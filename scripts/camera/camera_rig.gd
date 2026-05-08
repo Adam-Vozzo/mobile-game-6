@@ -7,7 +7,9 @@ class_name CameraRig
 ##
 ## CLAUDE.md flagged camera fiddling on mobile as the single biggest
 ## Dadish-3D pain point — the recenter behaviour is the answer to that.
-## SpringArm3D collision avoidance is queued in PLAN.md (P0).
+## Collision avoidance: a per-frame WorldSpace raycast shortens the arm
+## whenever geometry sits between the aim-point and desired camera position.
+## DECISIONS.md explains why we chose a raycast over a SpringArm3D node.
 
 @export var target_path: NodePath = ^"../Player"
 
@@ -32,6 +34,12 @@ class_name CameraRig
 ## Multiplier applied to the player's negative Y velocity to drop the
 ## camera target while falling. Helps the player see what's below.
 @export_range(0.0, 1.0, 0.01) var vertical_pull: float = 0.18
+
+@export_category("Collision")
+## Minimum arm length even when fully blocked (keeps camera from clipping inside wall).
+@export_range(0.3, 3.0, 0.05) var min_distance: float = 0.5
+## Gap between camera and wall surface, metres.
+@export_range(0.05, 0.5, 0.01) var wall_margin: float = 0.2
 
 @export_category("Manual override")
 @export_range(0.0001, 0.05, 0.0001) var yaw_drag_sens: float = 0.005
@@ -104,19 +112,36 @@ func _process(delta: float) -> void:
 	var rig_pos := target_pos + _lookahead + Vector3(0.0, vertical_offset, 0.0)
 	global_position = rig_pos
 
-	# --- Place camera behind-and-above per yaw + pitch ---
-	# Local offset assumes pitch is negative for looking down. Camera lives
-	# at distance * (back, up) where:
-	#   back = cos(|pitch|), up = sin(|pitch|)
+	# --- Place camera behind-and-above per yaw + pitch, with wall avoidance ---
+	# cam_dir: unit vector from aim-point toward desired camera position.
+	# A raycast along cam_dir finds the first World-layer surface and
+	# shortens the arm to stay in front of it (minus wall_margin).
 	var p := absf(_pitch)
-	var local_offset := Vector3(0.0, sin(p) * distance, cos(p) * distance)
-	var yaw_basis := Basis(Vector3.UP, _yaw)
-	_camera.global_position = rig_pos + yaw_basis * local_offset
-	_camera.look_at(target_pos + Vector3(0.0, aim_height, 0.0), Vector3.UP)
+	var cam_dir := (Basis(Vector3.UP, _yaw) * Vector3(0.0, sin(p), cos(p))).normalized()
+	var safe_dist := _query_safe_distance(rig_pos, cam_dir)
+	_camera.global_position = rig_pos + cam_dir * safe_dist
+	var look_target := target_pos + Vector3(0.0, aim_height, 0.0)
+	if _camera.global_position.distance_squared_to(look_target) > 0.0001:
+		_camera.look_at(look_target, Vector3.UP)
 
 	# --- Publish yaw to player so input is camera-relative ---
 	if _target.has_method("set_camera_yaw"):
 		_target.set_camera_yaw(_yaw)
+
+
+## Shoots a ray from `from` along `direction` for `distance` metres against
+## the World physics layer only. Returns the largest safe camera distance
+## (clamped to min_distance).
+func _query_safe_distance(from: Vector3, direction: Vector3) -> float:
+	var space := get_world_3d().direct_space_state
+	var query := PhysicsRayQueryParameters3D.create(
+		from, from + direction * distance, 1)  # layer 1 = World
+	if _target != null:
+		query.exclude = [_target.get_rid()]
+	var hit := space.intersect_ray(query)
+	if hit.is_empty():
+		return distance
+	return maxf(min_distance, from.distance_to(hit["position"]) - wall_margin)
 
 
 func _get_target_velocity() -> Vector3:
@@ -140,3 +165,7 @@ func _on_camera_param_changed(param_name: StringName, value: float) -> void:
 			lookahead_distance = value
 		&"vertical_pull":
 			vertical_pull = value
+		&"min_distance":
+			min_distance = value
+		&"wall_margin":
+			wall_margin = value

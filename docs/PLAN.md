@@ -14,9 +14,9 @@ instrumented and tunable.
 
 ## Active iteration
 
-- Branch: `main` (kickoff branch `claude/start-project-void-TxIcJ`
-  squash-merged at session end).
-- Focus: ready for iteration 1. Pull from the queue below.
+- Branch: `claude/elegant-lamport-9CpXU`
+- Focus: camera wall avoidance done; Floaty profile done. Next: on-device
+  smoke test (needs human) or camera dev-menu sliders.
 
 ## Queue (ranked, top is next)
 
@@ -32,30 +32,27 @@ The next iteration should pull from the top of this list. Items marked
    editor and on device via one-click deploy. Capture frametime, draw
    calls, and a 30-second gameplay clip if possible. Log results in
    README's Updates entry.
-2. **SpringArm collision on the camera rig.** Current rig sets the
-   camera position directly with no occlusion handling — fine for the
-   open Feel Lab, will clip walls in any tighter space. Wrap the camera
-   in a `SpringArm3D` and feed its hit-corrected position back to the
-   `Camera3D`. Gate 1 levels need this before geometry gets dense.
-3. **Tune Snappy on device.** Adjust `resources/profiles/snappy.tres`
+   _(Still blocked — no Godot binary in iteration environment. Needs human to
+   open the project in Godot 4.6 and paste any errors.)_
+2. **Tune Snappy on device.** Adjust `resources/profiles/snappy.tres`
    gravity / jump_velocity / accel / coyote / buffer based on first
-   on-device feel. Avoid making more profiles until Snappy is felt.
-4. **Author Floaty profile (`floaty.tres`)** as second variant for human
-   side-by-side feel test. Same parameter set, dadish-leaning values.
-5. **Author Momentum profile (`momentum.tres`)** with sustained-input
-   speed ramp. Add a sliders-affected curve for the ramp.
-6. **Author Assisted profile (`assisted.tres`)** — in-air steering toward
-   likely landing target, generous ledge grab, edge-snap on landing.
-7. **Camera params group in dev menu.** Wire sliders to the rig's
+   on-device feel. Floaty is now the comparison profile; have both
+   running before this pass.
+3. **Camera params group in dev menu.** Wire sliders to the rig's
    distance, pitch, lookahead_distance, vertical_pull, yaw/pitch drag
-   sensitivities, idle recenter delay/speed. Hot-swap during play.
-8. **Touch overlay polish.** Drag-to-place reposition mode invoked from
+   sensitivities, idle recenter delay/speed, min_distance, wall_margin.
+   Hot-swap during play.
+4. **Author Momentum profile (`momentum.tres`)** with sustained-input
+   speed ramp. Add a sliders-affected curve for the ramp.
+5. **Author Assisted profile (`assisted.tres`)** — in-air steering toward
+   likely landing target, generous ledge grab, edge-snap on landing.
+6. **Touch overlay polish.** Drag-to-place reposition mode invoked from
    the dev menu (handles per control, snap-to-thumb-zone presets,
    resize on jump button). Persist anchors + radii to `user://input.cfg`.
-9. **Dev menu fleshing.** Debug-viz toggles (collision shapes, velocity
+7. **Dev menu fleshing.** Debug-viz toggles (collision shapes, velocity
    vector, ground normal, jump prediction arc), time-scale slider,
    free-camera mode, save-as-new-profile button.
-10. **Reboot animation polish.** Replace the red-flash placeholder with
+8. **Reboot animation polish.** Replace the red-flash placeholder with
     the spec in CLAUDE.md (sparks → dark frame → power-on hum → upright).
     Visual beats first; audio can stay placeholder.
 
@@ -102,6 +99,10 @@ These mirror "Open questions waiting on you" in the README.
 
 ## Recently completed (last 5)
 
+- 2026-05-08 iter-2 — Raycast camera wall avoidance (`_query_safe_distance`
+  in camera_rig.gd; World-layer ray, `min_distance` + `wall_margin` tunables).
+  Floaty profile (`floaty.tres`) — Dadish-leaning values, exposed in dev menu.
+  DECISIONS.md entry: raycast vs SpringArm3D rationale.
 - 2026-05-08 — Kickoff steps 1–10 (folder layout + project settings,
   Android preset + ANDROID.md, all doc files, Feel Lab scene, Stray
   controller + Snappy profile, dev menu skeleton, camera rig, touch

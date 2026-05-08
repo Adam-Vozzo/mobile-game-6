@@ -79,6 +79,36 @@ Consequences: capsule-on-slope behaviour will need a tuning pass on
 device — Jolt's sliding/snapping characteristics differ subtly from the
 default and can affect "feel."
 
+## 2026-05-08 — Raycast camera collision instead of SpringArm3D
+
+Status: accepted
+Context: PLAN.md P0 item 2 called for "wrap the camera in a SpringArm3D and
+feed its hit-corrected position back to the Camera3D." SpringArm3D updates
+its children in `_physics_process`, but the camera rig runs in `_process`.
+This ordering creates a guaranteed 1-frame lag: the spring arm casts using
+the position/rotation set by the *previous* process frame, so when the
+player moves quickly toward a wall the camera clips for one frame before
+recovering. Additionally, SpringArm3D adds an extra scene node, slightly
+complicates the `@onready` graph, and its shape-sweep mode (which goes
+beyond a simple ray) is not needed for a behind-and-above pivot.
+Decision: implement wall avoidance with a direct `PhysicsRayQueryParameters3D`
+raycast inside `_process`. The ray goes from the aim-point along `cam_dir`
+for `distance` metres, hitting only the World layer (mask 1). On a hit,
+the arm length is clamped to `max(min_distance, hit_dist - wall_margin)`.
+Runs at display frame rate with zero additional lag.
+Alternatives considered:
+- SpringArm3D node (PLAN.md suggestion). Rejected: 1-frame lag; see above.
+- Move entire camera rig to `_physics_process`. Rejected: camera running at
+  the fixed physics tick (60 Hz) produces perceptible judder on 90 Hz or
+  variable-refresh displays.
+- Shape cast (CylinderShape3D sweep) for a wider detection volume. Deferred:
+  a simple ray is sufficient for Gate 0; revisit if the player reports odd
+  camera behaviour in narrow corridors.
+Consequences: two extra tunables (`min_distance`, `wall_margin`) are exposed
+on the CameraRig export group and wired into `_on_camera_param_changed` for
+live dev-menu adjustment. The PLAN.md item "SpringArm collision on the
+camera rig" is complete with this alternative implementation.
+
 ## 2026-05-08 — Auto-merge PR workflow per CLAUDE.md
 
 Status: accepted (after human confirmation)

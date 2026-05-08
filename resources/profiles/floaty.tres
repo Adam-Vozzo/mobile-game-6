@@ -1,0 +1,22 @@
+[gd_resource type="Resource" load_steps=2 format=3]
+
+[ext_resource type="Script" path="res://scripts/controller/controller_profile.gd" id="1_profile"]
+
+[resource]
+script = ExtResource("1_profile")
+max_speed = 6.5
+ground_acceleration = 45.0
+ground_deceleration = 50.0
+air_acceleration = 22.0
+air_horizontal_damping = 0.2
+jump_velocity = 9.5
+gravity_rising = 20.0
+gravity_falling = 32.0
+gravity_after_apex = 38.0
+terminal_velocity = 28.0
+coyote_time = 0.14
+jump_buffer = 0.16
+release_velocity_ratio = 0.55
+max_floor_angle_degrees = 52.0
+fall_kill_y = -25.0
+reboot_duration = 0.5
