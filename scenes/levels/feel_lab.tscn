@@ -1,7 +1,8 @@
-[gd_scene load_steps=24 format=3]
+[gd_scene load_steps=25 format=3]
 
 [ext_resource type="Script" path="res://scripts/levels/feel_lab.gd" id="1_feel"]
 [ext_resource type="Script" path="res://scripts/levels/moving_platform.gd" id="2_movp"]
+[ext_resource type="PackedScene" path="res://scenes/player/player.tscn" id="3_playerScene"]
 
 [sub_resource type="Environment" id="Environment_FeelLab"]
 background_mode = 1
@@ -105,6 +106,9 @@ light_energy = 1.5
 shadow_enabled = true
 
 [node name="PlayerSpawn" type="Marker3D" parent="."]
+transform = Transform3D(1, 0, 0, 0, 1, 0, 0, 0, 1, 0, 1, 0)
+
+[node name="Player" parent="." instance=ExtResource("3_playerScene")]
 transform = Transform3D(1, 0, 0, 0, 1, 0, 0, 0, 1, 0, 1, 0)
 
 [node name="Floor" type="StaticBody3D" parent="."]
