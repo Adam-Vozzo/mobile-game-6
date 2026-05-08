@@ -5,10 +5,10 @@ A mobile 3D platformer. Brutalist megastructure inspired by *BLAME!*. Controller
 ## Status
 
 Current gate: **Gate 0 — Feel Lab**
-Last iteration: 2026-05-08 — kickoff (folder layout, project settings, Android preset, docs, Feel Lab scene, Stray + Snappy controller, dev menu, camera rig, touch overlay)
-Test device build: not yet — kickoff authored without a Godot binary; first on-device build is the next iteration's top task
+Last iteration: 2026-05-08 — iter/springarm-floaty (SpringArm3D wall occlusion on camera rig, Floaty controller profile, Floaty added to dev menu)
+Test device build: not yet — kickoff authored without a Godot binary; first on-device build is still the top open question
 Performance: not yet measured on Nothing Phone 4(a) Pro
-Throttle level: normal — 0 iterations since last human direction
+Throttle level: normal — 1 iteration since last human direction
 
 If you only read one section, read **Open questions waiting on you** below.
 
@@ -36,7 +36,7 @@ Goal: one scene, one character controller, fully instrumented and tunable.
 - [x] CharacterBody3D player (the Stray) with Snappy profile
 - [x] Coyote, buffer, variable jump, preserved horizontal velocity
 - [x] Dev menu skeleton with live tunables
-- [x] Spring-arm camera with lookahead and right-drag override _(SpringArm collision avoidance still queued — current rig is direct-positioning only)_
+- [x] Spring-arm camera with lookahead and right-drag override, **SpringArm3D wall occlusion** ✓
 - [x] Touch input: virtual stick + jump, repositionable _(positions exposed as `@export`s; drag-to-place UI queued)_
 - [ ] Android export pipeline verified on test device
 
@@ -78,6 +78,18 @@ Goal: store-ready build.
 The full iteration log lives here, newest first. Every iteration appends an entry. Skim the dates to find where you last left off.
 
 <!-- ITERATION ENTRIES BELOW — DO NOT REMOVE OLDER ENTRIES -->
+
+### [2026-05-08] — `claude/elegant-lamport-Z9y09` — SpringArm wall occlusion + Floaty profile
+
+- Primary: wrapped `camera_rig.tscn` in a `SpringArm3D` node so the camera sweeps for wall collisions before placing itself — no more geometry clipping in tight spaces. `camera_rig.gd` now positions the spring arm's origin+rotation each frame instead of placing the `Camera3D` directly; `Camera3D` is a child of `SpringArm3D` and gets moved to the corrected arm-tip position by the engine. `look_at` runs after, accepting a one-frame positional lag (imperceptible at 60 fps). Spring margin 0.25 m.
+- Side quest: authored `resources/profiles/floaty.tres` (Dadish-leaning — smooth accel 35/(m/s)/s, generous air control 22, gentle gravity 18/30/38, larger coyote 160 ms + buffer 160 ms, hangtime-biased `release_velocity_ratio` 0.55). Added to the dev menu profile dropdown alongside Snappy. The human now has two profiles to compare on first device run.
+- Perf: not yet measured — on-device pending.
+- Bugs fixed: none — proactive improvement (Gate 1 needs camera occlusion before geometry gets dense).
+- New dev-menu: Floaty in the profile dropdown.
+- Assets acquired: none.
+- Research added: none.
+- Needs human attention: see "Open questions waiting on you" — first on-device run is still the gate.
+- Next likely focus: on-device smoke test (human action required), then camera params group in dev menu + debug-viz toggles, then Momentum/Assisted profiles.
 
 ### [2026-05-08] — `claude/start-project-void-TxIcJ` — kickoff
 

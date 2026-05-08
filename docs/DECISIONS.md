@@ -79,6 +79,26 @@ Consequences: capsule-on-slope behaviour will need a tuning pass on
 device — Jolt's sliding/snapping characteristics differ subtly from the
 default and can affect "feel."
 
+## 2026-05-08 — SpringArm3D for camera wall occlusion
+
+Status: accepted
+Context: kickoff camera rig placed Camera3D by setting global_position directly. No
+collision sweep meant the camera would clip through walls the moment Gate 1 adds any
+geometry tighter than the open Feel Lab.
+Decision: add SpringArm3D as an intermediate node between CameraRig root and Camera3D.
+CameraRig sets SpringArm's transform (origin at player + lookahead, +Z axis pointing
+toward desired camera position) and spring_length each frame. SpringArm sweeps a shape
+along its +Z axis and shortens the arm on collision; Camera3D child automatically lands
+at the collision-corrected tip. look_at is called after, from the camera's prior-frame
+position — one-frame lag, imperceptible at 60 fps.
+Alternatives considered:
+- Manual PhysicsDirectSpaceState3D.intersect_ray: more control, more code, re-implements
+  what SpringArm already does correctly. Rejected: not worth the duplication.
+- Keep direct placement, fix in Gate 1: deferred risk. Gate 1 authors levels assuming
+  camera works — easier to fix before any level geometry exists. Rejected.
+Consequences: camera occlusion works in any geometry. SpringArm margin = 0.25 m keeps
+the camera from touching walls. Pitch clamping still applies.
+
 ## 2026-05-08 — Auto-merge PR workflow per CLAUDE.md
 
 Status: accepted (after human confirmation)

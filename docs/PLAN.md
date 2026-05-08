@@ -32,32 +32,26 @@ The next iteration should pull from the top of this list. Items marked
    editor and on device via one-click deploy. Capture frametime, draw
    calls, and a 30-second gameplay clip if possible. Log results in
    README's Updates entry.
-2. **SpringArm collision on the camera rig.** Current rig sets the
-   camera position directly with no occlusion handling — fine for the
-   open Feel Lab, will clip walls in any tighter space. Wrap the camera
-   in a `SpringArm3D` and feed its hit-corrected position back to the
-   `Camera3D`. Gate 1 levels need this before geometry gets dense.
-3. **Tune Snappy on device.** Adjust `resources/profiles/snappy.tres`
+2. **Tune Snappy on device.** Adjust `resources/profiles/snappy.tres`
    gravity / jump_velocity / accel / coyote / buffer based on first
    on-device feel. Avoid making more profiles until Snappy is felt.
-4. **Author Floaty profile (`floaty.tres`)** as second variant for human
-   side-by-side feel test. Same parameter set, dadish-leaning values.
-5. **Author Momentum profile (`momentum.tres`)** with sustained-input
+   _(Floaty is now also in the dev menu for immediate side-by-side comparison.)_
+3. **Author Momentum profile (`momentum.tres`)** with sustained-input
    speed ramp. Add a sliders-affected curve for the ramp.
-6. **Author Assisted profile (`assisted.tres`)** — in-air steering toward
+4. **Author Assisted profile (`assisted.tres`)** — in-air steering toward
    likely landing target, generous ledge grab, edge-snap on landing.
-7. **Camera params group in dev menu.** Wire sliders to the rig's
+5. **Camera params group in dev menu.** Wire sliders to the rig's
    distance, pitch, lookahead_distance, vertical_pull, yaw/pitch drag
    sensitivities, idle recenter delay/speed. Hot-swap during play.
-8. **Touch overlay polish.** Drag-to-place reposition mode invoked from
+6. **Touch overlay polish.** Drag-to-place reposition mode invoked from
    the dev menu (handles per control, snap-to-thumb-zone presets,
    resize on jump button). Persist anchors + radii to `user://input.cfg`.
-9. **Dev menu fleshing.** Debug-viz toggles (collision shapes, velocity
+7. **Dev menu fleshing.** Debug-viz toggles (collision shapes, velocity
    vector, ground normal, jump prediction arc), time-scale slider,
    free-camera mode, save-as-new-profile button.
-10. **Reboot animation polish.** Replace the red-flash placeholder with
-    the spec in CLAUDE.md (sparks → dark frame → power-on hum → upright).
-    Visual beats first; audio can stay placeholder.
+8. **Reboot animation polish.** Replace the red-flash placeholder with
+   the spec in CLAUDE.md (sparks → dark frame → power-on hum → upright).
+   Visual beats first; audio can stay placeholder.
 
 ### P1 — Supporting
 
@@ -102,11 +96,13 @@ These mirror "Open questions waiting on you" in the README.
 
 ## Recently completed (last 5)
 
+- 2026-05-08 — Iter 1: SpringArm3D wall occlusion on camera rig (camera
+  no longer clips geometry); Floaty profile authored and wired into dev
+  menu dropdown.
 - 2026-05-08 — Kickoff steps 1–10 (folder layout + project settings,
   Android preset + ANDROID.md, all doc files, Feel Lab scene, Stray
   controller + Snappy profile, dev menu skeleton, camera rig, touch
-  overlay, ANDROID first-run checklist, README populated). See README's
-  Updates section.
+  overlay, ANDROID first-run checklist, README populated).
 
 ## Out of scope until next gate
 
