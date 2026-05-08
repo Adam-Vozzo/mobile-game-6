@@ -22,10 +22,9 @@ Suggested early reads (from CLAUDE.md):
 
 ## Mobile touch UX
 
-_(none yet)_
+- [`camera_mobile_3d.md`](camera_mobile_3d.md) — Camera systems in 3D mobile platformers: Dadish 3D pain points, Odyssey auto-framing, SpringArm best practices, Genshin touch patterns. Implications: lazy-follow lerp tuning, CameraHint volumes at Gate 1, touch drag dead zone before first device test.
 
-Suggested:
-- Genshin Impact touch layout postmortem.
+Suggested remaining:
 - Sky: Children of the Light gesture system.
 - Alto's Odyssey one-tap design.
 

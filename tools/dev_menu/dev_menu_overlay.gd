@@ -3,14 +3,16 @@ extends CanvasLayer
 ## a hand-authored .tscn and there's no theming work to lose.
 ##
 ## CLAUDE.md (Gate 0 minimum): controller profile dropdown, 3–4 live
-## sliders, juice toggle stubs. Subsequent iterations add camera params,
-## debug-viz toggles, time-scale, free-cam, save/load profile snapshots —
-## see PLAN.md.
+## sliders, juice toggle stubs. Camera params section added in iteration 1.
 
 const SNAPPY_PROFILE := preload("res://resources/profiles/snappy.tres")
+const FLOATY_PROFILE := preload("res://resources/profiles/floaty.tres")
+const MOMENTUM_PROFILE := preload("res://resources/profiles/momentum.tres")
 
 var _profiles: Dictionary = {
 	"Snappy": SNAPPY_PROFILE,
+	"Floaty": FLOATY_PROFILE,
+	"Momentum": MOMENTUM_PROFILE,
 }
 
 var _current_profile: Resource
@@ -22,6 +24,13 @@ var _slider_coyote: HSlider
 var _slider_buffer: HSlider
 var _juice_boxes: Dictionary = {}
 var _perf_label: Label
+
+# Camera sliders — defaults mirror camera_rig.gd @export values.
+var _slider_cam_distance: HSlider
+var _slider_cam_pitch: HSlider
+var _slider_cam_lookahead: HSlider
+var _slider_cam_vpull: HSlider
+var _slider_cam_yaw_sens: HSlider
 
 
 func _ready() -> void:
@@ -39,9 +48,15 @@ func _build_ui() -> void:
 	panel.mouse_filter = Control.MOUSE_FILTER_STOP
 	add_child(panel)
 
+	var scroll := ScrollContainer.new()
+	scroll.custom_minimum_size = Vector2(380, 580)
+	scroll.horizontal_scroll_mode = ScrollContainer.SCROLL_MODE_DISABLED
+	panel.add_child(scroll)
+
 	var vbox := VBoxContainer.new()
 	vbox.add_theme_constant_override("separation", 6)
-	panel.add_child(vbox)
+	vbox.size_flags_horizontal = Control.SIZE_EXPAND_FILL
+	scroll.add_child(vbox)
 
 	vbox.add_child(_make_label("Dev Menu", 20, true))
 
@@ -58,12 +73,30 @@ func _build_ui() -> void:
 	vbox.add_child(_make_label("Controller", 14, true))
 	_slider_max_speed = _make_slider(vbox, "Max speed",
 		2.0, 20.0, 0.1, _on_max_speed_changed)
-	_slider_jump_velocity = _make_slider(vbox, "Jump velocity",
+	_slider_jump_velocity = _make_slider(vbox, "Jump vel",
 		4.0, 20.0, 0.1, _on_jump_velocity_changed)
 	_slider_coyote = _make_slider(vbox, "Coyote (s)",
 		0.0, 0.3, 0.005, _on_coyote_changed)
 	_slider_buffer = _make_slider(vbox, "Buffer (s)",
 		0.0, 0.3, 0.005, _on_buffer_changed)
+
+	# --- Camera sliders ---
+	vbox.add_child(_make_label("Camera", 14, true))
+	_slider_cam_distance = _make_slider(vbox, "Distance",
+		2.0, 15.0, 0.1, _on_cam_distance_changed)
+	_slider_cam_distance.value = 6.0
+	_slider_cam_pitch = _make_slider(vbox, "Pitch (deg)",
+		0.0, 80.0, 0.5, _on_cam_pitch_changed)
+	_slider_cam_pitch.value = 22.0
+	_slider_cam_lookahead = _make_slider(vbox, "Lookahead",
+		0.0, 5.0, 0.05, _on_cam_lookahead_changed)
+	_slider_cam_lookahead.value = 1.2
+	_slider_cam_vpull = _make_slider(vbox, "Fall pull",
+		0.0, 1.0, 0.01, _on_cam_vpull_changed)
+	_slider_cam_vpull.value = 0.18
+	_slider_cam_yaw_sens = _make_slider(vbox, "Yaw sens",
+		0.0001, 0.02, 0.0001, _on_cam_yaw_sens_changed)
+	_slider_cam_yaw_sens.value = 0.005
 
 	# --- Juice toggles ---
 	vbox.add_child(_make_label("Juice", 14, true))
@@ -129,11 +162,11 @@ func _make_slider(parent: Node, label_text: String,
 
 	var val_label := Label.new()
 	val_label.custom_minimum_size = Vector2(54, 0)
-	val_label.text = "%.2f" % slider.value
+	val_label.text = "%.3f" % slider.value
 	row.add_child(val_label)
 
 	slider.value_changed.connect(func(v: float) -> void:
-		val_label.text = "%.2f" % v)
+		val_label.text = "%.3f" % v)
 	slider.value_changed.connect(on_changed)
 
 	return slider
@@ -144,9 +177,8 @@ func _select_profile(profile_name: String) -> void:
 		return
 	var p: Resource = _profiles[profile_name]
 	_current_profile = p
-	# Sync sliders to the new profile without firing _on_*_changed (the
-	# value_changed signal still emits, but the assignments below match
-	# the resource's current state, so no harm done).
+	# Sync sliders to the new profile.  value_changed fires and mutates
+	# _current_profile, but the values are the same so it's harmless.
 	_slider_max_speed.value = p.max_speed
 	_slider_jump_velocity.value = p.jump_velocity
 	_slider_coyote.value = p.coyote_time
@@ -158,6 +190,8 @@ func _on_profile_selected(idx: int) -> void:
 	var profile_name := _profile_dropdown.get_item_text(idx)
 	_select_profile(profile_name)
 
+
+# --- Controller slider callbacks ---
 
 func _on_max_speed_changed(v: float) -> void:
 	if _current_profile == null:
@@ -185,3 +219,25 @@ func _on_buffer_changed(v: float) -> void:
 		return
 	_current_profile.jump_buffer = v
 	DevMenu.controller_param_changed.emit(&"jump_buffer", v)
+
+
+# --- Camera slider callbacks ---
+
+func _on_cam_distance_changed(v: float) -> void:
+	DevMenu.camera_param_changed.emit(&"distance", v)
+
+
+func _on_cam_pitch_changed(v: float) -> void:
+	DevMenu.camera_param_changed.emit(&"pitch_degrees", v)
+
+
+func _on_cam_lookahead_changed(v: float) -> void:
+	DevMenu.camera_param_changed.emit(&"lookahead_distance", v)
+
+
+func _on_cam_vpull_changed(v: float) -> void:
+	DevMenu.camera_param_changed.emit(&"vertical_pull", v)
+
+
+func _on_cam_yaw_sens_changed(v: float) -> void:
+	DevMenu.camera_param_changed.emit(&"yaw_drag_sens", v)

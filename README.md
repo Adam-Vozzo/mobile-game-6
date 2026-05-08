@@ -5,10 +5,10 @@ A mobile 3D platformer. Brutalist megastructure inspired by *BLAME!*. Controller
 ## Status
 
 Current gate: **Gate 0 — Feel Lab**
-Last iteration: 2026-05-08 — kickoff (folder layout, project settings, Android preset, docs, Feel Lab scene, Stray + Snappy controller, dev menu, camera rig, touch overlay)
-Test device build: not yet — kickoff authored without a Godot binary; first on-device build is the next iteration's top task
+Last iteration: 2026-05-08 — iter 1 (SpringArm3D camera collision avoidance, Floaty + Momentum profiles, camera dev-menu params, camera research note)
+Test device build: not yet — first on-device build still pending human with Godot 4.6
 Performance: not yet measured on Nothing Phone 4(a) Pro
-Throttle level: normal — 0 iterations since last human direction
+Throttle level: normal — 1 iteration since last human direction
 
 If you only read one section, read **Open questions waiting on you** below.
 
@@ -35,9 +35,10 @@ Goal: one scene, one character controller, fully instrumented and tunable.
 - [x] Feel Lab test arena (brutalist primitives, fog, single warm light)
 - [x] CharacterBody3D player (the Stray) with Snappy profile
 - [x] Coyote, buffer, variable jump, preserved horizontal velocity
-- [x] Dev menu skeleton with live tunables
-- [x] Spring-arm camera with lookahead and right-drag override _(SpringArm collision avoidance still queued — current rig is direct-positioning only)_
-- [x] Touch input: virtual stick + jump, repositionable _(positions exposed as `@export`s; drag-to-place UI queued)_
+- [x] Dev menu with live tunables (controller + camera sections)
+- [x] Spring-arm camera with lookahead and right-drag override, SpringArm3D collision avoidance
+- [x] Touch input: virtual stick + jump, repositionable _(drag-to-place UI still queued)_
+- [x] 3 controller profiles: Snappy, Floaty, Momentum _(Assisted queued — needs player.gd work)_
 - [ ] Android export pipeline verified on test device
 
 ### Gate 1 — Vertical Slice
@@ -78,6 +79,18 @@ Goal: store-ready build.
 The full iteration log lives here, newest first. Every iteration appends an entry. Skim the dates to find where you last left off.
 
 <!-- ITERATION ENTRIES BELOW — DO NOT REMOVE OLDER ENTRIES -->
+
+### [2026-05-08] — `claude/elegant-lamport-Nvnn3` — iter 1 — SpringArm camera + profiles
+
+- Primary: **SpringArm3D collision avoidance on camera rig.** Camera was previously direct-positioned (no wall occlusion). Now uses a `SpringArm3D` (ray cast, World collision mask only, player excluded from cast, 0.2 m margin) so the camera never clips through walls or floors. The rig orients the spring arm's +Z toward the camera offset direction each frame; SpringArm3D shortens automatically on contact. Camera `look_at` timing is one frame behind the spring arm's position update (parent processes before child), which is imperceptible on smooth motion. `wall_margin` is now a dev-menu-wired export. Also added `wall_margin` to `_on_camera_param_changed` handler. `_spring_arm.add_excluded_object` called in `_ready` to prevent player capsule from triggering occlusion.
+- Side quest: **(a) Floaty + Momentum profiles.** `resources/profiles/floaty.tres` — lower gravity (22/30/42 m/s²), slower acceleration, more generous coyote + buffer, slight air damping for Dadish-leaning feel. `resources/profiles/momentum.tres` — higher top speed (12 m/s), slow ground ramp (30 m/s²) to reward sustained input, tight coyote + buffer windows. True non-linear ramp (curve-based) noted as debt in DECISIONS.md and PLAN.md. **(b) Camera params section in dev menu** — 5 sliders: distance, pitch, lookahead, fall-pull, yaw sensitivity. Defaults mirror camera_rig.gd `@export` values. The overlay now wraps in a `ScrollContainer` so it doesn't overflow on small screens. **(c) Research note** — `docs/research/camera_mobile_3d.md`: Dadish 3D pain-point data, Odyssey lazy-follow analysis, SpringArm best practices (no collision shape on arm for platformers, exclude player, add margin), Genshin touch drag patterns. Implications noted for future iterations.
+- Perf: not yet measured — on-device pending. No draw-call or geometry changes in this iteration; perf delta expected ~0 (spring arm does a physics ray each frame, negligible on mobile).
+- Bugs fixed: none (preventive — camera would have clipped walls in any Gate 1 geometry).
+- New dev-menu controls: Camera section → Distance (2–15), Pitch (0–80°), Lookahead (0–5), Fall pull (0–1), Yaw sens (0.0001–0.02). Profile dropdown now includes Floaty and Momentum.
+- Assets acquired: none.
+- Research added: `docs/research/camera_mobile_3d.md`.
+- Needs human attention: see "Open questions waiting on you."
+- Next likely focus: on-device build + first feel comparison of Snappy vs Floaty vs Momentum; dev menu debug-viz toggles; touch overlay drag-to-place reposition mode.
 
 ### [2026-05-08] — `claude/start-project-void-TxIcJ` — kickoff
 

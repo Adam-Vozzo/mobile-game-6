@@ -79,6 +79,25 @@ Consequences: capsule-on-slope behaviour will need a tuning pass on
 device — Jolt's sliding/snapping characteristics differ subtly from the
 default and can affect "feel."
 
+## 2026-05-08 — Momentum profile ships without non-linear speed ramp
+
+Status: accepted (debt acknowledged)
+Context: PLAN.md called for `momentum.tres` with a sustained-input speed ramp
+and a curve resource. Implementing a non-linear ramp requires changes to
+`player.gd` (sample input hold-time, drive acceleration through a curve) and
+a new `Curve` field on `ControllerProfile`.
+Decision: ship `momentum.tres` with a linear approximation — higher `max_speed`
+(12 m/s vs Snappy's 8) and lower `ground_acceleration` (30 vs 80), so speed
+naturally builds up over ~0.4 s of sustained input. The subjective "building
+momentum" feel is preserved at low cost.
+Alternatives considered:
+- Implement full curve-based ramp this iteration. Rejected: out of scope for
+  a profile resource addition; changes to player.gd deserve their own PR and
+  test pass.
+Consequences: `momentum.tres` is a useful comparison point but does not
+implement the full PLAN.md spec. Logged as debt: "Momentum profile — add
+Curve field to ControllerProfile for non-linear ramp" in PLAN.md.
+
 ## 2026-05-08 — Auto-merge PR workflow per CLAUDE.md
 
 Status: accepted (after human confirmation)

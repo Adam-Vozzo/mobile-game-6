@@ -5,9 +5,9 @@ class_name CameraRig
 ## right-drag override (consumed from TouchInput), and auto-recenter
 ## behind movement direction after a short idle window.
 ##
-## CLAUDE.md flagged camera fiddling on mobile as the single biggest
-## Dadish-3D pain point — the recenter behaviour is the answer to that.
-## SpringArm3D collision avoidance is queued in PLAN.md (P0).
+## SpringArm3D collision avoidance: the arm casts from the aim point toward
+## the camera position and shortens on geometry contact, preventing clipping.
+## The player's own collision shape is excluded from the cast.
 
 @export var target_path: NodePath = ^"../Player"
 
@@ -18,6 +18,8 @@ class_name CameraRig
 @export_range(0.0, 80.0, 0.5) var pitch_degrees: float = 22.0
 ## Vertical offset of the camera's aim point above the player's feet.
 @export_range(0.0, 3.0, 0.05) var aim_height: float = 0.6
+## Gap kept between camera and geometry when spring arm shortens.
+@export_range(0.0, 1.0, 0.01) var wall_margin: float = 0.2
 
 @export_category("Lookahead")
 ## How far ahead of the player (in the horizontal velocity direction)
@@ -50,14 +52,19 @@ var _lookahead: Vector3 = Vector3.ZERO
 var _last_drag_time: float = -1000.0
 var _target: Node3D
 
-@onready var _camera: Camera3D = $Camera
+@onready var _spring_arm: SpringArm3D = $SpringArm3D
+@onready var _camera: Camera3D = $SpringArm3D/Camera
 
 
 func _ready() -> void:
 	_pitch = -deg_to_rad(pitch_degrees)
 	_target = get_node_or_null(target_path) as Node3D
-	# Listen to dev-menu camera tweaks for this iteration; full implementation
-	# is the camera params group in PLAN.md.
+	_spring_arm.spring_length = distance
+	_spring_arm.margin = wall_margin
+	# Exclude the player's capsule so the arm never detects the Stray as an
+	# obstacle and incorrectly pulls the camera forward.
+	if _target is CollisionObject3D:
+		_spring_arm.add_excluded_object((_target as CollisionObject3D).get_rid())
 	if has_node("/root/DevMenu"):
 		DevMenu.camera_param_changed.connect(_on_camera_param_changed)
 
@@ -99,19 +106,29 @@ func _process(delta: float) -> void:
 	if vel.y < 0.0:
 		vertical_offset = vel.y * vertical_pull * 0.05
 
-	# --- Place rig at player + lookahead + vertical offset ---
+	# --- Place rig at aim point ---
 	var target_pos := _target.global_position
 	var rig_pos := target_pos + _lookahead + Vector3(0.0, vertical_offset, 0.0)
 	global_position = rig_pos
 
-	# --- Place camera behind-and-above per yaw + pitch ---
-	# Local offset assumes pitch is negative for looking down. Camera lives
-	# at distance * (back, up) where:
-	#   back = cos(|pitch|), up = sin(|pitch|)
+	# --- Orient spring arm so its +Z axis points toward the camera position ---
+	# arm_dir: direction from aim point toward the desired camera offset.
 	var p := absf(_pitch)
-	var local_offset := Vector3(0.0, sin(p) * distance, cos(p) * distance)
-	var yaw_basis := Basis(Vector3.UP, _yaw)
-	_camera.global_position = rig_pos + yaw_basis * local_offset
+	var arm_dir := (Basis(Vector3.UP, _yaw) * Vector3(0.0, sin(p), cos(p))).normalized()
+	_spring_arm.spring_length = distance
+
+	# Basis.looking_at(dir) makes -Z face dir, so negating arm_dir makes +Z
+	# face arm_dir.  Guard against near-vertical arm where UP and arm_dir are
+	# nearly parallel (would produce a degenerate cross product).
+	var safe_up := Vector3(0.0, 0.0, 1.0) \
+		if arm_dir.abs().dot(Vector3.UP) > 0.999 \
+		else Vector3.UP
+	_spring_arm.global_basis = Basis.looking_at(-arm_dir, safe_up)
+
+	# SpringArm3D positions the Camera child at hit_length along +Z each frame.
+	# We call look_at here; spring arm updates camera position after us in the
+	# same frame (child processes after parent), so look_at uses last frame's
+	# spring-corrected position — one-frame lag is imperceptible on smooth motion.
 	_camera.look_at(target_pos + Vector3(0.0, aim_height, 0.0), Vector3.UP)
 
 	# --- Publish yaw to player so input is camera-relative ---
@@ -129,6 +146,7 @@ func _on_camera_param_changed(param_name: StringName, value: float) -> void:
 	match param_name:
 		&"distance":
 			distance = value
+			_spring_arm.spring_length = value
 		&"pitch_degrees":
 			pitch_degrees = value
 			_pitch = -deg_to_rad(pitch_degrees)
@@ -140,3 +158,7 @@ func _on_camera_param_changed(param_name: StringName, value: float) -> void:
 			lookahead_distance = value
 		&"vertical_pull":
 			vertical_pull = value
+		&"wall_margin":
+			wall_margin = value
+			if _spring_arm != null:
+				_spring_arm.margin = value
