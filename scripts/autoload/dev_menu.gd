@@ -1,0 +1,80 @@
+extends Node
+## Dev menu autoload. Owns the overlay scene and broadcasts changes via
+## signals so gameplay code can react live without polling.
+##
+## Toggle: F1 in editor, 3-finger tap on device.
+
+const OVERLAY_SCENE := preload("res://tools/dev_menu/dev_menu_overlay.tscn")
+
+signal controller_profile_changed(profile_resource: Resource)
+signal controller_param_changed(param_name: StringName, value: float)
+signal camera_param_changed(param_name: StringName, value: float)
+signal juice_toggle_changed(toggle_name: StringName, enabled: bool)
+signal time_scale_changed(scale: float)
+signal teleport_requested(checkpoint_id: StringName)
+
+var is_open: bool = false
+var juice_state: Dictionary = {
+	&"screen_shake": true,
+	&"hitstop": true,
+	&"particles": true,
+	&"motion_trails": true,
+	&"squash_stretch": true,
+	&"sound_layers": true,
+}
+
+var _overlay: CanvasLayer
+var _active_touches: Dictionary = {}
+
+
+func _ready() -> void:
+	process_mode = Node.PROCESS_MODE_ALWAYS
+	# Defer instantiation by one frame so the autoload graph is fully up
+	# before the overlay's _ready runs (avoids ordering surprises).
+	call_deferred("_install_overlay")
+
+
+func _install_overlay() -> void:
+	if _overlay != null:
+		return
+	_overlay = OVERLAY_SCENE.instantiate()
+	_overlay.process_mode = Node.PROCESS_MODE_ALWAYS
+	# Add to /root so the overlay survives scene swaps.
+	get_tree().root.add_child(_overlay)
+	_overlay.visible = is_open
+
+
+func toggle() -> void:
+	set_open(not is_open)
+
+
+func set_open(open: bool) -> void:
+	is_open = open
+	if _overlay != null:
+		_overlay.visible = is_open
+
+
+func set_juice(toggle_name: StringName, enabled: bool) -> void:
+	juice_state[toggle_name] = enabled
+	juice_toggle_changed.emit(toggle_name, enabled)
+
+
+func is_juice_on(toggle_name: StringName) -> bool:
+	return bool(juice_state.get(toggle_name, true))
+
+
+func _unhandled_input(event: InputEvent) -> void:
+	if event is InputEventKey and event.is_action_pressed(&"dev_menu_toggle"):
+		toggle()
+		get_viewport().set_input_as_handled()
+		return
+	if event is InputEventScreenTouch:
+		var touch := event as InputEventScreenTouch
+		if touch.pressed:
+			_active_touches[touch.index] = true
+			if _active_touches.size() >= 3:
+				toggle()
+				_active_touches.clear()
+				get_viewport().set_input_as_handled()
+		else:
+			_active_touches.erase(touch.index)
