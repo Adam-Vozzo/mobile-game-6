@@ -89,7 +89,6 @@ Do not advance a gate without the human's explicit OK in chat.
   /debug          # overlays, gizmos, profilers
 /docs
   CLAUDE.md       # this file
-  README.md       # human dashboard — full update log lives here
   PLAN.md         # rolling plan
   DECISIONS.md    # ADR-lite log of significant choices
   JUICE.md        # catalog of juice elements + state
@@ -98,6 +97,7 @@ Do not advance a gate without the human's explicit OK in chat.
   ANDROID.md      # Android build / signing notes
   /research       # research notes by topic, INDEX.md lists them
 /tests            # GUT tests where applicable
+README.md         # human dashboard — full update log lives here (repo root)
 ```
 
 * One scene = one responsibility. Composition over inheritance for player abilities.
