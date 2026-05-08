@@ -1,0 +1,8 @@
+[gd_scene load_steps=2 format=3]
+
+[ext_resource type="Script" path="res://tools/dev_menu/dev_menu_overlay.gd" id="1_overlay"]
+
+[node name="DevMenuOverlay" type="CanvasLayer"]
+layer = 100
+visible = false
+script = ExtResource("1_overlay")
