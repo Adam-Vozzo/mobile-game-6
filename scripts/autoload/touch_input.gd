@@ -39,6 +39,27 @@ func set_camera_drag_delta(delta: Vector2) -> void:
 	camera_drag_delta = delta
 
 
+## Adds to the accumulated drag delta. Used by the touch overlay to push
+## per-event drag and by the mouse fallback below.
+func add_camera_drag_delta(delta: Vector2) -> void:
+	camera_drag_delta += delta
+
+
+## Reads + clears the accumulated drag delta. Called by the camera rig
+## once per frame so deltas don't double-apply.
+func consume_camera_drag_delta() -> Vector2:
+	var d := camera_drag_delta
+	camera_drag_delta = Vector2.ZERO
+	return d
+
+
+func _input(event: InputEvent) -> void:
+	# Editor fallback: right-mouse drag steers the camera. On device the
+	# touch overlay (step 8) feeds drag directly via add_camera_drag_delta.
+	if event is InputEventMouseMotion and Input.is_mouse_button_pressed(MOUSE_BUTTON_RIGHT):
+		camera_drag_delta += (event as InputEventMouseMotion).relative
+
+
 ## Convenience: prefer this over reading `move_vector` directly so we can
 ## later splice in keyboard fallback for editor testing.
 func get_move_vector() -> Vector2:

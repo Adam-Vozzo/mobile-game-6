@@ -1,8 +1,9 @@
-[gd_scene load_steps=25 format=3]
+[gd_scene load_steps=26 format=3]
 
 [ext_resource type="Script" path="res://scripts/levels/feel_lab.gd" id="1_feel"]
 [ext_resource type="Script" path="res://scripts/levels/moving_platform.gd" id="2_movp"]
 [ext_resource type="PackedScene" path="res://scenes/player/player.tscn" id="3_playerScene"]
+[ext_resource type="PackedScene" path="res://scenes/player/camera_rig.tscn" id="4_camRig"]
 
 [sub_resource type="Environment" id="Environment_FeelLab"]
 background_mode = 1
@@ -110,6 +111,9 @@ transform = Transform3D(1, 0, 0, 0, 1, 0, 0, 0, 1, 0, 1, 0)
 
 [node name="Player" parent="." instance=ExtResource("3_playerScene")]
 transform = Transform3D(1, 0, 0, 0, 1, 0, 0, 0, 1, 0, 1, 0)
+
+[node name="CameraRig" parent="." instance=ExtResource("4_camRig")]
+target_path = NodePath("../Player")
 
 [node name="Floor" type="StaticBody3D" parent="."]
 transform = Transform3D(1, 0, 0, 0, 1, 0, 0, 0, 1, 0, -0.5, 0)
