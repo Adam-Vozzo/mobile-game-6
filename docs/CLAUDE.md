@@ -201,6 +201,13 @@ Togglable overlay (3-finger tap on device, F1 in editor):
 * Acquiring third-party assets (with logging in `ASSETS.md`).
 * Research notes in `docs/research/`.
 
+## Git workflow
+
+* Push every change to a feature branch and open a PR (no direct commits to `main`).
+* Auto-merge: after pushing and opening the PR, mark it ready and merge it (squash) without waiting for human approval. The PR exists for traceability, not as a gate.
+* Exception — open the PR as a draft and stop for human review when the change: alters this Git workflow, modifies version control history (force push, rewrite, branch delete), introduces a paid service, ships outside the repo (Play Store, public release), or hits any item in *What requires the human*.
+* Never force-push, rewrite history, or delete branches without explicit instruction.
+
 ## Initial kickoff tasks
 
 Do these in order, committing after each:
