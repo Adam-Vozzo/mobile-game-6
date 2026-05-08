@@ -5,9 +5,13 @@ class_name CameraRig
 ## right-drag override (consumed from TouchInput), and auto-recenter
 ## behind movement direction after a short idle window.
 ##
+## Wall clip prevention: a SpringArm3D probes with a SphereShape3D (r=0.2)
+## and automatically shortens the arm when geometry is in the way. The
+## Camera3D is a child of the SpringArm3D and rides its corrected endpoint.
+##
 ## CLAUDE.md flagged camera fiddling on mobile as the single biggest
-## Dadish-3D pain point — the recenter behaviour is the answer to that.
-## SpringArm3D collision avoidance is queued in PLAN.md (P0).
+## Dadish-3D pain point — the recenter behaviour and spring-arm clip
+## prevention are the direct answers to that.
 
 @export var target_path: NodePath = ^"../Player"
 
@@ -45,19 +49,20 @@ class_name CameraRig
 @export_range(0.0, 10.0, 0.1) var recenter_min_speed: float = 0.5
 
 var _yaw: float = 0.0
-var _pitch: float = 0.0  # radians, negative = looking down
+## Pitch in radians; negative = camera above player. Clamped in drag handling.
+var _pitch: float = 0.0
 var _lookahead: Vector3 = Vector3.ZERO
 var _last_drag_time: float = -1000.0
 var _target: Node3D
 
-@onready var _camera: Camera3D = $Camera
+@onready var _arm: SpringArm3D = $SpringArm
+@onready var _camera: Camera3D = $SpringArm/Camera
 
 
 func _ready() -> void:
 	_pitch = -deg_to_rad(pitch_degrees)
 	_target = get_node_or_null(target_path) as Node3D
-	# Listen to dev-menu camera tweaks for this iteration; full implementation
-	# is the camera params group in PLAN.md.
+	_arm.spring_length = distance
 	if has_node("/root/DevMenu"):
 		DevMenu.camera_param_changed.connect(_on_camera_param_changed)
 
@@ -99,20 +104,25 @@ func _process(delta: float) -> void:
 	if vel.y < 0.0:
 		vertical_offset = vel.y * vertical_pull * 0.05
 
-	# --- Place rig at player + lookahead + vertical offset ---
+	# --- Position the SpringArm3D pivot at the aim/look-at target ---
+	# The arm's local +Z extends toward the camera (behind-and-above the player)
+	# when its rotation.x = -absf(_pitch) (tilts +Z upward) and rotation.y = _yaw.
+	# SpringArm3D internally moves the Camera3D child to (0, 0, spring_length)
+	# in local space, or to the first collision point if the arm is occluded.
 	var target_pos := _target.global_position
-	var rig_pos := target_pos + _lookahead + Vector3(0.0, vertical_offset, 0.0)
-	global_position = rig_pos
+	var pivot := target_pos + _lookahead \
+		+ Vector3(0.0, aim_height + vertical_offset, 0.0)
 
-	# --- Place camera behind-and-above per yaw + pitch ---
-	# Local offset assumes pitch is negative for looking down. Camera lives
-	# at distance * (back, up) where:
-	#   back = cos(|pitch|), up = sin(|pitch|)
-	var p := absf(_pitch)
-	var local_offset := Vector3(0.0, sin(p) * distance, cos(p) * distance)
-	var yaw_basis := Basis(Vector3.UP, _yaw)
-	_camera.global_position = rig_pos + yaw_basis * local_offset
-	_camera.look_at(target_pos + Vector3(0.0, aim_height, 0.0), Vector3.UP)
+	_arm.global_position = pivot
+	_arm.rotation.y = _yaw
+	# absf so the arm always tilts ABOVE the player regardless of sign from drag
+	_arm.rotation.x = -absf(_pitch)
+	_arm.spring_length = distance
+
+	# Orient the camera toward the aim point (independent of arm rotation)
+	var look_target := target_pos + Vector3(0.0, aim_height, 0.0)
+	if _camera.global_position.distance_to(look_target) > 0.01:
+		_camera.look_at(look_target, Vector3.UP)
 
 	# --- Publish yaw to player so input is camera-relative ---
 	if _target.has_method("set_camera_yaw"):
@@ -129,6 +139,7 @@ func _on_camera_param_changed(param_name: StringName, value: float) -> void:
 	match param_name:
 		&"distance":
 			distance = value
+			_arm.spring_length = value
 		&"pitch_degrees":
 			pitch_degrees = value
 			_pitch = -deg_to_rad(pitch_degrees)
