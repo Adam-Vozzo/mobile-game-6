@@ -47,12 +47,16 @@ godot --headless --export-debug "Android" build/project_void_debug.apk
 
 # Push to device
 adb install -r build/project_void_debug.apk
-adb shell am start -n com.projectvoid.stray/com.godot.game.GodotApp
+
+# Launch via the package's default LAUNCHER intent (works regardless of
+# what Godot names the activity in this version):
+adb shell monkey -p com.projectvoid.stray \
+    -c android.intent.category.LAUNCHER 1
 ```
 
-The `am start` activity name above assumes the default Godot Android
-activity. If the activity changes (e.g. with custom gradle build), update
-this command.
+If you prefer the explicit-activity form, run `adb shell dumpsys package
+com.projectvoid.stray | grep -A1 LAUNCHER` after install to find the
+current activity name and pass it to `am start -n <package>/<activity>`.
 
 ## Release / Play Store build (deferred — needs human)
 
@@ -89,6 +93,43 @@ green light. Steps are listed for reference only.
 
 5. **Upload to Play Console** under the Internal Testing track first.
 
+## First-run verification (current Gate 0 state)
+
+After import + one-click deploy of `scenes/levels/feel_lab.tscn`:
+
+In editor:
+
+- [ ] Project opens in Godot 4.6 with **no errors** in the Output panel.
+      Warnings about Forward+ vs. Mobile are OK; missing autoload scripts
+      are not — fix paths if any appear.
+- [ ] F5 → Feel Lab loads. You should see a grey concrete arena with
+      platforms rising +X, slopes at -X, walls at -Z, a moving platform
+      ping-ponging at +Z, and four tall pillars on the corners under
+      heavy fog.
+- [ ] **WASD / arrow keys** move the Stray. **Space** jumps. Holding
+      jump gives a higher arc; tapping cuts the apex (variable jump).
+- [ ] Walk off the level → the Stray falls below `fall_kill_y` (-25),
+      plays the placeholder reboot effect (red flash → dark frame →
+      warm power-on), and respawns at the spawn marker.
+- [ ] **R** respawns at any time.
+- [ ] **F1** opens the dev menu. Profile dropdown shows Snappy. Four
+      sliders adjust live. The perf line at the bottom updates.
+- [ ] Right-mouse drag rotates the camera. Releasing and standing still
+      eventually auto-recenters behind the player's last movement
+      direction (~1.2 s idle).
+
+On device (after `adb install`):
+
+- [ ] Game launches in **landscape** (sensor-landscape — both directions
+      are accepted, portrait is not).
+- [ ] **Left half of the screen** = virtual stick. Touch and drag.
+      Origin appears at first contact (free-floating).
+- [ ] **Right side, bottom-right** = jump button (red translucent
+      circle). Tap to jump, hold for higher.
+- [ ] **Right half of the screen** outside the jump button = camera drag.
+      Drag to rotate the camera; release and idle to auto-recenter.
+- [ ] **3-finger tap** opens the dev menu.
+
 ## Performance verification on device
 
 Each iteration that touches gameplay should run on device and capture:
@@ -118,9 +159,13 @@ in draw calls block merging without a written reason in `DECISIONS.md`.
 
 ## Open todos for ANDROID.md (not blocking kickoff)
 
-- [ ] Verify the activity name above by running a debug build and reading
-      the launched intent — replace placeholder if Godot 4.6 has changed it.
+- [ ] First on-device run pending — the kickoff was authored without a
+      Godot binary or device available, so all .tscn files are
+      hand-written. The import pass is the next iteration's first task.
 - [ ] Add a `tools/scripts/deploy_debug.sh` shortcut once the build pipeline
       stabilises.
 - [ ] Document the Play Store listing assets dimensions when we approach
       Gate 3.
+- [ ] If signing eventually goes through gradle build, document the
+      `gradle.properties` env-var pattern for keystore passwords so they
+      stay out of the repo.
