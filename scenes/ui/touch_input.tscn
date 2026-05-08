@@ -1,0 +1,19 @@
+[gd_scene load_steps=2 format=3]
+
+[ext_resource type="Script" path="res://scripts/ui/touch_input.gd" id="1_touch"]
+
+[node name="TouchInput" type="CanvasLayer"]
+layer = 10
+script = ExtResource("1_touch")
+
+[node name="StickBg" type="Panel" parent="."]
+custom_minimum_size = Vector2(120, 120)
+self_modulate = Color(1, 1, 1, 0.25)
+
+[node name="StickNub" type="Panel" parent="."]
+custom_minimum_size = Vector2(84, 84)
+self_modulate = Color(1, 1, 1, 0.5)
+
+[node name="JumpBg" type="Panel" parent="."]
+custom_minimum_size = Vector2(110, 110)
+self_modulate = Color(0.8, 0.2, 0.2, 0.4)

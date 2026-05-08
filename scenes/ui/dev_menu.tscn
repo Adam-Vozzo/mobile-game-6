@@ -1,0 +1,34 @@
+[gd_scene load_steps=2 format=3]
+
+[ext_resource type="Script" path="res://scripts/ui/dev_menu.gd" id="1_devmenu"]
+
+[node name="DevMenu" type="CanvasLayer"]
+layer = 100
+script = ExtResource("1_devmenu")
+
+[node name="RootPanel" type="PanelContainer" parent="."]
+anchors_preset = 15
+anchor_right = 1.0
+anchor_bottom = 1.0
+offset_left = 20.0
+offset_top = 20.0
+offset_right = -20.0
+offset_bottom = -20.0
+grow_horizontal = 2
+grow_vertical = 2
+
+[node name="VBox" type="VBoxContainer" parent="RootPanel"]
+layout_mode = 2
+
+[node name="PerfBar" type="HBoxContainer" parent="RootPanel/VBox"]
+layout_mode = 2
+
+[node name="PerfLabel" type="Label" parent="RootPanel/VBox/PerfBar"]
+layout_mode = 2
+text = "-- ms  |  -- DC  |  -- FPS"
+horizontal_alignment = 1
+
+[node name="TabContainer" type="TabContainer" parent="RootPanel/VBox"]
+layout_mode = 2
+size_flags_vertical = 3
+tab_alignment = 0

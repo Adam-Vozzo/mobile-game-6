@@ -1,0 +1,38 @@
+[gd_scene load_steps=6 format=3]
+
+[ext_resource type="Script" path="res://scripts/player/player.gd" id="1_player"]
+[ext_resource type="Resource" path="res://resources/controller_profiles/profile_snappy.tres" id="2_snappy"]
+
+[sub_resource type="CapsuleShape3D" id="CapsuleShape3D_body"]
+radius = 0.3
+height = 0.8
+
+[sub_resource type="BoxMesh" id="BoxMesh_body"]
+size = Vector3(0.5, 0.8, 0.3)
+
+[sub_resource type="StandardMaterial3D" id="Mat_stray"]
+albedo_color = Color(0.25, 0.25, 0.25, 1)
+emission_enabled = true
+emission = Color(0.8, 0.05, 0.05, 1)
+emission_energy_multiplier = 1.5
+roughness = 0.9
+metallic = 0.2
+
+[node name="Player" type="CharacterBody3D"]
+script = ExtResource("1_player")
+profile = ExtResource("2_snappy")
+floor_max_angle = 0.785398
+
+[node name="CollisionShape3D" type="CollisionShape3D" parent="."]
+transform = Transform3D(1, 0, 0, 0, 1, 0, 0, 0, 1, 0, 0.4, 0)
+shape = SubResource("CapsuleShape3D_body")
+
+[node name="Visual" type="Node3D" parent="."]
+transform = Transform3D(1, 0, 0, 0, 1, 0, 0, 0, 1, 0, 0.4, 0)
+
+[node name="MeshInstance3D" type="MeshInstance3D" parent="Visual"]
+mesh = SubResource("BoxMesh_body")
+surface_material_override/0 = SubResource("Mat_stray")
+
+[node name="CameraTarget" type="Marker3D" parent="."]
+transform = Transform3D(1, 0, 0, 0, 1, 0, 0, 0, 1, 0, 1.0, 0)

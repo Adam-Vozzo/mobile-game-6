@@ -1,0 +1,23 @@
+[gd_resource type="Resource" script_class="ControllerProfile" load_steps=2 format=3]
+
+[ext_resource type="Script" path="res://scripts/resources/controller_profile.gd" id="1_momentum"]
+
+[resource]
+script = ExtResource("1_momentum")
+profile_name = "Momentum"
+speed = 12.0
+acceleration = 20.0
+deceleration = 12.0
+air_acceleration = 10.0
+air_deceleration = 2.0
+jump_velocity = 12.5
+jump_cut_factor = 0.40
+coyote_time = 0.10
+jump_buffer_time = 0.13
+gravity_multiplier = 2.2
+fall_gravity_multiplier = 3.8
+terminal_velocity = -40.0
+horizontal_velocity_preservation = 1.0
+max_slope_degrees = 45.0
+ledge_snap_distance = 0.0
+air_steering_assist_radius = 0.0

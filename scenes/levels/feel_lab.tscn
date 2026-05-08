@@ -1,0 +1,211 @@
+[gd_scene load_steps=19 format=3]
+
+[ext_resource type="Script" path="res://scripts/levels/feel_lab.gd" id="1_feellab"]
+[ext_resource type="PackedScene" path="res://scenes/player/player.tscn" id="2_player"]
+[ext_resource type="Script" path="res://scripts/camera/camera_rig.gd" id="3_camrig"]
+[ext_resource type="PackedScene" path="res://scenes/ui/touch_input.tscn" id="4_touch"]
+[ext_resource type="Script" path="res://scripts/levels/moving_platform.gd" id="5_movplat"]
+
+[sub_resource type="BoxShape3D" id="BoxShape3D_floor"]
+size = Vector3(60, 1, 60)
+
+[sub_resource type="BoxMesh" id="BoxMesh_floor"]
+size = Vector3(60, 1, 60)
+
+[sub_resource type="StandardMaterial3D" id="Mat_concrete"]
+albedo_color = Color(0.28, 0.27, 0.26, 1)
+roughness = 0.92
+metallic = 0.05
+
+[sub_resource type="BoxShape3D" id="BoxShape3D_plat"]
+size = Vector3(2, 0.5, 2)
+
+[sub_resource type="BoxMesh" id="BoxMesh_plat"]
+size = Vector3(2, 0.5, 2)
+
+[sub_resource type="BoxShape3D" id="BoxShape3D_wall"]
+size = Vector3(0.5, 6, 6)
+
+[sub_resource type="BoxMesh" id="BoxMesh_wall"]
+size = Vector3(0.5, 6, 6)
+
+[sub_resource type="BoxShape3D" id="BoxShape3D_slope"]
+size = Vector3(4, 0.3, 4)
+
+[sub_resource type="BoxMesh" id="BoxMesh_slope"]
+size = Vector3(4, 0.3, 4)
+
+[sub_resource type="BoxShape3D" id="BoxShape3D_movplat"]
+size = Vector3(3, 0.4, 2)
+
+[sub_resource type="BoxMesh" id="BoxMesh_movplat"]
+size = Vector3(3, 0.4, 2)
+
+[sub_resource type="BoxShape3D" id="BoxShape3D_death"]
+size = Vector3(200, 2, 200)
+
+[sub_resource type="ProceduralSkyMaterial" id="ProceduralSkyMaterial_void"]
+sky_top_color = Color(0.05, 0.05, 0.07, 1)
+sky_horizon_color = Color(0.07, 0.06, 0.05, 1)
+sky_curve = 0.25
+ground_bottom_color = Color(0.03, 0.03, 0.04, 1)
+ground_horizon_color = Color(0.05, 0.04, 0.04, 1)
+
+[sub_resource type="Sky" id="Sky_void"]
+sky_material = SubResource("ProceduralSkyMaterial_void")
+
+[sub_resource type="Environment" id="Environment_lab"]
+background_mode = 2
+sky = SubResource("Sky_void")
+ambient_light_source = 2
+ambient_light_color = Color(0.1, 0.1, 0.12, 1)
+ambient_light_energy = 0.4
+fog_enabled = true
+fog_light_color = Color(0.08, 0.07, 0.07, 1)
+fog_light_energy = 0.5
+fog_density = 0.025
+fog_aerial_perspective = 0.3
+
+[node name="FeelLab" type="Node3D"]
+script = ExtResource("1_feellab")
+
+[node name="WorldEnvironment" type="WorldEnvironment" parent="."]
+environment = SubResource("Environment_lab")
+
+[node name="DirectionalLight3D" type="DirectionalLight3D" parent="."]
+transform = Transform3D(0.866, -0.354, 0.354, 0, 0.707, 0.707, -0.5, -0.612, 0.612, 8, 14, 6)
+light_color = Color(1.0, 0.82, 0.55, 1)
+light_energy = 1.2
+shadow_enabled = true
+
+[node name="Floor" type="StaticBody3D" parent="."]
+transform = Transform3D(1, 0, 0, 0, 1, 0, 0, 0, 1, 0, -0.5, 0)
+
+[node name="CollisionShape3D" type="CollisionShape3D" parent="Floor"]
+shape = SubResource("BoxShape3D_floor")
+
+[node name="MeshInstance3D" type="MeshInstance3D" parent="Floor"]
+mesh = SubResource("BoxMesh_floor")
+surface_material_override/0 = SubResource("Mat_concrete")
+
+[node name="PlatformGroup" type="Node3D" parent="."]
+
+[node name="Platform_std1" type="StaticBody3D" parent="PlatformGroup"]
+transform = Transform3D(1, 0, 0, 0, 1, 0, 0, 0, 1, 4, 1, -2)
+
+[node name="CollisionShape3D" type="CollisionShape3D" parent="PlatformGroup/Platform_std1"]
+shape = SubResource("BoxShape3D_plat")
+
+[node name="MeshInstance3D" type="MeshInstance3D" parent="PlatformGroup/Platform_std1"]
+mesh = SubResource("BoxMesh_plat")
+surface_material_override/0 = SubResource("Mat_concrete")
+
+[node name="Platform_std2" type="StaticBody3D" parent="PlatformGroup"]
+transform = Transform3D(1, 0, 0, 0, 1, 0, 0, 0, 1, 8, 2.5, -2)
+
+[node name="CollisionShape3D" type="CollisionShape3D" parent="PlatformGroup/Platform_std2"]
+shape = SubResource("BoxShape3D_plat")
+
+[node name="MeshInstance3D" type="MeshInstance3D" parent="PlatformGroup/Platform_std2"]
+mesh = SubResource("BoxMesh_plat")
+surface_material_override/0 = SubResource("Mat_concrete")
+
+[node name="Platform_std3" type="StaticBody3D" parent="PlatformGroup"]
+transform = Transform3D(1, 0, 0, 0, 1, 0, 0, 0, 1, 12, 4, -2)
+
+[node name="CollisionShape3D" type="CollisionShape3D" parent="PlatformGroup/Platform_std3"]
+shape = SubResource("BoxShape3D_plat")
+
+[node name="MeshInstance3D" type="MeshInstance3D" parent="PlatformGroup/Platform_std3"]
+mesh = SubResource("BoxMesh_plat")
+surface_material_override/0 = SubResource("Mat_concrete")
+
+[node name="Platform_small1" type="StaticBody3D" parent="PlatformGroup"]
+transform = Transform3D(1, 0, 0, 0, 1, 0, 0, 0, 1, 16, 5.5, -2)
+
+[node name="CollisionShape3D" type="CollisionShape3D" parent="PlatformGroup/Platform_small1"]
+shape = SubResource("BoxShape3D_plat")
+
+[node name="MeshInstance3D" type="MeshInstance3D" parent="PlatformGroup/Platform_small1"]
+mesh = SubResource("BoxMesh_plat")
+surface_material_override/0 = SubResource("Mat_concrete")
+
+[node name="Platform_far1" type="StaticBody3D" parent="PlatformGroup"]
+transform = Transform3D(1, 0, 0, 0, 1, 0, 0, 0, 1, 4, 1, -8)
+
+[node name="CollisionShape3D" type="CollisionShape3D" parent="PlatformGroup/Platform_far1"]
+shape = SubResource("BoxShape3D_plat")
+
+[node name="MeshInstance3D" type="MeshInstance3D" parent="PlatformGroup/Platform_far1"]
+mesh = SubResource("BoxMesh_plat")
+surface_material_override/0 = SubResource("Mat_concrete")
+
+[node name="Platform_far2" type="StaticBody3D" parent="PlatformGroup"]
+transform = Transform3D(1, 0, 0, 0, 1, 0, 0, 0, 1, 8, 2, -8)
+
+[node name="CollisionShape3D" type="CollisionShape3D" parent="PlatformGroup/Platform_far2"]
+shape = SubResource("BoxShape3D_plat")
+
+[node name="MeshInstance3D" type="MeshInstance3D" parent="PlatformGroup/Platform_far2"]
+mesh = SubResource("BoxMesh_plat")
+surface_material_override/0 = SubResource("Mat_concrete")
+
+[node name="Wall1" type="StaticBody3D" parent="."]
+transform = Transform3D(1, 0, 0, 0, 1, 0, 0, 0, 1, -6, 3, 0)
+
+[node name="CollisionShape3D" type="CollisionShape3D" parent="Wall1"]
+shape = SubResource("BoxShape3D_wall")
+
+[node name="MeshInstance3D" type="MeshInstance3D" parent="Wall1"]
+mesh = SubResource("BoxMesh_wall")
+surface_material_override/0 = SubResource("Mat_concrete")
+
+[node name="Slope1" type="StaticBody3D" parent="."]
+transform = Transform3D(1, 0, 0, 0, 0.940, 0.342, 0, -0.342, 0.940, -3, 0.5, -5)
+
+[node name="CollisionShape3D" type="CollisionShape3D" parent="Slope1"]
+shape = SubResource("BoxShape3D_slope")
+
+[node name="MeshInstance3D" type="MeshInstance3D" parent="Slope1"]
+mesh = SubResource("BoxMesh_slope")
+surface_material_override/0 = SubResource("Mat_concrete")
+
+[node name="MovingPlatform1" type="AnimatableBody3D" parent="."]
+transform = Transform3D(1, 0, 0, 0, 1, 0, 0, 0, 1, 0, 2, -14)
+script = ExtResource("5_movplat")
+move_axis = Vector3(6, 0, 0)
+period = 3.5
+
+[node name="CollisionShape3D" type="CollisionShape3D" parent="MovingPlatform1"]
+shape = SubResource("BoxShape3D_movplat")
+
+[node name="MeshInstance3D" type="MeshInstance3D" parent="MovingPlatform1"]
+mesh = SubResource("BoxMesh_movplat")
+surface_material_override/0 = SubResource("Mat_concrete")
+
+[node name="SpawnPoint" type="Marker3D" parent="."]
+transform = Transform3D(1, 0, 0, 0, 1, 0, 0, 0, 1, 0, 1, 0)
+
+[node name="Player" parent="." instance=ExtResource("2_player")]
+transform = Transform3D(1, 0, 0, 0, 1, 0, 0, 0, 1, 0, 1, 0)
+
+[node name="CameraRig" type="Node3D" parent="."]
+transform = Transform3D(1, 0, 0, 0, 1, 0, 0, 0, 1, 0, 2, 0)
+script = ExtResource("3_camrig")
+
+[node name="SpringArm3D" type="SpringArm3D" parent="CameraRig"]
+transform = Transform3D(1, 0, 0, 0, 0.966, 0.259, 0, -0.259, 0.966, 0, 0, 0)
+spring_length = 6.0
+margin = 0.2
+
+[node name="Camera3D" type="Camera3D" parent="CameraRig/SpringArm3D"]
+fov = 65.0
+
+[node name="TouchInput" parent="." instance=ExtResource("4_touch")]
+
+[node name="DeathZone" type="Area3D" parent="."]
+transform = Transform3D(1, 0, 0, 0, 1, 0, 0, 0, 1, 0, -28, 0)
+monitoring = true
+
+[node name="CollisionShape3D" type="CollisionShape3D" parent="DeathZone"]
+shape = SubResource("BoxShape3D_death")

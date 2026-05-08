@@ -1,0 +1,23 @@
+[gd_resource type="Resource" script_class="ControllerProfile" load_steps=2 format=3]
+
+[ext_resource type="Script" path="res://scripts/resources/controller_profile.gd" id="1_assisted"]
+
+[resource]
+script = ExtResource("1_assisted")
+profile_name = "Assisted"
+speed = 7.5
+acceleration = 40.0
+deceleration = 45.0
+air_acceleration = 30.0
+air_deceleration = 10.0
+jump_velocity = 11.5
+jump_cut_factor = 0.45
+coyote_time = 0.18
+jump_buffer_time = 0.20
+gravity_multiplier = 2.0
+fall_gravity_multiplier = 3.0
+terminal_velocity = -28.0
+horizontal_velocity_preservation = 0.9
+max_slope_degrees = 50.0
+ledge_snap_distance = 0.25
+air_steering_assist_radius = 1.5
