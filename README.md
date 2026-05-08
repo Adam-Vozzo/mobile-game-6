@@ -5,10 +5,10 @@ A mobile 3D platformer. Brutalist megastructure inspired by *BLAME!*. Controller
 ## Status
 
 Current gate: **Gate 0 — Feel Lab**
-Last iteration: 2026-05-08 — kickoff (folder layout, project settings, Android preset, docs, Feel Lab scene, Stray + Snappy controller, dev menu, camera rig, touch overlay)
-Test device build: not yet — kickoff authored without a Godot binary; first on-device build is the next iteration's top task
+Last iteration: 2026-05-08 — iter/profiles-camera-devmenu (Floaty + Momentum profiles, camera collision avoidance, full dev menu expansion, mini perf HUD)
+Test device build: not yet — hand-authored files; first on-device build remains the top priority
 Performance: not yet measured on Nothing Phone 4(a) Pro
-Throttle level: normal — 0 iterations since last human direction
+Throttle level: normal — 1 iteration since last human direction
 
 If you only read one section, read **Open questions waiting on you** below.
 
@@ -36,7 +36,7 @@ Goal: one scene, one character controller, fully instrumented and tunable.
 - [x] CharacterBody3D player (the Stray) with Snappy profile
 - [x] Coyote, buffer, variable jump, preserved horizontal velocity
 - [x] Dev menu skeleton with live tunables
-- [x] Spring-arm camera with lookahead and right-drag override _(SpringArm collision avoidance still queued — current rig is direct-positioning only)_
+- [x] Spring-arm camera with lookahead and right-drag override _(collision avoidance: ray-cast arm shortening)_
 - [x] Touch input: virtual stick + jump, repositionable _(positions exposed as `@export`s; drag-to-place UI queued)_
 - [ ] Android export pipeline verified on test device
 
@@ -78,6 +78,17 @@ Goal: store-ready build.
 The full iteration log lives here, newest first. Every iteration appends an entry. Skim the dates to find where you last left off.
 
 <!-- ITERATION ENTRIES BELOW — DO NOT REMOVE OLDER ENTRIES -->
+
+### [2026-05-08] — `claude/elegant-lamport-mZ1ip` — profiles, camera collision, dev menu expansion
+
+- Primary: (a) **Floaty + Momentum controller profiles** (`resources/profiles/floaty.tres`, `momentum.tres`) — both ready in the dev menu dropdown for human side-by-side feel test. Floaty: low gravity (22/38/48 m/s²), generous coyote/buffer, slow accel; Momentum: high top speed (14 m/s), slow decel, tight windows. (b) **Camera collision avoidance** — replaced the direct-position camera with a `PhysicsRayQueryParameters3D` ray cast each frame in `_process`; if the ray hits world geometry the camera pulls forward by `collision_margin` (0.15 m). No SpringArm3D node needed — all in GDScript, one process step, no frame delay. Also added `fov` as a live camera export. (c) **Dev menu expansion** — added full Camera section (distance, pitch, FOV, lookahead, vertical pull, yaw/pitch sensitivity, recenter delay/speed); expanded Controller section with gravity-rising, gravity-falling, gravity-apex, and release-ratio sliders; all three profiles in the profile dropdown; wrapped the panel in a ScrollContainer for small screens. (d) **Mini perf HUD** — always-visible top-right corner label (fps, frametime, tris, draw calls) managed by DevMenu autoload, independent of dev menu open/close; toggled via "Toggle Perf HUD" button.
+- Side quest: Fixed `feel_lab.gd` spawn transform coordination — now calls `player.set_spawn_transform()` after repositioning so respawns go to the marker, not the player's .tscn origin.
+- Perf: not measured — no Godot binary in environment; on-device pending.
+- Bugs fixed: spawn transform not propagated from feel_lab → player (silent in Gate 0 since marker == .tscn origin, but would break if marker moved).
+- New dev-menu controls: Camera section (9 sliders), additional controller sliders (gravity × 3, release ratio), Toggle Perf HUD button, Floaty + Momentum in profile dropdown, mini always-visible perf HUD.
+- Research added: none this iteration.
+- Needs human attention: see "Open questions waiting on you."
+- Next likely focus: open in Godot 4.6, fix any import errors, run the device checklist in `docs/ANDROID.md`, then feel Snappy vs Floaty vs Momentum on the Nothing Phone 4(a) Pro.
 
 ### [2026-05-08] — `claude/start-project-void-TxIcJ` — kickoff
 

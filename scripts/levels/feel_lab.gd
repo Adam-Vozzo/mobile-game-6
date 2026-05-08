@@ -14,14 +14,15 @@ extends Node3D
 
 
 func _ready() -> void:
-	# Move the player to the spawn marker if one was instanced as a child
-	# at scene-load time. Step 5 wires the player as an actual child node;
-	# until then this is a no-op.
 	if _spawn == null:
 		return
+	var spawn_t := _spawn.global_transform
 	for player in get_tree().get_nodes_in_group(&"player"):
 		if player is Node3D:
-			(player as Node3D).global_transform = _spawn.global_transform
+			(player as Node3D).global_transform = spawn_t
+			# Keep the player's respawn point in sync with the spawn marker.
+			if player.has_method("set_spawn_transform"):
+				player.set_spawn_transform(spawn_t)
 
 
 func get_spawn_transform() -> Transform3D:

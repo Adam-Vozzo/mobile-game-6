@@ -14,9 +14,10 @@ instrumented and tunable.
 
 ## Active iteration
 
-- Branch: `main` (kickoff branch `claude/start-project-void-TxIcJ`
-  squash-merged at session end).
-- Focus: ready for iteration 1. Pull from the queue below.
+- Branch: `claude/elegant-lamport-mZ1ip`
+- Completed: Floaty + Momentum profiles, camera collision avoidance, dev menu
+  expansion (camera section, extra controller sliders, mini perf HUD), feel_lab
+  spawn fix.
 
 ## Queue (ranked, top is next)
 
@@ -32,32 +33,22 @@ The next iteration should pull from the top of this list. Items marked
    editor and on device via one-click deploy. Capture frametime, draw
    calls, and a 30-second gameplay clip if possible. Log results in
    README's Updates entry.
-2. **SpringArm collision on the camera rig.** Current rig sets the
-   camera position directly with no occlusion handling — fine for the
-   open Feel Lab, will clip walls in any tighter space. Wrap the camera
-   in a `SpringArm3D` and feed its hit-corrected position back to the
-   `Camera3D`. Gate 1 levels need this before geometry gets dense.
-3. **Tune Snappy on device.** Adjust `resources/profiles/snappy.tres`
+2. **Tune Snappy on device.** Adjust `resources/profiles/snappy.tres`
    gravity / jump_velocity / accel / coyote / buffer based on first
-   on-device feel. Avoid making more profiles until Snappy is felt.
-4. **Author Floaty profile (`floaty.tres`)** as second variant for human
-   side-by-side feel test. Same parameter set, dadish-leaning values.
-5. **Author Momentum profile (`momentum.tres`)** with sustained-input
-   speed ramp. Add a sliders-affected curve for the ramp.
-6. **Author Assisted profile (`assisted.tres`)** — in-air steering toward
+   on-device feel. Then compare Floaty and Momentum back-to-back.
+3. **Author Assisted profile (`assisted.tres`)** — in-air steering toward
    likely landing target, generous ledge grab, edge-snap on landing.
-7. **Camera params group in dev menu.** Wire sliders to the rig's
-   distance, pitch, lookahead_distance, vertical_pull, yaw/pitch drag
-   sensitivities, idle recenter delay/speed. Hot-swap during play.
-8. **Touch overlay polish.** Drag-to-place reposition mode invoked from
+   Requires new code in `player.gd` for the steering logic; the .tres
+   data alone is not enough. Spike the steering in player.gd first.
+4. **Touch overlay polish.** Drag-to-place reposition mode invoked from
    the dev menu (handles per control, snap-to-thumb-zone presets,
    resize on jump button). Persist anchors + radii to `user://input.cfg`.
-9. **Dev menu fleshing.** Debug-viz toggles (collision shapes, velocity
+5. **Dev menu fleshing.** Debug-viz toggles (collision shapes, velocity
    vector, ground normal, jump prediction arc), time-scale slider,
    free-camera mode, save-as-new-profile button.
-10. **Reboot animation polish.** Replace the red-flash placeholder with
-    the spec in CLAUDE.md (sparks → dark frame → power-on hum → upright).
-    Visual beats first; audio can stay placeholder.
+6. **Reboot animation polish.** Replace the red-flash placeholder with
+   the spec in CLAUDE.md (sparks → dark frame → power-on hum → upright).
+   Visual beats first; audio can stay placeholder.
 
 ### P1 — Supporting
 
@@ -102,7 +93,11 @@ These mirror "Open questions waiting on you" in the README.
 
 ## Recently completed (last 5)
 
-- 2026-05-08 — Kickoff steps 1–10 (folder layout + project settings,
+- 2026-05-08 (iter 2) — Floaty + Momentum profiles; camera ray-cast collision
+  avoidance + FOV export; dev menu Camera section (9 sliders) + extra controller
+  sliders (gravity × 3, release ratio) + all profiles in dropdown + ScrollContainer;
+  mini perf HUD (always-visible, toggleable); feel_lab spawn-transform fix.
+- 2026-05-08 (iter 1) — Kickoff steps 1–10 (folder layout + project settings,
   Android preset + ANDROID.md, all doc files, Feel Lab scene, Stray
   controller + Snappy profile, dev menu skeleton, camera rig, touch
   overlay, ANDROID first-run checklist, README populated). See README's

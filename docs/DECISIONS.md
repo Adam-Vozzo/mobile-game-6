@@ -79,6 +79,29 @@ Consequences: capsule-on-slope behaviour will need a tuning pass on
 device — Jolt's sliding/snapping characteristics differ subtly from the
 default and can affect "feel."
 
+## 2026-05-08 — Camera collision avoidance via manual ray cast, not SpringArm3D
+
+Status: accepted
+Context: PLAN.md item #2 called for wrapping the camera in a SpringArm3D to
+prevent wall clipping. We evaluated two approaches: (a) SpringArm3D node as
+parent of Camera3D, or (b) manual PhysicsRayQueryParameters3D cast inside
+the existing _process loop.
+Decision: manual ray cast inside camera_rig.gd._process(). The cast goes from
+the rig pivot to the desired camera position each frame; on a hit, the camera
+is pulled forward by `collision_margin` (0.15 m).
+Alternatives considered:
+- SpringArm3D node: rejected because SpringArm3D positions children in its
+  own _physics/_process, which runs AFTER the CameraRig's _process. This
+  creates a one-frame delay before look_at can be called on the correctly-
+  placed Camera3D. The delay is sub-pixel at 60 fps but complicates the code
+  with an extra process step and a separate node.
+- Separate ray-cast node with call_deferred: rejected for the same ordering
+  reason without adding clarity.
+Consequences: camera_rig.gd now queries the physics space in _process (valid
+in Godot 4 — queries see last-committed physics state). The `collision_mask`
+and `collision_margin` are @export so they're tunable in the inspector. The
+camera_rig.tscn is unchanged (no SpringArm3D node added).
+
 ## 2026-05-08 — Auto-merge PR workflow per CLAUDE.md
 
 Status: accepted (after human confirmation)
