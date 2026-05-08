@@ -32,16 +32,15 @@ The next iteration should pull from the top of this list. Items marked
    editor and on device via one-click deploy. Capture frametime, draw
    calls, and a 30-second gameplay clip if possible. Log results in
    README's Updates entry.
-2. **SpringArm collision on the camera rig.** Current rig sets the
-   camera position directly with no occlusion handling — fine for the
-   open Feel Lab, will clip walls in any tighter space. Wrap the camera
-   in a `SpringArm3D` and feed its hit-corrected position back to the
-   `Camera3D`. Gate 1 levels need this before geometry gets dense.
+2. ~~**SpringArm collision on the camera rig.**~~ **Done** (iteration 1,
+   2026-05-08). `SpringArm3D` with sphere probe (r=0.2) + World-only
+   collision mask. Camera3D is now a child of the arm; occlusion handled
+   automatically.
 3. **Tune Snappy on device.** Adjust `resources/profiles/snappy.tres`
    gravity / jump_velocity / accel / coyote / buffer based on first
    on-device feel. Avoid making more profiles until Snappy is felt.
-4. **Author Floaty profile (`floaty.tres`)** as second variant for human
-   side-by-side feel test. Same parameter set, dadish-leaning values.
+4. ~~**Author Floaty profile (`floaty.tres`)**~~ **Done** (iteration 1,
+   2026-05-08). Added to dev menu Profile dropdown.
 5. **Author Momentum profile (`momentum.tres`)** with sustained-input
    speed ramp. Add a sliders-affected curve for the ramp.
 6. **Author Assisted profile (`assisted.tres`)** — in-air steering toward
@@ -77,6 +76,14 @@ The next iteration should pull from the top of this list. Items marked
   the resource directly via slider callbacks; the signal is currently
   decorative — confirm both paths agree).
 
+### Refactor backlog
+
+- `CameraRig._process` is 62 lines (over the 40-line guide). It is a
+  sequential pipeline with no bad smells, but a future iteration could
+  split into `_update_drag_and_recenter(delta)`, `_update_lookahead(delta)`,
+  and `_place_arm_and_camera()` helper methods if the function grows
+  further.
+
 ### P2 — Opportunistic
 
 - Add an always-on perf HUD visible only when the dev menu is closed
@@ -102,6 +109,10 @@ These mirror "Open questions waiting on you" in the README.
 
 ## Recently completed (last 5)
 
+- 2026-05-08 — Iteration 1: SpringArm3D camera collision avoidance
+  (P0 #2) + Floaty profile (P0 #4 side quest). Camera rig now uses a
+  SpringArm3D with sphere probe; Floaty added to Profile dropdown.
+  Logged in DECISIONS.md; README updated.
 - 2026-05-08 — Kickoff steps 1–10 (folder layout + project settings,
   Android preset + ANDROID.md, all doc files, Feel Lab scene, Stray
   controller + Snappy profile, dev menu skeleton, camera rig, touch

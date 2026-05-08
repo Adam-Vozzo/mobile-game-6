@@ -96,3 +96,47 @@ Alternatives considered:
 Consequences: faster iteration loop; PRs serve as traceability artefacts,
 not gates. If we ever want a stricter mode, the change is one line in
 CLAUDE.md.
+
+## 2026-05-08 — SpringArm3D for camera occlusion, collision_mask = World only
+
+Status: accepted
+Context: The kickoff camera rig set the Camera3D position directly with no
+collision probing. Gate 1 levels will have dense geometry; without
+SpringArm3D the camera will clip through walls whenever the player is near
+one.
+Decision: Wrap the Camera3D in a SpringArm3D (sphere probe r=0.2, margin
+0.05 m, spring_length tracks the `distance` export). Collision mask limited
+to layer 1 (World) only; the Player layer (2) is excluded so the player
+capsule never triggers arm shortening. The arm's +Z is oriented toward the
+camera position via rotation.x = -abs(_pitch), rotation.y = _yaw; the
+arm's physics process moves the Camera3D to the safe endpoint; our
+_process then calls look_at() on the camera to orient it.
+Alternatives considered:
+- Manual raycast + camera clamping: more control but significantly more
+  code for the same result.
+- Larger probe sphere (r=0.5): would cause the camera to pull in for
+  thin geometry like railings. r=0.2 balances responsiveness with
+  false-positive avoidance.
+Consequences: camera can't clip into walls; slight one-frame positional
+lag is acceptable for a smooth-follow rig. `_process` in camera_rig.gd
+is 62 lines (over the 40-line guide); logged in PLAN.md refactor backlog.
+
+## 2026-05-08 — Floaty profile authored as second controller variant
+
+Status: accepted
+Context: CLAUDE.md mandates four profiles: Snappy, Floaty, Momentum,
+Assisted. Snappy shipped with kickoff. Floaty is the Dadish-leaning
+variant intended for side-by-side feel comparison by the human.
+Decision: Author floaty.tres with softer acceleration (50 → ground,
+28 → air), longer hangtime (gravity_rising 22 vs 38), more generous
+coyote (180 ms vs 100 ms) and buffer (200 ms vs 120 ms), light air
+horizontal damping (0.25) for grippier in-air steering, lower peak
+speed (6.5 vs 8.0). Added to the dev menu Profile dropdown.
+Alternatives considered:
+- Wait for Snappy tuning results on device before authoring Floaty.
+  Rejected: Floaty only needs the profile file + dropdown entry; no
+  risk to Snappy. Adding it now gives the human more to feel on first
+  device session.
+Consequences: human can switch between Snappy and Floaty at runtime
+from the dev menu. Profile parameters are subject to tuning after
+first device feel session.
