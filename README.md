@@ -101,7 +101,6 @@ Feel Lab: open `scenes/levels/feel_lab.tscn` and run.
 ## Repo map
 
 - `docs/CLAUDE.md` — persistent context and conventions (Claude reads this every iteration)
-- `docs/ITERATE.md` — the iteration loop prompt
 - `docs/PLAN.md` — rolling work plan, updated each iteration
 - `docs/DECISIONS.md` — log of significant choices and why
 - `docs/JUICE.md` — catalogue of juice elements and their state
