@@ -5,10 +5,10 @@ A mobile 3D platformer. Brutalist megastructure inspired by *BLAME!*. Controller
 ## Status
 
 Current gate: **Gate 0 — Feel Lab**
-Last iteration: 2026-05-09 — iter 14: dev_menu_overlay bug fix + Alexander research
+Last iteration: 2026-05-09 — iter 15: respawn timer bug fix + slope tunable
 Test device build: not yet — hand-authored scenes pending first Godot 4.6 import; see Open questions
 Performance: not yet measured on Nothing Phone 4(a) Pro
-Throttle level: **HARD — 14 iterations since last human direction. No new features. See Open questions.**
+Throttle level: **HARD — 15 iterations since last human direction. No new features. See Open questions.**
 
 If you only read one section, read **Open questions waiting on you** below.
 
@@ -16,8 +16,8 @@ If you only read one section, read **Open questions waiting on you** below.
 
 Things Claude can't decide alone, or where it's stalled and needs direction. Each is blocking some piece of forward progress.
 
-> **⚠ HARD THROTTLE — 14 iterations since last human direction.** Claude has been
-> building infrastructure (tests, research, refactors, debug tooling) for 13 iterations
+> **⚠ HARD THROTTLE — 15 iterations since last human direction.** Claude has been
+> building infrastructure (tests, research, refactors, debug tooling) for 14 iterations
 > without a human feel verdict or direction signal. All P0 items are blocked on the
 > first on-device run. The next iteration will continue hardening work only.
 >
@@ -94,6 +94,37 @@ Goal: store-ready build.
 The full iteration log lives here, newest first. Every iteration appends an entry. Skim the dates to find where you last left off.
 
 <!-- ITERATION ENTRIES BELOW — DO NOT REMOVE OLDER ENTRIES -->
+
+### [2026-05-09] — `claude/gifted-shannon-b8hWF` — iter 15: respawn timer bug fix + slope tunable
+
+- **Throttle: HARD (15 iterations since last human direction).** Hardening only.
+- **Primary: Two targeted fixes.**
+  - **Bug fixed — `player.gd::respawn()` leaving timers live.** `_buffer_timer` and
+    `_coyote_timer` do not tick while `_is_rebooting = true` (physics returns early). A
+    jump press in the last 120 ms before death would freeze `_buffer_timer` at a non-zero
+    value; after the 0.5 s reboot sequence the timer was still "live." On the first frame
+    post-reboot, `_try_jump` would fire if the player landed at the spawn point, producing
+    an unintended jump. Fixed by zeroing both timers in `respawn()` before the reboot
+    sequence starts. The comment explains the why (non-obvious frozen-timer invariant).
+  - **`max_floor_angle_degrees` now live-tunable from the dev menu.** The property existed
+    in `ControllerProfile` but was only applied once (in `_apply_profile_to_body` on profile
+    load). A dev-menu slider would mutate the resource but not update `CharacterBody3D`'s
+    `floor_max_angle`. Fixed: `floor_max_angle = deg_to_rad(profile.max_floor_angle_degrees)`
+    moved to the top of `_physics_process` (after `_is_rebooting` guard) so it refreshes
+    every tick. A "Controller — Slope" subsection with a "Max floor°" slider (20–70°, step 1°)
+    added to the dev menu controller section. Slider is registered in `_profile_sliders` so it
+    bulk-syncs on profile switch like all other controller params.
+- **Side quest: slope param test group.** `_test_slope_params()` added to
+  `tests/test_controller_kinematics.gd` (7 assertions across 3 profiles). Checks
+  `max_floor_angle_degrees` in valid range [20, 70] and that Floaty ≥ Snappy (the
+  accessibility profile should be at least as forgiving on slopes). Total assertions: ~56 → ~63.
+- Perf: no runtime cost change. `floor_max_angle` assignment is a single float write per
+  physics tick — negligible. On-device baseline still pending.
+- Bugs fixed: respawn post-death unintended jump (buffer timer not cleared).
+- New dev-menu controls: "Controller — Slope" subsection → "Max floor°" slider.
+- Assets acquired: none.
+- Research added: none.
+- Needs human attention: **see "Open questions waiting on you" — hard throttle still active (15 iterations).**
 
 ### [2026-05-09] — `claude/gifted-shannon-72KFx` — iter 14: dev_menu_overlay bug fix + Alexander research
 

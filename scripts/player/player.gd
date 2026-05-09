@@ -63,6 +63,7 @@ func _apply_profile_to_body() -> void:
 func _physics_process(delta: float) -> void:
 	if _is_rebooting:
 		return
+	floor_max_angle = deg_to_rad(profile.max_floor_angle_degrees)
 	var on_floor := is_on_floor()
 	_tick_timers(delta, on_floor)
 	var jump_held := _collect_jump_input()
@@ -159,6 +160,11 @@ func respawn() -> void:
 		return
 	_is_rebooting = true
 	velocity = Vector3.ZERO
+	# Clear input timers so a buffered jump at death-time doesn't fire on the
+	# first frame after reboot. Timers don't tick while _is_rebooting is true,
+	# so without this they would still be "live" after a 0.5 s reboot sequence.
+	_buffer_timer = 0.0
+	_coyote_timer = 0.0
 	if has_node("/root/Game"):
 		Game.register_attempt()
 		Game.player_respawned.emit()

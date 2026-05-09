@@ -31,6 +31,7 @@ func _ready() -> void:
 	_test_coyote_countdown()
 	_test_buffer_countdown()
 	_test_profile_cross_invariants()
+	_test_slope_params()
 	_report()
 
 
@@ -309,3 +310,32 @@ func _test_profile_cross_invariants() -> void:
 		_ok(name + ": ground_acceleration > 0", p.ground_acceleration > 0.0)
 		# Terminal velocity must be positive (clamp is meaningful).
 		_ok(name + ": terminal_velocity > 0", p.terminal_velocity > 0.0)
+
+
+func _test_slope_params() -> void:
+	## max_floor_angle_degrees sanity checks.
+	## Floaty is the accessibility profile and should be at least as forgiving
+	## on slopes as Snappy (wider angle = walks up steeper surfaces).
+	print("\n-- Slope parameters --")
+	var profiles := [
+		["snappy",   "res://resources/profiles/snappy.tres"],
+		["floaty",   "res://resources/profiles/floaty.tres"],
+		["momentum", "res://resources/profiles/momentum.tres"],
+	]
+	var angle_snappy := 0.0
+	var angle_floaty := 0.0
+	for entry in profiles:
+		var name: String = entry[0]
+		var p: CP = _load_profile(entry[1])
+		if p == null:
+			continue
+		_ok(name + ": max_floor_angle_degrees in [20, 70]",
+			p.max_floor_angle_degrees >= 20.0 and p.max_floor_angle_degrees <= 70.0)
+		_ok(name + ": max_floor_angle_degrees > 0", p.max_floor_angle_degrees > 0.0)
+		if name == "snappy":
+			angle_snappy = p.max_floor_angle_degrees
+		elif name == "floaty":
+			angle_floaty = p.max_floor_angle_degrees
+	if angle_snappy > 0.0 and angle_floaty > 0.0:
+		_ok("floaty max_floor_angle >= snappy (more forgiving on slopes)",
+			angle_floaty >= angle_snappy)
