@@ -5,10 +5,10 @@ A mobile 3D platformer. Brutalist megastructure inspired by *BLAME!*. Controller
 ## Status
 
 Current gate: **Gate 0 — Feel Lab**
-Last iteration: 2026-05-09 — iter 6: mobile touch UX research + concrete material kit + .tres fixes
+Last iteration: 2026-05-09 — iter 7: controller kinematics unit tests + Godot mobile perf research
 Test device build: not yet — hand-authored scenes pending first Godot 4.6 import; see Open questions
 Performance: not yet measured on Nothing Phone 4(a) Pro
-Throttle level: soft — 6 iterations since last human direction
+Throttle level: soft — 7 iterations since last human direction
 
 If you only read one section, read **Open questions waiting on you** below.
 
@@ -78,6 +78,39 @@ Goal: store-ready build.
 The full iteration log lives here, newest first. Every iteration appends an entry. Skim the dates to find where you last left off.
 
 <!-- ITERATION ENTRIES BELOW — DO NOT REMOVE OLDER ENTRIES -->
+
+### [2026-05-09] — `claude/gifted-shannon-YdzrG` — iter 7: controller kinematics unit tests + mobile perf research
+
+- Primary: **Controller kinematics unit tests (PLAN P1).** `tests/test_controller_kinematics.gd`
+  + `tests/test_runner.tscn`. Standalone (no GUT plugin required): open
+  `test_runner.tscn`, press F5, read Output panel.
+  - 10 test groups, ~40 assertions:
+    **Profile defaults** (8 sanity checks on `CP.new()`),
+    **Jump height** (h = v₀²/2g in 1.5–5.0 m; floaty ≥ snappy),
+    **Gravity band ordering** (after_apex ≥ falling ≥ rising on all 3 profiles),
+    **Jump cut math** (threshold checks, boundary conditions),
+    **Horizontal interpolation** (move_toward convergence ≤ 30 frames),
+    **Air damping** (zero = SMB preservation; floaty > snappy),
+    **Terminal velocity** (maxf clamp holds at and past limit),
+    **Coyote countdown** (expires, never negative, within 2× expected frames),
+    **Buffer countdown** (expires; buffer ≥ coyote across all profiles),
+    **Cross-profile invariants** (buffer≥coyote, ratio<1, accel>0 on every shipped profile).
+  - GUT migration path documented in file header (`_ready` → `before_all`, `_test_*` → `test_*`).
+  - Cannot be run in CI without a Godot binary — marked "on-device pending" for runner integration.
+- Side quest: **Godot Mobile renderer performance research** — `docs/research/godot_mobile_perf.md`.
+  TBDR tile-based GPU architecture (Adreno/Mali), transparency cost, baked vs dynamic
+  lighting tradeoffs, ASTC texture notes, draw-call/triangle budgets, Jolt profiling tips,
+  in-game profiling workflow. 8 concrete "Implications for Project Void" (bake lights before
+  Gate 1; ≤ 50 draw calls; no alpha on every-frame geometry; no MSAA; etc.).
+  INDEX.md updated; "Performance & rendering" section now populated.
+- Plan drift fixed: P2 "always-on perf HUD" marked done (was completed iter 3 but still
+  listed as open). P2 "Mobile renderer research" marked done.
+- Perf: no runtime change this iteration (tests + docs only).
+- Bugs fixed: none.
+- New dev-menu controls: none.
+- Assets acquired: none.
+- Research added: `docs/research/godot_mobile_perf.md`; INDEX.md updated.
+- Needs human attention: see "Open questions waiting on you."
 
 ### [2026-05-09] — `iter/touch-ux-research` — iter 6: mobile touch UX research + concrete material kit
 
