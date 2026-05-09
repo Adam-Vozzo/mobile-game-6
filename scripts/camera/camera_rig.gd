@@ -79,8 +79,28 @@ func _process(delta: float) -> void:
 	if _target == null:
 		return
 	var now := Time.get_ticks_msec() / 1000.0
+	var vel := _get_target_velocity()
+	var horiz := Vector3(vel.x, 0.0, vel.z)
 
-	# --- Manual drag override ---
+	_apply_drag_input(now)
+	_update_yaw_recenter(horiz, now, delta)
+	_update_lookahead(horiz, delta)
+
+	var target_pos := _target.global_position
+	var vertical_offset := _vertical_pull_offset(vel.y)
+	var rig_pos := target_pos + _lookahead + Vector3(0.0, vertical_offset, 0.0)
+	global_position = rig_pos
+
+	var aim_point := target_pos + Vector3(0.0, aim_height, 0.0)
+	var desired_cam_pos := _desired_camera_position(rig_pos)
+	_camera.global_position = _occlude(aim_point, desired_cam_pos)
+	_camera.look_at(aim_point, Vector3.UP)
+
+	if _target.has_method("set_camera_yaw"):
+		_target.set_camera_yaw(_yaw)
+
+
+func _apply_drag_input(now: float) -> void:
 	var drag := TouchInput.consume_camera_drag_delta()
 	if drag.length_squared() > 0.0:
 		_yaw -= drag.x * yaw_drag_sens
@@ -89,48 +109,36 @@ func _process(delta: float) -> void:
 			deg_to_rad(absf(pitch_max_degrees)))
 		_last_drag_time = now
 
-	# --- Velocity sample ---
-	var vel := _get_target_velocity()
-	var horiz := Vector3(vel.x, 0.0, vel.z)
-	var horiz_speed := horiz.length()
 
-	# --- Auto-recenter behind movement direction after idle ---
+func _update_yaw_recenter(horiz: Vector3, now: float, delta: float) -> void:
+	var horiz_speed := horiz.length()
 	if horiz_speed > recenter_min_speed and now - _last_drag_time > idle_recenter_delay:
 		var desired_yaw := atan2(horiz.x, horiz.z)
 		var diff := wrapf(desired_yaw - _yaw, -PI, PI)
 		_yaw += diff * minf(1.0, idle_recenter_speed * delta)
 
-	# --- Lookahead lerp ---
+
+func _update_lookahead(horiz: Vector3, delta: float) -> void:
+	var horiz_speed := horiz.length()
 	var desired_lookahead := Vector3.ZERO
 	if horiz_speed > lookahead_min_speed:
 		desired_lookahead = horiz.normalized() * lookahead_distance
 	_lookahead = _lookahead.lerp(desired_lookahead,
 		clampf(lookahead_lerp * delta, 0.0, 1.0))
 
-	# --- Vertical pull when falling ---
-	var vertical_offset := 0.0
-	if vel.y < 0.0:
-		vertical_offset = vel.y * vertical_pull * 0.05
 
-	# --- Place rig at player + lookahead + vertical offset ---
-	var target_pos := _target.global_position
-	var rig_pos := target_pos + _lookahead + Vector3(0.0, vertical_offset, 0.0)
-	global_position = rig_pos
+# 0.05 converts the pull multiplier from "fraction of velocity" to metres of
+# camera offset — keeps vertical_pull in a 0–1 inspector range.
+func _vertical_pull_offset(vel_y: float) -> float:
+	if vel_y >= 0.0:
+		return 0.0
+	return vel_y * vertical_pull * 0.05
 
-	# --- Desired camera position behind-and-above per yaw + pitch ---
+
+func _desired_camera_position(rig_pos: Vector3) -> Vector3:
 	var p := absf(_pitch)
 	var local_offset := Vector3(0.0, sin(p) * distance, cos(p) * distance)
-	var yaw_basis := Basis(Vector3.UP, _yaw)
-	var aim_point := target_pos + Vector3(0.0, aim_height, 0.0)
-	var desired_cam_pos := rig_pos + yaw_basis * local_offset
-
-	# --- Occlusion: pull camera forward if geometry blocks the shot ---
-	_camera.global_position = _occlude(aim_point, desired_cam_pos)
-	_camera.look_at(aim_point, Vector3.UP)
-
-	# --- Publish yaw to player so input is camera-relative ---
-	if _target.has_method("set_camera_yaw"):
-		_target.set_camera_yaw(_yaw)
+	return rig_pos + Basis(Vector3.UP, _yaw) * local_offset
 
 
 func _get_target_velocity() -> Vector3:

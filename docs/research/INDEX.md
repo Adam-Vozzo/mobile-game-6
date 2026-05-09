@@ -34,11 +34,19 @@ Suggested:
 
 ## Level design references
 
-_(none yet)_
+- [`level_design_references.md`](level_design_references.md) — SMB grammar for level structure
+  (short focused rooms, introduce-then-combine, death as information, ghost trails as core grammar),
+  verticality principles (max 3 floor planes, descend=discovery/ascend=challenge), flow/pacing
+  (rhythm groups, rest areas, par-route-first authoring), Mario Odyssey density-over-sprawl and
+  expressed-architecture-as-affordance, Kevin Lynch vocabulary (path/edge/district/node/landmark)
+  applied to megastructure levels. 10 concrete implications for Void including: one-idea-per-beat,
+  shorten Snappy reboot to ≤ 0.35 s, 3-floor-plane rule, landmark requirement, rhythm hazards,
+  rest areas at checkpoints. Sources: The Level Design Book, Gamedeveloper.com, Team Meat / SMB.
 
-Suggested:
-- Mark Brown / Game Maker's Toolkit.
-- Steve Lee on level-design intent.
+Suggested (still open):
+- Mark Brown / Game Maker's Toolkit — specific 3D platformer level-design episodes.
+- Steve Lee (doublefunction.co.uk) — GDC talk "An Approach to Holistic Level Design."
+- Christopher Alexander on parti and pattern (reinforce LEVEL_DESIGN.md principles).
 
 ## Performance & rendering
 

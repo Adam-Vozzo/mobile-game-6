@@ -14,10 +14,10 @@ instrumented and tunable.
 
 ## Active iteration
 
-- Branch: `claude/gifted-shannon-9IpbZ`
-- Focus: iter 8. Style test scene greybox (P1) + brutalism/BLAME!/megastructure
-  research note (side quest).
-  **Items 1–4 are still blocked on human on-device action.**
+- Branch: `claude/gifted-shannon-tfUYS`
+- Focus: iter 9. Level design references research note (primary) + camera_rig
+  `_process()` refactor (side quest). Hard throttle (9 iterations since human
+  direction). **Items 1–4 still blocked on human on-device action.**
 
 ## Queue (ranked, top is next)
 
@@ -94,6 +94,10 @@ The next iteration should pull from the top of this list. Items marked
   input ramps `current_max_speed` up to a `ramp_max_speed` via a
   `speed_ramp_rate` param + optional Curve) is deferred until the human
   has felt the current approximation on device. Log as debt here.
+- **Snappy reboot_duration tuning.** Research note (level_design_references.md)
+  recommends ≤ 0.35 s for precision feel (current default 0.5 s is "cinematic").
+  Tune after first on-device feel; SMB analysis suggests 0.3–0.35 s. Floaty
+  profile may keep 0.5 s. Defer until human confirms Snappy feels right otherwise.
 
 ### P2 — Opportunistic
 
@@ -127,6 +131,21 @@ These mirror "Open questions waiting on you" in the README.
   feel issues. Those notes drive iteration 2's tuning pass.
 
 ## Recently completed (last 5)
+
+- 2026-05-09 — Iteration 9. Level design references research note (primary):
+  `docs/research/level_design_references.md` — SMB grammar (short focused rooms,
+  introduce-then-combine, instant respawn as information, ghost trails as core grammar),
+  verticality principles (max 3 floor planes, down=discovery/up=challenge),
+  flow/pacing (rhythm groups, rest areas, par-route-first authoring), Mario Odyssey
+  density-over-sprawl + expressed-architecture-as-affordance, Kevin Lynch vocabulary
+  applied to megastructure levels. 10 concrete implications including: one-idea-per-beat
+  rule, shorten Snappy reboot_duration to ≤ 0.35 s, 3-floor-plane limit, landmark
+  requirement, rhythm-group hazards, rest-area/checkpoint pairing.
+  Side quest: `camera_rig.gd::_process()` refactored — 56 → 22 lines via 5 extracted
+  sub-methods (`_apply_drag_input`, `_update_yaw_recenter`, `_update_lookahead`,
+  `_vertical_pull_offset`, `_desired_camera_position`). No behaviour change.
+  Magic number `0.05` in vertical pull now documented.
+  **Throttle: HARD (9 iterations). Hardening only.**
 
 - 2026-05-09 — Iteration 8. Style test scene greybox (P1):
   `scenes/levels/style_test.tscn` + `scripts/levels/style_test.gd` — compact
