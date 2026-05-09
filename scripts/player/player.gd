@@ -8,10 +8,8 @@ class_name Player
 ## velocity through jumps, slope handling, and instant respawn with a
 ## placeholder reboot effect — all implemented below.
 ##
-## Camera frame: until step 7 lands a real camera rig, this controller
-## interprets the input as world XZ (camera at +Z looking toward -Z, no
-## yaw). The dev menu / camera rig will publish a yaw via
-## set_camera_yaw() once it's in.
+## Camera frame: movement input is rotated by the camera's yaw, published
+## each frame by camera_rig.gd via set_camera_yaw().
 
 const ControllerProfileScript := preload("res://scripts/controller/controller_profile.gd")
 

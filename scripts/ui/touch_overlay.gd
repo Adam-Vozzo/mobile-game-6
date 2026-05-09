@@ -1,45 +1,67 @@
 extends Control
 class_name TouchOverlay
-## Touch input overlay for landscape mobile play. Routes screen touches
-## into TouchInput according to where they land:
-##   - Left half: virtual stick (free-floating, origin = first contact).
-##   - Jump button area on right: jump press/release.
-##   - Anything else on the right half: camera drag (yaw/pitch).
+## Touch input overlay for landscape mobile play. Zones:
+##   Left side (< stick_zone_ratio × width): virtual stick (free-floating).
+##   Jump button region (right side): jump press/release.
+##   Remaining right-side touches: camera drag (yaw/pitch).
 ##
-## CLAUDE.md mandates touch only, repositionable + resizable buttons,
-## and explicitly bans a second virtual stick for camera. Kickoff scope:
-## working stick + jump + drag, exported anchors for repositioning, and
-## a `enter_reposition_mode()` stub. The drag-to-place reposition UI and
-## persistence to user://input.cfg are queued in PLAN.md.
+## Layout persists to user://input.cfg. Drag-to-place reposition mode is
+## triggered by the dev menu Touch section ▶ "Reposition controls…" button,
+## or by calling enter_reposition_mode() directly.
 
 @export_category("Stick")
 @export_range(40.0, 250.0, 1.0) var stick_max_radius: float = 110.0
 @export_range(20.0, 120.0, 1.0) var stick_knob_radius: float = 50.0
 @export_range(0.0, 0.5, 0.01) var stick_deadzone: float = 0.15
+## Fraction of viewport width that is "stick territory" (left of divider = stick zone).
+@export_range(0.3, 0.7, 0.01) var stick_zone_ratio: float = 0.5
 
 @export_category("Jump button")
-## Anchor in viewport coordinates (1920x1080 reference frame).
 @export var jump_button_anchor: Vector2 = Vector2(1720.0, 900.0)
 @export_range(40.0, 200.0, 1.0) var jump_button_radius: float = 95.0
 
-const KIND_NONE := 0
+# --- touch classification ---
+const KIND_NONE  := 0
 const KIND_STICK := 1
-const KIND_JUMP := 2
-const KIND_DRAG := 3
+const KIND_JUMP  := 2
+const KIND_DRAG  := 3
 
-var _touches: Dictionary = {}  # InputEvent.index -> kind
+var _touches: Dictionary = {}    # index → KIND_*
 var _stick_origin: Vector2 = Vector2.ZERO
-var _stick_knob: Vector2 = Vector2.ZERO
-var _drag_last: Dictionary = {}  # InputEvent.index -> Vector2
+var _stick_knob:   Vector2 = Vector2.ZERO
+var _drag_last:    Dictionary = {}    # index → Vector2
+
+# --- reposition mode ---
+var _reposition_mode: bool = false
+var _repo_drag_jump:   bool = false    # currently moving the jump circle
+var _repo_drag_resize: bool = false    # currently resizing the jump circle
+
+# Thumb-zone presets in the same coordinate space as jump_button_anchor.
+# "zone" is stick_zone_ratio (0.0–1.0 fraction of viewport width).
+const _PRESETS: Array = [
+	{"name": "Default", "anchor": Vector2(1720, 900),  "radius": 95.0,  "zone": 0.50},
+	{"name": "Closer",  "anchor": Vector2(1580, 900),  "radius": 90.0,  "zone": 0.45},
+	{"name": "Wider",   "anchor": Vector2(1830, 950),  "radius": 100.0, "zone": 0.55},
+]
+
+const CFG_PATH    := "user://input.cfg"
+const CFG_SECTION := "touch"
 
 
 func _ready() -> void:
 	mouse_filter = Control.MOUSE_FILTER_IGNORE
 	set_anchors_and_offsets_preset(Control.PRESET_FULL_RECT)
+	_load_layout()
+	if has_node("/root/DevMenu"):
+		DevMenu.touch_param_changed.connect(_on_touch_param)
+		DevMenu.reposition_controls_requested.connect(enter_reposition_mode)
 
 
 func _input(event: InputEvent) -> void:
-	# Sleep while the dev menu is open so touches go to the panel.
+	if _reposition_mode:
+		_handle_repo_input(event)
+		get_viewport().set_input_as_handled()
+		return
 	if has_node("/root/DevMenu") and DevMenu.is_open:
 		return
 	if event is InputEventScreenTouch:
@@ -48,6 +70,8 @@ func _input(event: InputEvent) -> void:
 		_handle_drag(event as InputEventScreenDrag)
 
 
+# ── normal play ───────────────────────────────────────────────────────────────
+
 func _handle_touch(event: InputEventScreenTouch) -> void:
 	if event.pressed:
 		var kind := _classify(event.position)
@@ -55,7 +79,7 @@ func _handle_touch(event: InputEventScreenTouch) -> void:
 		match kind:
 			KIND_STICK:
 				_stick_origin = event.position
-				_stick_knob = event.position
+				_stick_knob   = event.position
 				TouchInput.set_move_vector(Vector2.ZERO)
 			KIND_JUMP:
 				TouchInput.set_jump_held(true)
@@ -66,7 +90,7 @@ func _handle_touch(event: InputEventScreenTouch) -> void:
 		match kind:
 			KIND_STICK:
 				_stick_origin = Vector2.ZERO
-				_stick_knob = Vector2.ZERO
+				_stick_knob   = Vector2.ZERO
 				TouchInput.set_move_vector(Vector2.ZERO)
 			KIND_JUMP:
 				TouchInput.set_jump_held(false)
@@ -98,14 +122,133 @@ func _handle_drag(event: InputEventScreenDrag) -> void:
 func _classify(pos: Vector2) -> int:
 	if pos.distance_to(jump_button_anchor) <= jump_button_radius:
 		return KIND_JUMP
-	var viewport_size := get_viewport_rect().size
-	if pos.x < viewport_size.x * 0.5:
+	if pos.x < get_viewport_rect().size.x * stick_zone_ratio:
 		return KIND_STICK
 	return KIND_DRAG
 
 
+# ── reposition mode ───────────────────────────────────────────────────────────
+
+## Enter drag-to-place layout mode. Closes dev menu and redirects all input.
+func enter_reposition_mode() -> void:
+	if has_node("/root/DevMenu"):
+		DevMenu.set_open(false)
+	_touches.clear()
+	_drag_last.clear()
+	_stick_origin = Vector2.ZERO
+	TouchInput.set_move_vector(Vector2.ZERO)
+	TouchInput.set_jump_held(false)
+	_reposition_mode  = true
+	_repo_drag_jump   = false
+	_repo_drag_resize = false
+	queue_redraw()
+
+
+func exit_reposition_mode() -> void:
+	_reposition_mode  = false
+	_repo_drag_jump   = false
+	_repo_drag_resize = false
+	_save_layout()
+	queue_redraw()
+
+
+func _handle_repo_input(event: InputEvent) -> void:
+	var pos      := Vector2.ZERO
+	var pressed  := false
+	var released := false
+	var moved    := false
+
+	if event is InputEventScreenTouch:
+		var t := event as InputEventScreenTouch
+		pos      = t.position
+		pressed  = t.pressed
+		released = not t.pressed
+	elif event is InputEventScreenDrag:
+		pos   = (event as InputEventScreenDrag).position
+		moved = true
+	elif event is InputEventMouseButton:
+		var mb := event as InputEventMouseButton
+		if mb.button_index != MOUSE_BUTTON_LEFT:
+			return
+		pos      = mb.position
+		pressed  = mb.pressed
+		released = not mb.pressed
+	elif event is InputEventMouseMotion:
+		if not Input.is_mouse_button_pressed(MOUSE_BUTTON_LEFT):
+			return
+		pos   = (event as InputEventMouseMotion).position
+		moved = true
+	else:
+		return
+
+	if pressed:
+		# Done button — closes reposition mode and saves.
+		if _done_rect().has_point(pos):
+			exit_reposition_mode()
+			return
+		# Preset buttons.
+		var pr := _preset_rects()
+		for i in pr.size():
+			if (pr[i] as Rect2).has_point(pos):
+				_apply_preset(i)
+				return
+		# Resize handle (yellow circle right of jump button).
+		if pos.distance_to(_resize_handle_pos()) <= 30.0:
+			_repo_drag_resize = true
+			_repo_drag_jump   = false
+			return
+		# Jump button body — drag to move.
+		if pos.distance_to(jump_button_anchor) <= jump_button_radius + 20.0:
+			_repo_drag_jump   = true
+			_repo_drag_resize = false
+			return
+
+	elif moved:
+		if _repo_drag_jump:
+			jump_button_anchor = pos
+			queue_redraw()
+		elif _repo_drag_resize:
+			jump_button_radius = clampf(pos.distance_to(jump_button_anchor), 40.0, 200.0)
+			queue_redraw()
+
+	elif released:
+		_repo_drag_jump   = false
+		_repo_drag_resize = false
+
+
+func _resize_handle_pos() -> Vector2:
+	return jump_button_anchor + Vector2(jump_button_radius + 16.0, 0.0)
+
+
+# ── reposition UI geometry (same coordinate space as _draw) ──────────────────
+
+func _done_rect() -> Rect2:
+	var vp := get_viewport_rect().size
+	return Rect2(vp.x * 0.5 - 80.0, 16.0, 160.0, 52.0)
+
+
+func _preset_rects() -> Array:
+	var vp  := get_viewport_rect().size
+	var bw  := 110.0
+	var gap := 12.0
+	var total := bw * _PRESETS.size() + gap * (_PRESETS.size() - 1)
+	var x0  := vp.x * 0.5 - total * 0.5
+	var rects: Array = []
+	for i in _PRESETS.size():
+		rects.append(Rect2(x0 + i * (bw + gap), 76.0, bw, 44.0))
+	return rects
+
+
+# ── draw ──────────────────────────────────────────────────────────────────────
+
 func _draw() -> void:
-	# Jump button — always visible.
+	if _reposition_mode:
+		_draw_reposition()
+	else:
+		_draw_play()
+
+
+func _draw_play() -> void:
 	var jump_pressed := false
 	for kind in _touches.values():
 		if kind == KIND_JUMP:
@@ -116,7 +259,6 @@ func _draw() -> void:
 	draw_arc(jump_button_anchor, jump_button_radius - 2.0,
 		0.0, TAU, 36, Color(1, 1, 1, 0.7), 2.0)
 
-	# Stick — only while a stick gesture is active.
 	if _stick_origin != Vector2.ZERO:
 		draw_circle(_stick_origin, stick_max_radius, Color(1, 1, 1, 0.10))
 		draw_arc(_stick_origin, stick_max_radius - 2.0,
@@ -124,9 +266,99 @@ func _draw() -> void:
 		draw_circle(_stick_knob, stick_knob_radius, Color(1, 1, 1, 0.42))
 
 
-## Stub for the reposition UI (CLAUDE.md mandate; full UI queued in
-## PLAN.md). When implemented, this enters a mode where each control is
-## draggable until the player taps "Done", then writes the new positions
-## to user://input.cfg.
-func enter_reposition_mode() -> void:
-	push_warning("TouchOverlay.enter_reposition_mode(): not implemented yet — see PLAN.md")
+func _draw_reposition() -> void:
+	var vp   := get_viewport_rect().size
+	var font := ThemeDB.fallback_font
+	var fsm  := 13    # small font size
+	var fsn  := 18    # normal font size
+
+	# Dim world behind reposition UI.
+	draw_rect(Rect2(Vector2.ZERO, vp), Color(0, 0, 0, 0.45))
+
+	# Stick zone divider line.
+	var div_x := vp.x * stick_zone_ratio
+	draw_line(Vector2(div_x, 0), Vector2(div_x, vp.y), Color(0.4, 0.7, 1.0, 0.55), 2.5)
+	if font:
+		draw_string(font, Vector2(div_x + 8.0, vp.y * 0.55),
+			"STICK ◀", HORIZONTAL_ALIGNMENT_LEFT, -1, fsm, Color(0.4, 0.7, 1.0, 0.8))
+
+	# Jump button — dashed circle + crosshair move indicator.
+	draw_circle(jump_button_anchor, jump_button_radius, Color(0.78, 0.18, 0.18, 0.4))
+	draw_arc(jump_button_anchor, jump_button_radius, 0.0, TAU, 36,
+		Color(1.0, 0.25, 0.25, 0.9), 2.5)
+	draw_line(jump_button_anchor - Vector2(18, 0), jump_button_anchor + Vector2(18, 0),
+		Color(1, 1, 1, 0.8), 2.0)
+	draw_line(jump_button_anchor - Vector2(0, 18), jump_button_anchor + Vector2(0, 18),
+		Color(1, 1, 1, 0.8), 2.0)
+
+	# Resize handle (yellow circle to the right of jump button).
+	var rh := _resize_handle_pos()
+	draw_circle(rh, 16.0, Color(1.0, 0.75, 0.1, 0.9))
+	draw_arc(rh, 16.0, 0.0, TAU, 20, Color(1, 1, 1, 0.95), 1.5)
+
+	# DONE button.
+	var dr := _done_rect()
+	draw_rect(dr, Color(0.12, 0.72, 0.12, 0.9), true, -1.0)
+	draw_rect(dr, Color(1, 1, 1, 0.9), false, 2.0)
+	if font:
+		draw_string(font, Vector2(dr.position.x, dr.position.y + dr.size.y * 0.5 + fsn * 0.38),
+			"DONE", HORIZONTAL_ALIGNMENT_CENTER, dr.size.x, fsn, Color.WHITE)
+
+	# Preset buttons.
+	var pr := _preset_rects()
+	for i in pr.size():
+		var r: Rect2 = pr[i]
+		draw_rect(r, Color(0.15, 0.35, 0.75, 0.88), true, -1.0)
+		draw_rect(r, Color(1, 1, 1, 0.7), false, 1.5)
+		if font:
+			draw_string(font,
+				Vector2(r.position.x, r.position.y + r.size.y * 0.5 + fsm * 0.38),
+				_PRESETS[i]["name"], HORIZONTAL_ALIGNMENT_CENTER, r.size.x,
+				fsm, Color(1, 1, 1, 0.95))
+
+	# Header instruction.
+	if font:
+		draw_string(font, Vector2(0.0, 13.0),
+			"TOUCH CONTROLS — drag ✛ to move, drag ● to resize, tap preset to snap",
+			HORIZONTAL_ALIGNMENT_CENTER, vp.x, fsm, Color(0.9, 0.9, 0.9, 0.9))
+
+
+# ── presets ───────────────────────────────────────────────────────────────────
+
+func _apply_preset(idx: int) -> void:
+	var p: Dictionary = _PRESETS[idx]
+	jump_button_anchor = p["anchor"]
+	jump_button_radius = p["radius"]
+	stick_zone_ratio   = p["zone"]
+	queue_redraw()
+
+
+# ── persistence ───────────────────────────────────────────────────────────────
+
+func _save_layout() -> void:
+	var cfg := ConfigFile.new()
+	cfg.set_value(CFG_SECTION, "jump_anchor_x", jump_button_anchor.x)
+	cfg.set_value(CFG_SECTION, "jump_anchor_y", jump_button_anchor.y)
+	cfg.set_value(CFG_SECTION, "jump_radius",   jump_button_radius)
+	cfg.set_value(CFG_SECTION, "stick_zone",    stick_zone_ratio)
+	cfg.save(CFG_PATH)
+
+
+func _load_layout() -> void:
+	var cfg := ConfigFile.new()
+	if cfg.load(CFG_PATH) != OK:
+		return
+	jump_button_anchor.x = cfg.get_value(CFG_SECTION, "jump_anchor_x", jump_button_anchor.x)
+	jump_button_anchor.y = cfg.get_value(CFG_SECTION, "jump_anchor_y", jump_button_anchor.y)
+	jump_button_radius   = cfg.get_value(CFG_SECTION, "jump_radius",   jump_button_radius)
+	stick_zone_ratio     = cfg.get_value(CFG_SECTION, "stick_zone",    stick_zone_ratio)
+
+
+func _on_touch_param(param: StringName, value: Variant) -> void:
+	match param:
+		&"jump_radius":
+			jump_button_radius = float(value)
+			queue_redraw()
+		&"stick_zone_ratio":
+			stick_zone_ratio = float(value)
+			queue_redraw()

@@ -5,6 +5,7 @@ extends Node
 ## Toggle: F1 in editor, 3-finger tap on device.
 
 const OVERLAY_SCENE := preload("res://tools/dev_menu/dev_menu_overlay.tscn")
+const HUD_OVERLAY_SCRIPT := preload("res://tools/debug/hud_overlay.gd")
 
 signal controller_profile_changed(profile_resource: Resource)
 signal controller_param_changed(param_name: StringName, value: float)
@@ -12,6 +13,9 @@ signal camera_param_changed(param_name: StringName, value: float)
 signal juice_toggle_changed(toggle_name: StringName, enabled: bool)
 signal time_scale_changed(scale: float)
 signal teleport_requested(checkpoint_id: StringName)
+signal debug_viz_changed(key: StringName, enabled: bool)
+signal touch_param_changed(param: StringName, value: Variant)
+signal reposition_controls_requested
 
 var is_open: bool = false
 var juice_state: Dictionary = {
@@ -22,8 +26,13 @@ var juice_state: Dictionary = {
 	&"squash_stretch": true,
 	&"sound_layers": true,
 }
+var debug_viz_state: Dictionary = {
+	&"perf_hud": true,
+	&"velocity_vec": false,
+}
 
 var _overlay: CanvasLayer
+var _hud: CanvasLayer
 var _active_touches: Dictionary = {}
 
 
@@ -43,6 +52,11 @@ func _install_overlay() -> void:
 	get_tree().root.add_child(_overlay)
 	_overlay.visible = is_open
 
+	# Always-on corner HUD — independent of is_open, controlled by debug_viz_state.
+	_hud = HUD_OVERLAY_SCRIPT.new()
+	_hud.process_mode = Node.PROCESS_MODE_ALWAYS
+	get_tree().root.add_child(_hud)
+
 
 func toggle() -> void:
 	set_open(not is_open)
@@ -61,6 +75,15 @@ func set_juice(toggle_name: StringName, enabled: bool) -> void:
 
 func is_juice_on(toggle_name: StringName) -> bool:
 	return bool(juice_state.get(toggle_name, true))
+
+
+func set_debug_viz(key: StringName, enabled: bool) -> void:
+	debug_viz_state[key] = enabled
+	debug_viz_changed.emit(key, enabled)
+
+
+func is_debug_viz_on(key: StringName) -> bool:
+	return bool(debug_viz_state.get(key, false))
 
 
 func _unhandled_input(event: InputEvent) -> void:
