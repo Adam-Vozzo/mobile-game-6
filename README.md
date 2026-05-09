@@ -5,16 +5,32 @@ A mobile 3D platformer. Brutalist megastructure inspired by *BLAME!*. Controller
 ## Status
 
 Current gate: **Gate 0 — Feel Lab**
-Last iteration: 2026-05-09 — iter 8: style test scene greybox + brutalism/BLAME! research
+Last iteration: 2026-05-09 — iter 9: level design references research + camera_rig refactor
 Test device build: not yet — hand-authored scenes pending first Godot 4.6 import; see Open questions
 Performance: not yet measured on Nothing Phone 4(a) Pro
-Throttle level: soft — 8 iterations since last human direction
+Throttle level: **HARD — 9 iterations since last human direction. No new features. See Open questions.**
 
 If you only read one section, read **Open questions waiting on you** below.
 
 ## Open questions waiting on you
 
 Things Claude can't decide alone, or where it's stalled and needs direction. Each is blocking some piece of forward progress.
+
+> **⚠ HARD THROTTLE — 9 iterations since last human direction.** Claude has been
+> building infrastructure (tests, research, refactors, debug tooling) for 9 iterations
+> without a human feel verdict or direction signal. All P0 items are blocked on the
+> first on-device run. The next iteration will continue hardening work only.
+>
+> **Suggested next directions (pick one or more):**
+> 1. Open the project in Godot 4.6, run the first-run checklist in `docs/ANDROID.md`,
+>    paste any import errors. This unblocks the entire P0 queue.
+> 2. Give a first feel verdict (Snappy / Floaty / Momentum) — even rough notes
+>    ("Snappy feels good but the jump arc is too low") give Claude a tuning target.
+> 3. Approve the style direction (cold palette, fog, brutalist primitives) so the
+>    `scenes/levels/style_test.tscn` greybox can be used as the template for Gate 1
+>    geometry.
+> 4. Give a gate-transition signal ("Gate 0 is done, proceed to Gate 1 vertical slice
+>    planning") if you feel the Feel Lab is instrumented enough.
 
 - [ ] **Open the project in Godot 4.6 and run the on-device first-run checklist in `docs/ANDROID.md`.** This is the only thing that will catch syntax mistakes in any of the hand-authored `.tscn`/`.tres` files. If anything fails, paste the Output panel error and Claude will fix it next iteration.
 - [ ] **First feel verdict — Snappy vs Floaty vs Momentum.** Once the build runs, open the dev menu (F1 in editor, 3-finger tap on device), switch the Profile dropdown between Snappy / Floaty / Momentum and play each for 30–60 seconds. Note: jump arc, air momentum feel, landing, coyote forgiveness. Any notes you give go straight into the next tuning pass.
@@ -78,6 +94,46 @@ Goal: store-ready build.
 The full iteration log lives here, newest first. Every iteration appends an entry. Skim the dates to find where you last left off.
 
 <!-- ITERATION ENTRIES BELOW — DO NOT REMOVE OLDER ENTRIES -->
+
+### [2026-05-09] — `claude/gifted-shannon-tfUYS` — iter 9: level design references research + camera_rig refactor
+
+- **Throttle: HARD (9 iterations since last human direction).** Feature work stopped;
+  hardening only. See "Open questions waiting on you" for suggested next directions.
+- Primary: **Level design references research note** — `docs/research/level_design_references.md`.
+  Synthesises five source clusters directly relevant to Gate 1 level authoring:
+  - **SMB grammar for level structure**: short focused rooms (single governing idea per
+    beat), introduce-then-combine pattern, instant respawn as information not punishment
+    (suggests Snappy profile's `reboot_duration` should be ≤ 0.35 s, not 0.5 s), ghost
+    trails as core SMB grammar not decoration (confirms Gate 1 attempt-replay is P0).
+  - **Verticality principles** (The Level Design Book): max 3 floor planes per area;
+    downward flow = dramatic/free, upward flow = earned challenge; ascending = goal,
+    descending = discovery; console/touch controllers prefer horizontal hazard reads
+    even in vertical spaces.
+  - **Flow and pacing**: movement-centered design; critical path vs. desire line (author
+    par route first, safe route is padding around it); rhythm groups make hard sequences
+    masterable; rest areas mandatory after ≥ 3 precision actions; intentional "bad" flow
+    (mazes, dead ends) is also legibility.
+  - **Mario Odyssey — density over sprawl**: compact + 3 floor planes > sprawling
+    horizontal; vertical ascent gates what's visible (vistas as reward); expressed
+    architecture = traversal affordance; macro compression→release mirrors micro.
+  - **Kevin Lynch vocabulary applied**: path, edge, district, node, landmark mapped
+    concretely to Void's megastructure. Every level needs one landmark for orientation
+    (critical in darkness/fog).
+  - 10 concrete "Implications for Project Void" including: one-idea-per-beat rule,
+    shorten Snappy reboot, author par route first, 3-floor-plane rule, landmark
+    requirement, rhythm-group hazards, rest-area/checkpoint pairing, downward entry beats.
+  - INDEX.md updated; "Level design references" section now populated.
+- Side quest: **`camera_rig.gd::_process()` refactor.** Was 56 lines (over the 40-line
+  threshold). Extracted 5 focused sub-methods: `_apply_drag_input`, `_update_yaw_recenter`,
+  `_update_lookahead`, `_vertical_pull_offset`, `_desired_camera_position`. `_process` is
+  now 22 lines. No behaviour change. Magic number `0.05` in `_vertical_pull_offset` now
+  has a comment explaining it (inspector-range normalisation for `vertical_pull`).
+- Perf: no runtime change.
+- Bugs fixed: none.
+- New dev-menu controls: none.
+- Assets acquired: none.
+- Research added: `docs/research/level_design_references.md`; INDEX.md updated.
+- Needs human attention: **see "Open questions waiting on you" — hard throttle active.**
 
 ### [2026-05-09] — `claude/gifted-shannon-9IpbZ` — iter 8: style test scene greybox + brutalism/BLAME! research
 
