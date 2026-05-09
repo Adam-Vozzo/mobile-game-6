@@ -14,11 +14,11 @@ instrumented and tunable.
 
 ## Active iteration
 
-- Branch: `claude/gifted-shannon-DCTEK`
-- Focus: iter 11. `perf_budget.gd` frametime bug fix (primary) + dead code removal
-  (`touch_input.gd::set_camera_drag_delta`) + test coverage expansion (side quest).
-  Hard throttle (11 iterations since human direction). **Items 1–4 still blocked on
-  human on-device action.**
+- Branch: `claude/gifted-shannon-j5hhr`
+- Focus: iter 12. `touch_overlay.gd` method-size refactor (primary) — `_handle_repo_input`
+  62 → 8 lines, `_draw_reposition` 56 → 9 lines, 11 new focused helpers. `DRAW_CALL_BUDGET`
+  corrected 200 → 50 (side quest). Hard throttle (12 iterations since human direction).
+  **Items 1–4 still blocked on human on-device action.**
 
 ## Queue (ranked, top is next)
 
@@ -136,6 +136,14 @@ These mirror "Open questions waiting on you" in the README.
   feel issues. Those notes drive iteration 2's tuning pass.
 
 ## Recently completed (last 5)
+
+- 2026-05-09 — Iteration 12. `touch_overlay.gd` method-size refactor (primary):
+  `_handle_repo_input` (62 lines) replaced with lean dispatcher + `_parse_repo_event`,
+  `_on_repo_press`, `_on_repo_move`, `_on_repo_release`. `_draw_reposition` (56 lines)
+  replaced with lean dispatcher + 7 draw helpers; font-size magic numbers promoted to
+  `_REPO_FONT_SM`/`_REPO_FONT_NM` constants. All methods now ≤ 15 lines. No behaviour
+  change. Side quest: `DRAW_CALL_BUDGET` in `perf_budget.gd` corrected from 200 to 50
+  (per `godot_mobile_perf.md` Gate 1 target). `over_budget()` now flags correctly.
 
 - 2026-05-09 — Iteration 11. `perf_budget.gd` frametime bug fix (primary):
   `last_frametime_ms` was `1000.0 / Engine.get_frames_per_second()` (smoothed,

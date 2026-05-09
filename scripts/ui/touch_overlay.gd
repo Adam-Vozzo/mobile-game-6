@@ -47,6 +47,9 @@ const _PRESETS: Array = [
 const CFG_PATH    := "user://input.cfg"
 const CFG_SECTION := "touch"
 
+const _REPO_FONT_SM := 13
+const _REPO_FONT_NM := 18
+
 
 func _ready() -> void:
 	mouse_filter = Control.MOUSE_FILTER_IGNORE
@@ -152,68 +155,68 @@ func exit_reposition_mode() -> void:
 	queue_redraw()
 
 
-func _handle_repo_input(event: InputEvent) -> void:
-	var pos      := Vector2.ZERO
-	var pressed  := false
-	var released := false
-	var moved    := false
-
+## Parses any relevant input event into position + gesture intent.
+## Returns an empty dict if the event should be ignored in reposition mode.
+func _parse_repo_event(event: InputEvent) -> Dictionary:
 	if event is InputEventScreenTouch:
 		var t := event as InputEventScreenTouch
-		pos      = t.position
-		pressed  = t.pressed
-		released = not t.pressed
-	elif event is InputEventScreenDrag:
-		pos   = (event as InputEventScreenDrag).position
-		moved = true
-	elif event is InputEventMouseButton:
+		return {&"pos": t.position, &"pressed": t.pressed, &"released": not t.pressed, &"moved": false}
+	if event is InputEventScreenDrag:
+		return {&"pos": (event as InputEventScreenDrag).position, &"pressed": false, &"released": false, &"moved": true}
+	if event is InputEventMouseButton:
 		var mb := event as InputEventMouseButton
 		if mb.button_index != MOUSE_BUTTON_LEFT:
-			return
-		pos      = mb.position
-		pressed  = mb.pressed
-		released = not mb.pressed
-	elif event is InputEventMouseMotion:
+			return {}
+		return {&"pos": mb.position, &"pressed": mb.pressed, &"released": not mb.pressed, &"moved": false}
+	if event is InputEventMouseMotion:
 		if not Input.is_mouse_button_pressed(MOUSE_BUTTON_LEFT):
-			return
-		pos   = (event as InputEventMouseMotion).position
-		moved = true
-	else:
+			return {}
+		return {&"pos": (event as InputEventMouseMotion).position, &"pressed": false, &"released": false, &"moved": true}
+	return {}
+
+
+func _on_repo_press(pos: Vector2) -> void:
+	if _done_rect().has_point(pos):
+		exit_reposition_mode()
 		return
-
-	if pressed:
-		# Done button — closes reposition mode and saves.
-		if _done_rect().has_point(pos):
-			exit_reposition_mode()
+	var pr := _preset_rects()
+	for i in pr.size():
+		if (pr[i] as Rect2).has_point(pos):
+			_apply_preset(i)
 			return
-		# Preset buttons.
-		var pr := _preset_rects()
-		for i in pr.size():
-			if (pr[i] as Rect2).has_point(pos):
-				_apply_preset(i)
-				return
-		# Resize handle (yellow circle right of jump button).
-		if pos.distance_to(_resize_handle_pos()) <= 30.0:
-			_repo_drag_resize = true
-			_repo_drag_jump   = false
-			return
-		# Jump button body — drag to move.
-		if pos.distance_to(jump_button_anchor) <= jump_button_radius + 20.0:
-			_repo_drag_jump   = true
-			_repo_drag_resize = false
-			return
-
-	elif moved:
-		if _repo_drag_jump:
-			jump_button_anchor = pos
-			queue_redraw()
-		elif _repo_drag_resize:
-			jump_button_radius = clampf(pos.distance_to(jump_button_anchor), 40.0, 200.0)
-			queue_redraw()
-
-	elif released:
+	if pos.distance_to(_resize_handle_pos()) <= 30.0:
+		_repo_drag_resize = true
 		_repo_drag_jump   = false
+		return
+	if pos.distance_to(jump_button_anchor) <= jump_button_radius + 20.0:
+		_repo_drag_jump   = true
 		_repo_drag_resize = false
+
+
+func _on_repo_move(pos: Vector2) -> void:
+	if _repo_drag_jump:
+		jump_button_anchor = pos
+		queue_redraw()
+	elif _repo_drag_resize:
+		jump_button_radius = clampf(pos.distance_to(jump_button_anchor), 40.0, 200.0)
+		queue_redraw()
+
+
+func _on_repo_release() -> void:
+	_repo_drag_jump   = false
+	_repo_drag_resize = false
+
+
+func _handle_repo_input(event: InputEvent) -> void:
+	var ev := _parse_repo_event(event)
+	if ev.is_empty():
+		return
+	if ev[&"pressed"]:
+		_on_repo_press(ev[&"pos"])
+	elif ev[&"moved"]:
+		_on_repo_move(ev[&"pos"])
+	elif ev[&"released"]:
+		_on_repo_release()
 
 
 func _resize_handle_pos() -> Vector2:
@@ -267,22 +270,30 @@ func _draw_play() -> void:
 
 
 func _draw_reposition() -> void:
-	var vp   := get_viewport_rect().size
-	var font := ThemeDB.fallback_font
-	var fsm  := 13    # small font size
-	var fsn  := 18    # normal font size
+	var vp := get_viewport_rect().size
+	_draw_dim_overlay(vp)
+	_draw_zone_divider(vp)
+	_draw_jump_button_repo()
+	_draw_resize_handle_repo()
+	_draw_done_button_repo()
+	_draw_preset_buttons_repo()
+	_draw_repo_header(vp)
 
-	# Dim world behind reposition UI.
+
+func _draw_dim_overlay(vp: Vector2) -> void:
 	draw_rect(Rect2(Vector2.ZERO, vp), Color(0, 0, 0, 0.45))
 
-	# Stick zone divider line.
+
+func _draw_zone_divider(vp: Vector2) -> void:
 	var div_x := vp.x * stick_zone_ratio
 	draw_line(Vector2(div_x, 0), Vector2(div_x, vp.y), Color(0.4, 0.7, 1.0, 0.55), 2.5)
+	var font := ThemeDB.fallback_font
 	if font:
 		draw_string(font, Vector2(div_x + 8.0, vp.y * 0.55),
-			"STICK ◀", HORIZONTAL_ALIGNMENT_LEFT, -1, fsm, Color(0.4, 0.7, 1.0, 0.8))
+			"STICK ◀", HORIZONTAL_ALIGNMENT_LEFT, -1, _REPO_FONT_SM, Color(0.4, 0.7, 1.0, 0.8))
 
-	# Jump button — dashed circle + crosshair move indicator.
+
+func _draw_jump_button_repo() -> void:
 	draw_circle(jump_button_anchor, jump_button_radius, Color(0.78, 0.18, 0.18, 0.4))
 	draw_arc(jump_button_anchor, jump_button_radius, 0.0, TAU, 36,
 		Color(1.0, 0.25, 0.25, 0.9), 2.5)
@@ -291,20 +302,26 @@ func _draw_reposition() -> void:
 	draw_line(jump_button_anchor - Vector2(0, 18), jump_button_anchor + Vector2(0, 18),
 		Color(1, 1, 1, 0.8), 2.0)
 
-	# Resize handle (yellow circle to the right of jump button).
+
+func _draw_resize_handle_repo() -> void:
 	var rh := _resize_handle_pos()
 	draw_circle(rh, 16.0, Color(1.0, 0.75, 0.1, 0.9))
 	draw_arc(rh, 16.0, 0.0, TAU, 20, Color(1, 1, 1, 0.95), 1.5)
 
-	# DONE button.
+
+func _draw_done_button_repo() -> void:
 	var dr := _done_rect()
 	draw_rect(dr, Color(0.12, 0.72, 0.12, 0.9), true, -1.0)
 	draw_rect(dr, Color(1, 1, 1, 0.9), false, 2.0)
+	var font := ThemeDB.fallback_font
 	if font:
-		draw_string(font, Vector2(dr.position.x, dr.position.y + dr.size.y * 0.5 + fsn * 0.38),
-			"DONE", HORIZONTAL_ALIGNMENT_CENTER, dr.size.x, fsn, Color.WHITE)
+		draw_string(font,
+			Vector2(dr.position.x, dr.position.y + dr.size.y * 0.5 + _REPO_FONT_NM * 0.38),
+			"DONE", HORIZONTAL_ALIGNMENT_CENTER, dr.size.x, _REPO_FONT_NM, Color.WHITE)
 
-	# Preset buttons.
+
+func _draw_preset_buttons_repo() -> void:
+	var font := ThemeDB.fallback_font
 	var pr := _preset_rects()
 	for i in pr.size():
 		var r: Rect2 = pr[i]
@@ -312,15 +329,17 @@ func _draw_reposition() -> void:
 		draw_rect(r, Color(1, 1, 1, 0.7), false, 1.5)
 		if font:
 			draw_string(font,
-				Vector2(r.position.x, r.position.y + r.size.y * 0.5 + fsm * 0.38),
+				Vector2(r.position.x, r.position.y + r.size.y * 0.5 + _REPO_FONT_SM * 0.38),
 				_PRESETS[i]["name"], HORIZONTAL_ALIGNMENT_CENTER, r.size.x,
-				fsm, Color(1, 1, 1, 0.95))
+				_REPO_FONT_SM, Color(1, 1, 1, 0.95))
 
-	# Header instruction.
+
+func _draw_repo_header(vp: Vector2) -> void:
+	var font := ThemeDB.fallback_font
 	if font:
 		draw_string(font, Vector2(0.0, 13.0),
 			"TOUCH CONTROLS — drag ✛ to move, drag ● to resize, tap preset to snap",
-			HORIZONTAL_ALIGNMENT_CENTER, vp.x, fsm, Color(0.9, 0.9, 0.9, 0.9))
+			HORIZONTAL_ALIGNMENT_CENTER, vp.x, _REPO_FONT_SM, Color(0.9, 0.9, 0.9, 0.9))
 
 
 # ── presets ───────────────────────────────────────────────────────────────────

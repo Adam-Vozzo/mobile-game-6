@@ -5,10 +5,10 @@ A mobile 3D platformer. Brutalist megastructure inspired by *BLAME!*. Controller
 ## Status
 
 Current gate: **Gate 0 — Feel Lab**
-Last iteration: 2026-05-09 — iter 11: perf frametime fix + dead-code removal + test coverage expansion
+Last iteration: 2026-05-09 — iter 12: touch_overlay.gd refactor + DRAW_CALL_BUDGET fix
 Test device build: not yet — hand-authored scenes pending first Godot 4.6 import; see Open questions
 Performance: not yet measured on Nothing Phone 4(a) Pro
-Throttle level: **HARD — 11 iterations since last human direction. No new features. See Open questions.**
+Throttle level: **HARD — 12 iterations since last human direction. No new features. See Open questions.**
 
 If you only read one section, read **Open questions waiting on you** below.
 
@@ -16,8 +16,8 @@ If you only read one section, read **Open questions waiting on you** below.
 
 Things Claude can't decide alone, or where it's stalled and needs direction. Each is blocking some piece of forward progress.
 
-> **⚠ HARD THROTTLE — 10 iterations since last human direction.** Claude has been
-> building infrastructure (tests, research, refactors, debug tooling) for 10 iterations
+> **⚠ HARD THROTTLE — 12 iterations since last human direction.** Claude has been
+> building infrastructure (tests, research, refactors, debug tooling) for 12 iterations
 > without a human feel verdict or direction signal. All P0 items are blocked on the
 > first on-device run. The next iteration will continue hardening work only.
 >
@@ -94,6 +94,32 @@ Goal: store-ready build.
 The full iteration log lives here, newest first. Every iteration appends an entry. Skim the dates to find where you last left off.
 
 <!-- ITERATION ENTRIES BELOW — DO NOT REMOVE OLDER ENTRIES -->
+
+### [2026-05-09] — `claude/gifted-shannon-j5hhr` — iter 12: touch_overlay.gd refactor + draw-call budget fix
+
+- **Throttle: HARD (12 iterations since last human direction).** Hardening only.
+- **Primary: `touch_overlay.gd` method-size refactor.** Two functions were over the
+  40-line threshold and have been replaced with lean dispatchers + extracted helpers:
+  - `_handle_repo_input` (was 62 lines) → lean dispatcher (8 lines) calling four new
+    helpers: `_parse_repo_event` (parses any `InputEvent` subtype into a common
+    `{pos, pressed, released, moved}` dict), `_on_repo_press`, `_on_repo_move`,
+    `_on_repo_release`. Each helper is ≤ 15 lines. No behaviour change.
+  - `_draw_reposition` (was 56 lines) → lean dispatcher (9 lines) calling seven new
+    draw helpers: `_draw_dim_overlay`, `_draw_zone_divider`, `_draw_jump_button_repo`,
+    `_draw_resize_handle_repo`, `_draw_done_button_repo`, `_draw_preset_buttons_repo`,
+    `_draw_repo_header`. Two font-size constants (`_REPO_FONT_SM = 13`,
+    `_REPO_FONT_NM = 18`) extracted from magic literals. No behaviour change.
+- **Side quest: `DRAW_CALL_BUDGET` corrected.** `perf_budget.gd` had
+  `DRAW_CALL_BUDGET := 200` — four times the Gate 1 target of ≤ 50 draw calls
+  established in `docs/research/godot_mobile_perf.md`. Updated to 50 so
+  `over_budget()` flags correctly. Comment references the research note.
+- Perf: no runtime change (pure structural refactor + constant adjustment).
+- Bugs fixed: `DRAW_CALL_BUDGET` was too lenient (200 vs. research-backed 50).
+- New dev-menu controls: none.
+- Assets acquired: none.
+- Research added: none.
+- Needs human attention: **see "Open questions waiting on you" — hard throttle still
+  active (12 iterations).**
 
 ### [2026-05-09] — `claude/gifted-shannon-DCTEK` — iter 11: perf frametime fix + dead code removal + test coverage
 
