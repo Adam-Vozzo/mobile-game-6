@@ -5,10 +5,10 @@ A mobile 3D platformer. Brutalist megastructure inspired by *BLAME!*. Controller
 ## Status
 
 Current gate: **Gate 0 — Feel Lab**
-Last iteration: 2026-05-09 — iter 12: touch_overlay.gd refactor + DRAW_CALL_BUDGET fix
+Last iteration: 2026-05-09 — iter 13: _spawn_sparks refactor + juice density research
 Test device build: not yet — hand-authored scenes pending first Godot 4.6 import; see Open questions
 Performance: not yet measured on Nothing Phone 4(a) Pro
-Throttle level: **HARD — 12 iterations since last human direction. No new features. See Open questions.**
+Throttle level: **HARD — 13 iterations since last human direction. No new features. See Open questions.**
 
 If you only read one section, read **Open questions waiting on you** below.
 
@@ -16,8 +16,8 @@ If you only read one section, read **Open questions waiting on you** below.
 
 Things Claude can't decide alone, or where it's stalled and needs direction. Each is blocking some piece of forward progress.
 
-> **⚠ HARD THROTTLE — 12 iterations since last human direction.** Claude has been
-> building infrastructure (tests, research, refactors, debug tooling) for 12 iterations
+> **⚠ HARD THROTTLE — 13 iterations since last human direction.** Claude has been
+> building infrastructure (tests, research, refactors, debug tooling) for 13 iterations
 > without a human feel verdict or direction signal. All P0 items are blocked on the
 > first on-device run. The next iteration will continue hardening work only.
 >
@@ -94,6 +94,38 @@ Goal: store-ready build.
 The full iteration log lives here, newest first. Every iteration appends an entry. Skim the dates to find where you last left off.
 
 <!-- ITERATION ENTRIES BELOW — DO NOT REMOVE OLDER ENTRIES -->
+
+### [2026-05-09] — `iter/spawn-sparks-refactor` — iter 13: _spawn_sparks refactor + juice density research
+
+- **Throttle: HARD (13 iterations since last human direction).** Hardening only.
+- **Primary: `player.gd::_spawn_sparks` method-size refactor.** The function was
+  41 lines (just over the 40-line budget). Extracted three focused helpers with no
+  behaviour change:
+  - `_build_spark_material() → StandardMaterial3D` (10 lines) — all material property
+    setup in one place; spark colour and alpha-blend settings readable at a glance.
+  - `_build_spark_mesh(rng: RandomNumberGenerator) → ImmediateMesh` (16 lines) — the
+    12-line-segment hemispherical burst geometry, self-contained.
+  - `_fade_and_free_spark(mi, mat)` (7 lines) — the tween sequence (0.07 s delay →
+    alpha fade → queue_free).
+  - `_spawn_sparks` is now 15 lines. Only `_run_reboot_effect` (45 lines) remains in
+    the backlog as "leave as-is" — sequential `await` beats make further extraction
+    awkward in GDScript without coroutine indirection.
+- **Side quest: juice density research note** — `docs/research/juice_density.md`.
+  Synthesises Astro's Playroom / Astro Bot "layered receipt" model (audio+visual+world
+  per action), Super Meat Boy sparse-juice contrast, mobile-specific considerations
+  (UI feedback compensates for no haptics), and draw-call cost of each juice type.
+  - Gate 1 priority ranking: landing squash → jump stretch → jump puff →
+    pre-jump anticipation. All gated behind existing `squash_stretch` / `particles`
+    dev-menu toggles.
+  - Key implication: Void should sit closer to SMB density than Astro Bot — brutalist
+    tone calls for restraint; heavy particle clusters undercut the atmosphere.
+  - INDEX.md updated; "Astro's Playroom — juice density" open item marked done.
+- Perf: no runtime change (pure refactor + docs).
+- Bugs fixed: none.
+- New dev-menu controls: none.
+- Assets acquired: none.
+- Research added: `docs/research/juice_density.md`; INDEX.md updated.
+- Needs human attention: **see "Open questions waiting on you" — hard throttle still active (13 iterations).**
 
 ### [2026-05-09] — `claude/gifted-shannon-j5hhr` — iter 12: touch_overlay.gd refactor + draw-call budget fix
 

@@ -13,8 +13,12 @@ they're written.
 
 - [`character_controllers.md`](character_controllers.md) — SMB grammar, Mario Odyssey assists (ledge magnetism, coyote), A Hat in Time homing-attack model, Pseudoregalia momentum rethink, Demon Turf custom-physics rationale. Implications: Snappy profile values are in the right range; Assisted profile should prioritise ledge magnetism; Momentum ramp should reduce deceleration not increase max speed.
 
-Suggested early reads (from CLAUDE.md):
-- Astro's Playroom — juice density (not yet covered).
+## Juice density
+
+- [`juice_density.md`](juice_density.md) — Astro's Playroom / Astro Bot "layered receipt" model (audio+visual+world per action), comparison with SMB sparse-juice approach, mobile considerations (UI feedback compensates for no haptics), draw-call cost of each juice type. Gate 1 priority ranking: landing squash > jump stretch > jump puff > pre-jump anticipation. Key implication: Void should sit closer to SMB density than Astro Bot given the brutalist tone.
+
+Suggested early reads (from CLAUDE.md) — now covered:
+- ~~Astro's Playroom — juice density~~ Done (iter 13, `juice_density.md`).
 
 ## Mobile touch UX
 
