@@ -1,6 +1,7 @@
-[gd_scene load_steps=27 format=3]
+[gd_scene load_steps=28 format=3]
 
 [ext_resource type="Script" path="res://scripts/levels/feel_lab.gd" id="1_feel"]
+[ext_resource type="Script" path="res://tools/debug/player_debug_draw.gd" id="6_dbgdraw"]
 [ext_resource type="Script" path="res://scripts/levels/moving_platform.gd" id="2_movp"]
 [ext_resource type="PackedScene" path="res://scenes/player/player.tscn" id="3_playerScene"]
 [ext_resource type="PackedScene" path="res://scenes/player/camera_rig.tscn" id="4_camRig"]
@@ -273,3 +274,6 @@ mesh = SubResource("Mesh_Plat_3x05x3")
 
 [node name="Collider" type="CollisionShape3D" parent="MovingPlatform"]
 shape = SubResource("Shape_Plat_3x05x3")
+
+[node name="PlayerDebugDraw" type="Node3D" parent="."]
+script = ExtResource("6_dbgdraw")

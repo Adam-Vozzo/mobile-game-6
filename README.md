@@ -5,10 +5,10 @@ A mobile 3D platformer. Brutalist megastructure inspired by *BLAME!*. Controller
 ## Status
 
 Current gate: **Gate 0 — Feel Lab**
-Last iteration: 2026-05-09 — iter 3: touch overlay polish + iter-2 carry-forward (full controller sliders, corner HUD)
+Last iteration: 2026-05-09 — iter 4: in-world debug viz (collision capsule, velocity arrow, ground normal, jump arc)
 Test device build: not yet — hand-authored scenes pending first Godot 4.6 import; see Open questions
 Performance: not yet measured on Nothing Phone 4(a) Pro
-Throttle level: normal — 2 iterations since last human direction
+Throttle level: normal — 3 iterations since last human direction
 
 If you only read one section, read **Open questions waiting on you** below.
 
@@ -78,6 +78,42 @@ Goal: store-ready build.
 The full iteration log lives here, newest first. Every iteration appends an entry. Skim the dates to find where you last left off.
 
 <!-- ITERATION ENTRIES BELOW — DO NOT REMOVE OLDER ENTRIES -->
+
+### [2026-05-09] — `claude/gifted-shannon-k7sgn` — iter 4: in-world debug viz + character-controller research
+
+- Primary: **In-world debug visualizations (PLAN P0 item 5).** New
+  `tools/debug/player_debug_draw.gd` — a `Node3D` added to the Feel Lab that
+  draws all overlays with `ImmediateMesh` (`no_depth_test=true`, unshaded,
+  vertex-coloured). Four overlays, all default OFF, toggled from Dev Menu →
+  Debug viz:
+  - **Collision capsule** (cyan) — wireframe capsule matching the physics shape
+    (r=0.28, h=0.9). Two rim circles + 4 verticals + XY/ZY hemisphere arcs.
+  - **Velocity arrow** (yellow) — line from player centre in velocity direction,
+    length proportional to speed (×0.15 scale), chevron arrowhead. Handles
+    near-vertical velocity (wall jumps) without divide-by-zero.
+  - **Ground normal** (green) — 1.2 m arrow along `get_floor_normal()` when on
+    floor, with tick at tip. Hidden when airborne.
+  - **Jump arc** (orange) — simulated parabola at 1/30 s steps × 60 frames.
+    On floor: preview of a jump from current position. Airborne: shows remaining
+    trajectory. Switches gravity band at apex (gravity_rising → gravity_after_apex).
+  - Four new dev-menu checkboxes: "Collision capsule", "Velocity arrow",
+    "Ground normal", "Jump arc".
+- Side quest: **Character controllers research note.** `docs/research/character_controllers.md`.
+  Covers SMB grammar (instant accel, velocity preservation, variable jump),
+  Mario Odyssey ledge magnetism, A Hat in Time homing-attack as Assisted profile
+  model, Pseudoregalia momentum rethink (reduce deceleration, don't raise cap),
+  Demon Turf custom-physics rationale (Jolt likely avoids same issue). Key
+  implication: Snappy profile values are in the right ballpark; Assisted profile
+  should prioritise ledge magnetism (~0.15 m snap radius) over mid-air steering.
+- Perf: no new draw calls added to the main render pass. `ImmediateMesh` with
+  ≤332 vertices/frame when all four overlays are on, all off by default.
+  On-device baseline still pending first human build.
+- Bugs fixed: none new.
+- New dev-menu controls: Debug viz section — "Collision capsule", "Velocity arrow",
+  "Ground normal", "Jump arc" (4 new checkboxes).
+- Assets acquired: none.
+- Research added: `docs/research/character_controllers.md`; INDEX.md updated.
+- Needs human attention: see "Open questions waiting on you."
 
 ### [2026-05-09] — `claude/gifted-shannon-6LHK6` — iter 3: touch overlay polish + iter-2 carry
 

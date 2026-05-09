@@ -170,8 +170,12 @@ func _build_juice_section(vbox: VBoxContainer) -> void:
 func _build_debug_section(vbox: VBoxContainer) -> void:
 	vbox.add_child(_make_sep())
 	vbox.add_child(_make_label("Debug viz", 14, true))
-	_make_viz_checkbox(vbox, "Perf HUD (corner)", &"perf_hud")
-	_make_viz_checkbox(vbox, "Velocity + state",  &"velocity_vec")
+	_make_viz_checkbox(vbox, "Perf HUD (corner)",  &"perf_hud")
+	_make_viz_checkbox(vbox, "Velocity + state",   &"velocity_vec")
+	_make_viz_checkbox(vbox, "Collision capsule",  &"collision_capsule")
+	_make_viz_checkbox(vbox, "Velocity arrow",     &"velocity_arrow")
+	_make_viz_checkbox(vbox, "Ground normal",      &"ground_normal")
+	_make_viz_checkbox(vbox, "Jump arc",           &"jump_arc")
 
 
 func _build_perf_section(vbox: VBoxContainer) -> void:

@@ -11,14 +11,10 @@ they're written.
 
 ## Character controllers
 
-_(none yet)_
+- [`character_controllers.md`](character_controllers.md) — SMB grammar, Mario Odyssey assists (ledge magnetism, coyote), A Hat in Time homing-attack model, Pseudoregalia momentum rethink, Demon Turf custom-physics rationale. Implications: Snappy profile values are in the right range; Assisted profile should prioritise ledge magnetism; Momentum ramp should reduce deceleration not increase max speed.
 
 Suggested early reads (from CLAUDE.md):
-- Super Mario Odyssey — snap-to-grid feel and assists.
-- A Hat in Time — homing-attack as platforming aid.
-- Pseudoregalia — momentum and movetech.
-- Demon Turf — custom physics over rigid-body.
-- Astro's Playroom — juice density.
+- Astro's Playroom — juice density (not yet covered).
 
 ## Mobile touch UX
 

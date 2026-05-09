@@ -14,14 +14,13 @@ instrumented and tunable.
 
 ## Active iteration
 
-- Branch: `claude/gifted-shannon-6LHK6`
-- Focus: iter 3 complete. Touch overlay polish (item 5) shipped. Iter-2
-  carry-forward (full controller sliders, corner HUD, debug viz) also
-  landed here. PR #12 closed as superseded.
+- Branch: `claude/gifted-shannon-k7sgn`
+- Focus: iter 4 complete. In-world debug viz shipped (P0 item 5).
+  PlayerDebugDraw node added to Feel Lab; 4 new checkboxes in dev menu.
+  Side quest: character controllers research note.
   **Items 1–4 are still blocked on human on-device action.**
-  Next: item 6 (dev menu debug viz — collision shapes, velocity vector,
-  jump arc) or item 7 (reboot animation polish), both actionable without
-  device access.
+  Next: item 6 (reboot animation polish) or item 7 (save-as-profile button),
+  both actionable without device access.
 
 ## Queue (ranked, top is next)
 
@@ -51,11 +50,11 @@ The next iteration should pull from the top of this list. Items marked
    landing. Requires new code in `player.gd` (target-detection, ledge
    cast). Scope for a dedicated iteration once the three base profiles
    have been felt on device.
-5. **Dev menu fleshing — in-world debug viz.** The "Debug viz" section
-   has checkboxes for perf HUD + velocity (done). Still missing: in-world
-   overlays (collision capsule, velocity vector arrow, ground normal,
-   jump prediction arc). Requires a debug-draw node in the Feel Lab scene
-   that reads `DevMenu.debug_viz_state`.
+5. ~~**Dev menu fleshing — in-world debug viz.**~~ Done (iter 4).
+   `tools/debug/player_debug_draw.gd` — ImmediateMesh node in Feel Lab;
+   collision capsule (cyan), velocity arrow (yellow), ground normal
+   (green), jump arc (orange). Four new checkboxes in dev menu Debug viz
+   section. All default OFF.
 6. **Reboot animation polish.** Replace the red-flash placeholder with
    the spec in CLAUDE.md (sparks → dark frame → power-on hum → upright).
    Visual beats first; audio can stay placeholder.
@@ -70,9 +69,8 @@ The next iteration should pull from the top of this list. Items marked
 - Greybox a `scenes/levels/style_test.tscn` with the Stray + a
   representative environment kit chunk so we can run the style fidelity
   check from `ART_PIPELINE.md` the moment we get a real asset.
-- Research notes: Mario Odyssey snap-to-grid feel, Demon Turf custom
-  physics, A Hat in Time homing-attack → `docs/research/`. Update
-  `docs/research/INDEX.md`.
+- ~~Research notes: Mario Odyssey / Demon Turf / A Hat in Time / Pseudoregalia~~
+  Done (iter 4): `docs/research/character_controllers.md`.
 - Convert Feel Lab platforms into a small reusable "concrete kit" of
   primitives (`mat_concrete.tres`, `scenes/levels/kit/*`) so Gate 1 has
   a starter vocabulary.
@@ -116,6 +114,14 @@ These mirror "Open questions waiting on you" in the README.
 
 ## Recently completed (last 5)
 
+- 2026-05-09 — Iteration 4. In-world debug viz (P0 item 5):
+  `tools/debug/player_debug_draw.gd` (ImmediateMesh, `no_depth_test=true`);
+  collision capsule / velocity arrow / ground normal / jump arc overlays;
+  4 new dev-menu checkboxes (all default OFF). Side quest: character
+  controllers research note (`docs/research/character_controllers.md`) —
+  SMB grammar, Odyssey ledge magnetism, Pseudoregalia momentum rethink,
+  Demon Turf custom-physics rationale; implications for Snappy tuning and
+  Assisted profile design.
 - 2026-05-09 — Iteration 3. Touch overlay polish: drag-to-place reposition
   mode, 3 thumb-zone presets (Default/Closer/Wider), jump-button resize
   handle, `stick_zone_ratio` replaces hardcoded 0.5 in `_classify`, layout
