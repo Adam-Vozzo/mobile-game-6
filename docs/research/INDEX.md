@@ -43,7 +43,7 @@ Suggested:
 
 ## Performance & rendering
 
-_(none yet)_
+- [`godot_mobile_perf.md`](godot_mobile_perf.md) — Godot 4 Mobile renderer capabilities/limits, TBDR tile-based GPU architecture (Adreno/Mali), draw call and triangle budgets, ASTC texture notes, baked vs dynamic lighting tradeoffs, Jolt physics profiling tips, in-game profiling steps. Implications: bake lights before Gate 1; keep alpha-blended objects exceptional; target ≤ 50 draw calls at Gate 1; no MSAA; profile Jolt separately.
 
 Suggested:
 - Godot Mobile renderer best practices.

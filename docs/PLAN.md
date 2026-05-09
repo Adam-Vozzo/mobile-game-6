@@ -14,12 +14,12 @@ instrumented and tunable.
 
 ## Active iteration
 
-- Branch: `iter/touch-ux-research`
-- Focus: iter 6. Mobile touch UX research note. Concrete material kit
-  (materials extracted from feel_lab.tscn to `resources/materials/`).
-  `.tres` profile type headers corrected to `ControllerProfile`.
+- Branch: `claude/gifted-shannon-YdzrG`
+- Focus: iter 7. Controller kinematics unit tests (P1) + Godot Mobile
+  renderer performance research note (side quest).
   **Items 1–4 are still blocked on human on-device action.**
-  Next: GUT unit tests (P1) or style_test.tscn (P1).
+  Tests are authored and runnable in editor (open test_runner.tscn, F5);
+  cannot be verified without a Godot binary in CI.
 
 ## Queue (ranked, top is next)
 
@@ -64,8 +64,13 @@ The next iteration should pull from the top of this list. Items marked
 
 ### P1 — Supporting
 
-- Add unit tests for the controller (kinematics integration only — no
-  scene-dependent tests yet) using GUT.
+- ~~**Controller kinematics unit tests.**~~ Done (iter 7).
+  `tests/test_controller_kinematics.gd` + `tests/test_runner.tscn`.
+  Standalone (no GUT dependency): open test_runner.tscn, F5, read Output
+  panel. Covers: profile defaults, jump height, gravity band ordering,
+  jump cut, horizontal interpolation, air damping, terminal velocity,
+  coyote/buffer countdown, cross-profile invariants (~40 assertions).
+  GUT migration: rename `_ready` → `before_all`, `_test_*` → `test_*`.
 - Greybox a `scenes/levels/style_test.tscn` with the Stray + a
   representative environment kit chunk so we can run the style fidelity
   check from `ART_PIPELINE.md` the moment we get a real asset.
@@ -91,8 +96,12 @@ The next iteration should pull from the top of this list. Items marked
 
 ### P2 — Opportunistic
 
-- Add an always-on perf HUD visible in a corner when the dev menu is
-  closed (frametime + fps) so on-device sessions don't need the menu open.
+- ~~**Always-on perf HUD.**~~ Done (iter 3). `tools/debug/hud_overlay.gd` —
+  corner FPS + frametime display, toggled from dev menu Debug viz section.
+- ~~**Godot Mobile renderer performance research.**~~ Done (iter 7, side quest).
+  `docs/research/godot_mobile_perf.md` — TBDR architecture, draw call /
+  triangle budgets, ASTC, baked lighting rationale, Jolt profiling tips.
+  Implications logged there; 8 concrete "Implications for Project Void."
 - Research a "ghost trail" prototype (point-based polyline that fades)
   for the Gate 1 attempt-replay overlay. Don't ship; just sketch.
 - Investigate Godot's Compatibility renderer fallback for very-low-end
@@ -117,6 +126,13 @@ These mirror "Open questions waiting on you" in the README.
   feel issues. Those notes drive iteration 2's tuning pass.
 
 ## Recently completed (last 5)
+
+- 2026-05-09 — Iteration 7. Controller kinematics unit tests (P1):
+  `tests/test_controller_kinematics.gd` + `tests/test_runner.tscn`. Standalone,
+  no GUT dependency. ~40 assertions across 10 test groups. Runnable in editor
+  (open test_runner.tscn, F5). Side quest: Godot Mobile renderer performance
+  research note (`docs/research/godot_mobile_perf.md`) — TBDR, budgets, ASTC,
+  lighting, Jolt. INDEX.md updated. P2 perf HUD marked done (was done in iter 3).
 
 - 2026-05-09 — Iteration 6. Mobile touch UX research note
   (`docs/research/mobile_touch_ux.md`): Dadish 3D pain points, floating vs.
