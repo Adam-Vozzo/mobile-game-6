@@ -14,10 +14,12 @@ instrumented and tunable.
 
 ## Active iteration
 
-- Branch: `iter/spawn-sparks-refactor`
-- Focus: iter 13. `player.gd::_spawn_sparks` method-size refactor (primary) — 41 → 15 lines
-  via 3 extracted helpers: `_build_spark_material`, `_build_spark_mesh`, `_fade_and_free_spark`.
-  Juice density research note (side quest). Hard throttle (13 iterations since human direction).
+- Branch: `claude/gifted-shannon-72KFx`
+- Focus: iter 14. `dev_menu_overlay.gd` bug fix + refactor (primary): fixed
+  `_on_save_confirmed` missing `_select_profile` call; extracted 6 layout magic numbers
+  to named constants (`_PANEL_W`, `_SCROLL_H`, `_SECTION_SEP`, `_SL_LABEL_W`,
+  `_SL_TRACK_W/_H`, `_SL_VAL_W`). Christopher Alexander research note (side quest).
+  Hard throttle (14 iterations since human direction).
   **Items 1–4 still blocked on human on-device action.**
 
 ## Queue (ranked, top is next)
@@ -136,6 +138,17 @@ These mirror "Open questions waiting on you" in the README.
   feel issues. Those notes drive iteration 2's tuning pass.
 
 ## Recently completed (last 5)
+
+- 2026-05-09 — Iteration 14. `dev_menu_overlay.gd` bug fix + refactor (primary):
+  Fixed `_on_save_confirmed` — after saving a profile, `OptionButton.selected = n` does
+  NOT emit `item_selected`, so `_current_profile` was never updated; added `_select_profile(name)`
+  at the end of `_on_save_confirmed` so subsequent slider edits affect the saved copy.
+  Extracted 6 UI layout magic numbers to named class constants (`_PANEL_W`, `_SCROLL_H`,
+  `_SECTION_SEP`, `_SL_LABEL_W`, `_SL_TRACK_W`, `_SL_TRACK_H`, `_SL_VAL_W`).
+  Side quest: Christopher Alexander research note (`docs/research/alexander_pattern_language.md`)
+  — parti pris, form synthesis, Pattern Language mapped to Void's level kit, 8 implications
+  including parti-per-beat discipline, ≥ 3 forces per beat, compression–release as primary
+  procession unit, structural (not decorative) landmarks, kit naming by pattern.
 
 - 2026-05-09 — Iteration 13. `player.gd::_spawn_sparks` method-size refactor (primary):
   was 41 lines, now 15. Extracted `_build_spark_material` (10 lines), `_build_spark_mesh`
