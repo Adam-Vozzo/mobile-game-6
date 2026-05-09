@@ -5,10 +5,10 @@ A mobile 3D platformer. Brutalist megastructure inspired by *BLAME!*. Controller
 ## Status
 
 Current gate: **Gate 0 — Feel Lab**
-Last iteration: 2026-05-09 — iter 7: controller kinematics unit tests + Godot mobile perf research
+Last iteration: 2026-05-09 — iter 8: style test scene greybox + brutalism/BLAME! research
 Test device build: not yet — hand-authored scenes pending first Godot 4.6 import; see Open questions
 Performance: not yet measured on Nothing Phone 4(a) Pro
-Throttle level: soft — 7 iterations since last human direction
+Throttle level: soft — 8 iterations since last human direction
 
 If you only read one section, read **Open questions waiting on you** below.
 
@@ -78,6 +78,43 @@ Goal: store-ready build.
 The full iteration log lives here, newest first. Every iteration appends an entry. Skim the dates to find where you last left off.
 
 <!-- ITERATION ENTRIES BELOW — DO NOT REMOVE OLDER ENTRIES -->
+
+### [2026-05-09] — `claude/gifted-shannon-9IpbZ` — iter 8: style test scene greybox + brutalism/BLAME! research
+
+- Primary: **Style test scene greybox (PLAN P1).** `scenes/levels/style_test.tscn` +
+  `scripts/levels/style_test.gd`. A compact display room for art fidelity checks —
+  required by `docs/ART_PIPELINE.md` § Style fidelity check before any real asset is
+  committed. Layout: 20×20 floor (mat_concrete_dark), a 2×0.5×2 platform (mat_concrete)
+  to the right, a 1×4×4 wall panel (mat_concrete_dark) to the left, a 2×8×2 scale pillar
+  in the background (6 m right, 7 m forward). Identical fog (density 0.045) and key light
+  (warm sodium, 1.5 energy) to Feel Lab. Player + camera + touch overlay all wired in —
+  walk the Stray to each piece and answer the 5 fidelity questions in ART_PIPELINE.md.
+  DisplayRoom node group makes it easy to swap in candidate assets.
+- Side quest: **Brutalism / *BLAME!* / megastructure research note** —
+  `docs/research/brutalism_blame.md`. Covers:
+  - *BLAME!* visual grammar: scale ambiguity, darkness as material, fog-as-depth,
+    recursive self-similarity, navigation-by-infrastructure logic.
+  - Colour palette derived from the manga (cold blue-grey concrete, rare sodium warm,
+    biolume cyan in deep layers). Confirms the current `mat_concrete` / `mat_concrete_dark`
+    albedo values are correct.
+  - Brutalist architecture: béton brut honesty, mass over surface, expressed structure,
+    geometric repetition with subtle variation.
+  - Megastructure hierarchy: mega-column → floor slab → service run → habitation volume
+    — maps directly to the compression/release procession pattern in LEVEL_DESIGN.md.
+  - 10 concrete implications for Project Void (cold palette, darkness as architecture,
+    Stray red as sole warm anchor, multi-scale kit, expressed structure, service-run
+    claustrophobia, column-array depth shots, "failed program" props, no skybox, vertical
+    axis primary).
+  - INDEX.md updated; "Brutalism / BLAME! / megastructure" section populated.
+- Throttle note: 8 iterations since last human direction (soft throttle). Both items
+  are non-destructive and produce infrastructure for the next stage (style checking,
+  level design) rather than new feature surfaces.
+- Perf: no runtime change this iteration.
+- Bugs fixed: none.
+- New dev-menu controls: none.
+- Assets acquired: none.
+- Research added: `docs/research/brutalism_blame.md`; INDEX.md updated.
+- Needs human attention: see "Open questions waiting on you."
 
 ### [2026-05-09] — `claude/gifted-shannon-YdzrG` — iter 7: controller kinematics unit tests + mobile perf research
 

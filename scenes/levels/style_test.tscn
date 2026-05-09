@@ -1,0 +1,111 @@
+[gd_scene load_steps=15 format=3]
+
+[ext_resource type="Script" path="res://scripts/levels/style_test.gd" id="1_stest"]
+[ext_resource type="PackedScene" path="res://scenes/player/player.tscn" id="2_player"]
+[ext_resource type="PackedScene" path="res://scenes/player/camera_rig.tscn" id="3_camRig"]
+[ext_resource type="PackedScene" path="res://scenes/ui/touch_overlay.tscn" id="4_touch"]
+[ext_resource type="Material" path="res://resources/materials/mat_concrete.tres" id="5_matConc"]
+[ext_resource type="Material" path="res://resources/materials/mat_concrete_dark.tres" id="6_matConcDark"]
+
+[sub_resource type="Environment" id="Env_StyleTest"]
+background_mode = 1
+background_color = Color(0.04, 0.04, 0.05, 1)
+ambient_light_source = 2
+ambient_light_color = Color(0.18, 0.19, 0.22, 1)
+ambient_light_energy = 0.4
+tonemap_mode = 2
+fog_enabled = true
+fog_light_color = Color(0.07, 0.075, 0.09, 1)
+fog_light_energy = 1.0
+fog_density = 0.045
+fog_aerial_perspective = 0.5
+fog_sky_affect = 0.0
+
+[sub_resource type="BoxMesh" id="Mesh_Floor"]
+material = ExtResource("6_matConcDark")
+size = Vector3(20, 1, 20)
+
+[sub_resource type="BoxShape3D" id="Shape_Floor"]
+size = Vector3(20, 1, 20)
+
+[sub_resource type="BoxMesh" id="Mesh_Platform"]
+material = ExtResource("5_matConc")
+size = Vector3(2, 0.5, 2)
+
+[sub_resource type="BoxShape3D" id="Shape_Platform"]
+size = Vector3(2, 0.5, 2)
+
+[sub_resource type="BoxMesh" id="Mesh_WallPanel"]
+material = ExtResource("6_matConcDark")
+size = Vector3(1, 4, 4)
+
+[sub_resource type="BoxShape3D" id="Shape_WallPanel"]
+size = Vector3(1, 4, 4)
+
+[sub_resource type="BoxMesh" id="Mesh_ScalePillar"]
+material = ExtResource("6_matConcDark")
+size = Vector3(2, 8, 2)
+
+[sub_resource type="BoxShape3D" id="Shape_ScalePillar"]
+size = Vector3(2, 8, 2)
+
+[node name="StyleTest" type="Node3D"]
+script = ExtResource("1_stest")
+
+[node name="WorldEnv" type="WorldEnvironment" parent="."]
+environment = SubResource("Env_StyleTest")
+
+[node name="KeyLight" type="DirectionalLight3D" parent="."]
+transform = Transform3D(1, 0, 0, 0, 0.6428, -0.766, 0, 0.766, 0.6428, 0, 20, 0)
+light_color = Color(1, 0.85, 0.55, 1)
+light_energy = 1.5
+shadow_enabled = true
+
+[node name="PlayerSpawn" type="Marker3D" parent="."]
+transform = Transform3D(1, 0, 0, 0, 1, 0, 0, 0, 1, 0, 1, 0)
+
+[node name="Player" parent="." instance=ExtResource("2_player")]
+transform = Transform3D(1, 0, 0, 0, 1, 0, 0, 0, 1, 0, 1, 0)
+
+[node name="CameraRig" parent="." instance=ExtResource("3_camRig")]
+target_path = NodePath("../Player")
+
+[node name="TouchOverlay" parent="." instance=ExtResource("4_touch")]
+
+[node name="DisplayRoom" type="Node3D" parent="."]
+
+[node name="Floor" type="StaticBody3D" parent="DisplayRoom"]
+transform = Transform3D(1, 0, 0, 0, 1, 0, 0, 0, 1, 0, -0.5, 0)
+
+[node name="Mesh" type="MeshInstance3D" parent="DisplayRoom/Floor"]
+mesh = SubResource("Mesh_Floor")
+
+[node name="Collider" type="CollisionShape3D" parent="DisplayRoom/Floor"]
+shape = SubResource("Shape_Floor")
+
+[node name="Platform" type="StaticBody3D" parent="DisplayRoom"]
+transform = Transform3D(1, 0, 0, 0, 1, 0, 0, 0, 1, 4, 0.25, -2)
+
+[node name="Mesh" type="MeshInstance3D" parent="DisplayRoom/Platform"]
+mesh = SubResource("Mesh_Platform")
+
+[node name="Collider" type="CollisionShape3D" parent="DisplayRoom/Platform"]
+shape = SubResource("Shape_Platform")
+
+[node name="WallPanel" type="StaticBody3D" parent="DisplayRoom"]
+transform = Transform3D(1, 0, 0, 0, 1, 0, 0, 0, 1, -4, 2, -2)
+
+[node name="Mesh" type="MeshInstance3D" parent="DisplayRoom/WallPanel"]
+mesh = SubResource("Mesh_WallPanel")
+
+[node name="Collider" type="CollisionShape3D" parent="DisplayRoom/WallPanel"]
+shape = SubResource("Shape_WallPanel")
+
+[node name="ScalePillar" type="StaticBody3D" parent="DisplayRoom"]
+transform = Transform3D(1, 0, 0, 0, 1, 0, 0, 0, 1, 6, 4, -7)
+
+[node name="Mesh" type="MeshInstance3D" parent="DisplayRoom/ScalePillar"]
+mesh = SubResource("Mesh_ScalePillar")
+
+[node name="Collider" type="CollisionShape3D" parent="DisplayRoom/ScalePillar"]
+shape = SubResource("Shape_ScalePillar")

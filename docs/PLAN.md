@@ -14,12 +14,10 @@ instrumented and tunable.
 
 ## Active iteration
 
-- Branch: `claude/gifted-shannon-YdzrG`
-- Focus: iter 7. Controller kinematics unit tests (P1) + Godot Mobile
-  renderer performance research note (side quest).
+- Branch: `claude/gifted-shannon-9IpbZ`
+- Focus: iter 8. Style test scene greybox (P1) + brutalism/BLAME!/megastructure
+  research note (side quest).
   **Items 1–4 are still blocked on human on-device action.**
-  Tests are authored and runnable in editor (open test_runner.tscn, F5);
-  cannot be verified without a Godot binary in CI.
 
 ## Queue (ranked, top is next)
 
@@ -71,9 +69,12 @@ The next iteration should pull from the top of this list. Items marked
   jump cut, horizontal interpolation, air damping, terminal velocity,
   coyote/buffer countdown, cross-profile invariants (~40 assertions).
   GUT migration: rename `_ready` → `before_all`, `_test_*` → `test_*`.
-- Greybox a `scenes/levels/style_test.tscn` with the Stray + a
-  representative environment kit chunk so we can run the style fidelity
-  check from `ART_PIPELINE.md` the moment we get a real asset.
+- ~~**Greybox `scenes/levels/style_test.tscn`.**~~ Done (iter 8).
+  `scenes/levels/style_test.tscn` + `scripts/levels/style_test.gd`.
+  Compact display room: 20×20 floor (mat_concrete_dark), standard platform
+  at (4, 0.25, −2), wall panel at (−4, 2, −2), scale pillar at (6, 4, −7).
+  Identical fog + lighting to Feel Lab. Walk the Stray around to answer the
+  5 ART_PIPELINE.md fidelity questions when a real asset arrives.
 - ~~Research notes: Mario Odyssey / Demon Turf / A Hat in Time / Pseudoregalia~~
   Done (iter 4): `docs/research/character_controllers.md`.
 - ~~**Concrete material kit — materials.**~~ Done (iter 6).
@@ -126,6 +127,14 @@ These mirror "Open questions waiting on you" in the README.
   feel issues. Those notes drive iteration 2's tuning pass.
 
 ## Recently completed (last 5)
+
+- 2026-05-09 — Iteration 8. Style test scene greybox (P1):
+  `scenes/levels/style_test.tscn` + `scripts/levels/style_test.gd` — compact
+  display room with floor, platform sample, wall panel, scale pillar. Same
+  fog/lighting as Feel Lab. Walk the Stray to each piece to answer the 5
+  ART_PIPELINE.md fidelity questions. Side quest: brutalism/BLAME!/megastructure
+  research note (`docs/research/brutalism_blame.md`) — BLAME! visual grammar,
+  brutalist design principles, megastructure hierarchy, 10 implications for Void.
 
 - 2026-05-09 — Iteration 7. Controller kinematics unit tests (P1):
   `tests/test_controller_kinematics.gd` + `tests/test_runner.tscn`. Standalone,
