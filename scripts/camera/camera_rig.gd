@@ -191,3 +191,15 @@ func _on_camera_param_changed(param_name: StringName, value: float) -> void:
 			idle_recenter_speed = value
 		&"occlusion_margin":
 			occlusion_margin = value
+		&"aim_height":
+			aim_height = value
+		&"lookahead_lerp":
+			lookahead_lerp = value
+		&"lookahead_min_speed":
+			lookahead_min_speed = value
+		&"pitch_min_degrees":
+			pitch_min_degrees = value
+		&"pitch_max_degrees":
+			pitch_max_degrees = value
+		&"recenter_min_speed":
+			recenter_min_speed = value

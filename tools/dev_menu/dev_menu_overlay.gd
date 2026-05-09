@@ -168,6 +168,14 @@ func _build_camera_section(vbox: VBoxContainer) -> void:
 	_make_cam_slider(vbox, "Rctr speed",      &"idle_recenter_speed",0.1,   10.0,  0.1,   1.5)
 	_make_cam_slider(vbox, "Occl. margin",    &"occlusion_margin",   0.1,    1.0,  0.05,  0.3)
 
+	vbox.add_child(_make_label("Camera — Tuning", 14, true))
+	_make_cam_slider(vbox, "Aim height",      &"aim_height",          0.0,   3.0,  0.05,  0.6)
+	_make_cam_slider(vbox, "Look lerp",       &"lookahead_lerp",      0.5,  20.0,  0.5,   4.0)
+	_make_cam_slider(vbox, "Look min spd",    &"lookahead_min_speed", 0.0,   5.0,  0.05,  0.15)
+	_make_cam_slider(vbox, "Pitch min deg",   &"pitch_min_degrees",  -89.0,  0.0,  1.0,  -55.0)
+	_make_cam_slider(vbox, "Pitch max deg",   &"pitch_max_degrees",   0.0,  89.0,  1.0,   55.0)
+	_make_cam_slider(vbox, "Rctr min spd",    &"recenter_min_speed",  0.0,  10.0,  0.1,   0.5)
+
 
 func _build_level_section(vbox: VBoxContainer) -> void:
 	vbox.add_child(_make_sep())

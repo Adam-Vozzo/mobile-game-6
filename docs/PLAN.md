@@ -14,13 +14,15 @@ instrumented and tunable.
 
 ## Active iteration
 
-- Branch: `claude/gifted-shannon-b8hWF`
-- Focus: iter 15. `player.gd` respawn timer bug fix + `max_floor_angle_degrees` dev menu
-  exposure (primary): `respawn()` now zeroes `_buffer_timer`/`_coyote_timer` before
-  rebooting (frozen timers caused unintended jump on first post-reboot frame); `floor_max_angle`
-  moved to `_physics_process` so the new "Controller — Slope / Max floor°" slider works live.
-  Slope param test group added to kinematics tests (side quest).
-  Hard throttle (15 iterations since human direction).
+- Branch: `claude/gifted-shannon-6ZYeJ`
+- Focus: iter 16. Camera dev-menu tunables (primary): 6 `@export` params previously
+  inspector-only (`aim_height`, `lookahead_lerp`, `lookahead_min_speed`,
+  `pitch_min/max_degrees`, `recenter_min_speed`) wired to new "Camera — Tuning"
+  sub-section sliders; `_on_camera_param_changed` gains 6 match arms.
+  `player_debug_draw.gd` viz-active caching (side quest): `_viz_active` bool updated
+  via signal instead of 4 dict lookups/frame; `_process` skips group search when all
+  overlays off.
+  Hard throttle (16 iterations since human direction).
   **Items 1–4 still blocked on human on-device action.**
 
 ## Queue (ranked, top is next)
@@ -139,6 +141,14 @@ These mirror "Open questions waiting on you" in the README.
   feel issues. Those notes drive iteration 2's tuning pass.
 
 ## Recently completed (last 5)
+
+- 2026-05-09 — Iteration 16. Camera dev-menu tunables + debug draw perf (primary/side):
+  6 camera `@export` params wired to new "Camera — Tuning" dev-menu sub-section
+  (`aim_height`, `lookahead_lerp`, `lookahead_min_speed`, `pitch_min/max_degrees`,
+  `recenter_min_speed`); `camera_rig.gd::_on_camera_param_changed` gains 6 match arms.
+  `player_debug_draw.gd`: `_viz_active: bool` cached via `DevMenu.debug_viz_changed`
+  signal; `_process` now returns early after `clear_surfaces()` when all overlays off,
+  skipping the scene-tree group search. Hard throttle (16 iterations).
 
 - 2026-05-09 — Iteration 15. `player.gd` respawn timer bug fix + slope tunable (primary):
   `respawn()` zeroes `_buffer_timer` and `_coyote_timer` before the reboot sequence —
@@ -306,6 +316,14 @@ These mirror "Open questions waiting on you" in the README.
 
 ## Refactor backlog
 
+- `perf_budget.gd::active_particles` is never updated — always 0. The `over_budget()`
+  check includes `active_particles > ACTIVE_PARTICLES_BUDGET` which is always false.
+  Current spark system uses `ImmediateMesh` (not `GPUParticles3D`) so there's no
+  built-in counter. Fix options: (a) expose a `register_particles(n)` /
+  `unregister_particles(n)` public API and call from any particle-emitting code, or
+  (b) enumerate `GPUParticles3D` nodes in-scene and sum `amount`. Either requires a
+  concrete particle system to test against — defer to Gate 1 when `GPUParticles3D`
+  nodes are added.
 - Momentum profile speed ramp: add `speed_ramp_rate` + `ramp_max_speed`
   to `ControllerProfile`, add `_ramp_speed: float` to `player.gd`. Hold
   until after first on-device feel of current Momentum approximation.
