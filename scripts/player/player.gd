@@ -231,23 +231,30 @@ func _run_reboot_effect() -> void:
 func _spawn_sparks(origin: Vector3) -> void:
 	if not DevMenu.is_juice_on(&"particles"):
 		return
+	var rng := RandomNumberGenerator.new()
+	rng.randomize()
+	var mat := _build_spark_material()
+	var mi := MeshInstance3D.new()
+	mi.mesh = _build_spark_mesh(rng)
+	mi.material_override = mat
+	mi.cast_shadow = GeometryInstance3D.SHADOW_CASTING_SETTING_OFF
+	get_tree().root.add_child(mi)
+	mi.global_position = origin
+	_fade_and_free_spark(mi, mat)
 
-	var mesh := ImmediateMesh.new()
+
+func _build_spark_material() -> StandardMaterial3D:
 	var mat := StandardMaterial3D.new()
 	mat.shading_mode = BaseMaterial3D.SHADING_MODE_UNSHADED
 	mat.albedo_color = Color(1.0, 0.78, 0.12, 1.0)
 	mat.transparency = BaseMaterial3D.TRANSPARENCY_ALPHA
 	mat.no_depth_test = true
 	mat.cull_mode = BaseMaterial3D.CULL_DISABLED
+	return mat
 
-	var mi := MeshInstance3D.new()
-	mi.mesh = mesh
-	mi.material_override = mat
-	mi.cast_shadow = GeometryInstance3D.SHADOW_CASTING_SETTING_OFF
 
-	var rng := RandomNumberGenerator.new()
-	rng.randomize()
-
+func _build_spark_mesh(rng: RandomNumberGenerator) -> ImmediateMesh:
+	var mesh := ImmediateMesh.new()
 	mesh.surface_begin(Mesh.PRIMITIVE_LINES)
 	for _i in 12:
 		var dir := Vector3(
@@ -259,10 +266,10 @@ func _spawn_sparks(origin: Vector3) -> void:
 		mesh.surface_add_vertex(dir * 0.1)
 		mesh.surface_add_vertex(dir * (0.1 + length))
 	mesh.surface_end()
+	return mesh
 
-	get_tree().root.add_child(mi)
-	mi.global_position = origin
 
+func _fade_and_free_spark(mi: MeshInstance3D, mat: StandardMaterial3D) -> void:
 	var tween := mi.create_tween()
 	tween.tween_interval(0.07)
 	tween.tween_property(mat, "albedo_color:a", 0.0, 0.38)

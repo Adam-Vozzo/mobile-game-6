@@ -14,10 +14,10 @@ instrumented and tunable.
 
 ## Active iteration
 
-- Branch: `claude/gifted-shannon-j5hhr`
-- Focus: iter 12. `touch_overlay.gd` method-size refactor (primary) — `_handle_repo_input`
-  62 → 8 lines, `_draw_reposition` 56 → 9 lines, 11 new focused helpers. `DRAW_CALL_BUDGET`
-  corrected 200 → 50 (side quest). Hard throttle (12 iterations since human direction).
+- Branch: `iter/spawn-sparks-refactor`
+- Focus: iter 13. `player.gd::_spawn_sparks` method-size refactor (primary) — 41 → 15 lines
+  via 3 extracted helpers: `_build_spark_material`, `_build_spark_mesh`, `_fade_and_free_spark`.
+  Juice density research note (side quest). Hard throttle (13 iterations since human direction).
   **Items 1–4 still blocked on human on-device action.**
 
 ## Queue (ranked, top is next)
@@ -136,6 +136,14 @@ These mirror "Open questions waiting on you" in the README.
   feel issues. Those notes drive iteration 2's tuning pass.
 
 ## Recently completed (last 5)
+
+- 2026-05-09 — Iteration 13. `player.gd::_spawn_sparks` method-size refactor (primary):
+  was 41 lines, now 15. Extracted `_build_spark_material` (10 lines), `_build_spark_mesh`
+  (16 lines), `_fade_and_free_spark` (7 lines). No behaviour change. `_run_reboot_effect`
+  (45 lines) remains in the backlog as "leave as-is" per sequential-await constraint.
+  Side quest: juice density research note (`docs/research/juice_density.md`) — Astro's
+  Playroom "layered receipt" model, SMB sparse-juice contrast, mobile haptics gap, draw-call
+  budget per juice type, Gate 1 priority ranking (landing squash first).
 
 - 2026-05-09 — Iteration 12. `touch_overlay.gd` method-size refactor (primary):
   `_handle_repo_input` (62 lines) replaced with lean dispatcher + `_parse_repo_event`,
