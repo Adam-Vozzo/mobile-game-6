@@ -39,7 +39,7 @@ Status legend:
 | Footstep dust | idea | mobile-budget particle (4 quads) on grounded run |
 | Jump puff | idea | radial burst at takeoff, larger if jump held to apex |
 | Land impact | idea | scaled by fall velocity |
-| Reboot sparks | stub | placeholder is a red flash; replace per CLAUDE.md |
+| Reboot sparks | prototype | 12 ImmediateMesh lines at death position, warm orange-yellow, fade 0.45 s; ~14 verts; gated behind `particles` toggle |
 | Wall slide trail | idea | only if wall mechanic survives Snappy tuning |
 
 ## Motion trails — toggle key `motion_trails`
@@ -56,6 +56,7 @@ Status legend:
 | Pre-jump anticipation | idea | slight Y squish in the buffer window |
 | Apex hold | idea | brief stretch at jump apex |
 | Land squish | idea | scaled by impact velocity, recovers on a curve |
+| Death squish | prototype | scale(1.25, 0.25, 1.25) crush on death; scale-up with TRANS_BACK overshoot on spawn; gated behind `squash_stretch` toggle |
 
 ## Sound layers — toggle key `sound_layers`
 

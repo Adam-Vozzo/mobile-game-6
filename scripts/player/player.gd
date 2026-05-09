@@ -173,31 +173,89 @@ func _on_dev_profile_changed(new_profile: Resource) -> void:
 
 
 func _run_reboot_effect() -> void:
-	# Placeholder reboot: red flash → dark → fade-in. Final spec
-	# (sparks → dark frame → power-on hum → upright) is queued in PLAN.md.
 	var dur := profile.reboot_duration
+	var death_centre := global_position + Vector3(0.0, 0.45, 0.0)
 
-	# 1) Red flash at death position (no teleport yet)
-	_set_emission(Color(1.0, 0.15, 0.15), 4.0)
-	await get_tree().create_timer(dur * 0.1).timeout
+	# 1. Death beat: sparks burst + squish crush
+	_spawn_sparks(death_centre)
+	_set_emission(Color(1.0, 0.18, 0.1), 5.0)
+	if _visual and DevMenu.is_juice_on(&"squash_stretch"):
+		var squish := create_tween()
+		squish.tween_property(_visual, "scale",
+				Vector3(1.25, 0.25, 1.25), dur * 0.08)
+	await get_tree().create_timer(dur * 0.12).timeout
 
-	# 2) Dark frame: hide visual, teleport to spawn
+	# 2. Dark frame: hide visual, reset scale, teleport
 	if _visual:
 		_visual.visible = false
+		_visual.scale = Vector3.ONE
+	_clear_emission()
 	global_transform = _spawn_transform
 	velocity = Vector3.ZERO
-	await get_tree().create_timer(dur * 0.4).timeout
+	await get_tree().create_timer(dur * 0.35).timeout
 
-	# 3) Power-on: visible again, warm flash
+	# 3. Power-on: scale up from near-zero with overshoot (upright beat)
 	if _visual:
 		_visual.visible = true
-	_set_emission(Color(1.0, 0.5, 0.2), 2.0)
-	await get_tree().create_timer(dur * 0.3).timeout
+		if DevMenu.is_juice_on(&"squash_stretch"):
+			_visual.scale = Vector3(0.05, 0.05, 0.05)
+			var grow := create_tween()
+			grow.set_ease(Tween.EASE_OUT).set_trans(Tween.TRANS_BACK)
+			grow.tween_property(_visual, "scale", Vector3.ONE, dur * 0.28)
+		else:
+			_visual.scale = Vector3.ONE
+	_set_emission(Color(1.0, 0.55, 0.15), 2.5)
+	await get_tree().create_timer(dur * 0.35).timeout
 
-	# 4) Settle: clear emission override, resume
+	# 4. Settle: clear glow, confirm scale, resume
+	if _visual:
+		_visual.scale = Vector3.ONE
 	_clear_emission()
-	await get_tree().create_timer(dur * 0.2).timeout
+	await get_tree().create_timer(dur * 0.18).timeout
 	_is_rebooting = false
+
+
+# Spawns temporary ImmediateMesh spark lines at `origin` in world space.
+# Gated behind the "particles" juice toggle; frees itself after ~0.5 s.
+func _spawn_sparks(origin: Vector3) -> void:
+	if not DevMenu.is_juice_on(&"particles"):
+		return
+
+	var mesh := ImmediateMesh.new()
+	var mat := StandardMaterial3D.new()
+	mat.shading_mode = BaseMaterial3D.SHADING_MODE_UNSHADED
+	mat.albedo_color = Color(1.0, 0.78, 0.12, 1.0)
+	mat.transparency = BaseMaterial3D.TRANSPARENCY_ALPHA
+	mat.no_depth_test = true
+	mat.cull_mode = BaseMaterial3D.CULL_DISABLED
+
+	var mi := MeshInstance3D.new()
+	mi.mesh = mesh
+	mi.material_override = mat
+	mi.cast_shadow = GeometryInstance3D.SHADOW_CASTING_SETTING_OFF
+
+	var rng := RandomNumberGenerator.new()
+	rng.randomize()
+
+	mesh.surface_begin(Mesh.PRIMITIVE_LINES)
+	for _i in 12:
+		var dir := Vector3(
+			rng.randf_range(-1.0, 1.0),
+			rng.randf_range(0.15, 1.6),
+			rng.randf_range(-1.0, 1.0)
+		).normalized()
+		var length := rng.randf_range(0.18, 0.65)
+		mesh.surface_add_vertex(dir * 0.1)
+		mesh.surface_add_vertex(dir * (0.1 + length))
+	mesh.surface_end()
+
+	get_tree().root.add_child(mi)
+	mi.global_position = origin
+
+	var tween := mi.create_tween()
+	tween.tween_interval(0.07)
+	tween.tween_property(mat, "albedo_color:a", 0.0, 0.38)
+	tween.tween_callback(mi.queue_free)
 
 
 func _set_emission(color: Color, energy: float) -> void:
