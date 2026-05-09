@@ -5,32 +5,29 @@ class_name CameraRig
 ## right-drag override (consumed from TouchInput), and auto-recenter
 ## behind movement direction after a short idle window.
 ##
-## CLAUDE.md flagged camera fiddling on mobile as the single biggest
-## Dadish-3D pain point — the recenter behaviour is the answer to that.
-## SpringArm3D collision avoidance is queued in PLAN.md (P0).
+## Collision avoidance: a SpringArm3D child casts a sphere from the rig
+## origin toward the camera position each frame. get_hit_length() returns
+## the shortest safe distance, which _current_distance lerps toward so
+## transitions are smooth rather than jarring. Camera3D is then placed
+## manually at that distance and told to look_at the aim point.
+##
+## SpringArm3D rotation formula (see DECISIONS.md):
+##   rotation = Vector3(|pitch|, yaw + PI, 0)
+##   → local -Z points from rig_pos toward camera world-space position.
 
 @export var target_path: NodePath = ^"../Player"
 
 @export_category("Geometry")
-## Distance from the player along the back-and-up vector.
 @export_range(2.0, 15.0, 0.1) var distance: float = 6.0
-## Camera tilt below horizontal, degrees. Positive = looks down.
 @export_range(0.0, 80.0, 0.5) var pitch_degrees: float = 22.0
-## Vertical offset of the camera's aim point above the player's feet.
 @export_range(0.0, 3.0, 0.05) var aim_height: float = 0.6
 
 @export_category("Lookahead")
-## How far ahead of the player (in the horizontal velocity direction)
-## the rig pulls before settling.
 @export_range(0.0, 5.0, 0.05) var lookahead_distance: float = 1.2
-## Lerp speed toward the lookahead target. Higher = snappier.
 @export_range(0.5, 20.0, 0.1) var lookahead_lerp: float = 4.0
-## Below this horizontal speed (m/s) lookahead decays to zero.
 @export_range(0.0, 5.0, 0.05) var lookahead_min_speed: float = 0.15
 
 @export_category("Fall pull")
-## Multiplier applied to the player's negative Y velocity to drop the
-## camera target while falling. Helps the player see what's below.
 @export_range(0.0, 1.0, 0.01) var vertical_pull: float = 0.18
 
 @export_category("Manual override")
@@ -45,19 +42,21 @@ class_name CameraRig
 @export_range(0.0, 10.0, 0.1) var recenter_min_speed: float = 0.5
 
 var _yaw: float = 0.0
-var _pitch: float = 0.0  # radians, negative = looking down
+var _pitch: float = 0.0
 var _lookahead: Vector3 = Vector3.ZERO
 var _last_drag_time: float = -1000.0
 var _target: Node3D
+var _current_distance: float = 0.0
 
+@onready var _spring_arm: SpringArm3D = $SpringArm3D
 @onready var _camera: Camera3D = $Camera
 
 
 func _ready() -> void:
 	_pitch = -deg_to_rad(pitch_degrees)
 	_target = get_node_or_null(target_path) as Node3D
-	# Listen to dev-menu camera tweaks for this iteration; full implementation
-	# is the camera params group in PLAN.md.
+	_current_distance = distance
+	_spring_arm.spring_length = distance
 	if has_node("/root/DevMenu"):
 		DevMenu.camera_param_changed.connect(_on_camera_param_changed)
 
@@ -67,7 +66,6 @@ func _process(delta: float) -> void:
 		return
 	var now := Time.get_ticks_msec() / 1000.0
 
-	# --- Manual drag override ---
 	var drag := TouchInput.consume_camera_drag_delta()
 	if drag.length_squared() > 0.0:
 		_yaw -= drag.x * yaw_drag_sens
@@ -76,47 +74,45 @@ func _process(delta: float) -> void:
 			deg_to_rad(absf(pitch_max_degrees)))
 		_last_drag_time = now
 
-	# --- Velocity sample ---
 	var vel := _get_target_velocity()
 	var horiz := Vector3(vel.x, 0.0, vel.z)
 	var horiz_speed := horiz.length()
 
-	# --- Auto-recenter behind movement direction after idle ---
 	if horiz_speed > recenter_min_speed and now - _last_drag_time > idle_recenter_delay:
 		var desired_yaw := atan2(horiz.x, horiz.z)
-		var diff := wrapf(desired_yaw - _yaw, -PI, PI)
-		_yaw += diff * minf(1.0, idle_recenter_speed * delta)
+		_yaw += wrapf(desired_yaw - _yaw, -PI, PI) * minf(1.0, idle_recenter_speed * delta)
 
-	# --- Lookahead lerp ---
 	var desired_lookahead := Vector3.ZERO
 	if horiz_speed > lookahead_min_speed:
 		desired_lookahead = horiz.normalized() * lookahead_distance
-	_lookahead = _lookahead.lerp(desired_lookahead,
-		clampf(lookahead_lerp * delta, 0.0, 1.0))
+	_lookahead = _lookahead.lerp(desired_lookahead, clampf(lookahead_lerp * delta, 0.0, 1.0))
 
-	# --- Vertical pull when falling ---
-	var vertical_offset := 0.0
-	if vel.y < 0.0:
-		vertical_offset = vel.y * vertical_pull * 0.05
-
-	# --- Place rig at player + lookahead + vertical offset ---
+	var vertical_offset := vel.y * vertical_pull * 0.05 if vel.y < 0.0 else 0.0
 	var target_pos := _target.global_position
 	var rig_pos := target_pos + _lookahead + Vector3(0.0, vertical_offset, 0.0)
 	global_position = rig_pos
 
-	# --- Place camera behind-and-above per yaw + pitch ---
-	# Local offset assumes pitch is negative for looking down. Camera lives
-	# at distance * (back, up) where:
-	#   back = cos(|pitch|), up = sin(|pitch|)
 	var p := absf(_pitch)
-	var local_offset := Vector3(0.0, sin(p) * distance, cos(p) * distance)
-	var yaw_basis := Basis(Vector3.UP, _yaw)
-	_camera.global_position = rig_pos + yaw_basis * local_offset
+	_tick_spring_arm(p, delta)
+	var cam_dir := Basis(Vector3.UP, _yaw) * Vector3(0.0, sin(p), cos(p))
+	_camera.global_position = rig_pos + cam_dir * _current_distance
 	_camera.look_at(target_pos + Vector3(0.0, aim_height, 0.0), Vector3.UP)
 
-	# --- Publish yaw to player so input is camera-relative ---
 	if _target.has_method("set_camera_yaw"):
 		_target.set_camera_yaw(_yaw)
+
+
+## Aims SpringArm3D toward the camera position, reads the collision-adjusted
+## length (1-frame lag acceptable), and lerps _current_distance toward it.
+func _tick_spring_arm(p: float, delta: float) -> void:
+	# Euler YXZ: Ry(yaw + PI) · Rx(|pitch|) maps local -Z to camera direction.
+	_spring_arm.spring_length = distance
+	_spring_arm.rotation = Vector3(p, _yaw + PI, 0.0)
+	var hit_len := _spring_arm.get_hit_length()
+	var target_dist := distance if hit_len < 0.001 else hit_len
+	var lerp_speed := 18.0 if target_dist < _current_distance else 5.0
+	_current_distance = lerpf(_current_distance, target_dist,
+		clampf(lerp_speed * delta, 0.0, 1.0))
 
 
 func _get_target_velocity() -> Vector3:
@@ -129,6 +125,7 @@ func _on_camera_param_changed(param_name: StringName, value: float) -> void:
 	match param_name:
 		&"distance":
 			distance = value
+			_spring_arm.spring_length = value
 		&"pitch_degrees":
 			pitch_degrees = value
 			_pitch = -deg_to_rad(pitch_degrees)

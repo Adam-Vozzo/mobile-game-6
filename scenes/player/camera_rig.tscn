@@ -1,10 +1,18 @@
-[gd_scene load_steps=2 format=3]
+[gd_scene load_steps=4 format=3]
 
 [ext_resource type="Script" path="res://scripts/camera/camera_rig.gd" id="1_rig"]
+
+[sub_resource type="SphereShape3D" id="Shape_CamSphere"]
+radius = 0.2
 
 [node name="CameraRig" type="Node3D"]
 script = ExtResource("1_rig")
 target_path = NodePath("../Player")
+
+[node name="SpringArm3D" type="SpringArm3D" parent="."]
+collision_mask = 1
+spring_length = 6.0
+shape = SubResource("Shape_CamSphere")
 
 [node name="Camera" type="Camera3D" parent="."]
 fov = 60.0
