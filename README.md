@@ -5,10 +5,10 @@ A mobile 3D platformer. Brutalist megastructure inspired by *BLAME!*. Controller
 ## Status
 
 Current gate: **Gate 0 — Feel Lab**
-Last iteration: 2026-05-09 — iter 15: respawn timer bug fix + slope tunable
+Last iteration: 2026-05-09 — iter 16: camera dev-menu tunables + debug draw perf
 Test device build: not yet — hand-authored scenes pending first Godot 4.6 import; see Open questions
 Performance: not yet measured on Nothing Phone 4(a) Pro
-Throttle level: **HARD — 15 iterations since last human direction. No new features. See Open questions.**
+Throttle level: **HARD — 16 iterations since last human direction. No new features. See Open questions.**
 
 If you only read one section, read **Open questions waiting on you** below.
 
@@ -16,8 +16,8 @@ If you only read one section, read **Open questions waiting on you** below.
 
 Things Claude can't decide alone, or where it's stalled and needs direction. Each is blocking some piece of forward progress.
 
-> **⚠ HARD THROTTLE — 15 iterations since last human direction.** Claude has been
-> building infrastructure (tests, research, refactors, debug tooling) for 14 iterations
+> **⚠ HARD THROTTLE — 16 iterations since last human direction.** Claude has been
+> building infrastructure (tests, research, refactors, debug tooling) for 15 iterations
 > without a human feel verdict or direction signal. All P0 items are blocked on the
 > first on-device run. The next iteration will continue hardening work only.
 >
@@ -94,6 +94,45 @@ Goal: store-ready build.
 The full iteration log lives here, newest first. Every iteration appends an entry. Skim the dates to find where you last left off.
 
 <!-- ITERATION ENTRIES BELOW — DO NOT REMOVE OLDER ENTRIES -->
+
+### [2026-05-09] — `claude/gifted-shannon-6ZYeJ` — iter 16: camera dev-menu tunables + debug draw perf
+
+- **Throttle: HARD (16 iterations since last human direction).** Hardening only.
+- **Primary: Camera dev-menu extended with 6 previously inspector-only tunables.**
+  Before this iteration, `aim_height`, `lookahead_lerp`, `lookahead_min_speed`,
+  `pitch_min_degrees`, `pitch_max_degrees`, and `recenter_min_speed` were only
+  adjustable via the Godot inspector — useless during a device tuning session where
+  the editor isn't open. Added a "Camera — Tuning" sub-section to the dev menu with
+  live sliders for all six. `camera_rig.gd::_on_camera_param_changed` gained 6 match
+  arms to apply them. All defaults match the existing `@export_range` defaults so
+  the behaviour is unchanged at startup; sliders become live the moment they're moved.
+  - Aim height (0–3 m, step 0.05, default 0.6) — vertical offset of the camera look-at
+    point above the player's feet; affects how much ceiling headroom the framing reveals.
+  - Look lerp (0.5–20, step 0.5, default 4.0) — how quickly the lookahead vector
+    catches up to the player's horizontal velocity direction. Lower = smoother/laggy;
+    higher = snappy/jerky.
+  - Look min spd (0–5 m/s, step 0.05, default 0.15) — velocity below which lookahead
+    decays to zero. Prevents the camera drifting when the player is nearly stopped.
+  - Pitch min/max deg (range −89–0 / 0–89, step 1, defaults −55/55) — clamps how far
+    up and down the player can drag-tilt the camera in manual override.
+  - Rctr min spd (0–10 m/s, step 0.1, default 0.5) — minimum player horizontal speed
+    required for the auto-recenter to kick in (prevents recenter while standing still).
+- **Side quest: `player_debug_draw.gd` per-frame overhead reduction.** Before this
+  change, `_process` called `_find_player()` (a scene-tree group search) and ran
+  four `DevMenu.is_debug_viz_on()` dictionary lookups every physics frame even when
+  all four overlays were disabled (the default state). Added `_viz_active: bool`
+  cached via `DevMenu.debug_viz_changed` signal (re-evaluated only when a checkbox
+  changes, not every frame). Restructured `_process`: now returns early after
+  `clear_surfaces()` if `_viz_active` is false, skipping the group search entirely.
+  When all overlays are off (the typical in-development state) the per-frame cost
+  drops to one bool check + one `clear_surfaces()` on an already-empty mesh.
+- Perf: no runtime cost increase. On-device baseline still pending first human build.
+- Bugs fixed: none new.
+- New dev-menu controls: "Camera — Tuning" subsection — Aim height, Look lerp,
+  Look min spd, Pitch min deg, Pitch max deg, Rctr min spd (6 new sliders).
+- Assets acquired: none.
+- Research added: none.
+- Needs human attention: **see "Open questions waiting on you" — hard throttle active (16 iterations).**
 
 ### [2026-05-09] — `claude/gifted-shannon-b8hWF` — iter 15: respawn timer bug fix + slope tunable
 
