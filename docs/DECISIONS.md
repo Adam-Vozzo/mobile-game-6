@@ -96,3 +96,26 @@ Alternatives considered:
 Consequences: faster iteration loop; PRs serve as traceability artefacts,
 not gates. If we ever want a stricter mode, the change is one line in
 CLAUDE.md.
+
+## 2026-05-09 — Camera occlusion via PhysicsDirectSpaceState3D raycast, not SpringArm3D
+
+Status: accepted
+Context: PLAN.md P0 #2 called for "wrapping the camera in a SpringArm3D." The
+goal is to pull the camera forward when world geometry sits between the player
+and the desired camera position (wall clip, tight corridors).
+Decision: implemented occlusion as a per-frame `intersect_ray` call in
+`camera_rig.gd::_occlude()` rather than restructuring the scene with a
+SpringArm3D node.
+Alternatives considered:
+- SpringArm3D child node: idiomatic Godot pattern, but requires restructuring
+  the existing yaw/pitch maths (SpringArm3D uses its local transform for the
+  arm direction, which conflicts with our procedural placement). Also adds a
+  .tscn change that can't be runtime-verified without a Godot binary present.
+- ShapeCast3D node: capsule cast gives better clearance than a point ray, but
+  the added complexity (orientation, shape sizing) isn't justified for a Feel
+  Lab with no tight geometry yet. Can revisit if point-ray occluder poke-through
+  becomes an issue in Gate 1 geometry.
+Consequences: `_occlude(aim, desired)` is a pure script function, easy to
+unit-test. Tunable via `occlusion_margin` and `occlusion_min_distance` exports,
+both now in the Camera section of the dev menu. Player RID is excluded from the
+query so the capsule doesn't occlude its own camera.

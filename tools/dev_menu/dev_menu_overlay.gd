@@ -2,15 +2,17 @@ extends CanvasLayer
 ## Dev menu overlay UI. Built programmatically — easier to maintain than
 ## a hand-authored .tscn and there's no theming work to lose.
 ##
-## CLAUDE.md (Gate 0 minimum): controller profile dropdown, 3–4 live
-## sliders, juice toggle stubs. Subsequent iterations add camera params,
-## debug-viz toggles, time-scale, free-cam, save/load profile snapshots —
-## see PLAN.md.
+## CLAUDE.md (Gate 0 minimum): controller profile dropdown, live sliders,
+## juice toggle stubs, camera params group. All present.
 
 const SNAPPY_PROFILE := preload("res://resources/profiles/snappy.tres")
+const FLOATY_PROFILE := preload("res://resources/profiles/floaty.tres")
+const MOMENTUM_PROFILE := preload("res://resources/profiles/momentum.tres")
 
 var _profiles: Dictionary = {
 	"Snappy": SNAPPY_PROFILE,
+	"Floaty": FLOATY_PROFILE,
+	"Momentum": MOMENTUM_PROFILE,
 }
 
 var _current_profile: Resource
@@ -35,26 +37,42 @@ func _build_ui() -> void:
 	var panel := PanelContainer.new()
 	panel.set_anchors_and_offsets_preset(Control.PRESET_TOP_LEFT)
 	panel.position = Vector2(20, 20)
-	panel.custom_minimum_size = Vector2(380, 0)
+	panel.custom_minimum_size = Vector2(400, 0)
 	panel.mouse_filter = Control.MOUSE_FILTER_STOP
 	add_child(panel)
 
+	var scroll := ScrollContainer.new()
+	scroll.custom_minimum_size = Vector2(400, 600)
+	scroll.horizontal_scroll_mode = ScrollContainer.SCROLL_MODE_DISABLED
+	panel.add_child(scroll)
+
 	var vbox := VBoxContainer.new()
 	vbox.add_theme_constant_override("separation", 6)
-	panel.add_child(vbox)
+	vbox.size_flags_horizontal = Control.SIZE_EXPAND_FILL
+	scroll.add_child(vbox)
 
 	vbox.add_child(_make_label("Dev Menu", 20, true))
+	_build_profile_section(vbox)
+	_build_controller_section(vbox)
+	_build_camera_section(vbox)
+	_build_juice_section(vbox)
+	_build_perf_section(vbox)
 
-	# --- Profile ---
+
+# ---- section builders -------------------------------------------------------
+
+func _build_profile_section(vbox: VBoxContainer) -> void:
+	vbox.add_child(_make_sep())
 	vbox.add_child(_make_label("Profile", 14, true))
-	var dropdown := OptionButton.new()
+	_profile_dropdown = OptionButton.new()
 	for profile_name in _profiles:
-		dropdown.add_item(profile_name)
-	vbox.add_child(dropdown)
-	_profile_dropdown = dropdown
-	dropdown.item_selected.connect(_on_profile_selected)
+		_profile_dropdown.add_item(profile_name)
+	vbox.add_child(_profile_dropdown)
+	_profile_dropdown.item_selected.connect(_on_profile_selected)
 
-	# --- Controller sliders ---
+
+func _build_controller_section(vbox: VBoxContainer) -> void:
+	vbox.add_child(_make_sep())
 	vbox.add_child(_make_label("Controller", 14, true))
 	_slider_max_speed = _make_slider(vbox, "Max speed",
 		2.0, 20.0, 0.1, _on_max_speed_changed)
@@ -65,7 +83,23 @@ func _build_ui() -> void:
 	_slider_buffer = _make_slider(vbox, "Buffer (s)",
 		0.0, 0.3, 0.005, _on_buffer_changed)
 
-	# --- Juice toggles ---
+
+func _build_camera_section(vbox: VBoxContainer) -> void:
+	vbox.add_child(_make_sep())
+	vbox.add_child(_make_label("Camera", 14, true))
+	_make_cam_slider(vbox, "Distance",       &"distance",          2.0,    15.0,   0.1,    6.0)
+	_make_cam_slider(vbox, "Pitch (deg)",    &"pitch_degrees",     0.0,    80.0,   0.5,    22.0)
+	_make_cam_slider(vbox, "Lookahead",      &"lookahead_distance",0.0,    5.0,    0.05,   1.2)
+	_make_cam_slider(vbox, "Fall pull",      &"vertical_pull",     0.0,    1.0,    0.01,   0.18)
+	_make_cam_slider(vbox, "Yaw sens",       &"yaw_drag_sens",     0.001,  0.05,   0.001,  0.005)
+	_make_cam_slider(vbox, "Pitch sens",     &"pitch_drag_sens",   0.001,  0.05,   0.001,  0.003)
+	_make_cam_slider(vbox, "Rctr delay",     &"idle_recenter_delay",0.0,   5.0,    0.1,    1.2)
+	_make_cam_slider(vbox, "Rctr speed",     &"idle_recenter_speed",0.1,   10.0,   0.1,    1.5)
+	_make_cam_slider(vbox, "Occl. margin",   &"occlusion_margin",  0.1,    1.0,    0.05,   0.3)
+
+
+func _build_juice_section(vbox: VBoxContainer) -> void:
+	vbox.add_child(_make_sep())
 	vbox.add_child(_make_label("Juice", 14, true))
 	var juice_grid := GridContainer.new()
 	juice_grid.columns = 2
@@ -80,12 +114,16 @@ func _build_ui() -> void:
 		juice_grid.add_child(cb)
 		_juice_boxes[key] = cb
 
-	# --- Perf overlay ---
+
+func _build_perf_section(vbox: VBoxContainer) -> void:
+	vbox.add_child(_make_sep())
 	vbox.add_child(_make_label("Performance", 14, true))
 	_perf_label = Label.new()
 	_perf_label.text = "—"
 	vbox.add_child(_perf_label)
 
+
+# ---- per-frame updates ------------------------------------------------------
 
 func _process(_delta: float) -> void:
 	if not visible or _perf_label == null:
@@ -99,6 +137,8 @@ func _process(_delta: float) -> void:
 	]
 
 
+# ---- widget factories -------------------------------------------------------
+
 func _make_label(text: String, font_size: int, bold: bool = false) -> Label:
 	var l := Label.new()
 	l.text = text
@@ -106,6 +146,10 @@ func _make_label(text: String, font_size: int, bold: bool = false) -> Label:
 	if bold:
 		l.add_theme_constant_override("outline_size", 0)
 	return l
+
+
+func _make_sep() -> HSeparator:
+	return HSeparator.new()
 
 
 func _make_slider(parent: Node, label_text: String,
@@ -129,24 +173,49 @@ func _make_slider(parent: Node, label_text: String,
 
 	var val_label := Label.new()
 	val_label.custom_minimum_size = Vector2(54, 0)
-	val_label.text = "%.2f" % slider.value
+	val_label.text = _fmt(slider.value, step)
 	row.add_child(val_label)
 
 	slider.value_changed.connect(func(v: float) -> void:
-		val_label.text = "%.2f" % v)
+		val_label.text = _fmt(v, step))
 	slider.value_changed.connect(on_changed)
 
 	return slider
 
+
+## Camera-param slider: fires DevMenu.camera_param_changed and sets an initial value.
+func _make_cam_slider(parent: Node, label_text: String, param: StringName,
+		mn: float, mx: float, step: float, default_val: float) -> HSlider:
+	var slider := _make_slider(parent, label_text, mn, mx, step,
+		func(v: float) -> void: DevMenu.camera_param_changed.emit(param, v))
+	# Set value after connecting; value_changed will update the display label
+	# and broadcast the initial default to the camera rig if it's already live.
+	slider.value = default_val
+	return slider
+
+
+## Smart number format: enough digits to show the step resolution.
+static func _fmt(v: float, step: float) -> String:
+	if step >= 1.0:
+		return "%d" % int(v)
+	elif step >= 0.1:
+		return "%.1f" % v
+	elif step >= 0.01:
+		return "%.2f" % v
+	elif step >= 0.001:
+		return "%.3f" % v
+	return "%.4f" % v
+
+
+# ---- profile logic ----------------------------------------------------------
 
 func _select_profile(profile_name: String) -> void:
 	if not _profiles.has(profile_name):
 		return
 	var p: Resource = _profiles[profile_name]
 	_current_profile = p
-	# Sync sliders to the new profile without firing _on_*_changed (the
-	# value_changed signal still emits, but the assignments below match
-	# the resource's current state, so no harm done).
+	# Sync sliders to the new profile. value_changed fires but writes back the
+	# same values the resource already holds — harmless.
 	_slider_max_speed.value = p.max_speed
 	_slider_jump_velocity.value = p.jump_velocity
 	_slider_coyote.value = p.coyote_time
@@ -155,8 +224,7 @@ func _select_profile(profile_name: String) -> void:
 
 
 func _on_profile_selected(idx: int) -> void:
-	var profile_name := _profile_dropdown.get_item_text(idx)
-	_select_profile(profile_name)
+	_select_profile(_profile_dropdown.get_item_text(idx))
 
 
 func _on_max_speed_changed(v: float) -> void:

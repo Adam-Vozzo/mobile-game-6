@@ -7,7 +7,13 @@ class_name CameraRig
 ##
 ## CLAUDE.md flagged camera fiddling on mobile as the single biggest
 ## Dadish-3D pain point — the recenter behaviour is the answer to that.
-## SpringArm3D collision avoidance is queued in PLAN.md (P0).
+##
+## Occlusion avoidance: a ray cast from the look-at point to the desired
+## camera position each frame; if geometry blocks the shot the camera
+## pulls forward to the hit point minus `occlusion_margin`. No SpringArm3D
+## node is needed — using PhysicsDirectSpaceState3D lets us exclude the
+## player body and reuse the existing position maths exactly.
+## See docs/DECISIONS.md for the SpringArm3D vs. raycast rationale.
 
 @export var target_path: NodePath = ^"../Player"
 
@@ -44,6 +50,15 @@ class_name CameraRig
 @export_range(0.1, 10.0, 0.1) var idle_recenter_speed: float = 1.5
 @export_range(0.0, 10.0, 0.1) var recenter_min_speed: float = 0.5
 
+@export_category("Occlusion")
+## Gap kept between the camera and any occluder surface.
+@export_range(0.1, 1.0, 0.05) var occlusion_margin: float = 0.3
+## Minimum distance the camera is allowed to snap to (prevents camera
+## burying in the player when inside a tight space).
+@export_range(0.3, 3.0, 0.05) var occlusion_min_distance: float = 0.8
+## Physics layer mask queried for occlusion (default: layer 1 = world).
+@export_flags_3d_physics var occlusion_mask: int = 1
+
 var _yaw: float = 0.0
 var _pitch: float = 0.0  # radians, negative = looking down
 var _lookahead: Vector3 = Vector3.ZERO
@@ -56,8 +71,6 @@ var _target: Node3D
 func _ready() -> void:
 	_pitch = -deg_to_rad(pitch_degrees)
 	_target = get_node_or_null(target_path) as Node3D
-	# Listen to dev-menu camera tweaks for this iteration; full implementation
-	# is the camera params group in PLAN.md.
 	if has_node("/root/DevMenu"):
 		DevMenu.camera_param_changed.connect(_on_camera_param_changed)
 
@@ -104,15 +117,16 @@ func _process(delta: float) -> void:
 	var rig_pos := target_pos + _lookahead + Vector3(0.0, vertical_offset, 0.0)
 	global_position = rig_pos
 
-	# --- Place camera behind-and-above per yaw + pitch ---
-	# Local offset assumes pitch is negative for looking down. Camera lives
-	# at distance * (back, up) where:
-	#   back = cos(|pitch|), up = sin(|pitch|)
+	# --- Desired camera position behind-and-above per yaw + pitch ---
 	var p := absf(_pitch)
 	var local_offset := Vector3(0.0, sin(p) * distance, cos(p) * distance)
 	var yaw_basis := Basis(Vector3.UP, _yaw)
-	_camera.global_position = rig_pos + yaw_basis * local_offset
-	_camera.look_at(target_pos + Vector3(0.0, aim_height, 0.0), Vector3.UP)
+	var aim_point := target_pos + Vector3(0.0, aim_height, 0.0)
+	var desired_cam_pos := rig_pos + yaw_basis * local_offset
+
+	# --- Occlusion: pull camera forward if geometry blocks the shot ---
+	_camera.global_position = _occlude(aim_point, desired_cam_pos)
+	_camera.look_at(aim_point, Vector3.UP)
 
 	# --- Publish yaw to player so input is camera-relative ---
 	if _target.has_method("set_camera_yaw"):
@@ -123,6 +137,28 @@ func _get_target_velocity() -> Vector3:
 	if _target is CharacterBody3D:
 		return (_target as CharacterBody3D).velocity
 	return Vector3.ZERO
+
+
+## Returns the camera position to use after checking for occluding geometry.
+## Casts a ray from `aim` (what the camera focuses on) to `desired`; if
+## something is in the way, snaps the camera to the hit point minus the
+## occlusion margin, floored at occlusion_min_distance from aim.
+func _occlude(aim: Vector3, desired: Vector3) -> Vector3:
+	var space := get_world_3d().direct_space_state
+	var params := PhysicsRayQueryParameters3D.new()
+	params.from = aim
+	params.to = desired
+	params.collision_mask = occlusion_mask
+	if _target:
+		var excl: Array[RID] = [_target.get_rid()]
+		params.exclude = excl
+	var hit := space.intersect_ray(params)
+	if hit.is_empty():
+		return desired
+	var dir := (desired - aim).normalized()
+	var hit_dist := (hit.position - aim).length()
+	var safe_dist := maxf(occlusion_min_distance, hit_dist - occlusion_margin)
+	return aim + dir * safe_dist
 
 
 func _on_camera_param_changed(param_name: StringName, value: float) -> void:
@@ -140,3 +176,9 @@ func _on_camera_param_changed(param_name: StringName, value: float) -> void:
 			lookahead_distance = value
 		&"vertical_pull":
 			vertical_pull = value
+		&"idle_recenter_delay":
+			idle_recenter_delay = value
+		&"idle_recenter_speed":
+			idle_recenter_speed = value
+		&"occlusion_margin":
+			occlusion_margin = value
