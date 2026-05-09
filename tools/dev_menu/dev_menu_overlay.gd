@@ -12,6 +12,17 @@ const SNAPPY_PROFILE := preload("res://resources/profiles/snappy.tres")
 const FLOATY_PROFILE := preload("res://resources/profiles/floaty.tres")
 const MOMENTUM_PROFILE := preload("res://resources/profiles/momentum.tres")
 
+## Panel / scroll sizing.
+const _PANEL_W    := 400.0
+const _SCROLL_H   := 600.0
+const _SECTION_SEP := 6
+
+## Slider row column widths — label | track | value. Sum (324) fits in _PANEL_W.
+const _SL_LABEL_W := 110.0
+const _SL_TRACK_W := 160.0
+const _SL_TRACK_H := 24.0
+const _SL_VAL_W   := 54.0
+
 var _profiles: Dictionary = {
 	"Snappy": SNAPPY_PROFILE,
 	"Floaty": FLOATY_PROFILE,
@@ -42,17 +53,17 @@ func _build_ui() -> void:
 	var panel := PanelContainer.new()
 	panel.set_anchors_and_offsets_preset(Control.PRESET_TOP_LEFT)
 	panel.position = Vector2(20, 20)
-	panel.custom_minimum_size = Vector2(400, 0)
+	panel.custom_minimum_size = Vector2(_PANEL_W, 0)
 	panel.mouse_filter = Control.MOUSE_FILTER_STOP
 	add_child(panel)
 
 	var scroll := ScrollContainer.new()
-	scroll.custom_minimum_size = Vector2(400, 600)
+	scroll.custom_minimum_size = Vector2(_PANEL_W, _SCROLL_H)
 	scroll.horizontal_scroll_mode = ScrollContainer.SCROLL_MODE_DISABLED
 	panel.add_child(scroll)
 
 	var vbox := VBoxContainer.new()
-	vbox.add_theme_constant_override("separation", 6)
+	vbox.add_theme_constant_override("separation", _SECTION_SEP)
 	vbox.size_flags_horizontal = Control.SIZE_EXPAND_FILL
 	scroll.add_child(vbox)
 
@@ -261,7 +272,7 @@ func _make_slider(parent: Node, label_text: String,
 
 	var lbl := Label.new()
 	lbl.text = label_text
-	lbl.custom_minimum_size = Vector2(110, 0)
+	lbl.custom_minimum_size = Vector2(_SL_LABEL_W, 0)
 	row.add_child(lbl)
 
 	var slider := HSlider.new()
@@ -269,11 +280,11 @@ func _make_slider(parent: Node, label_text: String,
 	slider.max_value = mx
 	slider.step = step
 	slider.size_flags_horizontal = Control.SIZE_EXPAND_FILL
-	slider.custom_minimum_size = Vector2(160, 24)
+	slider.custom_minimum_size = Vector2(_SL_TRACK_W, _SL_TRACK_H)
 	row.add_child(slider)
 
 	var val_label := Label.new()
-	val_label.custom_minimum_size = Vector2(54, 0)
+	val_label.custom_minimum_size = Vector2(_SL_VAL_W, 0)
 	val_label.text = _fmt(slider.value, step)
 	row.add_child(val_label)
 
@@ -350,6 +361,10 @@ func _on_save_confirmed() -> void:
 	# Persist to user://profiles/ so it survives the session.
 	DirAccess.make_dir_recursive_absolute("user://profiles")
 	ResourceSaver.save(new_p, "user://profiles/" + name + ".tres")
+	# Switch to the saved copy so subsequent slider edits affect it, not the
+	# original. OptionButton.selected = n does NOT emit item_selected, so we
+	# must call _select_profile explicitly.
+	_select_profile(name)
 
 
 # ---- profile logic ----------------------------------------------------------

@@ -33,7 +33,7 @@ Suggested:
 - [`brutalism_blame.md`](brutalism_blame.md) — Nihei's *BLAME!* visual grammar (scale ambiguity, darkness as material, recursion, navigation-by-infrastructure), brutalist architecture principles (béton brut, expressed structure, mass over surface), megastructure hierarchy (mega-column → floor slab → service run → habitation volume), Kevin Lynch legibility vocabulary. 10 concrete implications for Project Void: cold grey palette, darkness as architecture, Stray red as sole warm accent, multi-scale kit pieces, expressed structure in geometry, service-run compression sequences, column-array depth shots, "failed program" landmark props, no skybox, vertical axis primary.
 
 Suggested:
-- Christopher Alexander on parti and pattern (to reinforce LEVEL_DESIGN.md principles in practice).
+- ~~Christopher Alexander on parti and pattern~~ Done (iter 14, `alexander_pattern_language.md`).
 - Deeper *BLAME!* volume-by-volume architectural analysis (each volume of the manga has a distinct spatial character worth mapping).
 
 ## Ghost trail / attempt-replay overlay
@@ -57,10 +57,18 @@ Suggested:
   shorten Snappy reboot to ≤ 0.35 s, 3-floor-plane rule, landmark requirement, rhythm hazards,
   rest areas at checkpoints. Sources: The Level Design Book, Gamedeveloper.com, Team Meat / SMB.
 
+- [`alexander_pattern_language.md`](alexander_pattern_language.md) — Alexander's *Notes
+  on the Synthesis of Form* (form resolves a network of forces; each beat must satisfy ≥ 3),
+  parti pris (the organizing concept of every beat, which aligns with SMB's one-idea-per-room
+  rule), *A Pattern Language* (named reusable solutions mapped to a Void kit: Compression–
+  Release, Threshold, Landmark, Rest Alcove, Gauntlet Ascent, Overlook, Desire Line). 8
+  concrete implications: write a parti per beat, use pattern vocabulary for `kit/` naming,
+  Compression–Release as primary procession unit, ≥ 3 forces per beat, structural landmarks
+  not decorative, Stray-red as structural centre, desire line = par route, kit naming.
+
 Suggested (still open):
 - Mark Brown / Game Maker's Toolkit — specific 3D platformer level-design episodes.
 - Steve Lee (doublefunction.co.uk) — GDC talk "An Approach to Holistic Level Design."
-- Christopher Alexander on parti and pattern (reinforce LEVEL_DESIGN.md principles).
 
 ## Performance & rendering
 

@@ -5,10 +5,10 @@ A mobile 3D platformer. Brutalist megastructure inspired by *BLAME!*. Controller
 ## Status
 
 Current gate: **Gate 0 — Feel Lab**
-Last iteration: 2026-05-09 — iter 13: _spawn_sparks refactor + juice density research
+Last iteration: 2026-05-09 — iter 14: dev_menu_overlay bug fix + Alexander research
 Test device build: not yet — hand-authored scenes pending first Godot 4.6 import; see Open questions
 Performance: not yet measured on Nothing Phone 4(a) Pro
-Throttle level: **HARD — 13 iterations since last human direction. No new features. See Open questions.**
+Throttle level: **HARD — 14 iterations since last human direction. No new features. See Open questions.**
 
 If you only read one section, read **Open questions waiting on you** below.
 
@@ -16,7 +16,7 @@ If you only read one section, read **Open questions waiting on you** below.
 
 Things Claude can't decide alone, or where it's stalled and needs direction. Each is blocking some piece of forward progress.
 
-> **⚠ HARD THROTTLE — 13 iterations since last human direction.** Claude has been
+> **⚠ HARD THROTTLE — 14 iterations since last human direction.** Claude has been
 > building infrastructure (tests, research, refactors, debug tooling) for 13 iterations
 > without a human feel verdict or direction signal. All P0 items are blocked on the
 > first on-device run. The next iteration will continue hardening work only.
@@ -94,6 +94,45 @@ Goal: store-ready build.
 The full iteration log lives here, newest first. Every iteration appends an entry. Skim the dates to find where you last left off.
 
 <!-- ITERATION ENTRIES BELOW — DO NOT REMOVE OLDER ENTRIES -->
+
+### [2026-05-09] — `claude/gifted-shannon-72KFx` — iter 14: dev_menu_overlay bug fix + Alexander research
+
+- **Throttle: HARD (14 iterations since last human direction).** Hardening only.
+- **Primary: `dev_menu_overlay.gd` bug fix + magic-number refactor.**
+  - **Bug fixed**: `_on_save_confirmed` — when a profile is saved via the "Save as…"
+    button, `_profile_dropdown.selected = n` was set but `_select_profile(name)` was
+    never called. `OptionButton.selected` set programmatically does NOT emit
+    `item_selected`, so `_current_profile` continued pointing at the original resource.
+    Subsequent slider edits went to the wrong resource; the saved copy was frozen at
+    save-time values. Fixed by adding `_select_profile(name)` at the end of
+    `_on_save_confirmed`. One line, no behaviour change except the bug is now gone.
+  - **Refactor**: 6 inline UI layout magic numbers promoted to named class constants:
+    `_PANEL_W = 400`, `_SCROLL_H = 600`, `_SECTION_SEP = 6`, `_SL_LABEL_W = 110`,
+    `_SL_TRACK_W = 160`, `_SL_TRACK_H = 24`, `_SL_VAL_W = 54`. The column-sum comment
+    (`110+160+54 = 324 fits in 400`) makes the layout budget readable at a glance.
+- **Side quest: Christopher Alexander research note** — `docs/research/alexander_pattern_language.md`.
+  Synthesises three Alexander texts as applied to Void level design:
+  - *Notes on the Synthesis of Form*: form resolves a network of forces; every level beat
+    must satisfy ≥ 3 forces simultaneously (challenge + navigation + one of
+    spectacle/pacing/orientation). Beats satisfying only "challenge" are obstacle-course
+    padding.
+  - Parti pris: every beat needs a one-sentence organizing concept before geometry is
+    placed. The SMB "one governing idea per room" rule is parti thinking — Alexander
+    arrived at the same principle from architecture in 1964.
+  - *A Pattern Language*: named reusable solutions mapped to a Void kit vocabulary —
+    Compression–Release, Threshold, Landmark in Darkness, Rest Alcove, Gauntlet Ascent,
+    Overlook, Desire Line. Each `kit/` scene in Gate 1 should be named after a pattern.
+  - 8 concrete implications: parti-per-beat discipline, ≥ 3 forces per beat,
+    Compression–Release as the primary procession unit for brutalist megastructure,
+    structural (not decorative) landmarks, Stray-red as the structural centre of the
+    spatial field, desire line = par route, kit naming enforces patterns.
+  - INDEX.md and "Christopher Alexander" open items in Brutalism/BLAME section updated.
+- Perf: no runtime change.
+- Bugs fixed: `dev_menu_overlay.gd::_on_save_confirmed` profile-switch missing after save.
+- New dev-menu controls: none.
+- Assets acquired: none.
+- Research added: `docs/research/alexander_pattern_language.md`; INDEX.md updated.
+- Needs human attention: **see "Open questions waiting on you" — hard throttle still active (14 iterations).**
 
 ### [2026-05-09] — `iter/spawn-sparks-refactor` — iter 13: _spawn_sparks refactor + juice density research
 
