@@ -1,0 +1,19 @@
+[gd_resource type="Resource" script_class="ControllerProfile" load_steps=2 format=3 uid="uid://defaultprofile0"]
+
+[ext_resource type="Script" path="res://scripts/player/controller_profile.gd" id="1_profile"]
+
+[resource]
+script = ExtResource("1_profile")
+walk_speed = 7.0
+acceleration = 30.0
+friction = 25.0
+air_acceleration = 15.0
+air_friction = 5.0
+base_gravity = 25.0
+jump_velocity = 11.0
+jump_hold_gravity_scale = 0.5
+fall_gravity_scale = 2.0
+max_fall_speed = 30.0
+coyote_time = 0.12
+jump_buffer_time = 0.15
+turn_speed_deg = 720.0

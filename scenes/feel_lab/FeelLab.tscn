@@ -1,0 +1,127 @@
+[gd_scene load_steps=18 format=3 uid="uid://feellabtscn01"]
+
+[ext_resource type="Script" path="res://scenes/feel_lab/feel_lab.gd" id="1_fl"]
+[ext_resource type="PackedScene" uid="uid://playerscn001" path="res://scenes/player/Player.tscn" id="2_player"]
+[ext_resource type="PackedScene" uid="uid://gamecamscn01" path="res://scenes/camera/GameCamera.tscn" id="3_cam"]
+[ext_resource type="PackedScene" uid="uid://touchctrlscn1" path="res://scenes/ui/TouchControls.tscn" id="4_touch"]
+[ext_resource type="PackedScene" uid="uid://devmenuscn01" path="res://scenes/ui/DevMenu.tscn" id="5_dev"]
+
+[sub_resource type="Environment" id="Env_1"]
+background_mode = 1
+background_color = Color(0.08, 0.08, 0.09, 1)
+ambient_light_source = 2
+ambient_light_color = Color(0.55, 0.57, 0.62, 1)
+ambient_light_energy = 0.4
+fog_enabled = true
+fog_light_color = Color(0.52, 0.54, 0.58, 1)
+fog_density = 0.018
+
+[sub_resource type="StandardMaterial3D" id="Mat_concrete"]
+albedo_color = Color(0.42, 0.43, 0.44, 1)
+roughness = 0.9
+metallic_specular = 0.05
+
+[sub_resource type="StandardMaterial3D" id="Mat_red"]
+albedo_color = Color(0.8, 0.07, 0.07, 1)
+roughness = 0.6
+emission_enabled = true
+emission = Color(0.8, 0.07, 0.07, 1)
+emission_energy_multiplier = 0.4
+
+[sub_resource type="BoxShape3D" id="BoxShape3D_floor"]
+size = Vector3(20, 0.5, 20)
+
+[sub_resource type="BoxMesh" id="BoxMesh_floor"]
+size = Vector3(20, 0.5, 20)
+
+[sub_resource type="BoxShape3D" id="BoxShape3D_a"]
+size = Vector3(4, 0.5, 4)
+
+[sub_resource type="BoxMesh" id="BoxMesh_a"]
+size = Vector3(4, 0.5, 4)
+
+[sub_resource type="BoxShape3D" id="BoxShape3D_b"]
+size = Vector3(3, 0.5, 3)
+
+[sub_resource type="BoxMesh" id="BoxMesh_b"]
+size = Vector3(3, 0.5, 3)
+
+[sub_resource type="BoxShape3D" id="BoxShape3D_narrow"]
+size = Vector3(6, 0.5, 2)
+
+[sub_resource type="BoxMesh" id="BoxMesh_narrow"]
+size = Vector3(6, 0.5, 2)
+
+[sub_resource type="BoxMesh" id="BoxMesh_stray"]
+size = Vector3(0.5, 0.5, 0.5)
+
+[node name="FeelLab" type="Node3D"]
+script = ExtResource("1_fl")
+
+[node name="World" type="Node3D" parent="."]
+
+[node name="WorldEnvironment" type="WorldEnvironment" parent="World"]
+environment = SubResource("Env_1")
+
+[node name="Sun" type="DirectionalLight3D" parent="World"]
+rotation_degrees = Vector3(-45, 45, 0)
+light_color = Color(0.95, 0.92, 0.88, 1)
+light_energy = 1.2
+shadow_enabled = true
+
+[node name="Floor" type="StaticBody3D" parent="World"]
+position = Vector3(0, -0.25, 0)
+
+[node name="CollisionShape3D" type="CollisionShape3D" parent="World/Floor"]
+shape = SubResource("BoxShape3D_floor")
+
+[node name="MeshInstance3D" type="MeshInstance3D" parent="World/Floor"]
+mesh = SubResource("BoxMesh_floor")
+material_override = SubResource("Mat_concrete")
+
+[node name="Platform_A" type="StaticBody3D" parent="World"]
+position = Vector3(0, 1.5, -6)
+
+[node name="CollisionShape3D" type="CollisionShape3D" parent="World/Platform_A"]
+shape = SubResource("BoxShape3D_a")
+
+[node name="MeshInstance3D" type="MeshInstance3D" parent="World/Platform_A"]
+mesh = SubResource("BoxMesh_a")
+material_override = SubResource("Mat_concrete")
+
+[node name="Platform_B" type="StaticBody3D" parent="World"]
+position = Vector3(0, 3.0, -11)
+
+[node name="CollisionShape3D" type="CollisionShape3D" parent="World/Platform_B"]
+shape = SubResource("BoxShape3D_b")
+
+[node name="MeshInstance3D" type="MeshInstance3D" parent="World/Platform_B"]
+mesh = SubResource("BoxMesh_b")
+material_override = SubResource("Mat_concrete")
+
+[node name="Narrow" type="StaticBody3D" parent="World"]
+position = Vector3(4, 2.0, -9)
+
+[node name="CollisionShape3D" type="CollisionShape3D" parent="World/Narrow"]
+shape = SubResource("BoxShape3D_narrow")
+
+[node name="MeshInstance3D" type="MeshInstance3D" parent="World/Narrow"]
+mesh = SubResource("BoxMesh_narrow")
+material_override = SubResource("Mat_concrete")
+
+[node name="Stray" type="MeshInstance3D" parent="World"]
+position = Vector3(0, 3.75, -11)
+mesh = SubResource("BoxMesh_stray")
+material_override = SubResource("Mat_red")
+
+[node name="Player" parent="." instance=ExtResource("2_player")]
+position = Vector3(0, 0.5, 0)
+
+[node name="GameCamera" parent="." instance=ExtResource("3_cam")]
+
+[node name="UI" type="CanvasLayer" parent="."]
+layer = 1
+
+[node name="TouchControls" parent="UI" instance=ExtResource("4_touch")]
+
+[node name="DevMenu" parent="UI" instance=ExtResource("5_dev")]

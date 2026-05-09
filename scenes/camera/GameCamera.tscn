@@ -1,0 +1,9 @@
+[gd_scene load_steps=2 format=3 uid="uid://gamecamscn01"]
+
+[ext_resource type="Script" path="res://scripts/camera/game_camera.gd" id="1_cam"]
+
+[node name="GameCamera" type="Node3D"]
+script = ExtResource("1_cam")
+
+[node name="Camera3D" type="Camera3D" parent="."]
+fov = 70.0
