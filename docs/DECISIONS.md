@@ -97,6 +97,30 @@ Consequences: faster iteration loop; PRs serve as traceability artefacts,
 not gates. If we ever want a stricter mode, the change is one line in
 CLAUDE.md.
 
+## 2026-05-09 — _make_slider: initial_value set before callbacks, not after
+
+Status: accepted
+Context: `_build_touch_section` and `_build_level_section` were setting slider values
+via `slider.value = x` AFTER connecting `value_changed` callbacks. This emitted
+`DevMenu.touch_param_changed` / `time_scale_changed` on init, routing back to
+`touch_overlay._on_touch_param` and overwriting whatever `_load_layout()` had
+loaded from `user://input.cfg`. Touch layout persistence was silently broken.
+Decision: Added `initial_value: float = NAN` to `_make_slider`. When provided, the
+value is set on the Range node BEFORE callbacks are connected, so `value_changed`
+fires internally but no listeners receive it. The val_label is then initialised from
+`slider.value` (which now reflects the initial_value). All callers that need a
+specific start display pass it as `initial_value`; profile sliders still get set by
+`_select_profile` after build (correct: they need to fire the callback to sync the
+display label).
+Alternatives considered:
+- `Range.set_value_no_signal` after connecting: would suppress the label update too,
+  requiring a separate manual label refresh.
+- Deferred emit from touch_overlay after load: requires the overlay to exist first
+  (another deferred frame), and the signal goes to _on_touch_param (self-loop).
+  More complex, addressed in refactor backlog under "touch slider display."
+Consequences: Camera rig and dev menu defaults must stay in sync by convention (no
+longer auto-corrected by broadcast on init). Touch layout persistence now works.
+
 ## 2026-05-09 — Camera occlusion via PhysicsDirectSpaceState3D raycast, not SpringArm3D
 
 Status: accepted

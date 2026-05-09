@@ -184,8 +184,8 @@ func _build_level_section(vbox: VBoxContainer) -> void:
 		0.25, 2.0, 0.05,
 		func(v: float) -> void:
 			Engine.time_scale = v
-			DevMenu.time_scale_changed.emit(v))
-	_slider_time_scale.value = 1.0
+			DevMenu.time_scale_changed.emit(v),
+		1.0)
 
 
 func _build_touch_section(vbox: VBoxContainer) -> void:
@@ -193,14 +193,15 @@ func _build_touch_section(vbox: VBoxContainer) -> void:
 	vbox.add_child(_make_label("Touch Controls", 14, true))
 	_make_button(vbox, "Reposition controls…",
 		func() -> void: DevMenu.reposition_controls_requested.emit())
+	# Silent init: touch_overlay._load_layout() already ran; don't overwrite it.
 	_make_slider(vbox, "Jump radius",
 		40.0, 200.0, 1.0,
-		func(v: float) -> void: DevMenu.touch_param_changed.emit(&"jump_radius", v)
-	).value = 95.0
+		func(v: float) -> void: DevMenu.touch_param_changed.emit(&"jump_radius", v),
+		95.0)
 	_make_slider(vbox, "Stick zone %",
 		0.30, 0.70, 0.01,
-		func(v: float) -> void: DevMenu.touch_param_changed.emit(&"stick_zone_ratio", v)
-	).value = 0.5
+		func(v: float) -> void: DevMenu.touch_param_changed.emit(&"stick_zone_ratio", v),
+		0.5)
 
 
 func _build_juice_section(vbox: VBoxContainer) -> void:
@@ -276,9 +277,10 @@ func _make_button(parent: Node, label_text: String, callback: Callable) -> Butto
 	return btn
 
 
+## Pass initial_value to show a start value without firing on_changed.
 func _make_slider(parent: Node, label_text: String,
 		mn: float, mx: float, step: float,
-		on_changed: Callable) -> HSlider:
+		on_changed: Callable, initial_value: float = NAN) -> HSlider:
 	var row := HBoxContainer.new()
 	parent.add_child(row)
 
@@ -294,6 +296,10 @@ func _make_slider(parent: Node, label_text: String,
 	slider.size_flags_horizontal = Control.SIZE_EXPAND_FILL
 	slider.custom_minimum_size = Vector2(_SL_TRACK_W, _SL_TRACK_H)
 	row.add_child(slider)
+
+	# Set before connecting so value_changed fires with no listeners → silent.
+	if not is_nan(initial_value):
+		slider.value = initial_value
 
 	var val_label := Label.new()
 	val_label.custom_minimum_size = Vector2(_SL_VAL_W, 0)
@@ -319,15 +325,12 @@ func _make_profile_slider(parent: Node, label_text: String,
 				DevMenu.controller_param_changed.emit(prop, v))
 
 
-## Camera-param slider: fires DevMenu.camera_param_changed and sets an initial value.
+## Camera-param slider: silent init (camera rig uses its own @export defaults).
 func _make_cam_slider(parent: Node, label_text: String, param: StringName,
 		mn: float, mx: float, step: float, default_val: float) -> HSlider:
-	var slider := _make_slider(parent, label_text, mn, mx, step,
-		func(v: float) -> void: DevMenu.camera_param_changed.emit(param, v))
-	# Set value after connecting; value_changed updates the display label and
-	# broadcasts the initial default to the camera rig if it's already live.
-	slider.value = default_val
-	return slider
+	return _make_slider(parent, label_text, mn, mx, step,
+		func(v: float) -> void: DevMenu.camera_param_changed.emit(param, v),
+		default_val)
 
 
 func _make_viz_checkbox(parent: Node, label_text: String, key: StringName) -> void:
