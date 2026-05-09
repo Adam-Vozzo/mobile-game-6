@@ -14,11 +14,12 @@ instrumented and tunable.
 
 ## Active iteration
 
-- Branch: `claude/gifted-shannon-bchl4`
-- Focus: iter 5 complete. Reboot animation fully specced (P0 item 6) +
-  save-as-profile button (P0 item 7, side quest).
+- Branch: `iter/touch-ux-research`
+- Focus: iter 6. Mobile touch UX research note. Concrete material kit
+  (materials extracted from feel_lab.tscn to `resources/materials/`).
+  `.tres` profile type headers corrected to `ControllerProfile`.
   **Items 1–4 are still blocked on human on-device action.**
-  Next: GUT unit tests for controller kinematics (P1) or concrete kit (P1).
+  Next: GUT unit tests (P1) or style_test.tscn (P1).
 
 ## Queue (ranked, top is next)
 
@@ -70,9 +71,13 @@ The next iteration should pull from the top of this list. Items marked
   check from `ART_PIPELINE.md` the moment we get a real asset.
 - ~~Research notes: Mario Odyssey / Demon Turf / A Hat in Time / Pseudoregalia~~
   Done (iter 4): `docs/research/character_controllers.md`.
-- Convert Feel Lab platforms into a small reusable "concrete kit" of
-  primitives (`mat_concrete.tres`, `scenes/levels/kit/*`) so Gate 1 has
-  a starter vocabulary.
+- ~~**Concrete material kit — materials.**~~ Done (iter 6).
+  `resources/materials/mat_concrete.tres` (light, albedo 0.55/0.55/0.58,
+  rough 0.85) and `mat_concrete_dark.tres` (albedo 0.32/0.32/0.35,
+  rough 0.9) extracted from feel_lab.tscn inline sub_resources to
+  standalone ext_resources. feel_lab.tscn updated. **Remaining:**
+  `scenes/levels/kit/` prebuilt platform scenes using these materials —
+  deferred to a later iter once art direction is roughed in (human gated).
 - ~~Wire the player's `controller_param_changed` signal~~ — confirmed
   the dev menu overlay mutates the live profile resource directly via
   `_current_profile.set(prop, v)` in `_make_profile_slider`. The signal
@@ -112,6 +117,15 @@ These mirror "Open questions waiting on you" in the README.
   feel issues. Those notes drive iteration 2's tuning pass.
 
 ## Recently completed (last 5)
+
+- 2026-05-09 — Iteration 6. Mobile touch UX research note
+  (`docs/research/mobile_touch_ux.md`): Dadish 3D pain points, floating vs.
+  fixed joystick research, thumb-reach analysis for 1920×1080 landscape,
+  Genshin/Sky/Alto notes, Assisted profile design targets. INDEX.md updated.
+  Concrete material kit (P1): `resources/materials/mat_concrete.tres` +
+  `mat_concrete_dark.tres` extracted from feel_lab.tscn; scene now references
+  external materials. `.tres` profile headers corrected from generic
+  `type="Resource"` to `type="ControllerProfile"`.
 
 - 2026-05-09 — Iteration 5. Reboot animation polish (P0 item 6) + save-as-profile
   side quest (P0 item 7). `_run_reboot_effect()` replaced: sparks burst

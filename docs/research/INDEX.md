@@ -18,12 +18,11 @@ Suggested early reads (from CLAUDE.md):
 
 ## Mobile touch UX
 
-_(none yet)_
+- [`mobile_touch_ux.md`](mobile_touch_ux.md) — Dadish 3D pain points, fixed vs. floating joystick research, thumb-reach analysis for 1920×1080 landscape, Genshin/Sky/Alto design notes. Implications: floating stick + dead zone correct; no UI in top 25% of screen; ledge magnetism is highest-ROI assist; `stick_dead_zone_ratio` param needed before Gate 1.
 
 Suggested:
-- Genshin Impact touch layout postmortem.
-- Sky: Children of the Light gesture system.
-- Alto's Odyssey one-tap design.
+- Genshin Impact touch layout postmortem (dead zone tuning specifics).
+- Sky: Children of the Light gesture system (covered briefly above; more detail on social-game input philosophy worth a deeper read for Gate 2+ UX decisions).
 
 ## Brutalism / *BLAME!* / megastructure
 

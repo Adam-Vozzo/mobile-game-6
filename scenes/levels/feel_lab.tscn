@@ -6,6 +6,8 @@
 [ext_resource type="PackedScene" path="res://scenes/player/player.tscn" id="3_playerScene"]
 [ext_resource type="PackedScene" path="res://scenes/player/camera_rig.tscn" id="4_camRig"]
 [ext_resource type="PackedScene" path="res://scenes/ui/touch_overlay.tscn" id="5_touch"]
+[ext_resource type="Material" path="res://resources/materials/mat_concrete.tres" id="7_matConc"]
+[ext_resource type="Material" path="res://resources/materials/mat_concrete_dark.tres" id="8_matConcDark"]
 
 [sub_resource type="Environment" id="Environment_FeelLab"]
 background_mode = 1
@@ -21,76 +23,64 @@ fog_density = 0.045
 fog_aerial_perspective = 0.5
 fog_sky_affect = 0.0
 
-[sub_resource type="StandardMaterial3D" id="Mat_Concrete"]
-albedo_color = Color(0.55, 0.55, 0.58, 1)
-roughness = 0.85
-metallic = 0.0
-metallic_specular = 0.25
-
-[sub_resource type="StandardMaterial3D" id="Mat_ConcreteDark"]
-albedo_color = Color(0.32, 0.32, 0.35, 1)
-roughness = 0.9
-metallic = 0.0
-metallic_specular = 0.2
-
 [sub_resource type="BoxMesh" id="Mesh_Floor"]
-material = SubResource("Mat_ConcreteDark")
+material = ExtResource("8_matConcDark")
 size = Vector3(40, 1, 40)
 
 [sub_resource type="BoxShape3D" id="Shape_Floor"]
 size = Vector3(40, 1, 40)
 
 [sub_resource type="BoxMesh" id="Mesh_Plat_2x1x2"]
-material = SubResource("Mat_Concrete")
+material = ExtResource("7_matConc")
 size = Vector3(2, 1, 2)
 
 [sub_resource type="BoxShape3D" id="Shape_Plat_2x1x2"]
 size = Vector3(2, 1, 2)
 
 [sub_resource type="BoxMesh" id="Mesh_Plat_2x2x2"]
-material = SubResource("Mat_Concrete")
+material = ExtResource("7_matConc")
 size = Vector3(2, 2, 2)
 
 [sub_resource type="BoxShape3D" id="Shape_Plat_2x2x2"]
 size = Vector3(2, 2, 2)
 
 [sub_resource type="BoxMesh" id="Mesh_Plat_2x3x2"]
-material = SubResource("Mat_Concrete")
+material = ExtResource("7_matConc")
 size = Vector3(2, 3, 2)
 
 [sub_resource type="BoxShape3D" id="Shape_Plat_2x3x2"]
 size = Vector3(2, 3, 2)
 
 [sub_resource type="BoxMesh" id="Mesh_Plat_3x05x3"]
-material = SubResource("Mat_Concrete")
+material = ExtResource("7_matConc")
 size = Vector3(3, 0.5, 3)
 
 [sub_resource type="BoxShape3D" id="Shape_Plat_3x05x3"]
 size = Vector3(3, 0.5, 3)
 
 [sub_resource type="BoxMesh" id="Mesh_Plat_4x05x4"]
-material = SubResource("Mat_Concrete")
+material = ExtResource("7_matConc")
 size = Vector3(4, 0.5, 4)
 
 [sub_resource type="BoxShape3D" id="Shape_Plat_4x05x4"]
 size = Vector3(4, 0.5, 4)
 
 [sub_resource type="BoxMesh" id="Mesh_Slope"]
-material = SubResource("Mat_Concrete")
+material = ExtResource("7_matConc")
 size = Vector3(4, 0.5, 3)
 
 [sub_resource type="BoxShape3D" id="Shape_Slope"]
 size = Vector3(4, 0.5, 3)
 
 [sub_resource type="BoxMesh" id="Mesh_Wall"]
-material = SubResource("Mat_ConcreteDark")
+material = ExtResource("8_matConcDark")
 size = Vector3(1, 4, 4)
 
 [sub_resource type="BoxShape3D" id="Shape_Wall"]
 size = Vector3(1, 4, 4)
 
 [sub_resource type="BoxMesh" id="Mesh_Pillar"]
-material = SubResource("Mat_ConcreteDark")
+material = ExtResource("8_matConcDark")
 size = Vector3(2, 20, 2)
 
 [sub_resource type="BoxShape3D" id="Shape_Pillar"]

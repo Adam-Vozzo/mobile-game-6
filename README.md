@@ -5,10 +5,10 @@ A mobile 3D platformer. Brutalist megastructure inspired by *BLAME!*. Controller
 ## Status
 
 Current gate: **Gate 0 — Feel Lab**
-Last iteration: 2026-05-09 — iter 5: reboot animation polish + save-as-profile button
+Last iteration: 2026-05-09 — iter 6: mobile touch UX research + concrete material kit + .tres fixes
 Test device build: not yet — hand-authored scenes pending first Godot 4.6 import; see Open questions
 Performance: not yet measured on Nothing Phone 4(a) Pro
-Throttle level: soft — 5 iterations since last human direction
+Throttle level: soft — 6 iterations since last human direction
 
 If you only read one section, read **Open questions waiting on you** below.
 
@@ -78,6 +78,39 @@ Goal: store-ready build.
 The full iteration log lives here, newest first. Every iteration appends an entry. Skim the dates to find where you last left off.
 
 <!-- ITERATION ENTRIES BELOW — DO NOT REMOVE OLDER ENTRIES -->
+
+### [2026-05-09] — `iter/touch-ux-research` — iter 6: mobile touch UX research + concrete material kit
+
+- Primary: **Mobile touch UX research note** — `docs/research/mobile_touch_ux.md`.
+  Synthesises Dadish 3D Play Store pain points (camera, air control, touch controls
+  bar), fixed vs. floating joystick HCI research (floating wins first-session, neutral
+  at 5 min), Genshin Impact dead zone parameterisation, Sky: Children of the Light
+  zone-split study (50/50 confirmed), Alto's Odyssey one-tap note (not applicable).
+  Thumb-reach analysis for 1920×1080 landscape on Nothing Phone 4(a) Pro: comfortable
+  reach radius ≈ 580 px from each anchor; no gameplay UI in top 25% of screen;
+  jump button minimum radius = 60 px. Assisted profile design targets articulated:
+  ledge magnetism (≤ 1.5 m/s impulse within 0.2 m of edge), arc assist (≤ 15% of
+  jump_velocity at peak), sticky landing (20% speed reduction for 2 frames on narrow
+  platforms), `stick_dead_zone_ratio` = 0.15. New `ControllerProfile` properties
+  needed for Assisted: `ledge_magnet_radius`, `ledge_magnet_strength`,
+  `arc_assist_max`, `landing_sticky_frames`, `stick_dead_zone_ratio`.
+- Side quest A: **Concrete material kit** — `resources/materials/mat_concrete.tres`
+  (albedo 0.55/0.55/0.58, roughness 0.85) and `mat_concrete_dark.tres` (0.32/0.32/0.35,
+  roughness 0.9) extracted from inline `[sub_resource]` in `feel_lab.tscn` to
+  standalone `.tres` files. `feel_lab.tscn` updated to reference them as
+  `[ext_resource]`. Gate 1 level authors can now `@export` a material slot and drag
+  these in. Remaining: `scenes/levels/kit/` prebuilt platform scenes — deferred to
+  art direction approval iteration.
+- Side quest B: **`.tres` profile type headers** — all three controller profiles
+  (`snappy.tres`, `floaty.tres`, `momentum.tres`) updated from `type="Resource"` to
+  `type="ControllerProfile"`. Godot editor now correctly identifies the resource type
+  in the inspector.
+- Perf: no change — material extraction is load-time reorganisation only.
+- Bugs fixed: none.
+- New dev-menu controls: none.
+- Assets acquired: none.
+- Research added: `docs/research/mobile_touch_ux.md`; INDEX.md updated.
+- Needs human attention: see "Open questions waiting on you."
 
 ### [2026-05-09] — `claude/gifted-shannon-bchl4` — iter 5: reboot animation polish + save-as-profile
 
