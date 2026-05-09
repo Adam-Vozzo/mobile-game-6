@@ -132,29 +132,35 @@ func _test_gravity_band_ordering() -> void:
 
 
 func _test_jump_cut_math() -> void:
-	## Variable jump cut (player.gd line ~136):
+	## Variable jump cut (player.gd):
 	##   if jump_released and vy > jump_velocity * release_velocity_ratio:
 	##       vy = jump_velocity * release_velocity_ratio
 	print("\n-- Variable jump cut math --")
-	var p: CP = _load_profile("res://resources/profiles/snappy.tres")
-	if p == null:
-		return
-	var threshold := p.jump_velocity * p.release_velocity_ratio
+	var profiles := [
+		["snappy",   "res://resources/profiles/snappy.tres"],
+		["floaty",   "res://resources/profiles/floaty.tres"],
+		["momentum", "res://resources/profiles/momentum.tres"],
+	]
+	for entry in profiles:
+		var name: String = entry[0]
+		var p: CP = _load_profile(entry[1])
+		if p == null:
+			continue
+		var threshold := p.jump_velocity * p.release_velocity_ratio
 
-	# At full jump_velocity the cut must fire (vy is far above threshold).
-	_ok("cut fires at full jump_velocity", p.jump_velocity > threshold)
+		# At full jump_velocity the cut must fire.
+		_ok(name + ": cut fires at full jump_velocity", p.jump_velocity > threshold)
 
-	# Threshold is strictly between zero and jump_velocity.
-	_ok("threshold > 0 (cut leaves player still rising)", threshold > 0.0)
-	_ok("threshold < jump_velocity (cut actually reduces vy)", threshold < p.jump_velocity)
+		# Threshold is strictly between zero and jump_velocity.
+		_ok(name + ": threshold > 0 (still rising after cut)", threshold > 0.0)
+		_ok(name + ": threshold < jump_velocity (cut reduces vy)", threshold < p.jump_velocity)
 
-	# At exactly the threshold the condition is false (no cut, no feedback loop).
-	_ok("no cut when vy == threshold (boundary)", not (threshold > threshold))
+		# At exactly the threshold the condition is false — no feedback loop.
+		_ok(name + ": no cut at vy == threshold (boundary)", not (threshold > threshold))
 
-	# Well below threshold: no cut. For snappy ratio=0.45 → threshold≈5.175;
-	# vy at 20% of jump_velocity ≈ 2.3, which is below threshold.
-	var vy_low := p.jump_velocity * 0.2
-	_ok("no cut when vy is 20% of jump_velocity (below threshold)", not (vy_low > threshold))
+		# Well below threshold: no cut (vy at 20% of jump_velocity).
+		var vy_low := p.jump_velocity * 0.2
+		_ok(name + ": no cut when vy is 20% of jump_velocity", not (vy_low > threshold))
 
 
 func _test_horizontal_interpolation() -> void:
@@ -210,26 +216,33 @@ func _test_terminal_velocity() -> void:
 	## player.gd: velocity.y = maxf(-terminal_velocity, vy - g * delta)
 	## Once at terminal velocity, additional gravity must not push further down.
 	print("\n-- Terminal velocity clamp --")
-	var p: CP = _load_profile("res://resources/profiles/snappy.tres")
-	if p == null:
-		return
 	const DELTA := 1.0 / 60.0
+	var profiles := [
+		["snappy",   "res://resources/profiles/snappy.tres"],
+		["floaty",   "res://resources/profiles/floaty.tres"],
+		["momentum", "res://resources/profiles/momentum.tres"],
+	]
+	for entry in profiles:
+		var name: String = entry[0]
+		var p: CP = _load_profile(entry[1])
+		if p == null:
+			continue
 
-	# Already past terminal: clamp must hold.
-	var vy_past := -p.terminal_velocity - 30.0
-	var clamped := maxf(-p.terminal_velocity, vy_past - p.gravity_after_apex * DELTA)
-	_ok("clamp holds when vy is far past terminal", _near(clamped, -p.terminal_velocity))
+		# Already past terminal: clamp must hold.
+		var vy_past := -p.terminal_velocity - 30.0
+		var clamped := maxf(-p.terminal_velocity, vy_past - p.gravity_after_apex * DELTA)
+		_ok(name + ": clamp holds when vy is far past terminal", _near(clamped, -p.terminal_velocity))
 
-	# At exactly -terminal_velocity: gravity would push further → clamp holds.
-	var vy_at := -p.terminal_velocity
-	var clamped2 := maxf(-p.terminal_velocity, vy_at - p.gravity_after_apex * DELTA)
-	_ok("clamp holds at exactly -terminal_velocity", _near(clamped2, -p.terminal_velocity))
+		# At exactly -terminal_velocity: gravity would push further → clamp holds.
+		var vy_at := -p.terminal_velocity
+		var clamped2 := maxf(-p.terminal_velocity, vy_at - p.gravity_after_apex * DELTA)
+		_ok(name + ": clamp holds at exactly -terminal_velocity", _near(clamped2, -p.terminal_velocity))
 
-	# Mild fall speed (not yet terminal): gravity still applies freely.
-	var vy_mild := -5.0
-	var after_gravity := maxf(-p.terminal_velocity, vy_mild - p.gravity_after_apex * DELTA)
-	_ok("gravity applies freely below terminal speed", after_gravity < vy_mild)
-	_ok("mild fall stays above -terminal_velocity", after_gravity > -p.terminal_velocity)
+		# Mild fall speed (not yet terminal): gravity still applies freely.
+		var vy_mild := -5.0
+		var after_gravity := maxf(-p.terminal_velocity, vy_mild - p.gravity_after_apex * DELTA)
+		_ok(name + ": gravity applies freely below terminal speed", after_gravity < vy_mild)
+		_ok(name + ": mild fall stays above -terminal_velocity", after_gravity > -p.terminal_velocity)
 
 
 func _test_coyote_countdown() -> void:
