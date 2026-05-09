@@ -14,13 +14,14 @@ instrumented and tunable.
 
 ## Active iteration
 
-- Branch: `claude/fix-scheduled-runs-WjNm9`
-- Focus: process fix complete (auto-merge workflow + iteration-startup
-  rules in `CLAUDE.md`). Iteration 2 should pull from the queue below.
-  **Items 1–4 are blocked on human on-device action — skip past them
-  to item 5 (Touch overlay polish) or further if no human input has
-  arrived.** Don't re-do items already covered by an open PR — see
-  CLAUDE.md "Iteration startup".
+- Branch: `claude/gifted-shannon-6LHK6`
+- Focus: iter 3 complete. Touch overlay polish (item 5) shipped. Iter-2
+  carry-forward (full controller sliders, corner HUD, debug viz) also
+  landed here. PR #12 closed as superseded.
+  **Items 1–4 are still blocked on human on-device action.**
+  Next: item 6 (dev menu debug viz — collision shapes, velocity vector,
+  jump arc) or item 7 (reboot animation polish), both actionable without
+  device access.
 
 ## Queue (ranked, top is next)
 
@@ -50,15 +51,17 @@ The next iteration should pull from the top of this list. Items marked
    landing. Requires new code in `player.gd` (target-detection, ledge
    cast). Scope for a dedicated iteration once the three base profiles
    have been felt on device.
-5. **Touch overlay polish.** Drag-to-place reposition mode invoked from
-   the dev menu (handles per control, snap-to-thumb-zone presets,
-   resize on jump button). Persist anchors + radii to `user://input.cfg`.
-6. **Dev menu fleshing — debug viz.** Debug-viz toggles (collision
-   shapes, velocity vector, ground normal, jump prediction arc),
-   time-scale slider, free-camera mode, save-as-new-profile button.
-7. **Reboot animation polish.** Replace the red-flash placeholder with
+5. **Dev menu fleshing — in-world debug viz.** The "Debug viz" section
+   has checkboxes for perf HUD + velocity (done). Still missing: in-world
+   overlays (collision capsule, velocity vector arrow, ground normal,
+   jump prediction arc). Requires a debug-draw node in the Feel Lab scene
+   that reads `DevMenu.debug_viz_state`.
+6. **Reboot animation polish.** Replace the red-flash placeholder with
    the spec in CLAUDE.md (sparks → dark frame → power-on hum → upright).
    Visual beats first; audio can stay placeholder.
+7. **Save-as-new-profile button.** Dev menu "Profile" section needs a
+   "Save as…" button that writes the current slider values to a new `.tres`
+   and adds it to the dropdown. Scoped to the Feel Lab session for now.
 
 ### P1 — Supporting
 
@@ -73,10 +76,11 @@ The next iteration should pull from the top of this list. Items marked
 - Convert Feel Lab platforms into a small reusable "concrete kit" of
   primitives (`mat_concrete.tres`, `scenes/levels/kit/*`) so Gate 1 has
   a starter vocabulary.
-- Wire the player's `controller_param_changed` signal from the dev menu
-  to actually mutate the live profile values (kickoff already mutates
-  the resource directly via slider callbacks; the signal is currently
-  decorative — confirm both paths agree).
+- ~~Wire the player's `controller_param_changed` signal~~ — confirmed
+  the dev menu overlay mutates the live profile resource directly via
+  `_current_profile.set(prop, v)` in `_make_profile_slider`. The signal
+  is decorative for now (player already reads the resource). No action
+  needed until a second consumer appears.
 - **Momentum profile speed ramp.** The current Momentum profile uses the
   same code path as Snappy/Floaty. The real ramp mechanic (sustained
   input ramps `current_max_speed` up to a `ramp_max_speed` via a
@@ -112,6 +116,14 @@ These mirror "Open questions waiting on you" in the README.
 
 ## Recently completed (last 5)
 
+- 2026-05-09 — Iteration 3. Touch overlay polish: drag-to-place reposition
+  mode, 3 thumb-zone presets (Default/Closer/Wider), jump-button resize
+  handle, `stick_zone_ratio` replaces hardcoded 0.5 in `_classify`, layout
+  persists to `user://input.cfg`. Dev menu gains Touch Controls section
+  (Reposition button, Jump radius slider, Stick zone % slider). Iter-2
+  carry-forward also landed: full controller slider coverage (13 sliders),
+  always-on corner HUD (`hud_overlay.gd`), time-scale slider, debug viz
+  section. PR #12 closed as superseded.
 - 2026-05-09 — Process fix. Added `.github/workflows/auto-merge.yml`
   (squash-merges any non-draft PR with the `auto-merge` label). New
   "Iteration startup" rules in `docs/CLAUDE.md` require listing your

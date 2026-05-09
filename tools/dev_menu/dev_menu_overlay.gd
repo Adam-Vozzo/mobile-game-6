@@ -4,6 +4,9 @@ extends CanvasLayer
 ##
 ## CLAUDE.md (Gate 0 minimum): controller profile dropdown, live sliders,
 ## juice toggle stubs, camera params group. All present.
+##
+## Controller sliders use a unified _profile_sliders dict keyed by property
+## name so _select_profile can bulk-sync all of them when switching profiles.
 
 const SNAPPY_PROFILE := preload("res://resources/profiles/snappy.tres")
 const FLOATY_PROFILE := preload("res://resources/profiles/floaty.tres")
@@ -18,10 +21,10 @@ var _profiles: Dictionary = {
 var _current_profile: Resource
 
 var _profile_dropdown: OptionButton
-var _slider_max_speed: HSlider
-var _slider_jump_velocity: HSlider
-var _slider_coyote: HSlider
-var _slider_buffer: HSlider
+## All controller-param sliders keyed by ControllerProfile property StringName.
+## _select_profile iterates this to bulk-sync when switching profiles.
+var _profile_sliders: Dictionary = {}
+var _slider_time_scale: HSlider
 var _juice_boxes: Dictionary = {}
 var _perf_label: Label
 
@@ -55,7 +58,10 @@ func _build_ui() -> void:
 	_build_profile_section(vbox)
 	_build_controller_section(vbox)
 	_build_camera_section(vbox)
+	_build_level_section(vbox)
+	_build_touch_section(vbox)
 	_build_juice_section(vbox)
+	_build_debug_section(vbox)
 	_build_perf_section(vbox)
 
 
@@ -73,29 +79,75 @@ func _build_profile_section(vbox: VBoxContainer) -> void:
 
 func _build_controller_section(vbox: VBoxContainer) -> void:
 	vbox.add_child(_make_sep())
-	vbox.add_child(_make_label("Controller", 14, true))
-	_slider_max_speed = _make_slider(vbox, "Max speed",
-		2.0, 20.0, 0.1, _on_max_speed_changed)
-	_slider_jump_velocity = _make_slider(vbox, "Jump velocity",
-		4.0, 20.0, 0.1, _on_jump_velocity_changed)
-	_slider_coyote = _make_slider(vbox, "Coyote (s)",
-		0.0, 0.3, 0.005, _on_coyote_changed)
-	_slider_buffer = _make_slider(vbox, "Buffer (s)",
-		0.0, 0.3, 0.005, _on_buffer_changed)
+	vbox.add_child(_make_label("Controller — Movement", 14, true))
+	_profile_sliders[&"max_speed"] = _make_profile_slider(vbox,
+		"Max speed",          2.0,   20.0,  0.1,  &"max_speed")
+	_profile_sliders[&"ground_acceleration"] = _make_profile_slider(vbox,
+		"Ground accel",      10.0,  200.0,  1.0,  &"ground_acceleration")
+	_profile_sliders[&"ground_deceleration"] = _make_profile_slider(vbox,
+		"Ground decel",      10.0,  200.0,  1.0,  &"ground_deceleration")
+	_profile_sliders[&"air_acceleration"] = _make_profile_slider(vbox,
+		"Air accel",          5.0,  200.0,  1.0,  &"air_acceleration")
+	_profile_sliders[&"air_horizontal_damping"] = _make_profile_slider(vbox,
+		"Air damping",        0.0,    5.0,  0.05, &"air_horizontal_damping")
+
+	vbox.add_child(_make_label("Controller — Jump", 14, true))
+	_profile_sliders[&"jump_velocity"] = _make_profile_slider(vbox,
+		"Jump velocity",      4.0,   20.0,  0.1,  &"jump_velocity")
+	_profile_sliders[&"gravity_rising"] = _make_profile_slider(vbox,
+		"Gravity rising",    10.0,   80.0,  0.5,  &"gravity_rising")
+	_profile_sliders[&"gravity_falling"] = _make_profile_slider(vbox,
+		"Gravity falling",   10.0,   80.0,  0.5,  &"gravity_falling")
+	_profile_sliders[&"gravity_after_apex"] = _make_profile_slider(vbox,
+		"Gravity apex",      10.0,  100.0,  0.5,  &"gravity_after_apex")
+	_profile_sliders[&"terminal_velocity"] = _make_profile_slider(vbox,
+		"Terminal vel",      10.0,   60.0,  0.5,  &"terminal_velocity")
+	_profile_sliders[&"coyote_time"] = _make_profile_slider(vbox,
+		"Coyote (s)",         0.0,    0.3,  0.005, &"coyote_time")
+	_profile_sliders[&"jump_buffer"] = _make_profile_slider(vbox,
+		"Buffer (s)",         0.0,    0.3,  0.005, &"jump_buffer")
+	_profile_sliders[&"release_velocity_ratio"] = _make_profile_slider(vbox,
+		"Release ratio",      0.1,    1.0,  0.01, &"release_velocity_ratio")
 
 
 func _build_camera_section(vbox: VBoxContainer) -> void:
 	vbox.add_child(_make_sep())
 	vbox.add_child(_make_label("Camera", 14, true))
-	_make_cam_slider(vbox, "Distance",       &"distance",          2.0,    15.0,   0.1,    6.0)
-	_make_cam_slider(vbox, "Pitch (deg)",    &"pitch_degrees",     0.0,    80.0,   0.5,    22.0)
-	_make_cam_slider(vbox, "Lookahead",      &"lookahead_distance",0.0,    5.0,    0.05,   1.2)
-	_make_cam_slider(vbox, "Fall pull",      &"vertical_pull",     0.0,    1.0,    0.01,   0.18)
-	_make_cam_slider(vbox, "Yaw sens",       &"yaw_drag_sens",     0.001,  0.05,   0.001,  0.005)
-	_make_cam_slider(vbox, "Pitch sens",     &"pitch_drag_sens",   0.001,  0.05,   0.001,  0.003)
-	_make_cam_slider(vbox, "Rctr delay",     &"idle_recenter_delay",0.0,   5.0,    0.1,    1.2)
-	_make_cam_slider(vbox, "Rctr speed",     &"idle_recenter_speed",0.1,   10.0,   0.1,    1.5)
-	_make_cam_slider(vbox, "Occl. margin",   &"occlusion_margin",  0.1,    1.0,    0.05,   0.3)
+	_make_cam_slider(vbox, "Distance",        &"distance",           2.0,   15.0,  0.1,   6.0)
+	_make_cam_slider(vbox, "Pitch (deg)",     &"pitch_degrees",      0.0,   80.0,  0.5,  22.0)
+	_make_cam_slider(vbox, "Lookahead",       &"lookahead_distance", 0.0,    5.0,  0.05,  1.2)
+	_make_cam_slider(vbox, "Fall pull",       &"vertical_pull",      0.0,    1.0,  0.01,  0.18)
+	_make_cam_slider(vbox, "Yaw sens",        &"yaw_drag_sens",      0.001,  0.05, 0.001, 0.005)
+	_make_cam_slider(vbox, "Pitch sens",      &"pitch_drag_sens",    0.001,  0.05, 0.001, 0.003)
+	_make_cam_slider(vbox, "Rctr delay",      &"idle_recenter_delay",0.0,    5.0,  0.1,   1.2)
+	_make_cam_slider(vbox, "Rctr speed",      &"idle_recenter_speed",0.1,   10.0,  0.1,   1.5)
+	_make_cam_slider(vbox, "Occl. margin",    &"occlusion_margin",   0.1,    1.0,  0.05,  0.3)
+
+
+func _build_level_section(vbox: VBoxContainer) -> void:
+	vbox.add_child(_make_sep())
+	vbox.add_child(_make_label("Level", 14, true))
+	_slider_time_scale = _make_slider(vbox, "Time scale ×",
+		0.25, 2.0, 0.05,
+		func(v: float) -> void:
+			Engine.time_scale = v
+			DevMenu.time_scale_changed.emit(v))
+	_slider_time_scale.value = 1.0
+
+
+func _build_touch_section(vbox: VBoxContainer) -> void:
+	vbox.add_child(_make_sep())
+	vbox.add_child(_make_label("Touch Controls", 14, true))
+	_make_button(vbox, "Reposition controls…",
+		func() -> void: DevMenu.reposition_controls_requested.emit())
+	_make_slider(vbox, "Jump radius",
+		40.0, 200.0, 1.0,
+		func(v: float) -> void: DevMenu.touch_param_changed.emit(&"jump_radius", v)
+	).value = 95.0
+	_make_slider(vbox, "Stick zone %",
+		0.30, 0.70, 0.01,
+		func(v: float) -> void: DevMenu.touch_param_changed.emit(&"stick_zone_ratio", v)
+	).value = 0.5
 
 
 func _build_juice_section(vbox: VBoxContainer) -> void:
@@ -113,6 +165,13 @@ func _build_juice_section(vbox: VBoxContainer) -> void:
 			DevMenu.set_juice(captured_key, pressed))
 		juice_grid.add_child(cb)
 		_juice_boxes[key] = cb
+
+
+func _build_debug_section(vbox: VBoxContainer) -> void:
+	vbox.add_child(_make_sep())
+	vbox.add_child(_make_label("Debug viz", 14, true))
+	_make_viz_checkbox(vbox, "Perf HUD (corner)", &"perf_hud")
+	_make_viz_checkbox(vbox, "Velocity + state",  &"velocity_vec")
 
 
 func _build_perf_section(vbox: VBoxContainer) -> void:
@@ -152,6 +211,14 @@ func _make_sep() -> HSeparator:
 	return HSeparator.new()
 
 
+func _make_button(parent: Node, label_text: String, callback: Callable) -> Button:
+	var btn := Button.new()
+	btn.text = label_text
+	btn.pressed.connect(callback)
+	parent.add_child(btn)
+	return btn
+
+
 func _make_slider(parent: Node, label_text: String,
 		mn: float, mx: float, step: float,
 		on_changed: Callable) -> HSlider:
@@ -183,15 +250,36 @@ func _make_slider(parent: Node, label_text: String,
 	return slider
 
 
+## Profile-param slider: mutates the active profile resource directly (player
+## reads from it each frame) and emits controller_param_changed.
+func _make_profile_slider(parent: Node, label_text: String,
+		mn: float, mx: float, step: float,
+		prop: StringName) -> HSlider:
+	return _make_slider(parent, label_text, mn, mx, step,
+		func(v: float) -> void:
+			if _current_profile != null:
+				_current_profile.set(prop, v)
+				DevMenu.controller_param_changed.emit(prop, v))
+
+
 ## Camera-param slider: fires DevMenu.camera_param_changed and sets an initial value.
 func _make_cam_slider(parent: Node, label_text: String, param: StringName,
 		mn: float, mx: float, step: float, default_val: float) -> HSlider:
 	var slider := _make_slider(parent, label_text, mn, mx, step,
 		func(v: float) -> void: DevMenu.camera_param_changed.emit(param, v))
-	# Set value after connecting; value_changed will update the display label
-	# and broadcast the initial default to the camera rig if it's already live.
+	# Set value after connecting; value_changed updates the display label and
+	# broadcasts the initial default to the camera rig if it's already live.
 	slider.value = default_val
 	return slider
+
+
+func _make_viz_checkbox(parent: Node, label_text: String, key: StringName) -> void:
+	var cb := CheckBox.new()
+	cb.text = label_text
+	cb.button_pressed = DevMenu.is_debug_viz_on(key)
+	cb.toggled.connect(func(pressed: bool) -> void:
+		DevMenu.set_debug_viz(key, pressed))
+	parent.add_child(cb)
 
 
 ## Smart number format: enough digits to show the step resolution.
@@ -214,42 +302,13 @@ func _select_profile(profile_name: String) -> void:
 		return
 	var p: Resource = _profiles[profile_name]
 	_current_profile = p
-	# Sync sliders to the new profile. value_changed fires but writes back the
-	# same values the resource already holds — harmless.
-	_slider_max_speed.value = p.max_speed
-	_slider_jump_velocity.value = p.jump_velocity
-	_slider_coyote.value = p.coyote_time
-	_slider_buffer.value = p.jump_buffer
+	# Bulk-sync all sliders to the new profile's values.
+	for prop: StringName in _profile_sliders:
+		var val = p.get(prop)
+		if val != null:
+			_profile_sliders[prop].value = float(val)
 	DevMenu.controller_profile_changed.emit(p)
 
 
 func _on_profile_selected(idx: int) -> void:
 	_select_profile(_profile_dropdown.get_item_text(idx))
-
-
-func _on_max_speed_changed(v: float) -> void:
-	if _current_profile == null:
-		return
-	_current_profile.max_speed = v
-	DevMenu.controller_param_changed.emit(&"max_speed", v)
-
-
-func _on_jump_velocity_changed(v: float) -> void:
-	if _current_profile == null:
-		return
-	_current_profile.jump_velocity = v
-	DevMenu.controller_param_changed.emit(&"jump_velocity", v)
-
-
-func _on_coyote_changed(v: float) -> void:
-	if _current_profile == null:
-		return
-	_current_profile.coyote_time = v
-	DevMenu.controller_param_changed.emit(&"coyote_time", v)
-
-
-func _on_buffer_changed(v: float) -> void:
-	if _current_profile == null:
-		return
-	_current_profile.jump_buffer = v
-	DevMenu.controller_param_changed.emit(&"jump_buffer", v)

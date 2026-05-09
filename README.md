@@ -5,7 +5,7 @@ A mobile 3D platformer. Brutalist megastructure inspired by *BLAME!*. Controller
 ## Status
 
 Current gate: **Gate 0 — Feel Lab**
-Last iteration: 2026-05-09 — process fix (auto-merge workflow + iteration-startup rules)
+Last iteration: 2026-05-09 — iter 3: touch overlay polish + iter-2 carry-forward (full controller sliders, corner HUD)
 Test device build: not yet — hand-authored scenes pending first Godot 4.6 import; see Open questions
 Performance: not yet measured on Nothing Phone 4(a) Pro
 Throttle level: normal — 2 iterations since last human direction
@@ -78,6 +78,41 @@ Goal: store-ready build.
 The full iteration log lives here, newest first. Every iteration appends an entry. Skim the dates to find where you last left off.
 
 <!-- ITERATION ENTRIES BELOW — DO NOT REMOVE OLDER ENTRIES -->
+
+### [2026-05-09] — `claude/gifted-shannon-6LHK6` — iter 3: touch overlay polish + iter-2 carry
+
+- Primary: **Touch overlay polish (PLAN P0 item 5).** `scripts/ui/touch_overlay.gd` fully
+  rewritten. Drag-to-place reposition mode (`enter_reposition_mode()` / "Reposition
+  controls…" button in dev menu Touch section): drag the red circle to move the jump button,
+  drag the yellow handle at its edge to resize, tap a preset button to snap to a thumb-zone
+  configuration. Three presets: Default (1720×900, r=95), Closer (1580×900, r=90), Wider
+  (1830×950, r=100). Reposition mode also shows the stick-zone divider line live. All
+  changes are written to `user://input.cfg` (ConfigFile) on Done and reloaded on startup.
+  Dev menu gains a "Touch Controls" section: Reposition button, Jump radius slider, Stick
+  zone % slider. `stick_zone_ratio` replaces the hardcoded 0.5 fraction in `_classify()`.
+- Bundled: **Carry-forward of iter-2 code from stranded PR #12** (`claude/elegant-lamport-VlWlA`,
+  draft with merge conflicts). Iter-2 work now lands cleanly on current main:
+  — `tools/debug/hud_overlay.gd` (new): always-on layer-98 CanvasLayer. Perf HUD (FPS +
+    frametime) on by default in top-right corner; Velocity+state readout off by default.
+    Controlled by `DevMenu.debug_viz_state` and toggled from the Debug viz section.
+  — Dev menu controller section expanded from 4 to 13 sliders covering every
+    `ControllerProfile` property (gravity bands, air accel/damping, release ratio). Profile
+    switching bulk-syncs all sliders via `_profile_sliders` dict — switching Snappy ↔ Floaty
+    ↔ Momentum now shows each profile's distinct values immediately.
+  — Level section: Time scale × slider (0.25×–2.0×) sets `Engine.time_scale` live.
+  — Debug viz section in dev menu: "Perf HUD" and "Velocity + state" checkboxes.
+  — Stale "until step 7" camera-frame comment removed from `player.gd`.
+- PR #12 closed as superseded by this PR.
+- Perf: no new geometry or draw calls. HUD is a Label in a CanvasLayer — CPU cost is
+  negligible. On-device baseline still pending first human build.
+- Bugs fixed: profile slider mismatch (sliders always showed Snappy values regardless of
+  selected profile — now bulk-synced on switch).
+- New dev-menu controls: Touch section (Reposition button, Jump radius, Stick zone %);
+  Controller section now 13 sliders; Level section (Time scale); Debug viz section (2
+  checkboxes); corner HUD always-on.
+- Assets acquired: none.
+- Research added: none.
+- Needs human attention: see "Open questions waiting on you."
 
 ### [2026-05-09] — `claude/fix-scheduled-runs-WjNm9` — process fix: auto-merge workflow
 

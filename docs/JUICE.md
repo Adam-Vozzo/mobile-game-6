@@ -71,10 +71,17 @@ Status legend:
 
 | element | status | notes |
 |---------|--------|-------|
-| Lookahead lerp | prototype | covered by camera implementation in step 7 |
+| Lookahead lerp | prototype | covered by camera_rig.gd; tunable via dev menu |
 | Vertical pull on fall | prototype | same |
 | Vista slowdown | idea | `CameraHint`-driven, Gate 1 |
-| Recenter on idle | prototype | timer-based |
+| Recenter on idle | prototype | timer-based; tunable via dev menu |
+
+## Debug HUD — not juice, but listed here for completeness
+
+| element | status | notes |
+|---------|--------|-------|
+| Corner perf HUD | prototype | FPS + frametime; always-on, toggle via Debug viz section; zero draw-call overhead |
+| Velocity + state | prototype | player velocity + floor/air state; toggled off by default |
 
 ## UI juice — currently no toggle
 

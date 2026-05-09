@@ -4,7 +4,7 @@ class_name ControllerProfile
 ## live in /resources/profiles/ as .tres files and are hot-swappable from
 ## the dev menu. CLAUDE.md mandates four targets: Snappy (SMB-leaning),
 ## Floaty (Dadish-leaning), Momentum (experimental), Assisted (mobile-first).
-## This kickoff ships Snappy; the others are queued in PLAN.md.
+## Snappy, Floaty, and Momentum are implemented; Assisted is queued in PLAN.md.
 ##
 ## Units: metres, seconds. The Stray is ~0.8 m tall.
 
