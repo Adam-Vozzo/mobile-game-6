@@ -5,10 +5,10 @@ A mobile 3D platformer. Brutalist megastructure inspired by *BLAME!*. Controller
 ## Status
 
 Current gate: **Gate 0 — Feel Lab**
-Last iteration: 2026-05-09 — iter 1 (camera occlusion avoidance, camera dev-menu section, Floaty + Momentum profiles)
+Last iteration: 2026-05-09 — iter 2 (dev menu fleshing: full controller sliders, Level/Debug sections, corner HUD)
 Test device build: not yet — hand-authored scenes pending first Godot 4.6 import; see Open questions
 Performance: not yet measured on Nothing Phone 4(a) Pro
-Throttle level: normal — 1 iteration since last human direction
+Throttle level: normal — 2 iterations since last human direction
 
 If you only read one section, read **Open questions waiting on you** below.
 
@@ -78,6 +78,50 @@ Goal: store-ready build.
 The full iteration log lives here, newest first. Every iteration appends an entry. Skim the dates to find where you last left off.
 
 <!-- ITERATION ENTRIES BELOW — DO NOT REMOVE OLDER ENTRIES -->
+
+### [2026-05-09] — `claude/elegant-lamport-VlWlA` — iter 2: dev menu fleshing
+
+- Primary: **Full controller-param exposure.** Dev menu controller section
+  expanded from 4 sliders to 13 — all `ControllerProfile` properties now
+  exposed: ground/air acceleration, ground decel, air damping, gravity rising /
+  falling / after-apex, terminal velocity, release ratio (in addition to the
+  existing max speed, jump velocity, coyote, buffer). Critically, `_select_profile`
+  now bulk-syncs every slider when switching profiles, so Snappy / Floaty /
+  Momentum differences are visible immediately in the sliders (gravity bands
+  differ significantly between profiles). Profile-slider logic refactored to a
+  unified `_profile_sliders` dict + `_make_profile_slider` helper — fewer
+  callbacks, bulk sync for free.
+- Primary (cont): **Level section** — time-scale slider (0.25×–2.0×, step 0.05).
+  Sets `Engine.time_scale` live; useful for examining jump arcs in slow-mo.
+  Emits `DevMenu.time_scale_changed`.
+- Primary (cont): **Debug viz section** — two checkboxes: "Perf HUD (corner)"
+  (default ON) and "Velocity + state" (default OFF). `DevMenu.debug_viz_state`
+  dict + `set_debug_viz` / `is_debug_viz_on` API + `debug_viz_changed` signal.
+- Side quest: **Always-on corner HUD** (`tools/debug/hud_overlay.gd`). Layer 98
+  CanvasLayer added to `/root` by `DevMenu._install_overlay()` — completely
+  independent of the dev menu open/close toggle. Shows FPS + frametime in the
+  top-right corner (13 px, right-aligned). When "Velocity + state" is enabled,
+  also shows player velocity (XYZ) and floor/air state below the perf line.
+  Zero geometry cost — pure UI labels reading `PerfBudget.snapshot()` and the
+  player group each frame.
+- Refactor/cleanup: Stale "until step 7" camera-frame comment removed from
+  `player.gd`; `controller_profile.gd` updated to reflect Floaty and Momentum
+  are now shipped.
+- Perf: no new geometry or draw calls. Corner HUD is 2 Label nodes; no impact
+  on-device. On-device baseline still pending first human build.
+- Bugs fixed: subtle dev menu bug — switching between Snappy/Floaty/Momentum
+  previously left slider positions showing Snappy's values regardless of
+  selected profile (4 of 13 params were synced; 9 were invisible). Now all 13
+  sync correctly on profile switch.
+- New dev-menu controls: Controller — Ground accel, Ground decel, Air accel,
+  Air damping, Gravity rising, Gravity falling, Gravity apex, Terminal vel,
+  Release ratio. Level — Time scale. Debug viz — Perf HUD, Velocity+state.
+- Assets acquired: none.
+- Research added: none this iteration.
+- Needs human attention: same as before — see "Open questions waiting on you."
+- Next likely focus: once human opens in Godot 4.6 and confirms project
+  imports cleanly, tune Snappy on device then compare Floaty/Momentum with
+  full slider visibility.
 
 ### [2026-05-09] — `claude/elegant-lamport-c9ZE9` — iter 1: camera occlusion + profiles
 

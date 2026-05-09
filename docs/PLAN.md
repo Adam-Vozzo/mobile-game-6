@@ -14,8 +14,8 @@ instrumented and tunable.
 
 ## Active iteration
 
-- Branch: `claude/elegant-lamport-c9ZE9`
-- Focus: iteration 1 complete. Pull from the queue below for iteration 2.
+- Branch: `claude/elegant-lamport-VlWlA`
+- Focus: iteration 2 complete. Pull from the queue below for iteration 3.
 
 ## Queue (ranked, top is next)
 
@@ -48,9 +48,10 @@ The next iteration should pull from the top of this list. Items marked
 5. **Touch overlay polish.** Drag-to-place reposition mode invoked from
    the dev menu (handles per control, snap-to-thumb-zone presets,
    resize on jump button). Persist anchors + radii to `user://input.cfg`.
-6. **Dev menu fleshing — debug viz.** Debug-viz toggles (collision
-   shapes, velocity vector, ground normal, jump prediction arc),
-   time-scale slider, free-camera mode, save-as-new-profile button.
+6. **Dev menu fleshing — debug viz.** _(partial)_ Time-scale slider,
+   always-on corner perf HUD, velocity+state HUD done this iteration.
+   Still TODO: collision-shape toggle, velocity/ground-normal 3D overlays,
+   free-camera mode, save-as-new-profile button.
 7. **Reboot animation polish.** Replace the red-flash placeholder with
    the spec in CLAUDE.md (sparks → dark frame → power-on hum → upright).
    Visual beats first; audio can stay placeholder.
@@ -80,8 +81,8 @@ The next iteration should pull from the top of this list. Items marked
 
 ### P2 — Opportunistic
 
-- Add an always-on perf HUD visible in a corner when the dev menu is
-  closed (frametime + fps) so on-device sessions don't need the menu open.
+- ~~Add an always-on perf HUD~~ — done iter 2. Corner HUD shows FPS + frametime
+  when `perf_hud` viz toggle is on (default). Velocity+state readout also wired.
 - Research a "ghost trail" prototype (point-based polyline that fades)
   for the Gate 1 attempt-replay overlay. Don't ship; just sketch.
 - Investigate Godot's Compatibility renderer fallback for very-low-end
@@ -107,6 +108,14 @@ These mirror "Open questions waiting on you" in the README.
 
 ## Recently completed (last 5)
 
+- 2026-05-09 — Iteration 2. Dev menu controller section expanded from 4 to 13
+  sliders (all ControllerProfile params exposed: gravity bands, air accel,
+  damping, release ratio). Profile switching now bulk-syncs all sliders.
+  Level section added with time-scale slider (0.25×–2.0×). Debug viz section
+  added with "Perf HUD" and "Velocity+state" checkboxes. Always-on corner HUD
+  (`tools/debug/hud_overlay.gd`) shows FPS+frametime in top-right regardless
+  of dev menu open state; velocity+state optional. Stale step-7 comment in
+  player.gd removed; controller_profile.gd comment updated.
 - 2026-05-09 — Iteration 1. Camera occlusion avoidance via
   `PhysicsDirectSpaceState3D` raycast in `camera_rig.gd` (script-only,
   no scene change). Camera params group added to dev menu (9 sliders:
