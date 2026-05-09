@@ -150,6 +150,10 @@ func _build_controller_section(vbox: VBoxContainer) -> void:
 	_profile_sliders[&"fall_kill_y"] = _make_profile_slider(vbox,
 		"Fall kill Y",      -200.0,   0.0,  0.5,  &"fall_kill_y")
 
+	vbox.add_child(_make_label("Controller — Slope", 14, true))
+	_profile_sliders[&"max_floor_angle_degrees"] = _make_profile_slider(vbox,
+		"Max floor°",         20.0,  70.0,  1.0,  &"max_floor_angle_degrees")
+
 
 func _build_camera_section(vbox: VBoxContainer) -> void:
 	vbox.add_child(_make_sep())

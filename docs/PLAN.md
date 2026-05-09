@@ -14,12 +14,13 @@ instrumented and tunable.
 
 ## Active iteration
 
-- Branch: `claude/gifted-shannon-72KFx`
-- Focus: iter 14. `dev_menu_overlay.gd` bug fix + refactor (primary): fixed
-  `_on_save_confirmed` missing `_select_profile` call; extracted 6 layout magic numbers
-  to named constants (`_PANEL_W`, `_SCROLL_H`, `_SECTION_SEP`, `_SL_LABEL_W`,
-  `_SL_TRACK_W/_H`, `_SL_VAL_W`). Christopher Alexander research note (side quest).
-  Hard throttle (14 iterations since human direction).
+- Branch: `claude/gifted-shannon-b8hWF`
+- Focus: iter 15. `player.gd` respawn timer bug fix + `max_floor_angle_degrees` dev menu
+  exposure (primary): `respawn()` now zeroes `_buffer_timer`/`_coyote_timer` before
+  rebooting (frozen timers caused unintended jump on first post-reboot frame); `floor_max_angle`
+  moved to `_physics_process` so the new "Controller — Slope / Max floor°" slider works live.
+  Slope param test group added to kinematics tests (side quest).
+  Hard throttle (15 iterations since human direction).
   **Items 1–4 still blocked on human on-device action.**
 
 ## Queue (ranked, top is next)
@@ -138,6 +139,15 @@ These mirror "Open questions waiting on you" in the README.
   feel issues. Those notes drive iteration 2's tuning pass.
 
 ## Recently completed (last 5)
+
+- 2026-05-09 — Iteration 15. `player.gd` respawn timer bug fix + slope tunable (primary):
+  `respawn()` zeroes `_buffer_timer` and `_coyote_timer` before the reboot sequence —
+  timers don't tick while `_is_rebooting`, so a buffered jump press at death-time would
+  survive the full 0.5 s reboot and fire on the first frame back. `floor_max_angle` moved
+  to `_physics_process` top so it refreshes every tick; "Controller — Slope / Max floor°"
+  slider (20–70°) added to dev menu, registered in `_profile_sliders` for bulk-sync.
+  Side quest: `_test_slope_params()` added to kinematics tests — 7 assertions (in-range
+  check + floaty ≥ snappy accessibility invariant). ~56 → ~63 total assertions.
 
 - 2026-05-09 — Iteration 14. `dev_menu_overlay.gd` bug fix + refactor (primary):
   Fixed `_on_save_confirmed` — after saving a profile, `OptionButton.selected = n` does
