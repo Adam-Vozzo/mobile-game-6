@@ -5,10 +5,10 @@ A mobile 3D platformer. Brutalist megastructure inspired by *BLAME!*. Controller
 ## Status
 
 Current gate: **Gate 0 — Feel Lab**
-Last iteration: 2026-05-08 — kickoff (folder layout, project settings, Android preset, docs, Feel Lab scene, Stray + Snappy controller, dev menu, camera rig, touch overlay)
-Test device build: not yet — kickoff authored without a Godot binary; first on-device build is the next iteration's top task
+Last iteration: 2026-05-09 — iter 1 (camera occlusion avoidance, camera dev-menu section, Floaty + Momentum profiles)
+Test device build: not yet — hand-authored scenes pending first Godot 4.6 import; see Open questions
 Performance: not yet measured on Nothing Phone 4(a) Pro
-Throttle level: normal — 0 iterations since last human direction
+Throttle level: normal — 1 iteration since last human direction
 
 If you only read one section, read **Open questions waiting on you** below.
 
@@ -17,7 +17,7 @@ If you only read one section, read **Open questions waiting on you** below.
 Things Claude can't decide alone, or where it's stalled and needs direction. Each is blocking some piece of forward progress.
 
 - [ ] **Open the project in Godot 4.6 and run the on-device first-run checklist in `docs/ANDROID.md`.** This is the only thing that will catch syntax mistakes in any of the hand-authored `.tscn`/`.tres` files. If anything fails, paste the Output panel error and Claude will fix it next iteration.
-- [ ] **First feel of Snappy on device.** Once the build runs, hold the phone and play for 60 seconds. Note: does the jump arc feel right? Coyote forgiving enough? Buffer too sticky? Anything you flag goes into iteration 1's tuning pass.
+- [ ] **First feel verdict — Snappy vs Floaty vs Momentum.** Once the build runs, open the dev menu (F1 in editor, 3-finger tap on device), switch the Profile dropdown between Snappy / Floaty / Momentum and play each for 30–60 seconds. Note: jump arc, air momentum feel, landing, coyote forgiveness. Any notes you give go straight into the next tuning pass.
 - [ ] **Confirm the auto-merge git workflow is what you want long-term.** Decided already in `docs/DECISIONS.md` for kickoff after your "go ahead and feel free to merge" — flag here only because it's the kind of thing that's easy to forget about until it surprises you.
 
 ## Roadmap
@@ -36,7 +36,7 @@ Goal: one scene, one character controller, fully instrumented and tunable.
 - [x] CharacterBody3D player (the Stray) with Snappy profile
 - [x] Coyote, buffer, variable jump, preserved horizontal velocity
 - [x] Dev menu skeleton with live tunables
-- [x] Spring-arm camera with lookahead and right-drag override _(SpringArm collision avoidance still queued — current rig is direct-positioning only)_
+- [x] Spring-arm camera with lookahead and right-drag override _(occlusion avoidance via raycast added iter 1; camera params live in dev menu)_
 - [x] Touch input: virtual stick + jump, repositionable _(positions exposed as `@export`s; drag-to-place UI queued)_
 - [ ] Android export pipeline verified on test device
 
@@ -78,6 +78,38 @@ Goal: store-ready build.
 The full iteration log lives here, newest first. Every iteration appends an entry. Skim the dates to find where you last left off.
 
 <!-- ITERATION ENTRIES BELOW — DO NOT REMOVE OLDER ENTRIES -->
+
+### [2026-05-09] — `claude/elegant-lamport-c9ZE9` — iter 1: camera occlusion + profiles
+
+- Primary: **Camera occlusion avoidance** — `camera_rig.gd` now casts a ray from the
+  look-at point to the desired camera position each frame
+  (`PhysicsDirectSpaceState3D.intersect_ray`); if world geometry blocks the shot the
+  camera snaps forward to the hit minus `occlusion_margin` (0.3 m default), floored
+  at `occlusion_min_distance` (0.8 m). Player capsule is excluded from the query.
+  Script-only change — no `.tscn` restructuring required. Rationale for not using
+  `SpringArm3D` logged in `DECISIONS.md`.  
+  **Camera params dev-menu section** — 9 new live sliders in the dev menu (distance,
+  pitch, lookahead, fall pull, yaw/pitch drag sensitivity, recenter delay/speed,
+  occlusion margin). `_build_ui` refactored into per-section helpers; number display
+  uses smart precision formatting.
+- Side quest: **Floaty + Momentum profiles** — `floaty.tres` (smooth accel,
+  generous air, long hang, wide coyote/buffer) and `momentum.tres` (high top speed,
+  near-zero ground decel, full horizontal velocity preservation, tighter coyote).
+  Both wired into the dev menu Profile dropdown → dropdown now shows
+  **Snappy / Floaty / Momentum**. Momentum speed-ramp mechanic (sustained-input
+  speed increase) deferred to a later iteration; logged in PLAN.md refactor backlog.
+- Perf: no change — no new geometry or draw calls; physics ray cast is O(1).
+  On-device baseline still pending first human build.
+- Bugs fixed: none new (occlusion was a missing feature, not a bug).
+- New dev-menu controls: Camera section — distance, pitch (deg), lookahead,
+  fall pull, yaw sens, pitch sens, recenter delay, recenter speed, occl. margin.
+  Profile dropdown now shows 3 entries.
+- Assets acquired: none.
+- Research added: none this iteration.
+- Needs human attention: see "Open questions waiting on you."
+- Next likely focus: once human opens in Godot 4.6 and fixes any import errors,
+  iterate on Snappy feel tuning based on first-feel feedback; then first contrast
+  of Floaty vs Momentum.
 
 ### [2026-05-08] — `claude/start-project-void-TxIcJ` — kickoff
 
