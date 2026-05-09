@@ -29,6 +29,10 @@ var juice_state: Dictionary = {
 var debug_viz_state: Dictionary = {
 	&"perf_hud": true,
 	&"velocity_vec": false,
+	&"collision_capsule": false,
+	&"velocity_arrow": false,
+	&"ground_normal": false,
+	&"jump_arc": false,
 }
 
 var _overlay: CanvasLayer
