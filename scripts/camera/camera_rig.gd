@@ -164,7 +164,8 @@ func _occlude(aim: Vector3, desired: Vector3) -> Vector3:
 	if hit.is_empty():
 		return desired
 	var dir := (desired - aim).normalized()
-	var hit_dist := (hit.position - aim).length()
+	var hit_pos: Vector3 = hit.position
+	var hit_dist := (hit_pos - aim).length()
 	var safe_dist := maxf(occlusion_min_distance, hit_dist - occlusion_margin)
 	return aim + dir * safe_dist
 
