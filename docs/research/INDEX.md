@@ -26,12 +26,11 @@ Suggested:
 
 ## Brutalism / *BLAME!* / megastructure
 
-_(none yet)_
+- [`brutalism_blame.md`](brutalism_blame.md) — Nihei's *BLAME!* visual grammar (scale ambiguity, darkness as material, recursion, navigation-by-infrastructure), brutalist architecture principles (béton brut, expressed structure, mass over surface), megastructure hierarchy (mega-column → floor slab → service run → habitation volume), Kevin Lynch legibility vocabulary. 10 concrete implications for Project Void: cold grey palette, darkness as architecture, Stray red as sole warm accent, multi-scale kit pieces, expressed structure in geometry, service-run compression sequences, column-array depth shots, "failed program" landmark props, no skybox, vertical axis primary.
 
 Suggested:
-- Tsutomu Nihei interviews and *BLAME!* art reference.
-- Christopher Alexander on parti and pattern.
-- Kevin Lynch on legibility.
+- Christopher Alexander on parti and pattern (to reinforce LEVEL_DESIGN.md principles in practice).
+- Deeper *BLAME!* volume-by-volume architectural analysis (each volume of the manga has a distinct spatial character worth mapping).
 
 ## Level design references
 
