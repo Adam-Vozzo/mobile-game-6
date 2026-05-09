@@ -11,9 +11,7 @@ class_name Player
 ## Camera frame: movement input is rotated by the camera's yaw, published
 ## each frame by camera_rig.gd via set_camera_yaw().
 
-const ControllerProfileScript := preload("res://scripts/controller/controller_profile.gd")
-
-@export var profile: Resource:
+@export var profile: ControllerProfile:
 	set = set_profile
 
 var _camera_yaw: float = 0.0
@@ -41,7 +39,7 @@ func _ready() -> void:
 		TouchInput.jump_pressed.connect(_on_jump_pressed)
 
 
-func set_profile(p: Resource) -> void:
+func set_profile(p: ControllerProfile) -> void:
 	profile = p
 	if is_inside_tree():
 		_apply_profile_to_body()
@@ -54,7 +52,7 @@ func set_camera_yaw(yaw_radians: float) -> void:
 
 func _apply_profile_to_body() -> void:
 	if profile == null:
-		profile = ControllerProfileScript.new()
+		profile = ControllerProfile.new()
 	floor_max_angle = deg_to_rad(profile.max_floor_angle_degrees)
 	floor_snap_length = 0.3
 	# Preserve platform-velocity on takeoff (SMB-style momentum off moving
@@ -169,7 +167,7 @@ func _on_jump_pressed() -> void:
 
 func _on_dev_profile_changed(new_profile: Resource) -> void:
 	if new_profile != null:
-		set_profile(new_profile)
+		set_profile(new_profile as ControllerProfile)
 
 
 func _run_reboot_effect() -> void:
