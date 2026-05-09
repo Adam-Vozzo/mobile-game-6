@@ -7,10 +7,14 @@ extends CanvasLayer
 ## debug-viz toggles, time-scale, free-cam, save/load profile snapshots —
 ## see PLAN.md.
 
-const SNAPPY_PROFILE := preload("res://resources/profiles/snappy.tres")
+const SNAPPY_PROFILE   := preload("res://resources/profiles/snappy.tres")
+const FLOATY_PROFILE   := preload("res://resources/profiles/floaty.tres")
+const MOMENTUM_PROFILE := preload("res://resources/profiles/momentum.tres")
 
 var _profiles: Dictionary = {
-	"Snappy": SNAPPY_PROFILE,
+	"Snappy":   SNAPPY_PROFILE,
+	"Floaty":   FLOATY_PROFILE,
+	"Momentum": MOMENTUM_PROFILE,
 }
 
 var _current_profile: Resource

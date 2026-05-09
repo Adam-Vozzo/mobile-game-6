@@ -79,6 +79,33 @@ Consequences: capsule-on-slope behaviour will need a tuning pass on
 device — Jolt's sliding/snapping characteristics differ subtly from the
 default and can affect "feel."
 
+## 2026-05-09 — SpringArm3D used as collision sensor, not child mover
+
+Status: accepted
+Context: PLAN.md called for wrapping the camera in SpringArm3D. Godot's
+SpringArm3D repositions its children to the end of the arm in its own
+internal _process notification — which fires AFTER the parent Node3D's
+_process. Our CameraRig calls look_at() at the end of _process, which
+runs before SpringArm3D moves the Camera3D, so depending on automatic
+child repositioning would produce a 1-frame misaligned look_at.
+Decision: Use SpringArm3D for collision sensing only (get_hit_length()).
+Camera3D stays as a direct child of CameraRig and is positioned manually
+using the hit length from the last frame. SpringArm3D has no Camera3D
+child. This gives correct look_at every frame at the cost of a ~1-frame
+lag on the collision distance, which is unnoticeable for camera avoidance.
+Alternatives considered:
+- Camera3D as SpringArm3D child, look_at via deferred call. Rejected:
+  adds 1-frame visual lag to the camera rotation, noticeable during fast
+  movement.
+- Use RayCast3D with force_raycast_update() instead of SpringArm3D.
+  Rejected: SpringArm3D's SphereShape cast catches edge geometry that a
+  ray misses; consistent with PLAN.md wording.
+Consequences: SpringArm3D rotation must be set to the correct orientation
+for the cast. Rotation formula (Euler YXZ): Vector3(|pitch|, yaw + π, 0)
+maps local -Z to the world-space camera direction. Derived: Ry(yaw+π)·Rx(|pitch|)·(0,0,-1)
+= (cos|pitch|·sin(yaw), sin|pitch|, cos|pitch|·cos(yaw)), which equals
+Ry(yaw)·(0, sin|pitch|, cos|pitch|) — the camera offset direction.
+
 ## 2026-05-08 — Auto-merge PR workflow per CLAUDE.md
 
 Status: accepted (after human confirmation)
