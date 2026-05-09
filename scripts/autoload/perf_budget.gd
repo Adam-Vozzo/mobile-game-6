@@ -9,7 +9,7 @@ extends Node
 const TARGET_FPS := 60
 const FRAMETIME_BUDGET_MS := 9.0
 const TRIANGLE_BUDGET := 80_000
-const DRAW_CALL_BUDGET := 200
+const DRAW_CALL_BUDGET := 50    # research target: ≤ 50 at Gate 1 (godot_mobile_perf.md)
 const ACTIVE_PARTICLES_BUDGET := 256
 
 var triangles_in_frame: int = 0
