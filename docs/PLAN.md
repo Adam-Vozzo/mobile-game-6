@@ -14,9 +14,9 @@ instrumented and tunable.
 
 ## Active iteration
 
-- Branch: `claude/gifted-shannon-tfUYS`
-- Focus: iter 9. Level design references research note (primary) + camera_rig
-  `_process()` refactor (side quest). Hard throttle (9 iterations since human
+- Branch: `claude/gifted-shannon-wIoiG`
+- Focus: iter 10. `player.gd::_physics_process` refactor (primary) + ghost trail
+  prototype research note (side quest). Hard throttle (10 iterations since human
   direction). **Items 1–4 still blocked on human on-device action.**
 
 ## Queue (ranked, top is next)
@@ -107,8 +107,12 @@ The next iteration should pull from the top of this list. Items marked
   `docs/research/godot_mobile_perf.md` — TBDR architecture, draw call /
   triangle budgets, ASTC, baked lighting rationale, Jolt profiling tips.
   Implications logged there; 8 concrete "Implications for Project Void."
-- Research a "ghost trail" prototype (point-based polyline that fades)
-  for the Gate 1 attempt-replay overlay. Don't ship; just sketch.
+- ~~**Ghost trail prototype research.**~~ Done (iter 10).
+  `docs/research/ghost_trail_prototype.md` — SMB trail design intent, four Godot 4
+  options (MultiMesh recommended, 1 draw call, 300 instances), GDScript sketch for
+  `game.gd` recorder + `GhostTrailRenderer`, alpha-by-recency formula, 6 implications.
+  Gate 1 implementation task: wire `Game.player_respawned` → recorder, add
+  `GhostTrailRenderer` to the vertical slice level.
 - Investigate Godot's Compatibility renderer fallback for very-low-end
   devices. Don't switch; just measure.
 - Investigate signing-key handling via gradle env vars so a future
@@ -131,6 +135,16 @@ These mirror "Open questions waiting on you" in the README.
   feel issues. Those notes drive iteration 2's tuning pass.
 
 ## Recently completed (last 5)
+
+- 2026-05-09 — Iteration 10. `player.gd::_physics_process` refactor (primary):
+  79 → 22 lines. Extracted 8 private sub-routines (`_tick_timers`, `_collect_jump_input`,
+  `_was_jump_released`, `_camera_relative_move_dir`, `_apply_horizontal`, `_apply_gravity`,
+  `_try_jump`, `_cut_jump`). No behaviour change — pure structural refactor; every
+  sub-routine is under 40 lines. `_run_reboot_effect` (44 lines, await-chained) noted in
+  refactor backlog. Side quest: ghost trail prototype research note
+  (`docs/research/ghost_trail_prototype.md`) — SMB trail design, MultiMesh approach sketch,
+  GDScript recorder + renderer sketch, 6 implications. INDEX.md updated.
+  **Throttle: HARD (10 iterations).**
 
 - 2026-05-09 — Iteration 9. Level design references research note (primary):
   `docs/research/level_design_references.md` — SMB grammar (short focused rooms,
@@ -248,3 +262,6 @@ These mirror "Open questions waiting on you" in the README.
   until after first on-device feel of current Momentum approximation.
 - Camera occlusion upgrade to ShapeCast3D if point-ray poke-through
   observed in Gate 1 geometry.
+- `player.gd::_run_reboot_effect` is 44 lines (just over threshold). The
+  sequential `await` beats make sub-method extraction awkward in GDScript
+  without coroutine indirection. Leave as-is; revisit if it grows further.

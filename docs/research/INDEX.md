@@ -32,6 +32,16 @@ Suggested:
 - Christopher Alexander on parti and pattern (to reinforce LEVEL_DESIGN.md principles in practice).
 - Deeper *BLAME!* volume-by-volume architectural analysis (each volume of the manga has a distinct spatial character worth mapping).
 
+## Ghost trail / attempt-replay overlay
+
+- [`ghost_trail_prototype.md`](ghost_trail_prototype.md) — SMB ghost trail design (what it
+  actually does, why it works pedagogically), four Godot 4 implementation options
+  (MultiMesh recommended, ImmediateMesh fallback, GPU ring-buffer advanced, physics-replay
+  discarded), concrete GDScript sketch for `game.gd` recorder + `GhostTrailRenderer` using
+  300-instance MultiMesh (1 draw call), alpha-by-recency formula, open questions (colour
+  palette, temporal window, checkpoint anchoring), 6 implications for Project Void including
+  `Game.player_respawned` signal already wired.
+
 ## Level design references
 
 - [`level_design_references.md`](level_design_references.md) — SMB grammar for level structure

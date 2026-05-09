@@ -5,10 +5,10 @@ A mobile 3D platformer. Brutalist megastructure inspired by *BLAME!*. Controller
 ## Status
 
 Current gate: **Gate 0 — Feel Lab**
-Last iteration: 2026-05-09 — iter 9: level design references research + camera_rig refactor
+Last iteration: 2026-05-09 — iter 10: player.gd _physics_process refactor + ghost trail research
 Test device build: not yet — hand-authored scenes pending first Godot 4.6 import; see Open questions
 Performance: not yet measured on Nothing Phone 4(a) Pro
-Throttle level: **HARD — 9 iterations since last human direction. No new features. See Open questions.**
+Throttle level: **HARD — 10 iterations since last human direction. No new features. See Open questions.**
 
 If you only read one section, read **Open questions waiting on you** below.
 
@@ -16,8 +16,8 @@ If you only read one section, read **Open questions waiting on you** below.
 
 Things Claude can't decide alone, or where it's stalled and needs direction. Each is blocking some piece of forward progress.
 
-> **⚠ HARD THROTTLE — 9 iterations since last human direction.** Claude has been
-> building infrastructure (tests, research, refactors, debug tooling) for 9 iterations
+> **⚠ HARD THROTTLE — 10 iterations since last human direction.** Claude has been
+> building infrastructure (tests, research, refactors, debug tooling) for 10 iterations
 > without a human feel verdict or direction signal. All P0 items are blocked on the
 > first on-device run. The next iteration will continue hardening work only.
 >
@@ -94,6 +94,42 @@ Goal: store-ready build.
 The full iteration log lives here, newest first. Every iteration appends an entry. Skim the dates to find where you last left off.
 
 <!-- ITERATION ENTRIES BELOW — DO NOT REMOVE OLDER ENTRIES -->
+
+### [2026-05-09] — `claude/gifted-shannon-wIoiG` — iter 10: player.gd refactor + ghost trail research
+
+- **Throttle: HARD (10 iterations since last human direction).** Feature work stopped;
+  hardening only. See "Open questions waiting on you" for suggested next directions.
+- Primary: **`player.gd::_physics_process` refactor.** Was 79 lines — well over the
+  40-line threshold. Extracted 8 focused private sub-routines with no behaviour change:
+  - `_tick_timers(delta, on_floor)` — coyote/buffer countdown
+  - `_collect_jump_input()` — keyboard just-press → buffer; returns held state
+  - `_was_jump_released(jump_held)` — detects both keyboard and touch release
+  - `_camera_relative_move_dir()` — TouchInput vector rotated by camera yaw
+  - `_apply_horizontal(delta, on_floor, move_dir)` — accel/decel + air damping
+  - `_apply_gravity(delta, jump_held)` — three-band gravity
+  - `_try_jump()` — consumes coyote + buffer
+  - `_cut_jump(jump_released)` — variable jump height cut
+  - `_physics_process` is now 22 lines. All sub-routines are ≤16 lines each.
+  - `_run_reboot_effect` (44 lines, `await`-chained sequence) noted in refactor
+    backlog — sequential awaits make further extraction awkward without coroutine
+    indirection; leave as-is until the function needs to grow.
+- Side quest: **Ghost trail prototype research note** — `docs/research/ghost_trail_prototype.md`.
+  Synthesises SMB's attempt-replay overlay (pedagogical design intent, why dense ghost
+  clusters mark death walls, recency-alpha formula), evaluates four Godot 4 approaches
+  (MultiMesh recommended at 1 draw call / 300 instances; ImmediateMesh fallback; GPU ring
+  buffer for Gate 2+; physics replay discarded), and provides a concrete GDScript sketch
+  for `game.gd` recorder + `GhostTrailRenderer`. 6 implications for Void including: wire
+  existing `Game.player_respawned` signal, default ghost_trails juice toggle OFF until
+  level exists, cold blue-grey colour to protect the Stray's red.
+- Note: PR #21 ("Fix ControllerProfile parse errors in player.gd and camera_rig.gd")
+  landed between iter 9 and iter 10 but wasn't reflected in README or PLAN — documented
+  here retroactively.
+- Perf: no runtime change (pure refactor + research note).
+- Bugs fixed: none new.
+- New dev-menu controls: none.
+- Assets acquired: none.
+- Research added: `docs/research/ghost_trail_prototype.md`; INDEX.md updated.
+- Needs human attention: **see "Open questions waiting on you" — hard throttle active.**
 
 ### [2026-05-09] — `claude/gifted-shannon-tfUYS` — iter 9: level design references research + camera_rig refactor
 
