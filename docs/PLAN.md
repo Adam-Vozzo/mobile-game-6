@@ -14,10 +14,11 @@ instrumented and tunable.
 
 ## Active iteration
 
-- Branch: `claude/gifted-shannon-wIoiG`
-- Focus: iter 10. `player.gd::_physics_process` refactor (primary) + ghost trail
-  prototype research note (side quest). Hard throttle (10 iterations since human
-  direction). **Items 1–4 still blocked on human on-device action.**
+- Branch: `claude/gifted-shannon-DCTEK`
+- Focus: iter 11. `perf_budget.gd` frametime bug fix (primary) + dead code removal
+  (`touch_input.gd::set_camera_drag_delta`) + test coverage expansion (side quest).
+  Hard throttle (11 iterations since human direction). **Items 1–4 still blocked on
+  human on-device action.**
 
 ## Queue (ranked, top is next)
 
@@ -135,6 +136,15 @@ These mirror "Open questions waiting on you" in the README.
   feel issues. Those notes drive iteration 2's tuning pass.
 
 ## Recently completed (last 5)
+
+- 2026-05-09 — Iteration 11. `perf_budget.gd` frametime bug fix (primary):
+  `last_frametime_ms` was `1000.0 / Engine.get_frames_per_second()` (smoothed,
+  hides spikes) → `delta * 1000.0` (actual frame time, catches hitches). Dead code
+  removed: `touch_input.gd::set_camera_drag_delta` (never called; stale comment
+  claimed it was the touch overlay's entry point but overlay uses
+  `add_camera_drag_delta`). Side quest: kinematics tests expanded — `_test_jump_cut_math`
+  and `_test_terminal_velocity` now loop over all three profiles (was Snappy only);
+  ~40 → ~56 assertions total.
 
 - 2026-05-09 — Iteration 10. `player.gd::_physics_process` refactor (primary):
   79 → 22 lines. Extracted 8 private sub-routines (`_tick_timers`, `_collect_jump_input`,

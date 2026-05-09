@@ -5,10 +5,10 @@ A mobile 3D platformer. Brutalist megastructure inspired by *BLAME!*. Controller
 ## Status
 
 Current gate: **Gate 0 — Feel Lab**
-Last iteration: 2026-05-09 — iter 10: player.gd _physics_process refactor + ghost trail research
+Last iteration: 2026-05-09 — iter 11: perf frametime fix + dead-code removal + test coverage expansion
 Test device build: not yet — hand-authored scenes pending first Godot 4.6 import; see Open questions
 Performance: not yet measured on Nothing Phone 4(a) Pro
-Throttle level: **HARD — 10 iterations since last human direction. No new features. See Open questions.**
+Throttle level: **HARD — 11 iterations since last human direction. No new features. See Open questions.**
 
 If you only read one section, read **Open questions waiting on you** below.
 
@@ -94,6 +94,32 @@ Goal: store-ready build.
 The full iteration log lives here, newest first. Every iteration appends an entry. Skim the dates to find where you last left off.
 
 <!-- ITERATION ENTRIES BELOW — DO NOT REMOVE OLDER ENTRIES -->
+
+### [2026-05-09] — `claude/gifted-shannon-DCTEK` — iter 11: perf frametime fix + dead code removal + test coverage
+
+- **Throttle: HARD (11 iterations since last human direction).** Hardening only.
+- **Bug fixed — `perf_budget.gd` frametime accuracy.** `last_frametime_ms` was
+  computed as `1000.0 / Engine.get_frames_per_second()`. That value is a 0.5-second
+  rolling average, so a 25 ms spike frame was reported as ~17 ms. Fixed to use
+  `delta * 1000.0` (actual last-frame time). The `over_budget()` check now catches
+  real hitches; the HUD corner display shows honest numbers.
+- **Dead code removed — `touch_input.gd::set_camera_drag_delta`.** The method's
+  stale comment claimed it was "called by the touch overlay each frame," but the
+  overlay calls `add_camera_drag_delta` (the accumulating variant). `set_camera_drag_delta`
+  was never called anywhere. Removed; `add_camera_drag_delta` comment updated.
+- **Test coverage expansion (side quest).** `_test_jump_cut_math` and
+  `_test_terminal_velocity` in `tests/test_controller_kinematics.gd` previously
+  tested only the Snappy profile. Both now loop over all three shipped profiles
+  (Snappy / Floaty / Momentum), adding 2×8 = 16 new assertions. Test labels
+  include the profile name for easy identification in Output panel.
+  Total assertions: was ~40, now ~56.
+- Perf: no runtime change (perf_budget fix changes the value of `last_frametime_ms`
+  but not any other computation; dead code removal has zero cost).
+- Bugs fixed: `perf_budget.gd` spike-frame underreporting.
+- New dev-menu controls: none.
+- Assets acquired: none.
+- Research added: none.
+- Needs human attention: **see "Open questions waiting on you" — hard throttle still active.**
 
 ### [2026-05-09] — `claude/gifted-shannon-wIoiG` — iter 10: player.gd refactor + ghost trail research
 
