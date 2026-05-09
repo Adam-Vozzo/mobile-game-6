@@ -8,9 +8,11 @@ extends CanvasLayer
 ## see PLAN.md.
 
 const SNAPPY_PROFILE := preload("res://resources/profiles/snappy.tres")
+const FLOATY_PROFILE := preload("res://resources/profiles/floaty.tres")
 
 var _profiles: Dictionary = {
 	"Snappy": SNAPPY_PROFILE,
+	"Floaty": FLOATY_PROFILE,
 }
 
 var _current_profile: Resource

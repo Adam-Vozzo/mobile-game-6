@@ -6,7 +6,12 @@
 script = ExtResource("1_rig")
 target_path = NodePath("../Player")
 
-[node name="Camera" type="Camera3D" parent="."]
+[node name="SpringArm" type="SpringArm3D" parent="."]
+spring_length = 6.0
+collision_mask = 1
+margin = 0.2
+
+[node name="Camera" type="Camera3D" parent="SpringArm"]
 fov = 60.0
 near = 0.1
 far = 200.0

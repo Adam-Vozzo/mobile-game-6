@@ -5,10 +5,10 @@ A mobile 3D platformer. Brutalist megastructure inspired by *BLAME!*. Controller
 ## Status
 
 Current gate: **Gate 0 — Feel Lab**
-Last iteration: 2026-05-08 — kickoff (folder layout, project settings, Android preset, docs, Feel Lab scene, Stray + Snappy controller, dev menu, camera rig, touch overlay)
-Test device build: not yet — kickoff authored without a Godot binary; first on-device build is the next iteration's top task
+Last iteration: 2026-05-09 — iter 1 (SpringArm3D camera collision avoidance, Floaty profile)
+Test device build: not yet — on-device smoke test still blocked on first Godot editor run
 Performance: not yet measured on Nothing Phone 4(a) Pro
-Throttle level: normal — 0 iterations since last human direction
+Throttle level: normal — 1 iteration since last human direction
 
 If you only read one section, read **Open questions waiting on you** below.
 
@@ -36,7 +36,7 @@ Goal: one scene, one character controller, fully instrumented and tunable.
 - [x] CharacterBody3D player (the Stray) with Snappy profile
 - [x] Coyote, buffer, variable jump, preserved horizontal velocity
 - [x] Dev menu skeleton with live tunables
-- [x] Spring-arm camera with lookahead and right-drag override _(SpringArm collision avoidance still queued — current rig is direct-positioning only)_
+- [x] Spring-arm camera with lookahead, right-drag override, and SpringArm3D collision avoidance
 - [x] Touch input: virtual stick + jump, repositionable _(positions exposed as `@export`s; drag-to-place UI queued)_
 - [ ] Android export pipeline verified on test device
 
@@ -78,6 +78,18 @@ Goal: store-ready build.
 The full iteration log lives here, newest first. Every iteration appends an entry. Skim the dates to find where you last left off.
 
 <!-- ITERATION ENTRIES BELOW — DO NOT REMOVE OLDER ENTRIES -->
+
+### [2026-05-09] — `claude/elegant-lamport-M4XQE` — SpringArm camera + Floaty profile
+
+- Primary: **SpringArm3D camera collision avoidance.** Refactored `camera_rig.tscn` + `camera_rig.gd` — Camera3D is now a child of a SpringArm3D node rather than a direct sibling. The SpringArm's global basis is set each frame (yaw × pitch) so its +Z points from the pivot toward the desired camera position; SpringArm3D internally casts along that axis and shortens the arm if geometry is in the way. Player's RID is excluded from the collision cast so the Stray's own capsule doesn't trigger shortening. Math cross-checked: camera position is identical to the old formula when no collision occurs. See `DECISIONS.md` for one-frame look_at lag caveat (acceptable for open Feel Lab; revisit if Gate 1 corners show wobble).
+- Side quest: **Floaty controller profile.** Authored `resources/profiles/floaty.tres` — Dadish-leaning values (gravity_rising 22 vs Snappy's 38, larger coyote/buffer 0.18, light air damping 0.8, slower ground accel 45). Registered in `dev_menu_overlay.gd` — profile dropdown now shows Snappy / Floaty for side-by-side comparison on first device session.
+- Perf: not yet measured (no device run). No new draw calls or particles added.
+- Bugs fixed: camera-wall clipping addressed pre-emptively before Gate 1 tight geometry.
+- New dev-menu controls: Floaty profile in the profile dropdown.
+- Assets acquired: none.
+- Research added: none.
+- Needs human attention: **on-device smoke test still top priority** — open project in Godot 4.6, confirm no import errors, then run Feel Lab and switch between Snappy/Floaty to give feel feedback. See "Open questions waiting on you."
+- Next likely focus: Camera params sliders in dev menu (PLAN item #5), then Momentum profile (PLAN item #3).
 
 ### [2026-05-08] — `claude/start-project-void-TxIcJ` — kickoff
 
