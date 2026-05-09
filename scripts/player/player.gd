@@ -63,41 +63,58 @@ func _apply_profile_to_body() -> void:
 func _physics_process(delta: float) -> void:
 	if _is_rebooting:
 		return
-
-	# --- Timers ---
 	var on_floor := is_on_floor()
+	_tick_timers(delta, on_floor)
+	var jump_held := _collect_jump_input()
+	var jump_released := _was_jump_released(jump_held)
+	_jump_held_last_frame = jump_held
+	if Input.is_action_just_pressed(&"respawn"):
+		respawn()
+		return
+	var move_dir := _camera_relative_move_dir()
+	_apply_horizontal(delta, on_floor, move_dir)
+	_apply_gravity(delta, jump_held)
+	_try_jump()
+	_cut_jump(jump_released)
+	move_and_slide()
+	if global_position.y < profile.fall_kill_y:
+		respawn()
+
+
+# ---------- physics sub-routines ----------
+
+func _tick_timers(delta: float, on_floor: bool) -> void:
 	if on_floor:
 		_coyote_timer = profile.coyote_time
 		_last_grounded_pos_y = global_position.y
 	else:
 		_coyote_timer = maxf(0.0, _coyote_timer - delta)
-
 	if _buffer_timer > 0.0:
 		_buffer_timer = maxf(0.0, _buffer_timer - delta)
 
-	# --- Input ---
-	var move_input := TouchInput.get_move_vector()
-	var jump_pressed_now := Input.is_action_just_pressed(&"jump")
-	var jump_held := TouchInput.is_jump_held() or Input.is_action_pressed(&"jump")
-	var jump_released_now := (
+
+func _collect_jump_input() -> bool:
+	if Input.is_action_just_pressed(&"jump"):
+		_buffer_timer = profile.jump_buffer
+	return TouchInput.is_jump_held() or Input.is_action_pressed(&"jump")
+
+
+func _was_jump_released(jump_held: bool) -> bool:
+	return (
 		Input.is_action_just_released(&"jump")
 		or (_jump_held_last_frame and not jump_held)
 	)
-	_jump_held_last_frame = jump_held
 
-	if jump_pressed_now:
-		_buffer_timer = profile.jump_buffer
 
-	if Input.is_action_just_pressed(&"respawn"):
-		respawn()
-		return
+func _camera_relative_move_dir() -> Vector3:
+	var move_input := TouchInput.get_move_vector()
+	var dir := Basis(Vector3.UP, _camera_yaw) * Vector3(move_input.x, 0.0, move_input.y)
+	if dir.length_squared() > 1.0:
+		dir = dir.normalized()
+	return dir
 
-	# --- Horizontal movement (camera-relative) ---
-	var camera_basis := Basis(Vector3.UP, _camera_yaw)
-	var move_dir := camera_basis * Vector3(move_input.x, 0.0, move_input.y)
-	if move_dir.length_squared() > 1.0:
-		move_dir = move_dir.normalized()
 
+func _apply_horizontal(delta: float, on_floor: bool, move_dir: Vector3) -> void:
 	var current_h := Vector3(velocity.x, 0.0, velocity.z)
 	var target_h := move_dir * profile.max_speed
 	var accel: float
@@ -110,11 +127,11 @@ func _physics_process(delta: float) -> void:
 	var new_h := current_h.move_toward(target_h, accel * delta)
 	if not on_floor and profile.air_horizontal_damping > 0.0:
 		new_h *= maxf(0.0, 1.0 - profile.air_horizontal_damping * delta)
-
 	velocity.x = new_h.x
 	velocity.z = new_h.z
 
-	# --- Gravity (three-band: rising-held / rising-released / falling) ---
+
+func _apply_gravity(delta: float, jump_held: bool) -> void:
 	var g: float
 	if velocity.y <= 0.0:
 		g = profile.gravity_after_apex
@@ -124,21 +141,17 @@ func _physics_process(delta: float) -> void:
 		g = profile.gravity_falling
 	velocity.y = maxf(-profile.terminal_velocity, velocity.y - g * delta)
 
-	# --- Jump (consumes coyote + buffer if both alive) ---
+
+func _try_jump() -> void:
 	if _buffer_timer > 0.0 and _coyote_timer > 0.0:
 		velocity.y = profile.jump_velocity
 		_buffer_timer = 0.0
 		_coyote_timer = 0.0
 
-	# --- Variable jump cut on early release ---
-	if jump_released_now and velocity.y > profile.jump_velocity * profile.release_velocity_ratio:
+
+func _cut_jump(jump_released: bool) -> void:
+	if jump_released and velocity.y > profile.jump_velocity * profile.release_velocity_ratio:
 		velocity.y = profile.jump_velocity * profile.release_velocity_ratio
-
-	move_and_slide()
-
-	# --- Fall kill ---
-	if global_position.y < profile.fall_kill_y:
-		respawn()
 
 
 func respawn() -> void:
