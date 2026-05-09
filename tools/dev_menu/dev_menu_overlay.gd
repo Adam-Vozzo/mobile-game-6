@@ -27,6 +27,8 @@ var _profile_sliders: Dictionary = {}
 var _slider_time_scale: HSlider
 var _juice_boxes: Dictionary = {}
 var _perf_label: Label
+var _save_as_row: HBoxContainer
+var _save_name_field: LineEdit
 
 
 func _ready() -> void:
@@ -76,6 +78,28 @@ func _build_profile_section(vbox: VBoxContainer) -> void:
 	vbox.add_child(_profile_dropdown)
 	_profile_dropdown.item_selected.connect(_on_profile_selected)
 
+	_make_button(vbox, "Save as…", _toggle_save_row)
+
+	_save_as_row = HBoxContainer.new()
+	vbox.add_child(_save_as_row)
+
+	_save_name_field = LineEdit.new()
+	_save_name_field.placeholder_text = "profile name"
+	_save_name_field.size_flags_horizontal = Control.SIZE_EXPAND_FILL
+	_save_as_row.add_child(_save_name_field)
+
+	var save_btn := Button.new()
+	save_btn.text = "Save"
+	save_btn.pressed.connect(_on_save_confirmed)
+	_save_as_row.add_child(save_btn)
+
+	var cancel_btn := Button.new()
+	cancel_btn.text = "✕"
+	cancel_btn.pressed.connect(func() -> void: _save_as_row.visible = false)
+	_save_as_row.add_child(cancel_btn)
+
+	_save_as_row.visible = false
+
 
 func _build_controller_section(vbox: VBoxContainer) -> void:
 	vbox.add_child(_make_sep())
@@ -108,6 +132,12 @@ func _build_controller_section(vbox: VBoxContainer) -> void:
 		"Buffer (s)",         0.0,    0.3,  0.005, &"jump_buffer")
 	_profile_sliders[&"release_velocity_ratio"] = _make_profile_slider(vbox,
 		"Release ratio",      0.1,    1.0,  0.01, &"release_velocity_ratio")
+
+	vbox.add_child(_make_label("Controller — Respawn", 14, true))
+	_profile_sliders[&"reboot_duration"] = _make_profile_slider(vbox,
+		"Reboot dur (s)",     0.05,   1.5,  0.05, &"reboot_duration")
+	_profile_sliders[&"fall_kill_y"] = _make_profile_slider(vbox,
+		"Fall kill Y",      -200.0,   0.0,  0.5,  &"fall_kill_y")
 
 
 func _build_camera_section(vbox: VBoxContainer) -> void:
@@ -297,6 +327,29 @@ static func _fmt(v: float, step: float) -> String:
 	elif step >= 0.001:
 		return "%.3f" % v
 	return "%.4f" % v
+
+
+# ---- save-as logic ----------------------------------------------------------
+
+func _toggle_save_row() -> void:
+	_save_as_row.visible = not _save_as_row.visible
+	if _save_as_row.visible:
+		_save_name_field.text = ""
+		_save_name_field.grab_focus()
+
+
+func _on_save_confirmed() -> void:
+	var name := _save_name_field.text.strip_edges()
+	if name.is_empty():
+		return
+	var new_p: Resource = _current_profile.duplicate(true)
+	_profiles[name] = new_p
+	_profile_dropdown.add_item(name)
+	_profile_dropdown.selected = _profile_dropdown.item_count - 1
+	_save_as_row.visible = false
+	# Persist to user://profiles/ so it survives the session.
+	DirAccess.make_dir_recursive_absolute("user://profiles")
+	ResourceSaver.save(new_p, "user://profiles/" + name + ".tres")
 
 
 # ---- profile logic ----------------------------------------------------------

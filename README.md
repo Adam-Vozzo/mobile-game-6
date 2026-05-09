@@ -5,10 +5,10 @@ A mobile 3D platformer. Brutalist megastructure inspired by *BLAME!*. Controller
 ## Status
 
 Current gate: **Gate 0 — Feel Lab**
-Last iteration: 2026-05-09 — iter 4: in-world debug viz (collision capsule, velocity arrow, ground normal, jump arc)
+Last iteration: 2026-05-09 — iter 5: reboot animation polish + save-as-profile button
 Test device build: not yet — hand-authored scenes pending first Godot 4.6 import; see Open questions
 Performance: not yet measured on Nothing Phone 4(a) Pro
-Throttle level: normal — 3 iterations since last human direction
+Throttle level: soft — 5 iterations since last human direction
 
 If you only read one section, read **Open questions waiting on you** below.
 
@@ -78,6 +78,43 @@ Goal: store-ready build.
 The full iteration log lives here, newest first. Every iteration appends an entry. Skim the dates to find where you last left off.
 
 <!-- ITERATION ENTRIES BELOW — DO NOT REMOVE OLDER ENTRIES -->
+
+### [2026-05-09] — `claude/gifted-shannon-bchl4` — iter 5: reboot animation polish + save-as-profile
+
+- Primary: **Reboot animation fully specced (PLAN P0 item 6).** `_run_reboot_effect()`
+  in `player.gd` replaced from scratch:
+  - **Step 1 — Death beat**: `_spawn_sparks(death_centre)` fires 12 `ImmediateMesh` line
+    segments in random hemispherical directions from the capsule centre, warm orange-yellow
+    (`Color(1.0, 0.78, 0.12)`), fade out over 0.45 s via tween, then `queue_free`.
+    Gated behind `DevMenu.is_juice_on("particles")`. Material uses
+    `TRANSPARENCY_ALPHA` + `no_depth_test = true` so sparks are always visible.
+    A death-squish tween (`scale(1.25, 0.25, 1.25)`) fires simultaneously, gated
+    behind `DevMenu.is_juice_on("squash_stretch")`.
+  - **Step 2 — Dark frame**: hide visual, reset scale to `ONE`, teleport.
+  - **Step 3 — Power-on**: scale from `(0.05, 0.05, 0.05)` → `ONE` using
+    `EASE_OUT` / `TRANS_BACK` (overshoot then settle = "upright" beat), plus warm
+    glow emission. Squash_stretch-gated; falls back to instant-show if off.
+  - **Step 4 — Settle**: confirm scale, clear emission, clear `_is_rebooting`.
+  - Timing: 12 % / 35 % / 35 % / 18 % of `profile.reboot_duration` (sums to 100 %).
+- Side quest: **Save-as-profile button (PLAN P0 item 7).** Dev menu Profile section now
+  has a "Save as…" button that reveals an inline `LineEdit + Save + ✕` row.
+  On confirm: `_current_profile.duplicate(true)` → add to `_profiles` dict and
+  dropdown → select new item → persist to `user://profiles/<name>.tres` via
+  `ResourceSaver`. Works in-session; copied `.tres` can be promoted to `res://profiles/`
+  manually.
+- Dev menu additions: Controller — Respawn subsection with **Reboot dur (s)** and
+  **Fall kill Y** sliders (both wired into `_profile_sliders` for bulk-sync on
+  profile switch). Now 15 profile sliders total.
+- Perf: `_spawn_sparks` creates one `MeshInstance3D` + `ImmediateMesh` + `StandardMaterial3D`
+  per respawn (~24 verts × one frame), freed after 0.45 s. Zero draw-call cost at
+  rest (all default-OFF in the Juice section). Squash tween runs on `_visual`
+  (one Node3D transform), no GPU cost.
+- Bugs fixed: none.
+- New dev-menu controls: "Reboot dur (s)" and "Fall kill Y" sliders (Controller — Respawn);
+  "Save as…" button + inline form (Profile section).
+- Assets acquired: none.
+- Research added: none this iteration.
+- Needs human attention: see "Open questions waiting on you."
 
 ### [2026-05-09] — `claude/gifted-shannon-k7sgn` — iter 4: in-world debug viz + character-controller research
 

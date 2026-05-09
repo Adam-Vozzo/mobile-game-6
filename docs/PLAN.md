@@ -14,13 +14,11 @@ instrumented and tunable.
 
 ## Active iteration
 
-- Branch: `claude/gifted-shannon-k7sgn`
-- Focus: iter 4 complete. In-world debug viz shipped (P0 item 5).
-  PlayerDebugDraw node added to Feel Lab; 4 new checkboxes in dev menu.
-  Side quest: character controllers research note.
+- Branch: `claude/gifted-shannon-bchl4`
+- Focus: iter 5 complete. Reboot animation fully specced (P0 item 6) +
+  save-as-profile button (P0 item 7, side quest).
   **Items 1–4 are still blocked on human on-device action.**
-  Next: item 6 (reboot animation polish) or item 7 (save-as-profile button),
-  both actionable without device access.
+  Next: GUT unit tests for controller kinematics (P1) or concrete kit (P1).
 
 ## Queue (ranked, top is next)
 
@@ -55,12 +53,13 @@ The next iteration should pull from the top of this list. Items marked
    collision capsule (cyan), velocity arrow (yellow), ground normal
    (green), jump arc (orange). Four new checkboxes in dev menu Debug viz
    section. All default OFF.
-6. **Reboot animation polish.** Replace the red-flash placeholder with
-   the spec in CLAUDE.md (sparks → dark frame → power-on hum → upright).
-   Visual beats first; audio can stay placeholder.
-7. **Save-as-new-profile button.** Dev menu "Profile" section needs a
-   "Save as…" button that writes the current slider values to a new `.tres`
-   and adds it to the dropdown. Scoped to the Feel Lab session for now.
+6. ~~**Reboot animation polish.**~~ Done (iter 5). Sparks (`ImmediateMesh`,
+   12 lines, particles-toggle gated) + death squish/scale-pop
+   (squash_stretch-toggle gated) + warm power-on glow. 2 new JUICE.md
+   entries. Reboot dur + fall_kill_y now in dev menu sliders.
+7. ~~**Save-as-new-profile button.**~~ Done (iter 5, side quest). "Save as…"
+   button in Profile section opens an inline LineEdit + Save/Cancel row.
+   Duplicate profile added to dropdown + saved to `user://profiles/<name>.tres`.
 
 ### P1 — Supporting
 
@@ -113,6 +112,15 @@ These mirror "Open questions waiting on you" in the README.
   feel issues. Those notes drive iteration 2's tuning pass.
 
 ## Recently completed (last 5)
+
+- 2026-05-09 — Iteration 5. Reboot animation polish (P0 item 6) + save-as-profile
+  side quest (P0 item 7). `_run_reboot_effect()` replaced: sparks burst
+  (`_spawn_sparks` via `ImmediateMesh`, 12 lines, particles-toggled) → death
+  squish (squash_stretch-toggled) → dark/teleport → scale-up with TRANS_BACK
+  overshoot → glow settle. "Save as…" button in dev menu Profile section (inline
+  form + `user://profiles/` persistence). `reboot_duration` + `fall_kill_y`
+  sliders added to dev menu Controller — Respawn subsection. JUICE.md updated
+  (reboot sparks → prototype, death squish → prototype).
 
 - 2026-05-09 — Iteration 4. In-world debug viz (P0 item 5):
   `tools/debug/player_debug_draw.gd` (ImmediateMesh, `no_depth_test=true`);
