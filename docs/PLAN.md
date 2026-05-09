@@ -14,15 +14,19 @@ instrumented and tunable.
 
 ## Active iteration
 
-- Branch: `claude/gifted-shannon-6ZYeJ`
-- Focus: iter 16. Camera dev-menu tunables (primary): 6 `@export` params previously
-  inspector-only (`aim_height`, `lookahead_lerp`, `lookahead_min_speed`,
-  `pitch_min/max_degrees`, `recenter_min_speed`) wired to new "Camera — Tuning"
-  sub-section sliders; `_on_camera_param_changed` gains 6 match arms.
-  `player_debug_draw.gd` viz-active caching (side quest): `_viz_active` bool updated
-  via signal instead of 4 dict lookups/frame; `_process` skips group search when all
-  overlays off.
-  Hard throttle (16 iterations since human direction).
+- Branch: `claude/gifted-shannon-QnzBx`
+- Focus: iter 17. `dev_menu_overlay.gd::_make_slider` silent-init fix (primary):
+  touch layout persistence was silently broken — `_build_touch_section` called
+  `.value = 95.0` after connecting callbacks, which fired `DevMenu.touch_param_changed`
+  and overwrote the value just loaded from `user://input.cfg`. Added `initial_value`
+  param (NAN default) set before callbacks connect; updated `_make_cam_slider`,
+  `_build_touch_section`, and `_build_level_section` to use it. No behaviour change
+  for a first-run user (defaults match); saves a returning user's layout.
+  Side quest: `docs/research/holistic_level_design.md` — Steve Lee GDC 2017 (three
+  integrated dimensions, affordances, intentionality pipeline) + GMTK Kishōtenketsu
+  4-beat arc + Odyssey density/apex-visibility. 6 implications for Gate 1 level
+  authoring. INDEX.md updated.
+  Hard throttle (17 iterations since human direction).
   **Items 1–4 still blocked on human on-device action.**
 
 ## Queue (ranked, top is next)
@@ -141,6 +145,18 @@ These mirror "Open questions waiting on you" in the README.
   feel issues. Those notes drive iteration 2's tuning pass.
 
 ## Recently completed (last 5)
+
+- 2026-05-09 — Iteration 17. `dev_menu_overlay.gd` silent-init fix + holistic level design research:
+  `_make_slider` gets `initial_value: float = NAN` param — value is set before callbacks connect,
+  so the slider's on_changed is never fired during init. `_make_cam_slider` passes `default_val`
+  as `initial_value` (no post-return `.value =`). `_build_touch_section` and `_build_level_section`
+  likewise. Touch layout persistence (user://input.cfg) now works correctly for returning users —
+  previously the dev menu init overwrote loaded values silently on every startup.
+  Side quest: `docs/research/holistic_level_design.md` — Steve Lee GDC 2017 holistic three
+  dimensions + GMTK Kishōtenketsu 4-beat arc (Ki/Shō/Ten/Ketsu, ~5 min arc, discard after
+  ketsu) + Odyssey density-over-span (compressed verticality, apex always visible). 6 implications
+  for Gate 1. INDEX.md updated; open research items for Steve Lee and GMTK marked done.
+  PLAN.md refactor backlog: "touch slider display doesn't reflect loaded layout value" added.
 
 - 2026-05-09 — Iteration 16. Camera dev-menu tunables + debug draw perf (primary/side):
   6 camera `@export` params wired to new "Camera — Tuning" dev-menu sub-section
@@ -316,6 +332,13 @@ These mirror "Open questions waiting on you" in the README.
 
 ## Refactor backlog
 
+- **Touch slider display doesn't reflect loaded layout.** After iter 17's fix,
+  the touch sliders in the dev menu show 95 / 0.5 (the @export defaults) even when
+  `user://input.cfg` has different values. The touch overlay values are correct;
+  the slider display is stale. Fix requires a "loaded params" signal or a query
+  API from dev_menu_overlay → touch_overlay. Deferred to avoid adding a new signal
+  surface during hard throttle. Low priority (UI cosmetic only; underlying layout
+  is preserved and the slider works correctly once the user drags it).
 - `perf_budget.gd::active_particles` is never updated — always 0. The `over_budget()`
   check includes `active_particles > ACTIVE_PARTICLES_BUDGET` which is always false.
   Current spark system uses `ImmediateMesh` (not `GPUParticles3D`) so there's no

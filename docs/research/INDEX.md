@@ -66,9 +66,18 @@ Suggested:
   Compression–Release as primary procession unit, ≥ 3 forces per beat, structural landmarks
   not decorative, Stray-red as structural centre, desire line = par route, kit naming.
 
+- [`holistic_level_design.md`](holistic_level_design.md) — Steve Lee GDC 2017 holistic level design
+  (three integrated dimensions: gameplay / presentation / narrative; affordances and intentionality;
+  authoring pipeline: mechanic → geometry → world-reason). GMTK synthesis: Kishōtenketsu 4-beat arc
+  (Ki/Shō/Ten/Ketsu — intro / development / twist / resolution, ~5 min per arc, throw mechanic away
+  after ketsu), Odyssey density-over-span (compressed verticality, apex always visible, no monotonic
+  ascent). 6 concrete implications: holistic affordance pipeline, Ten beat required per beat, brutalist
+  expressed structure = free affordances, apex visibility rule, Twist beat for precision platformers,
+  intentionality check before committing a kit piece.
+
 Suggested (still open):
-- Mark Brown / Game Maker's Toolkit — specific 3D platformer level-design episodes.
-- Steve Lee (doublefunction.co.uk) — GDC talk "An Approach to Holistic Level Design."
+- ~~Mark Brown / Game Maker's Toolkit — specific 3D platformer level-design episodes.~~ Covered above (holistic_level_design.md).
+- ~~Steve Lee (doublefunction.co.uk) — GDC talk "An Approach to Holistic Level Design."~~ Done (iter 17, holistic_level_design.md).
 
 ## Performance & rendering
 

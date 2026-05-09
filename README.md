@@ -5,10 +5,10 @@ A mobile 3D platformer. Brutalist megastructure inspired by *BLAME!*. Controller
 ## Status
 
 Current gate: **Gate 0 — Feel Lab**
-Last iteration: 2026-05-09 — iter 16: camera dev-menu tunables + debug draw perf
+Last iteration: 2026-05-09 — iter 17: touch layout persistence fix + holistic level design research
 Test device build: not yet — hand-authored scenes pending first Godot 4.6 import; see Open questions
 Performance: not yet measured on Nothing Phone 4(a) Pro
-Throttle level: **HARD — 16 iterations since last human direction. No new features. See Open questions.**
+Throttle level: **HARD — 17 iterations since last human direction. No new features. See Open questions.**
 
 If you only read one section, read **Open questions waiting on you** below.
 
@@ -16,8 +16,8 @@ If you only read one section, read **Open questions waiting on you** below.
 
 Things Claude can't decide alone, or where it's stalled and needs direction. Each is blocking some piece of forward progress.
 
-> **⚠ HARD THROTTLE — 16 iterations since last human direction.** Claude has been
-> building infrastructure (tests, research, refactors, debug tooling) for 15 iterations
+> **⚠ HARD THROTTLE — 17 iterations since last human direction.** Claude has been
+> building infrastructure (tests, research, refactors, debug tooling) for 16 iterations
 > without a human feel verdict or direction signal. All P0 items are blocked on the
 > first on-device run. The next iteration will continue hardening work only.
 >
@@ -94,6 +94,65 @@ Goal: store-ready build.
 The full iteration log lives here, newest first. Every iteration appends an entry. Skim the dates to find where you last left off.
 
 <!-- ITERATION ENTRIES BELOW — DO NOT REMOVE OLDER ENTRIES -->
+
+### [2026-05-09] — `claude/gifted-shannon-QnzBx` — iter 17: touch layout persistence fix + holistic level design research
+
+- **Throttle: HARD (17 iterations since last human direction).** Hardening only.
+- **Primary: `dev_menu_overlay.gd::_make_slider` silent-init bug fix.**
+  Touch layout persistence (`user://input.cfg`) was silently broken on every startup.
+  The root cause: `_build_touch_section` called `.value = 95.0` on a freshly-built
+  slider *after* `value_changed` callbacks were already connected. This caused
+  `DevMenu.touch_param_changed` to fire immediately, routing to
+  `touch_overlay._on_touch_param`, which set `jump_button_radius = 95.0` and
+  `stick_zone_ratio = 0.5` — overwriting whatever `_load_layout()` had just loaded
+  from disk. The same pattern existed in `_build_level_section` (time scale slider)
+  and `_make_cam_slider` (all camera sliders).
+  - Fix: `_make_slider` now accepts `initial_value: float = NAN`. When provided, the
+    value is applied to the Range node *before* any `value_changed` callbacks are
+    connected, so the signal fires internally but no listeners receive it. The
+    val_label is then initialised from `slider.value` (reflecting the initial_value).
+  - Updated `_make_cam_slider`: passes `default_val` as `initial_value` instead of
+    setting `.value` post-return. Camera `@export` defaults match the dev menu
+    defaults by convention (verified — all 15 camera params match).
+  - Updated `_build_touch_section`: passes 95.0 / 0.5 as `initial_value`. A
+    returning user's layout is now preserved; a new install starts at defaults. ✓
+  - Updated `_build_level_section`: passes 1.0 as `initial_value`. `Engine.time_scale`
+    is already 1.0 by default; no observable change for any user.
+  - Remaining gap (noted in refactor backlog): touch sliders display their defaults
+    (95 / 0.5) even when a different value is loaded from disk. Values are correct
+    in the overlay; only the slider display is stale. Fixing it needs a "loaded
+    params" signal — deferred, low priority.
+  - DECISIONS.md entry added.
+- **Side quest: `docs/research/holistic_level_design.md`** — Steve Lee GDC 2017
+  ("An Approach to Holistic Level Design") + GMTK synthesis (3D platformer pacing).
+  - Steve Lee's three integrated dimensions: gameplay / presentation / narrative.
+    Authoring pipeline: decide the mechanic first, then shape geometry that makes
+    it self-evident, then give it a world-reason. "Intentionality" — the player
+    understands what the space asks without a UI prompt. If a popup is needed,
+    the geometry shape is wrong. Lee's pipeline = Alexander's parti pris, operationalised
+    as a production sequence.
+  - GMTK Kishōtenketsu 4-beat arc (Ki→Shō→Ten→Ketsu): Intro (safe learning) →
+    Development (escalation, same mechanic) → Twist (recontextualise, not just
+    harder) → Resolution (mastery + optional depth). ~5-minute arc; discard the
+    mechanic after Ketsu. Hayashida's rule: the Twist beat is required, not optional.
+    This adds the explicit "Ten" to the SMB introduce-then-combine pattern already
+    in level_design_references.md.
+  - GMTK Odyssey density-over-span: compressed verticality (apex visible from start),
+    no monotonic ascent (one path, one floor plane, 3 minutes of climbing = bad).
+    Confirms 3-floor-plane rule; adds specific: **keep the destination in the
+    player's FOV throughout the ascent.**
+  - 6 concrete implications for Gate 1: holistic affordance pipeline per beat,
+    Twist beat required, brutalist expressed structure = free affordances (no glowing
+    arrows needed), apex-visibility rule for ascent sequences, Twist beat recipe for
+    precision platformers (combine mastered mechanic + momentum reversal), intentionality
+    check before committing any kit piece.
+  - INDEX.md updated; Steve Lee and GMTK open items marked done.
+- Perf: no runtime change.
+- Bugs fixed: `dev_menu_overlay.gd` touch layout persistence overwrite on startup.
+- New dev-menu controls: none.
+- Assets acquired: none.
+- Research added: `docs/research/holistic_level_design.md`; INDEX.md updated.
+- Needs human attention: **see "Open questions waiting on you" — hard throttle active (17 iterations).**
 
 ### [2026-05-09] — `claude/gifted-shannon-6ZYeJ` — iter 16: camera dev-menu tunables + debug draw perf
 
