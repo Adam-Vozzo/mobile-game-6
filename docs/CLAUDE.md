@@ -203,10 +203,52 @@ Togglable overlay (3-finger tap on device, F1 in editor):
 
 ## Git workflow
 
-* Push every change to a feature branch and open a PR (no direct commits to `main`).
-* Auto-merge: after pushing and opening the PR, mark it ready and merge it (squash) without waiting for human approval. The PR exists for traceability, not as a gate.
-* Exception — open the PR as a draft and stop for human review when the change: alters this Git workflow, modifies version control history (force push, rewrite, branch delete), introduces a paid service, ships outside the repo (Play Store, public release), or hits any item in *What requires the human*.
-* Never force-push, rewrite history, or delete branches without explicit instruction.
+### Iteration startup — read this BEFORE picking work
+
+The 2-hour cadence will create duplicate work if every run starts from a
+stale `main` and re-picks the same top P0 item. Before doing anything
+else:
+
+1. **List your own open PRs** (`mcp__github__list_pull_requests` with
+   `state=open` or `gh pr list --author @me`).
+2. **If any open PR already targets the item you would have picked**:
+   *do not* open a new branch. Either (a) check out that PR's branch
+   and iterate on it, or (b) skip that item and pick the next one in
+   `PLAN.md`. Both are fine; opening a parallel branch is not.
+3. **If multiple open PRs cover the same item** (it has happened),
+   pick the most complete one, merge it, close the rest as duplicates
+   with a comment linking to the merged PR. Then continue.
+4. Only after that — pull from the top of `PLAN.md`'s queue.
+
+### Per-PR rules
+
+* Push every change to a feature branch and open a PR (no direct
+  commits to `main`).
+* **Auto-merge: add the `auto-merge` label when you open the PR and
+  mark it ready for review.** `.github/workflows/auto-merge.yml`
+  squash-merges any non-draft PR carrying that label as soon as the
+  event fires. The PR exists for traceability, not as a gate. Belt and
+  braces: also call `mcp__github__merge_pull_request` (squash) yourself
+  before ending the session — if the workflow already merged it, the
+  call is a no-op. Don't end the session with an open PR you intended
+  to auto-merge.
+* **Exception — open the PR as a *draft* without the `auto-merge`
+  label and stop for human review** when the change: alters this Git
+  workflow or `.github/workflows/auto-merge.yml`, modifies version
+  control history (force push, rewrite, branch delete), introduces a
+  paid service, ships outside the repo (Play Store, public release),
+  or hits any item in *What requires the human*.
+* Never force-push, rewrite history, or delete branches without
+  explicit instruction.
+
+### End-of-iteration update
+
+The PR you merge **must** include updates to `docs/PLAN.md` (move the
+completed item out of the queue into "Recently completed", re-rank the
+queue if needed) and `README.md` (append an "Updates" entry for the
+iteration). If those aren't updated, the next run will see stale state
+and pick the same item again — exactly the failure mode the iteration
+startup rule is meant to prevent.
 
 ## Initial kickoff tasks
 

@@ -5,10 +5,10 @@ A mobile 3D platformer. Brutalist megastructure inspired by *BLAME!*. Controller
 ## Status
 
 Current gate: **Gate 0 — Feel Lab**
-Last iteration: 2026-05-09 — iter 1 (camera occlusion avoidance, camera dev-menu section, Floaty + Momentum profiles)
+Last iteration: 2026-05-09 — process fix (auto-merge workflow + iteration-startup rules)
 Test device build: not yet — hand-authored scenes pending first Godot 4.6 import; see Open questions
 Performance: not yet measured on Nothing Phone 4(a) Pro
-Throttle level: normal — 1 iteration since last human direction
+Throttle level: normal — 2 iterations since last human direction
 
 If you only read one section, read **Open questions waiting on you** below.
 
@@ -18,7 +18,7 @@ Things Claude can't decide alone, or where it's stalled and needs direction. Eac
 
 - [ ] **Open the project in Godot 4.6 and run the on-device first-run checklist in `docs/ANDROID.md`.** This is the only thing that will catch syntax mistakes in any of the hand-authored `.tscn`/`.tres` files. If anything fails, paste the Output panel error and Claude will fix it next iteration.
 - [ ] **First feel verdict — Snappy vs Floaty vs Momentum.** Once the build runs, open the dev menu (F1 in editor, 3-finger tap on device), switch the Profile dropdown between Snappy / Floaty / Momentum and play each for 30–60 seconds. Note: jump arc, air momentum feel, landing, coyote forgiveness. Any notes you give go straight into the next tuning pass.
-- [ ] **Confirm the auto-merge git workflow is what you want long-term.** Decided already in `docs/DECISIONS.md` for kickoff after your "go ahead and feel free to merge" — flag here only because it's the kind of thing that's easy to forget about until it surprises you.
+- [x] **Auto-merge git workflow confirmed and instrumented.** Now enforced by `.github/workflows/auto-merge.yml` — PRs labeled `auto-merge` are squash-merged automatically. Iteration-startup rules in `docs/CLAUDE.md` require checking your own open PRs before opening a new branch, to prevent the duplicate-PR loop that ate iter 1.
 
 ## Roadmap
 
@@ -78,6 +78,35 @@ Goal: store-ready build.
 The full iteration log lives here, newest first. Every iteration appends an entry. Skim the dates to find where you last left off.
 
 <!-- ITERATION ENTRIES BELOW — DO NOT REMOVE OLDER ENTRIES -->
+
+### [2026-05-09] — `claude/fix-scheduled-runs-WjNm9` — process fix: auto-merge workflow
+
+- Primary: **Auto-merge GitHub Action.** Added
+  `.github/workflows/auto-merge.yml`. Squash-merges any non-draft PR
+  carrying the `auto-merge` label, on `opened` / `labeled` /
+  `ready_for_review` / `synchronize` / `reopened`. The agent now adds
+  the label on PR creation; if the session dies before merge, the
+  workflow finishes the job. Removes the dependency on the agent
+  staying alive past `gh pr create`.
+- Primary: **Iteration startup rules in `docs/CLAUDE.md`.** New
+  required sequence at the top of "Git workflow": list your own open
+  PRs first; if one already targets the item you'd have picked, check
+  out that branch and iterate on it (don't fork a new one) or skip the
+  item; if multiple PRs cover the same item, merge the most complete
+  one and close the rest. Also added an "End-of-iteration update"
+  reminder that PLAN.md + README.md updates ride in the same PR — that
+  was the silent failure mode of iter 1.
+- Cleanup: 8 duplicate iter-1 PRs (#3–#10) all attacked the same P0
+  items (camera occlusion + Floaty profile) because every 2-hour run
+  started from a stale `main`. PR #10 was the most complete — squash-
+  merged. PRs #3–#9 closed with comments linking to #10.
+- Perf: n/a (workflow + docs only).
+- Bugs fixed: scheduled-runs duplicate-PR loop.
+- Needs human attention: merge **this** PR. It alters the Git workflow
+  and so is opened as a draft per the existing exception rule.
+- Next likely focus: once on `main`, the next 2-hour run picks the
+  current top of `PLAN.md` (smoke test or, if still blocked on human,
+  Touch overlay polish / dev-menu debug viz).
 
 ### [2026-05-09] — `claude/elegant-lamport-c9ZE9` — iter 1: camera occlusion + profiles
 

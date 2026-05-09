@@ -1,0 +1,32 @@
+name: Auto-merge labeled PRs
+
+# Squash-merges any non-draft PR that carries the `auto-merge` label.
+# Iteration runs (per docs/CLAUDE.md) add the label on PR creation; this
+# workflow is the safety net so merging doesn't depend on the agent
+# session staying alive after `gh pr create`.
+#
+# Exemptions live in the iteration's PR-creation step (see CLAUDE.md
+# "Git workflow"): if the change alters the workflow itself, modifies
+# version-control history, ships outside the repo, or hits anything in
+# "What requires the human", the agent opens the PR as a draft without
+# the label and stops.
+
+on:
+  pull_request:
+    types: [opened, labeled, reopened, ready_for_review, synchronize]
+
+permissions:
+  contents: write
+  pull-requests: write
+
+jobs:
+  auto-merge:
+    if: contains(github.event.pull_request.labels.*.name, 'auto-merge') && github.event.pull_request.draft == false
+    runs-on: ubuntu-latest
+    steps:
+      - name: Squash merge
+        env:
+          GH_TOKEN: ${{ secrets.GITHUB_TOKEN }}
+          PR_NUMBER: ${{ github.event.pull_request.number }}
+          REPO: ${{ github.repository }}
+        run: gh pr merge "$PR_NUMBER" --squash --delete-branch --repo "$REPO"

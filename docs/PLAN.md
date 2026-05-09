@@ -14,8 +14,13 @@ instrumented and tunable.
 
 ## Active iteration
 
-- Branch: `claude/elegant-lamport-c9ZE9`
-- Focus: iteration 1 complete. Pull from the queue below for iteration 2.
+- Branch: `claude/fix-scheduled-runs-WjNm9`
+- Focus: process fix complete (auto-merge workflow + iteration-startup
+  rules in `CLAUDE.md`). Iteration 2 should pull from the queue below.
+  **Items 1–4 are blocked on human on-device action — skip past them
+  to item 5 (Touch overlay polish) or further if no human input has
+  arrived.** Don't re-do items already covered by an open PR — see
+  CLAUDE.md "Iteration startup".
 
 ## Queue (ranked, top is next)
 
@@ -107,6 +112,15 @@ These mirror "Open questions waiting on you" in the README.
 
 ## Recently completed (last 5)
 
+- 2026-05-09 — Process fix. Added `.github/workflows/auto-merge.yml`
+  (squash-merges any non-draft PR with the `auto-merge` label). New
+  "Iteration startup" rules in `docs/CLAUDE.md` require listing your
+  own open PRs first and either iterating on an existing branch or
+  skipping the item if work overlaps. Cleaned up 8 duplicate iter-1
+  PRs (#3–#10) — merged #10, closed the rest. Root cause: every 2-hour
+  run was starting from a stale `main` because the previous run's
+  auto-merge step never fired (no GitHub Action existed; agent
+  self-blocked on unticked README questions).
 - 2026-05-09 — Iteration 1. Camera occlusion avoidance via
   `PhysicsDirectSpaceState3D` raycast in `camera_rig.gd` (script-only,
   no scene change). Camera params group added to dev menu (9 sliders:
