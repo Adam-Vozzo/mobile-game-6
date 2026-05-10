@@ -35,6 +35,8 @@ func _ready() -> void:
 	_test_slope_params()
 	_test_respawn_params()
 	_test_movement_params()
+	_test_assisted_params()
+	_test_try_jump_logic()
 	_test_camera_vertical_pull()
 	_test_camera_occlude_math()
 	_test_camera_pitch_formula()
@@ -99,6 +101,7 @@ func _test_jump_height_plausible() -> void:
 		["snappy",   "res://resources/profiles/snappy.tres"],
 		["floaty",   "res://resources/profiles/floaty.tres"],
 		["momentum", "res://resources/profiles/momentum.tres"],
+		["assisted", "res://resources/profiles/assisted.tres"],
 	]
 	var h_snappy := 0.0
 	var h_floaty := 0.0
@@ -132,6 +135,7 @@ func _test_gravity_band_ordering() -> void:
 		["snappy",   "res://resources/profiles/snappy.tres"],
 		["floaty",   "res://resources/profiles/floaty.tres"],
 		["momentum", "res://resources/profiles/momentum.tres"],
+		["assisted", "res://resources/profiles/assisted.tres"],
 	]
 	for entry in profiles:
 		var name: String = entry[0]
@@ -152,6 +156,7 @@ func _test_jump_cut_math() -> void:
 		["snappy",   "res://resources/profiles/snappy.tres"],
 		["floaty",   "res://resources/profiles/floaty.tres"],
 		["momentum", "res://resources/profiles/momentum.tres"],
+		["assisted", "res://resources/profiles/assisted.tres"],
 	]
 	for entry in profiles:
 		var name: String = entry[0]
@@ -186,6 +191,7 @@ func _test_horizontal_interpolation() -> void:
 		["snappy",   "res://resources/profiles/snappy.tres"],
 		["floaty",   "res://resources/profiles/floaty.tres"],
 		["momentum", "res://resources/profiles/momentum.tres"],
+		["assisted", "res://resources/profiles/assisted.tres"],
 	]
 	const DELTA := 1.0 / 60.0
 	for entry in profiles:
@@ -241,6 +247,7 @@ func _test_terminal_velocity() -> void:
 		["snappy",   "res://resources/profiles/snappy.tres"],
 		["floaty",   "res://resources/profiles/floaty.tres"],
 		["momentum", "res://resources/profiles/momentum.tres"],
+		["assisted", "res://resources/profiles/assisted.tres"],
 	]
 	for entry in profiles:
 		var name: String = entry[0]
@@ -269,12 +276,13 @@ func _test_coyote_countdown() -> void:
 	## Simulates timer = maxf(0, timer - delta) to verify:
 	##   1. Never goes negative.
 	##   2. Expires within 2× the expected frame count (float-rounding headroom).
-	## Tests all three shipped profiles (coyote_time varies: 0.1 / 0.18 / 0.08 s).
+	## Tests all four shipped profiles (coyote_time varies: 0.1 / 0.18 / 0.08 / 0.22 s).
 	print("\n-- Coyote timer countdown --")
 	var profiles := [
 		["snappy",   "res://resources/profiles/snappy.tres"],
 		["floaty",   "res://resources/profiles/floaty.tres"],
 		["momentum", "res://resources/profiles/momentum.tres"],
+		["assisted", "res://resources/profiles/assisted.tres"],
 	]
 	const DELTA := 1.0 / 60.0
 	for entry in profiles:
@@ -296,12 +304,13 @@ func _test_coyote_countdown() -> void:
 
 func _test_buffer_countdown() -> void:
 	## Same countdown logic as coyote. Verifies buffer-specific design goals
-	## on all three shipped profiles (jump_buffer: 0.12 / 0.20 / 0.10 s).
+	## on all four shipped profiles (jump_buffer: 0.12 / 0.20 / 0.10 / 0.24 s).
 	print("\n-- Jump buffer countdown --")
 	var profiles := [
 		["snappy",   "res://resources/profiles/snappy.tres"],
 		["floaty",   "res://resources/profiles/floaty.tres"],
 		["momentum", "res://resources/profiles/momentum.tres"],
+		["assisted", "res://resources/profiles/assisted.tres"],
 	]
 	const DELTA := 1.0 / 60.0
 	for entry in profiles:
@@ -328,6 +337,7 @@ func _test_profile_cross_invariants() -> void:
 		["snappy",   "res://resources/profiles/snappy.tres"],
 		["floaty",   "res://resources/profiles/floaty.tres"],
 		["momentum", "res://resources/profiles/momentum.tres"],
+		["assisted", "res://resources/profiles/assisted.tres"],
 	]
 	for entry in profiles:
 		var name: String = entry[0]
@@ -346,16 +356,17 @@ func _test_profile_cross_invariants() -> void:
 
 func _test_slope_params() -> void:
 	## max_floor_angle_degrees sanity checks.
-	## Floaty is the accessibility profile and should be at least as forgiving
-	## on slopes as Snappy (wider angle = walks up steeper surfaces).
+	## Assisted is the most forgiving on slopes, Floaty next, Snappy last.
 	print("\n-- Slope parameters --")
 	var profiles := [
 		["snappy",   "res://resources/profiles/snappy.tres"],
 		["floaty",   "res://resources/profiles/floaty.tres"],
 		["momentum", "res://resources/profiles/momentum.tres"],
+		["assisted", "res://resources/profiles/assisted.tres"],
 	]
-	var angle_snappy := 0.0
-	var angle_floaty := 0.0
+	var angle_snappy  := 0.0
+	var angle_floaty  := 0.0
+	var angle_assisted := 0.0
 	for entry in profiles:
 		var name: String = entry[0]
 		var p: CP = _load_profile(entry[1])
@@ -368,9 +379,14 @@ func _test_slope_params() -> void:
 			angle_snappy = p.max_floor_angle_degrees
 		elif name == "floaty":
 			angle_floaty = p.max_floor_angle_degrees
+		elif name == "assisted":
+			angle_assisted = p.max_floor_angle_degrees
 	if angle_snappy > 0.0 and angle_floaty > 0.0:
 		_ok("floaty max_floor_angle >= snappy (more forgiving on slopes)",
 			angle_floaty >= angle_snappy)
+	if angle_floaty > 0.0 and angle_assisted > 0.0:
+		_ok("assisted max_floor_angle >= floaty (most forgiving on slopes)",
+			angle_assisted >= angle_floaty)
 
 
 func _test_respawn_params() -> void:
@@ -385,6 +401,7 @@ func _test_respawn_params() -> void:
 		["snappy",   "res://resources/profiles/snappy.tres"],
 		["floaty",   "res://resources/profiles/floaty.tres"],
 		["momentum", "res://resources/profiles/momentum.tres"],
+		["assisted", "res://resources/profiles/assisted.tres"],
 	]
 	for entry in profiles:
 		var name: String = entry[0]
@@ -406,6 +423,7 @@ func _test_movement_params() -> void:
 		["snappy",   "res://resources/profiles/snappy.tres"],
 		["floaty",   "res://resources/profiles/floaty.tres"],
 		["momentum", "res://resources/profiles/momentum.tres"],
+		["assisted", "res://resources/profiles/assisted.tres"],
 	]
 	for entry in profiles:
 		var name: String = entry[0]
@@ -420,12 +438,13 @@ func _test_movement_params() -> void:
 	var sp: CP = _load_profile("res://resources/profiles/snappy.tres")
 	var fp: CP = _load_profile("res://resources/profiles/floaty.tres")
 	var mp: CP = _load_profile("res://resources/profiles/momentum.tres")
+	var ap: CP = _load_profile("res://resources/profiles/assisted.tres")
 	if sp == null or fp == null or mp == null:
 		return
 	_ok("momentum max_speed > snappy max_speed", mp.max_speed > sp.max_speed)
 	_ok("floaty max_speed < snappy max_speed (controlled profile)", fp.max_speed < sp.max_speed)
 	# Momentum preserves velocity fully: zero air damping, like Snappy.
-	# Floaty is the only profile with non-zero damping (covered in _test_air_damping too).
+	# Floaty is the only base profile with non-zero damping.
 	_ok("momentum air_horizontal_damping == 0 (full velocity preservation)",
 		mp.air_horizontal_damping == 0.0)
 	# Momentum intentionally decelerates slowly on the ground (high-momentum feel).
@@ -433,6 +452,12 @@ func _test_movement_params() -> void:
 	# to reach max speed — the opposite of Snappy and Floaty which stop quickly.
 	_ok("momentum ground_deceleration < momentum ground_acceleration (loose decel feel)",
 		mp.ground_deceleration < mp.ground_acceleration)
+	# Assisted is the slowest and grippiest profile: lowest max_speed, most air damping.
+	if ap != null:
+		_ok("assisted max_speed <= floaty max_speed (most controlled profile)",
+			ap.max_speed <= fp.max_speed)
+		_ok("assisted air_horizontal_damping > floaty air_horizontal_damping (maximum grip)",
+			ap.air_horizontal_damping > fp.air_horizontal_damping)
 
 
 func _test_camera_vertical_pull() -> void:
@@ -640,6 +665,7 @@ func _test_horizontal_deceleration() -> void:
 		["snappy",   "res://resources/profiles/snappy.tres"],
 		["floaty",   "res://resources/profiles/floaty.tres"],
 		["momentum", "res://resources/profiles/momentum.tres"],
+		["assisted", "res://resources/profiles/assisted.tres"],
 	]
 	const DELTA := 1.0 / 60.0
 	var frames_snappy := 0
@@ -779,6 +805,7 @@ func _test_gravity_band_selection() -> void:
 		["snappy",   "res://resources/profiles/snappy.tres"],
 		["floaty",   "res://resources/profiles/floaty.tres"],
 		["momentum", "res://resources/profiles/momentum.tres"],
+		["assisted", "res://resources/profiles/assisted.tres"],
 	]
 	for entry in profiles:
 		var name: String = entry[0]
@@ -803,3 +830,97 @@ func _select_gravity(p: CP, vel_y: float, jump_held: bool) -> float:
 		return p.gravity_rising
 	else:
 		return p.gravity_falling
+
+
+func _test_assisted_params() -> void:
+	## Sanity checks for the Assisted profile's new landing_sticky_* properties.
+	## All non-Assisted profiles must have these properties at 0 (the safe default
+	## that disables the mechanic so existing behaviour is unchanged).
+	print("\n-- Assisted profile parameters --")
+	var ap: CP = _load_profile("res://resources/profiles/assisted.tres")
+	if ap == null:
+		return
+	# Assisted must actually enable stickiness.
+	_ok("assisted: landing_sticky_factor > 0 (mechanic enabled)", ap.landing_sticky_factor > 0.0)
+	_ok("assisted: landing_sticky_factor in (0, 1) (partial damping only)",
+		ap.landing_sticky_factor > 0.0 and ap.landing_sticky_factor < 1.0)
+	_ok("assisted: landing_sticky_frames > 0 (at least one damped frame)",
+		ap.landing_sticky_frames > 0)
+	_ok("assisted: landing_sticky_frames <= 6 (slider max, avoids dragging feel)",
+		ap.landing_sticky_frames <= 6)
+	# Assisted has the most generous timing windows (coyote + buffer).
+	var fp: CP = _load_profile("res://resources/profiles/floaty.tres")
+	if fp != null:
+		_ok("assisted coyote_time >= floaty coyote_time (most forgiving timing)",
+			ap.coyote_time >= fp.coyote_time)
+		_ok("assisted jump_buffer >= floaty jump_buffer (most forgiving pre-press window)",
+			ap.jump_buffer >= fp.jump_buffer)
+	# Non-Assisted profiles must have sticky params at safe defaults (0 = disabled).
+	for entry: Array in [
+		["snappy",   "res://resources/profiles/snappy.tres"],
+		["floaty",   "res://resources/profiles/floaty.tres"],
+		["momentum", "res://resources/profiles/momentum.tres"],
+	]:
+		var name: String = entry[0]
+		var p: CP = _load_profile(entry[1])
+		if p == null:
+			continue
+		_ok(name + ": landing_sticky_factor == 0 (disabled by default)",
+			p.landing_sticky_factor == 0.0)
+		_ok(name + ": landing_sticky_frames == 0 (disabled by default)",
+			p.landing_sticky_frames == 0)
+
+
+func _test_try_jump_logic() -> void:
+	## Verifies the conjunction logic from player.gd::_try_jump.
+	## Rule: jump fires only when BOTH _buffer_timer > 0 AND _coyote_timer > 0.
+	## After firing: both timers are zeroed (prevents double-jump on the next
+	## frame if both happened to still be > 0), and velocity.y = jump_velocity.
+	## This function's AND condition is the core of the coyote + buffer system:
+	## the player can have an unspent press (buffer > 0) OR unspent grace
+	## (coyote > 0), but NOT trigger a jump unless both exist simultaneously.
+	print("\n-- _try_jump logic (buffer × coyote conjunction) --")
+	var profiles := [
+		["snappy",   "res://resources/profiles/snappy.tres"],
+		["floaty",   "res://resources/profiles/floaty.tres"],
+		["momentum", "res://resources/profiles/momentum.tres"],
+		["assisted", "res://resources/profiles/assisted.tres"],
+	]
+	# Shared edge-case assertions independent of profile.
+	var r_both := _try_jump_helper(0.1, 0.1, 10.0)
+	_ok("both timers > 0: jump fires (vy = jump_velocity)", _near(r_both["vy"], 10.0))
+	_ok("both timers > 0: buffer zeroed after jump", _near(r_both["buffer"], 0.0))
+	_ok("both timers > 0: coyote zeroed after jump", _near(r_both["coyote"], 0.0))
+
+	var r_no_buffer := _try_jump_helper(0.0, 0.1, 10.0)
+	_ok("buffer == 0, coyote > 0: no jump (no recent press)", _near(r_no_buffer["vy"], 0.0))
+	_ok("buffer == 0, coyote > 0: coyote unchanged (no consumption)", _near(r_no_buffer["coyote"], 0.1))
+
+	var r_no_coyote := _try_jump_helper(0.1, 0.0, 10.0)
+	_ok("buffer > 0, coyote == 0: no jump (ran off ledge too long)", _near(r_no_coyote["vy"], 0.0))
+	_ok("buffer > 0, coyote == 0: buffer unchanged (no consumption)", _near(r_no_coyote["buffer"], 0.1))
+
+	var r_both_zero := _try_jump_helper(0.0, 0.0, 10.0)
+	_ok("both timers == 0: no jump", _near(r_both_zero["vy"], 0.0))
+
+	# Per-profile: vy assigned is exactly jump_velocity (no scaling).
+	for entry in profiles:
+		var name: String = entry[0]
+		var p: CP = _load_profile(entry[1])
+		if p == null:
+			continue
+		var r := _try_jump_helper(0.1, 0.1, p.jump_velocity)
+		_ok(name + ": jump fires with vy == profile.jump_velocity",
+			_near(r["vy"], p.jump_velocity))
+
+
+func _try_jump_helper(buffer: float, coyote: float, jump_v: float) -> Dictionary:
+	## Mirrors player.gd::_try_jump exactly. Returns post-call state.
+	var buf_out := buffer
+	var coy_out := coyote
+	var vy_out  := 0.0
+	if buf_out > 0.0 and coy_out > 0.0:
+		vy_out  = jump_v
+		buf_out = 0.0
+		coy_out = 0.0
+	return {"vy": vy_out, "buffer": buf_out, "coyote": coy_out}

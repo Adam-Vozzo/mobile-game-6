@@ -49,3 +49,14 @@ class_name ControllerProfile
 @export_range(-200.0, 0.0, 0.5) var fall_kill_y: float = -25.0
 ## Duration of the reboot effect (red flash → dark → fade in).
 @export_range(0.05, 1.5, 0.05) var reboot_duration: float = 0.5
+
+@export_category("Assisted")
+## Speed multiplier applied to horizontal velocity for `landing_sticky_frames`
+## physics frames after the player touches down. 0 = disabled (default for all
+## non-Assisted profiles). 0.2 = 20% per-frame reduction for 2 frames on landing.
+## This shortens the slide-out on narrow platforms — the key mobile-first
+## "sticky landing" mechanic for the Assisted profile.
+@export_range(0.0, 0.8, 0.05) var landing_sticky_factor: float = 0.0
+## How many grounded physics frames to apply landing_sticky_factor after landing.
+## 0 = disabled. Counting resets if the player leaves the floor before it expires.
+@export_range(0, 6, 1) var landing_sticky_frames: int = 0

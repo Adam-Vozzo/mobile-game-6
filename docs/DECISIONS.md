@@ -342,3 +342,35 @@ subsequent air frames. Coyote-time grace is inherited from the controller's
 `is_on_floor()` semantics, which is the desired behaviour (camera doesn't
 snap-freeze the instant the player runs off a ledge — it freezes once the
 controller actually treats the player as airborne).
+
+## 2026-05-10 — Assisted profile: Phase 1 = sticky landing only; Phase 2 deferred
+
+Status: accepted
+Context: PLAN.md P0 item 4 calls for a full Assisted profile including in-air
+steering toward likely landing targets, generous ledge grab, and edge-snap.
+`docs/research/assist_mechanics.md` defines the complete implementation (sticky
+landing → ledge magnetism → arc assist → edge-snap in that order). The profile
+requires no device feel to implement Phase 1 since all new properties default to
+0 on non-Assisted profiles, preserving all existing behaviour.
+Decision: Implement Phase 1 this iteration: (a) add `landing_sticky_factor` and
+`landing_sticky_frames` to `ControllerProfile` (both default 0 = disabled,
+backwards compatible); (b) add `_was_on_floor_last_frame` + `_sticky_frames_remaining`
+to `player.gd`; (c) apply the damping multiplier in `_apply_horizontal` when the
+sticky counter is live; (d) author `assisted.tres` with generous timing windows and
+sticky landing enabled; (e) add Assisted to the dev menu dropdown. Phase 2 (ledge
+magnetism via ShapeCast, arc assist) deferred until the human feels all four profiles
+on device — those mechanics require tuning against real tactile feedback.
+Alternatives considered:
+- Wait for device feel before implementing anything: the Assisted dropdown entry
+  would be absent for the first device run, losing the opportunity to compare all
+  four profiles. Since Phase 1 is backwards-compatible, there is no cost to shipping
+  it now.
+- Implement full Phase 2 now: ledge magnetism requires ShapeCast at jump time, arc
+  assist requires per-frame parabola simulation. Both are non-trivial and their
+  parameter values are meaningless without device feel. Premature implementation
+  would be guesswork.
+Consequences: Dev menu dropdown now has four entries: Snappy / Floaty / Momentum /
+Assisted. All existing tests pass (non-Assisted profiles have sticky params == 0).
+`_was_on_floor_last_frame` is also the correct place for the juice system's
+landing-squash trigger (per `assist_mechanics.md` implication) — extracted here so
+future juice work doesn't need to add a second `is_on_floor()` call.
