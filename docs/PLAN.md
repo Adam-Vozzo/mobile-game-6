@@ -14,17 +14,15 @@ instrumented and tunable.
 
 ## Active iteration
 
-- Branch: `claude/gifted-shannon-80jFq`
-- Focus: iter 19. `_build_controller_section` refactor (primary): extracted 4
-  focused sub-builders (`_build_controller_movement`, `_build_controller_jump`,
-  `_build_controller_respawn`, `_build_controller_slope`). Function was 42 lines,
-  now 7. No behaviour change. Every method in `dev_menu_overlay.gd` is now under
-  40 lines.
-  Side quest: `_test_movement_params()` added to kinematics tests — 10 new
-  assertions for `ground_deceleration > 0`, `air_acceleration > 0`, speed-profile
-  ordering (Momentum > Snappy > Floaty), Momentum zero-damping invariant, Momentum
-  loose-decel invariant. Total: ~76 → ~86 assertions.
-  Hard throttle (19 iterations since human direction).
+- Branch: `claude/gifted-shannon-5UrSF`
+- Focus: iter 20. Test suite expansion (primary): `_test_horizontal_interpolation`,
+  `_test_coyote_countdown`, and `_test_buffer_countdown` expanded from Snappy-only
+  to all three shipped profiles. Net +20 assertions (~86 → ~106 total). No
+  behaviour change.
+  Side quest: `docs/research/touch_dead_zone_calibration.md` — truncating vs.
+  remapping dead zones, Genshin Impact observations, HCI sizing guidance.
+  Closes "Genshin dead zone" open item in INDEX.md.
+  Hard throttle (20 iterations since human direction).
   **Items 1–4 still blocked on human on-device action.**
 
 ## Queue (ranked, top is next)
@@ -143,6 +141,19 @@ These mirror "Open questions waiting on you" in the README.
   feel issues. Those notes drive iteration 2's tuning pass.
 
 ## Recently completed (last 5)
+
+- 2026-05-10 — Iteration 20. Test suite expansion: `_test_horizontal_interpolation`,
+  `_test_coyote_countdown`, and `_test_buffer_countdown` now loop over all three
+  shipped profiles (was Snappy-only, matching iter 11's expansion of jump_cut and
+  terminal_velocity). Net +20 assertions: +6 (interpolation, 3 assertions × 3
+  profiles), +8 (coyote, 4 assertions × 3 profiles), +6 (buffer, 3 assertions ×
+  3 profiles). Total: ~86 → ~106. No behaviour change.
+  Side quest: `docs/research/touch_dead_zone_calibration.md` — truncating vs.
+  remapping dead zones (formulae), Genshin observations (8–10% inner DZ, 90–95%
+  outer DZ, safety band), Sky/Alto notes, HCI sizing guidance. 5 implications:
+  current 15% truncating DZ is correct for Gate 0; Floaty may need remapping;
+  outer DZ at 93% for sprint ergonomics; camera safety band; DZ belongs in
+  touch_overlay not ControllerProfile. INDEX.md updated; Genshin open item closed.
 
 - 2026-05-10 — Iteration 19. `dev_menu_overlay.gd::_build_controller_section` refactor:
   extracted `_build_controller_movement` (13 lines), `_build_controller_jump` (19 lines),
