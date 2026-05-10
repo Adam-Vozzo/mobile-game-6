@@ -5,7 +5,7 @@ A mobile 3D platformer. Brutalist megastructure inspired by *BLAME!*. Controller
 ## Status
 
 Current gate: **Gate 0 — Feel Lab**
-Last iteration: 2026-05-10 — iter 25: stale camera test cleanup (tripod model tests) + pitch_min_degrees dead-code removal
+Last iteration: 2026-05-10 — iter 26: deceleration + visual facing tests + ANDROID.md signing docs
 Test device build: not yet — hand-authored scenes pending first Godot 4.6 import; see Open questions
 Performance: not yet measured on Nothing Phone 4(a) Pro
 Throttle level: **CLEAR — human is actively directing.** Re-engage the HARD throttle if 5+ autonomous iterations pass without further input.
@@ -95,6 +95,50 @@ Goal: store-ready build.
 The full iteration log lives here, newest first. Every iteration appends an entry. Skim the dates to find where you last left off.
 
 <!-- ITERATION ENTRIES BELOW — DO NOT REMOVE OLDER ENTRIES -->
+
+### [2026-05-10] — `claude/gifted-shannon-doncr` — iter 26: deceleration + visual facing tests + ANDROID.md signing docs
+
+- **Throttle: CLEAR (2 autonomous iterations since 2026-05-11 human session).** Normal mode.
+- **Primary: Two new test groups added to `tests/test_controller_kinematics.gd`.**
+  179 → 198 assertions (+19). Both groups cover production code paths that had zero
+  previous test coverage.
+
+  - **`_test_horizontal_deceleration` (11 assertions)** — exercises the decel branch
+    of `player.gd::_apply_horizontal` (fires when `move_dir.length() < 0.01 and on_floor`):
+    - Per profile (×3): convergence from `max_speed` to near-zero within 600 frames (10 s);
+      `final_speed < 0.01 m/s`; `speed ≥ 0` throughout (`move_toward` no-overshoot guarantee).
+    - Cross-profile: `frames_momentum > frames_snappy` — Snappy decelerates from 6.5 m/s
+      at 90 m/s² (~5 frames); Momentum decelerates from 11.0 m/s at 30 m/s² (~23 frames).
+      Documents the "loose decel" design intent from `_test_movement_params`.
+    - Edge case: starting at rest stays at rest (decel step on zero vector = zero).
+
+  - **`_test_visual_facing_formula` (8 assertions)** — exercises the target_yaw formula
+    of `player.gd::_update_visual_facing` (`target_yaw = atan2(-velocity.x, -velocity.z)`):
+    - Four cardinal directions: moving -Z→yaw=0, +Z→±PI, +X→-PI/2, -X→+PI/2. Verifies
+      local -Z (Godot forward) aligns with velocity direction after the rotation.
+    - Lerp weight clamp: `clampf(turn_speed * delta, 0, 1)` at default turn_speed (12) is
+      in (0, 1) (smooth); at max export bound (30) is ≤ 1.0 (no overshoot).
+    - Speed deadband: 0.1 m/s < 0.2 m/s threshold (guard fires); 0.3 m/s ≥ threshold (updates).
+
+- **Side quest: `docs/ANDROID.md` — "Headless / CI signing via environment variables" section.**
+  Closes the P2 queue item "investigate signing-key handling via gradle env vars."
+  - **Pattern A** — Godot 4.3+ CLI env vars (`GODOT_ANDROID_KEYSTORE_RELEASE_PATH`,
+    `..._USER`, `..._PASSWORD`) for standard (non-custom-build) headless export. The env
+    vars override the blank `export_presets.cfg` fields at export time.
+  - **Pattern B** — `android/build/local.properties` + `build.gradle` patch for Gradle
+    custom build (`use_gradle_build = true`, required for Play Store AAB). The `local.properties`
+    file is gitignored by the custom build template; signing credentials never touch the repo.
+    Includes a `gradle_signing.patch` workflow so the build.gradle edit survives template reinstalls.
+  - Security checklist (5 items: blank password in preset, local.properties gitignored, keystore
+    outside repo, password in password manager, CI uses secret variable).
+  - `ANDROID.md` open TODO for this item marked done.
+
+- Perf: no runtime change (tests + docs only).
+- Bugs fixed: none.
+- New dev-menu controls: none.
+- Assets acquired: none.
+- Research added: none.
+- Needs human attention: **see "Open questions waiting on you" — on-device first run still the #1 unlocker.**
 
 ### [2026-05-10] — `claude/gifted-shannon-TuINF` — iter 25: stale camera test cleanup + tripod model tests + pitch_min_degrees cleanup
 

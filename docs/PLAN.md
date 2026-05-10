@@ -14,18 +14,19 @@ instrumented and tunable.
 
 ## Active iteration
 
-- Branch: `claude/gifted-shannon-TuINF`
-- Focus: iter 25. Stale camera test cleanup: removed `_test_camera_yaw_recenter`
-  (8 assertions) and `_test_camera_lookahead_target` (5 assertions) — both tested
-  functions deleted in the tripod rewrite (`_update_yaw_recenter`, `_update_lookahead`
-  no longer exist). Replaced with `_test_tripod_placement` (6 assertions: placement
-  formula, Pythagorean identity, elevation edge cases) and `_test_tripod_drag_orbit`
-  (7 assertions: radius, phi derivation, pure-yaw orbit, clamp invariants). Net:
-  179 → 179 assertions (13 removed + 13 added; tests now cover live code).
-  Side quest: removed dead `pitch_min_degrees` @export and its dev-menu slider —
-  the lower clamp in `_apply_drag_input` is hardcoded to 0.0; only `pitch_max_degrees`
-  is used. Throttle: CLEAR (first autonomous iteration since 2026-05-11 human-direction
-  session). **Items 1–4 still blocked on human on-device action.**
+- Branch: `claude/gifted-shannon-doncr`
+- Focus: iter 26. Two new test groups added to `tests/test_controller_kinematics.gd`:
+  `_test_horizontal_deceleration` (11 assertions: per-profile decel convergence from
+  max_speed to rest, no-overshoot guarantee, momentum-brakes-slower-than-snappy
+  cross-profile invariant, rest-at-rest edge case) and `_test_visual_facing_formula`
+  (8 assertions: atan2(-vx,-vz) cardinal-direction mappings, lerp weight clamp at
+  default/max turn_speed, speed deadband thresholds). Net: 179 → 198 assertions.
+  Both groups cover production code paths (`_apply_horizontal` decel branch and
+  `_update_visual_facing`) with zero previous coverage.
+  Side quest: `docs/ANDROID.md` gains a "Headless / CI signing via environment
+  variables" section — Pattern A (Godot 4.3+ env vars) and Pattern B (local.properties
+  for Gradle custom build), security checklist, gradle_signing.patch workflow. Closes
+  P2 TODO. Throttle: CLEAR. **Items 1–4 still blocked on human on-device action.**
 
 ## Queue (ranked, top is next)
 
@@ -125,8 +126,10 @@ The next iteration should pull from the top of this list. Items marked
   devices.~~ Done (iter 23). `docs/research/compatibility_renderer.md` —
   no switch needed; Compatibility APK is viable at Gate 2+ as a second
   export preset, zero code changes required.
-- Investigate signing-key handling via gradle env vars so a future
-  Play Store build doesn't require touching the editor settings.
+- ~~Investigate signing-key handling via gradle env vars so a future
+  Play Store build doesn't require touching the editor settings.~~
+  Done (iter 26). `docs/ANDROID.md` "Headless / CI signing" section covers
+  Pattern A (env vars, Godot 4.3+) and Pattern B (local.properties + Gradle patch).
 - Consider upgrading camera occlusion from point ray to ShapeCast3D
   (capsule) if poke-through is observed in Gate 1 tighter geometry.
 
@@ -145,6 +148,14 @@ These mirror "Open questions waiting on you" in the README.
   feel issues. Those notes drive iteration 2's tuning pass.
 
 ## Recently completed (last 5)
+
+- 2026-05-10 — Iteration 26. Two new test groups: `_test_horizontal_deceleration`
+  (11 assertions — decel convergence from max_speed, no-overshoot, momentum-slower-
+  than-snappy invariant, rest-at-rest edge case) and `_test_visual_facing_formula`
+  (8 assertions — atan2(-vx,-vz) cardinal directions, lerp weight clamp, deadband).
+  179 → 198 assertions. Side quest: `docs/ANDROID.md` signing env vars section
+  (Pattern A: Godot 4.3+ env vars; Pattern B: local.properties + gradle patch);
+  P2 TODO closed.
 
 - 2026-05-10 — Iteration 25. Stale camera test cleanup + tripod model tests.
   Removed `_test_camera_yaw_recenter` and `_test_camera_lookahead_target` (13
