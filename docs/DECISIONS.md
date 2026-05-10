@@ -143,3 +143,30 @@ Consequences: `_occlude(aim, desired)` is a pure script function, easy to
 unit-test. Tunable via `occlusion_margin` and `occlusion_min_distance` exports,
 both now in the Camera section of the dev menu. Player RID is excluded from the
 query so the capsule doesn't occlude its own camera.
+
+## 2026-05-10 — Touch slider display: group-query approach
+
+Status: accepted
+Context: After the iter-17 silent-init fix, touch sliders correctly do not fire
+DevMenu.touch_param_changed during init — but they displayed hardcoded defaults
+(95 / 0.5) even when user://input.cfg had different values. The overlay itself
+was correct; only the slider display label was stale. A "loaded params" signal
+was the obvious fix but would require connecting before the signal fires, adding
+a new autoload signal that DevMenuOverlay would need to observe before build.
+Decision: TouchOverlay adds itself to the "touch_overlay" group in _ready().
+DevMenuOverlay._build_touch_section() queries that group just before building
+sliders and passes the actual loaded values as initial_value. Since
+DevMenuOverlay._ready() is triggered by call_deferred("_install_overlay") in
+DevMenu._ready(), the full scene tree — including TouchOverlay._ready() and its
+_load_layout() call — has already completed before the group query runs.
+Alternatives considered:
+- New DevMenu.touch_layout_loaded signal: requires knowing exact load timing;
+  adds a new autoload signal surface for a cosmetic fix.
+- Store params in DevMenu autoload: DevMenu doesn't own touch layout state;
+  creates confusing ownership. Also doubles as stale-on-scene-swap risk.
+- set_value_no_signal + manual label refresh: requires storing (slider, label)
+  pairs per row; more invasive refactor than the problem warrants.
+Consequences: DevMenuOverlay reads from the scene tree during _build_ui().
+Falls back to hardcoded defaults (95 / 0.5) if no "touch_overlay" group member
+exists — correct for editor scenes without touch UI. Relies on the
+call_deferred ordering guarantee, which is stable in Godot 4.x.

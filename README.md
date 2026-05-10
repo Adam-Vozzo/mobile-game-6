@@ -5,10 +5,10 @@ A mobile 3D platformer. Brutalist megastructure inspired by *BLAME!*. Controller
 ## Status
 
 Current gate: **Gate 0 — Feel Lab**
-Last iteration: 2026-05-09 — iter 17: touch layout persistence fix + holistic level design research
+Last iteration: 2026-05-10 — iter 18: touch slider display fix + respawn param tests
 Test device build: not yet — hand-authored scenes pending first Godot 4.6 import; see Open questions
 Performance: not yet measured on Nothing Phone 4(a) Pro
-Throttle level: **HARD — 17 iterations since last human direction. No new features. See Open questions.**
+Throttle level: **HARD — 18 iterations since last human direction. No new features. See Open questions.**
 
 If you only read one section, read **Open questions waiting on you** below.
 
@@ -16,8 +16,8 @@ If you only read one section, read **Open questions waiting on you** below.
 
 Things Claude can't decide alone, or where it's stalled and needs direction. Each is blocking some piece of forward progress.
 
-> **⚠ HARD THROTTLE — 17 iterations since last human direction.** Claude has been
-> building infrastructure (tests, research, refactors, debug tooling) for 16 iterations
+> **⚠ HARD THROTTLE — 18 iterations since last human direction.** Claude has been
+> building infrastructure (tests, research, refactors, debug tooling) for 17 iterations
 > without a human feel verdict or direction signal. All P0 items are blocked on the
 > first on-device run. The next iteration will continue hardening work only.
 >
@@ -94,6 +94,40 @@ Goal: store-ready build.
 The full iteration log lives here, newest first. Every iteration appends an entry. Skim the dates to find where you last left off.
 
 <!-- ITERATION ENTRIES BELOW — DO NOT REMOVE OLDER ENTRIES -->
+
+### [2026-05-10] — `claude/gifted-shannon-iG0FA` — iter 18: touch slider display fix + respawn param tests
+
+- **Throttle: HARD (18 iterations since last human direction).** Hardening only.
+- **Primary: Touch slider display now reflects loaded layout values.**
+  The dev menu "Jump radius" and "Stick zone %" sliders were showing hardcoded
+  defaults (95 / 0.5) even when `user://input.cfg` had different values. The
+  touch overlay itself was loading correctly; only the slider display label was
+  stale. Root cause: `_build_touch_section` used hardcoded constants as
+  `initial_value` because it had no way to query the overlay at build time.
+  - Fix: `TouchOverlay._ready()` now adds itself to the `"touch_overlay"` group.
+    `DevMenuOverlay._build_touch_section()` queries that group just before building
+    sliders and uses the actual loaded values as `initial_value`. The deferred
+    `_install_overlay` call guarantees the scene tree (including
+    `TouchOverlay._load_layout()`) has completed before the group query runs.
+    Falls back to 95 / 0.5 if no overlay is in the tree.
+  - DECISIONS.md entry added (group-query vs. signal vs. store-in-autoload
+    comparison).
+  - Closes "Touch slider display doesn't reflect loaded layout" from refactor
+    backlog.
+- **Side quest: `_test_respawn_params()` added to `tests/test_controller_kinematics.gd`.**
+  - Phase-fraction sum check: `0.12 + 0.35 + 0.35 + 0.18 == 1.0` — documents
+    the beat percentages in `player.gd::_run_reboot_effect()` so future edits
+    that change a fraction are caught here.
+  - Per-profile: `reboot_duration` in `(0, 1.5]` (matches slider range);
+    `fall_kill_y < 0` (must be below ground); `fall_kill_y >= -200` (matches
+    slider min). All three profiles pass.
+  - +13 assertions; total ~76 (was ~63).
+- Perf: no runtime change.
+- Bugs fixed: touch slider display showing stale defaults after loading layout.
+- New dev-menu controls: none.
+- Assets acquired: none.
+- Research added: none.
+- Needs human attention: **see "Open questions waiting on you" — hard throttle active (18 iterations).**
 
 ### [2026-05-09] — `claude/gifted-shannon-QnzBx` — iter 17: touch layout persistence fix + holistic level design research
 

@@ -14,19 +14,18 @@ instrumented and tunable.
 
 ## Active iteration
 
-- Branch: `claude/gifted-shannon-QnzBx`
-- Focus: iter 17. `dev_menu_overlay.gd::_make_slider` silent-init fix (primary):
-  touch layout persistence was silently broken — `_build_touch_section` called
-  `.value = 95.0` after connecting callbacks, which fired `DevMenu.touch_param_changed`
-  and overwrote the value just loaded from `user://input.cfg`. Added `initial_value`
-  param (NAN default) set before callbacks connect; updated `_make_cam_slider`,
-  `_build_touch_section`, and `_build_level_section` to use it. No behaviour change
-  for a first-run user (defaults match); saves a returning user's layout.
-  Side quest: `docs/research/holistic_level_design.md` — Steve Lee GDC 2017 (three
-  integrated dimensions, affordances, intentionality pipeline) + GMTK Kishōtenketsu
-  4-beat arc + Odyssey density/apex-visibility. 6 implications for Gate 1 level
-  authoring. INDEX.md updated.
-  Hard throttle (17 iterations since human direction).
+- Branch: `claude/gifted-shannon-iG0FA`
+- Focus: iter 18. Touch slider display fix (primary): `TouchOverlay` now adds
+  itself to the `"touch_overlay"` group in `_ready()`. `DevMenuOverlay._build_touch_section`
+  queries that group to read actual loaded values (`jump_button_radius`, `stick_zone_ratio`)
+  before building sliders. Since `DevMenuOverlay._ready()` is triggered by
+  `call_deferred`, the scene tree — including `TouchOverlay._load_layout()` —
+  has completed before the query runs. Closes refactor backlog item.
+  Side quest: `_test_respawn_params()` added to kinematics tests — `reboot_duration`
+  range assertions (0 < x ≤ 1.5), `fall_kill_y` sign/range assertions, and a
+  phase-fraction sum check (0.12+0.35+0.35+0.18 = 1.0) documenting
+  `_run_reboot_effect`'s beat percentages. +13 assertions (~76 total).
+  Hard throttle (18 iterations since human direction).
   **Items 1–4 still blocked on human on-device action.**
 
 ## Queue (ranked, top is next)
@@ -145,6 +144,16 @@ These mirror "Open questions waiting on you" in the README.
   feel issues. Those notes drive iteration 2's tuning pass.
 
 ## Recently completed (last 5)
+
+- 2026-05-10 — Iteration 18. Touch slider display fix + respawn param tests:
+  `TouchOverlay._ready()` adds itself to group `"touch_overlay"`.
+  `DevMenuOverlay._build_touch_section()` queries that group to read actual
+  `jump_button_radius` / `stick_zone_ratio` values as `initial_value` rather
+  than hardcoded defaults. Closes refactor backlog item "Touch slider display
+  doesn't reflect loaded layout." Side quest: `_test_respawn_params()` in
+  `tests/test_controller_kinematics.gd` — reboot_duration range (0, 1.5],
+  fall_kill_y sign/range, phase-fraction sum (0.12+0.35+0.35+0.18=1.0).
+  +13 assertions, ~76 total. DECISIONS.md updated.
 
 - 2026-05-09 — Iteration 17. `dev_menu_overlay.gd` silent-init fix + holistic level design research:
   `_make_slider` gets `initial_value: float = NAN` param — value is set before callbacks connect,
@@ -332,13 +341,9 @@ These mirror "Open questions waiting on you" in the README.
 
 ## Refactor backlog
 
-- **Touch slider display doesn't reflect loaded layout.** After iter 17's fix,
-  the touch sliders in the dev menu show 95 / 0.5 (the @export defaults) even when
-  `user://input.cfg` has different values. The touch overlay values are correct;
-  the slider display is stale. Fix requires a "loaded params" signal or a query
-  API from dev_menu_overlay → touch_overlay. Deferred to avoid adding a new signal
-  surface during hard throttle. Low priority (UI cosmetic only; underlying layout
-  is preserved and the slider works correctly once the user drags it).
+- ~~**Touch slider display doesn't reflect loaded layout.**~~ Done (iter 18).
+  `TouchOverlay` now adds itself to the `"touch_overlay"` group; `_build_touch_section`
+  queries that group for actual values. DECISIONS.md updated.
 - `perf_budget.gd::active_particles` is never updated — always 0. The `over_budget()`
   check includes `active_particles > ACTIVE_PARTICLES_BUDGET` which is always false.
   Current spark system uses `ImmediateMesh` (not `GPUParticles3D`) so there's no

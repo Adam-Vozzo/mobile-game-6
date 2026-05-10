@@ -193,15 +193,26 @@ func _build_touch_section(vbox: VBoxContainer) -> void:
 	vbox.add_child(_make_label("Touch Controls", 14, true))
 	_make_button(vbox, "Reposition controls…",
 		func() -> void: DevMenu.reposition_controls_requested.emit())
-	# Silent init: touch_overlay._load_layout() already ran; don't overwrite it.
+	# Read actual loaded values from the touch overlay rather than using
+	# hardcoded defaults. DevMenuOverlay._ready() is triggered via
+	# DevMenu.call_deferred("_install_overlay"), so the full scene tree —
+	# including TouchOverlay._ready() → _load_layout() — has completed
+	# before this runs. Falls back to @export defaults if no overlay is
+	# found (e.g. editor scenes without touch UI).
+	var jump_radius := 95.0
+	var stick_zone  := 0.5
+	var touch_nodes := get_tree().get_nodes_in_group(&"touch_overlay")
+	if not touch_nodes.is_empty():
+		jump_radius = float(touch_nodes[0].get(&"jump_button_radius"))
+		stick_zone  = float(touch_nodes[0].get(&"stick_zone_ratio"))
 	_make_slider(vbox, "Jump radius",
 		40.0, 200.0, 1.0,
 		func(v: float) -> void: DevMenu.touch_param_changed.emit(&"jump_radius", v),
-		95.0)
+		jump_radius)
 	_make_slider(vbox, "Stick zone %",
 		0.30, 0.70, 0.01,
 		func(v: float) -> void: DevMenu.touch_param_changed.emit(&"stick_zone_ratio", v),
-		0.5)
+		stick_zone)
 
 
 func _build_juice_section(vbox: VBoxContainer) -> void:

@@ -52,6 +52,7 @@ const _REPO_FONT_NM := 18
 
 
 func _ready() -> void:
+	add_to_group(&"touch_overlay")
 	mouse_filter = Control.MOUSE_FILTER_IGNORE
 	set_anchors_and_offsets_preset(Control.PRESET_FULL_RECT)
 	_load_layout()

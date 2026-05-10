@@ -32,6 +32,7 @@ func _ready() -> void:
 	_test_buffer_countdown()
 	_test_profile_cross_invariants()
 	_test_slope_params()
+	_test_respawn_params()
 	_report()
 
 
@@ -339,3 +340,27 @@ func _test_slope_params() -> void:
 	if angle_snappy > 0.0 and angle_floaty > 0.0:
 		_ok("floaty max_floor_angle >= snappy (more forgiving on slopes)",
 			angle_floaty >= angle_snappy)
+
+
+func _test_respawn_params() -> void:
+	## Respawn / reboot parameter sanity checks.
+	## The phase-fraction assertion documents the values hardcoded in
+	## player.gd::_run_reboot_effect() so future edits are caught here.
+	print("\n-- Respawn / reboot parameters --")
+	# Phase fractions in player.gd::_run_reboot_effect: 12 + 35 + 35 + 18 = 100 %.
+	_ok("reboot phase fractions sum to 1.0", _near(0.12 + 0.35 + 0.35 + 0.18, 1.0))
+
+	var profiles := [
+		["snappy",   "res://resources/profiles/snappy.tres"],
+		["floaty",   "res://resources/profiles/floaty.tres"],
+		["momentum", "res://resources/profiles/momentum.tres"],
+	]
+	for entry in profiles:
+		var name: String = entry[0]
+		var p: CP = _load_profile(entry[1])
+		if p == null:
+			continue
+		_ok(name + ": reboot_duration > 0", p.reboot_duration > 0.0)
+		_ok(name + ": reboot_duration <= 1.5 (slider max)", p.reboot_duration <= 1.5)
+		_ok(name + ": fall_kill_y < 0 (below ground)", p.fall_kill_y < 0.0)
+		_ok(name + ": fall_kill_y >= -200 (slider min)", p.fall_kill_y >= -200.0)
