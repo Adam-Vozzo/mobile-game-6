@@ -28,6 +28,8 @@ signal debug_viz_changed(key: StringName, enabled: bool)
 signal touch_param_changed(param: StringName, value: Variant)
 @warning_ignore("unused_signal")
 signal reposition_controls_requested
+@warning_ignore("unused_signal")
+signal blob_shadow_param_changed(param: StringName, value: float)
 
 var is_open: bool = false
 var juice_state: Dictionary[StringName, bool] = {

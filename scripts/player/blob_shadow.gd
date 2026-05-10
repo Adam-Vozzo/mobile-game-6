@@ -36,6 +36,8 @@ func _ready() -> void:
 		@warning_ignore("return_value_discarded")
 		DevMenu.juice_toggle_changed.connect(_on_juice_changed)
 		_enabled = DevMenu.is_juice_on(&"blob_shadow")
+		@warning_ignore("return_value_discarded")
+		DevMenu.blob_shadow_param_changed.connect(_on_blob_shadow_param_changed)
 
 
 func _build_mesh() -> void:
@@ -101,3 +103,11 @@ func _process(_delta: float) -> void:
 func _on_juice_changed(key: StringName, enabled: bool) -> void:
 	if key == &"blob_shadow":
 		_enabled = enabled
+
+
+func _on_blob_shadow_param_changed(param: StringName, value: float) -> void:
+	match param:
+		&"radius_at_ground": radius_at_ground = value
+		&"radius_at_height": radius_at_height = value
+		&"fade_height":      fade_height = value
+		&"alpha_max":        alpha_max = value

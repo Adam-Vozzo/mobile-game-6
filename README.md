@@ -5,7 +5,7 @@ A mobile 3D platformer. Brutalist megastructure inspired by *BLAME!*. Controller
 ## Status
 
 Current gate: **Gate 0 — Feel Lab**
-Last iteration: 2026-05-10 — iter 28: SMB 3D research + blob shadow projector
+Last iteration: 2026-05-10 — iter 29: Blob shadow dev menu tunables + math unit tests
 Test device build: not yet — hand-authored scenes pending first Godot 4.6 import; see Open questions
 Performance: not yet measured on Nothing Phone 4(a) Pro
 Throttle level: **CLEAR — human is actively directing.** Re-engage the HARD throttle if 5+ autonomous iterations pass without further input.
@@ -95,6 +95,33 @@ Goal: store-ready build.
 The full iteration log lives here, newest first. Every iteration appends an entry. Skim the dates to find where you last left off.
 
 <!-- ITERATION ENTRIES BELOW — DO NOT REMOVE OLDER ENTRIES -->
+
+### [2026-05-10] — `claude/gifted-shannon-HuiCV` — iter 29: Blob shadow dev menu tunables + math unit tests
+
+- **Throttle: CLEAR (1 autonomous iteration since 2026-05-11 human session).**
+- **Primary: Blob shadow dev menu tunables.** Iter 28 added `blob_shadow.gd` with four
+  `@export_range` tunables but did not wire them to the dev menu (CLAUDE.md mandates same-
+  iteration exposure). This iteration closes the gap.
+
+  - `scripts/autoload/dev_menu.gd` — new signal `blob_shadow_param_changed(param, value)`.
+  - `scripts/player/blob_shadow.gd` — connects to signal in `_ready()`; new
+    `_on_blob_shadow_param_changed` handler updates `@export` var from signal (same pattern
+    as camera rig's `_on_camera_param_changed`).
+  - `tools/dev_menu/dev_menu_overlay.gd` — new `_make_blob_slider` helper + new
+    `_build_blob_shadow_tuning` method (called from `_build_juice_section`); adds a
+    **"Blob Shadow — Tuning"** subsection in the Juice panel with four live sliders:
+    Radius ground (0.05–1.0), Radius height (0.1–2.0), Fade height (1.0–20.0), Max alpha (0.05–1.0).
+
+- **Side quest: Blob shadow math unit tests.** 12 new assertions in
+  `_test_blob_shadow_math()` added to `tests/test_controller_kinematics.gd`. Covers the
+  three formulas mirrored in `blob_shadow.gd::_process`: t (clamp), r (linear lerp, shadow
+  expands with height), a (quadratic falloff — slower early drop than linear). Net assertion
+  count: 268 → 280.
+
+- **Dev-menu controls added:** Blob Shadow — Tuning: Radius ground, Radius height,
+  Fade height, Max alpha.
+- **Perf:** unchanged (no new draw calls; no perf measurement on device yet).
+- **On-device pending.** All P0 items still blocked on first Godot 4.6 import run.
 
 ### [2026-05-10] — `claude/gifted-shannon-CoSWy` — iter 28: SMB 3D research + blob shadow projector
 

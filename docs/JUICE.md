@@ -62,7 +62,7 @@ Status legend:
 
 | element | status | notes |
 |---------|--------|-------|
-| Ground-projected disc | prototype | `scripts/player/blob_shadow.gd`; 1 raycast/frame + 1 draw call; disc scales radius_at_ground→radius_at_height and alpha_max→0 as height increases; quadratic alpha falloff; default ON (gameplay-critical depth aid, not decoration) |
+| Ground-projected disc | prototype | `scripts/player/blob_shadow.gd`; 1 raycast/frame + 1 draw call; disc scales radius_at_ground→radius_at_height and alpha_max→0 as height increases; quadratic alpha falloff; default ON (gameplay-critical depth aid, not decoration). 4 tunables now live in dev menu Juice → Blob Shadow — Tuning (radius ground/height, fade height, max alpha). |
 
 ## Sound layers — toggle key `sound_layers`
 
