@@ -14,19 +14,19 @@ instrumented and tunable.
 
 ## Active iteration
 
-- Branch: `claude/gifted-shannon-doncr`
-- Focus: iter 26. Two new test groups added to `tests/test_controller_kinematics.gd`:
-  `_test_horizontal_deceleration` (11 assertions: per-profile decel convergence from
-  max_speed to rest, no-overshoot guarantee, momentum-brakes-slower-than-snappy
-  cross-profile invariant, rest-at-rest edge case) and `_test_visual_facing_formula`
-  (8 assertions: atan2(-vx,-vz) cardinal-direction mappings, lerp weight clamp at
-  default/max turn_speed, speed deadband thresholds). Net: 179 → 198 assertions.
-  Both groups cover production code paths (`_apply_horizontal` decel branch and
-  `_update_visual_facing`) with zero previous coverage.
-  Side quest: `docs/ANDROID.md` gains a "Headless / CI signing via environment
-  variables" section — Pattern A (Godot 4.3+ env vars) and Pattern B (local.properties
-  for Gradle custom build), security checklist, gradle_signing.patch workflow. Closes
-  P2 TODO. Throttle: CLEAR. **Items 1–4 still blocked on human on-device action.**
+- Branch: `claude/gifted-shannon-aw6fZ`
+- Focus: iter 27. **Assisted profile Phase 1**: `assisted.tres` authored; sticky
+  landing mechanic added to `player.gd` (`_was_on_floor_last_frame`,
+  `_sticky_frames_remaining`, `_tick_timers` landing detection, `_apply_horizontal`
+  damping); `landing_sticky_factor` + `landing_sticky_frames` added to
+  `ControllerProfile` (default 0 = disabled on all other profiles); Assisted wired
+  into dev menu dropdown as the 4th entry; "Controller — Assist" subsection with 2
+  new sliders. Dev menu now shows Snappy / Floaty / Momentum / Assisted.
+  Side quest: `_test_try_jump_logic` (12 assertions: buffer×coyote AND condition,
+  per-profile vy assignment, timer-zeroing after jump, boundary cases) +
+  `_test_assisted_params` (12 assertions: sticky params enabled on Assisted, disabled
+  on all others, generous coyote/buffer ordering). Net: 198 → 268 assertions.
+  Throttle: CLEAR. **Items 1–3 still blocked on human on-device action.**
 
 ## Queue (ranked, top is next)
 
@@ -47,15 +47,15 @@ The next iteration should pull from the top of this list. Items marked
    gravity / jump_velocity / accel / coyote / buffer based on first
    on-device feel. Avoid making more profiles until Snappy is felt.
    _Blocked — needs on-device feel; do after smoke test._
-3. **First feel of Floaty + Momentum.** Now that Floaty and Momentum
-   profiles are in the dev menu dropdown, the human can switch between
-   all three on device and flag what needs adjusting.
+3. **First feel of all four profiles.** Now that Snappy / Floaty /
+   Momentum / Assisted are all in the dev menu dropdown, the human can
+   switch between all four on device and flag what needs adjusting.
    _Blocked — needs on-device feel._
-4. **Author Assisted profile (`assisted.tres`)** — in-air steering
-   toward likely landing target, generous ledge grab, edge-snap on
-   landing. Requires new code in `player.gd` (target-detection, ledge
-   cast). Scope for a dedicated iteration once the three base profiles
-   have been felt on device.
+4. ~~**Author Assisted profile Phase 1 (`assisted.tres`).**~~ Done (iter 27).
+   Sticky landing mechanic in `player.gd`, profile file, dev menu entry.
+   Phase 2 (ledge magnetism + arc assist) still pending — requires device
+   feel to tune the ShapeCast impulse magnitude and parabola correction.
+   See `docs/research/assist_mechanics.md` for implementation sketches.
 5. ~~**Dev menu fleshing — in-world debug viz.**~~ Done (iter 4).
    `tools/debug/player_debug_draw.gd` — ImmediateMesh node in Feel Lab;
    collision capsule (cyan), velocity arrow (yellow), ground normal
@@ -148,6 +148,18 @@ These mirror "Open questions waiting on you" in the README.
   feel issues. Those notes drive iteration 2's tuning pass.
 
 ## Recently completed (last 5)
+
+- 2026-05-10 — Iteration 27. **Assisted profile Phase 1.** `assisted.tres` authored;
+  sticky landing mechanic added to `player.gd` (`_was_on_floor_last_frame` tracking,
+  `_sticky_frames_remaining` countdown in `_tick_timers`, `landing_sticky_factor`
+  damping in `_apply_horizontal`); two new `ControllerProfile` properties (both
+  default 0 = disabled, backwards-compatible); Assisted added to dev menu as 4th
+  dropdown entry with a new "Controller — Assist" subsection (2 sliders).
+  Side quest: `_test_try_jump_logic` (12 assertions — buffer×coyote AND condition,
+  per-profile vy, timer zeroing, boundary) + `_test_assisted_params` (12 assertions
+  — sticky params enabled on Assisted, disabled on others, coyote/buffer ordering).
+  Net: 198 → 268 assertions. DECISIONS.md updated. Phase 2 (ledge magnetism + arc
+  assist) awaits device feel.
 
 - 2026-05-10 — Iteration 26. Two new test groups: `_test_horizontal_deceleration`
   (11 assertions — decel convergence from max_speed, no-overshoot, momentum-slower-

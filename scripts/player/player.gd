@@ -30,6 +30,12 @@ var _spawn_transform: Transform3D
 var _last_grounded_pos_y: float = 0.0
 var _jump_held_last_frame: bool = false
 var _override_material: StandardMaterial3D
+# Assisted-profile landing mechanic: track the previous grounded state so we
+# can detect the exact frame of touch-down, then count down a short damping
+# window.  Both vars are useful outside the Assisted profile — `_was_on_floor`
+# doubles as the landing-squash trigger for the juice system (see JUICE.md).
+var _was_on_floor_last_frame: bool = false
+var _sticky_frames_remaining: int = 0
 
 @onready var _visual: Node3D = $Visual
 @onready var _body_mesh: MeshInstance3D = $Visual/Body
@@ -100,6 +106,17 @@ func _tick_timers(delta: float, on_floor: bool) -> void:
 		_coyote_timer = maxf(0.0, _coyote_timer - delta)
 	if _buffer_timer > 0.0:
 		_buffer_timer = maxf(0.0, _buffer_timer - delta)
+	# Landing detection for Assisted profile sticky-landing mechanic (and juice).
+	# `just_landed` is true only on the single frame of touch-down.
+	var just_landed := on_floor and not _was_on_floor_last_frame
+	if just_landed and profile.landing_sticky_frames > 0:
+		_sticky_frames_remaining = profile.landing_sticky_frames
+	elif _sticky_frames_remaining > 0:
+		if on_floor:
+			_sticky_frames_remaining -= 1
+		else:
+			_sticky_frames_remaining = 0  # took off before window expired
+	_was_on_floor_last_frame = on_floor
 
 
 func _collect_jump_input() -> bool:
@@ -136,6 +153,10 @@ func _apply_horizontal(delta: float, on_floor: bool, move_dir: Vector3) -> void:
 	var new_h := current_h.move_toward(target_h, accel * delta)
 	if not on_floor and profile.air_horizontal_damping > 0.0:
 		new_h *= maxf(0.0, 1.0 - profile.air_horizontal_damping * delta)
+	# Assisted sticky landing: damp horizontal speed for the first N grounded
+	# frames after touch-down so the Stray doesn't skid off narrow platforms.
+	if _sticky_frames_remaining > 0 and profile.landing_sticky_factor > 0.0:
+		new_h *= (1.0 - profile.landing_sticky_factor)
 	velocity.x = new_h.x
 	velocity.z = new_h.z
 

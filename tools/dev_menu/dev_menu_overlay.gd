@@ -8,14 +8,16 @@ extends CanvasLayer
 ## Controller sliders use a unified _profile_sliders dict keyed by property
 ## name so _select_profile can bulk-sync all of them when switching profiles.
 
-const SNAPPY_PROFILE := preload("res://resources/profiles/snappy.tres")
-const FLOATY_PROFILE := preload("res://resources/profiles/floaty.tres")
+const SNAPPY_PROFILE   := preload("res://resources/profiles/snappy.tres")
+const FLOATY_PROFILE   := preload("res://resources/profiles/floaty.tres")
 const MOMENTUM_PROFILE := preload("res://resources/profiles/momentum.tres")
+const ASSISTED_PROFILE := preload("res://resources/profiles/assisted.tres")
 
 var _profiles: Dictionary[String, Resource] = {
-	"Snappy": SNAPPY_PROFILE,
-	"Floaty": FLOATY_PROFILE,
+	"Snappy":   SNAPPY_PROFILE,
+	"Floaty":   FLOATY_PROFILE,
 	"Momentum": MOMENTUM_PROFILE,
+	"Assisted": ASSISTED_PROFILE,
 }
 
 var _current_profile: Resource
@@ -134,6 +136,7 @@ func _build_controller_section(vbox: VBoxContainer) -> void:
 	_build_controller_jump(vbox)
 	_build_controller_respawn(vbox)
 	_build_controller_slope(vbox)
+	_build_controller_assist(vbox)
 
 
 func _build_controller_movement(vbox: VBoxContainer) -> void:
@@ -184,6 +187,14 @@ func _build_controller_slope(vbox: VBoxContainer) -> void:
 	vbox.add_child(_make_label("Controller — Slope", SECTION_FONT_SIZE, true))
 	_profile_sliders[&"max_floor_angle_degrees"] = _make_profile_slider(vbox,
 		"Max floor°",         20.0,  70.0,  1.0,  &"max_floor_angle_degrees")
+
+
+func _build_controller_assist(vbox: VBoxContainer) -> void:
+	vbox.add_child(_make_label("Controller — Assist", SECTION_FONT_SIZE, true))
+	_profile_sliders[&"landing_sticky_factor"] = _make_profile_slider(vbox,
+		"Sticky factor",       0.0,   0.8,  0.05, &"landing_sticky_factor")
+	_profile_sliders[&"landing_sticky_frames"] = _make_profile_slider(vbox,
+		"Sticky frames",       0.0,   6.0,  1.0,  &"landing_sticky_frames")
 
 
 func _build_camera_section(vbox: VBoxContainer) -> void:

@@ -5,7 +5,7 @@ A mobile 3D platformer. Brutalist megastructure inspired by *BLAME!*. Controller
 ## Status
 
 Current gate: **Gate 0 — Feel Lab**
-Last iteration: 2026-05-10 — iter 26: deceleration + visual facing tests + ANDROID.md signing docs
+Last iteration: 2026-05-10 — iter 27: Assisted profile Phase 1 + try-jump tests
 Test device build: not yet — hand-authored scenes pending first Godot 4.6 import; see Open questions
 Performance: not yet measured on Nothing Phone 4(a) Pro
 Throttle level: **CLEAR — human is actively directing.** Re-engage the HARD throttle if 5+ autonomous iterations pass without further input.
@@ -95,6 +95,69 @@ Goal: store-ready build.
 The full iteration log lives here, newest first. Every iteration appends an entry. Skim the dates to find where you last left off.
 
 <!-- ITERATION ENTRIES BELOW — DO NOT REMOVE OLDER ENTRIES -->
+
+### [2026-05-10] — `claude/gifted-shannon-aw6fZ` — iter 27: Assisted profile Phase 1 + try-jump tests
+
+- **Throttle: CLEAR (3 autonomous iterations since 2026-05-11 human session).** Normal mode.
+- **Primary: Assisted profile Phase 1 — sticky landing + profile file + dev menu.**
+  The dev menu dropdown now shows **Snappy / Floaty / Momentum / Assisted** — all
+  four controller profiles defined in `CLAUDE.md` are present and switchable on
+  first device run.
+
+  - **`resources/profiles/assisted.tres`** — new profile. Key values:
+    `max_speed = 5.0` (slowest, most controlled), `coyote_time = 0.22` and
+    `jump_buffer = 0.24` (most generous timing windows),
+    `gravity_rising = 15.0` (lowest, maximum hang time — peak height ~3.3 m),
+    `air_horizontal_damping = 1.2` (highest grip in the air),
+    `max_floor_angle_degrees = 60.0` (most forgiving on slopes),
+    `landing_sticky_factor = 0.2`, `landing_sticky_frames = 2` (sticky landing enabled).
+
+  - **`ControllerProfile` — two new properties** (both default `0` = disabled, so
+    all existing profiles and saved `.tres` files are unaffected):
+    - `landing_sticky_factor: float = 0.0` — per-frame horizontal speed multiplier
+      applied for `landing_sticky_frames` frames after touching down.
+    - `landing_sticky_frames: int = 0` — grounded-frame countdown window.
+
+  - **`player.gd` — sticky landing mechanic** in `_tick_timers` and
+    `_apply_horizontal`:
+    - `_was_on_floor_last_frame: bool` — tracks previous grounded state; fires the
+      sticky window on the exact touch-down frame. Also the correct hook for the
+      juice system's landing-squash trigger (see JUICE.md note).
+    - `_sticky_frames_remaining: int` — counts down only while grounded; resets to 0
+      on takeoff so a running jump doesn't carry leftover stickiness.
+    - When `_sticky_frames_remaining > 0` and `landing_sticky_factor > 0.0`:
+      `new_h *= (1.0 - landing_sticky_factor)` after normal accel/decel, before
+      writing to `velocity.x/z`. Non-Assisted profiles have `landing_sticky_factor = 0`
+      so the branch is entered but the multiplication is a no-op.
+
+  - **Dev menu — "Controller — Assist" subsection** with two new sliders:
+    `landing_sticky_factor` (0.0–0.8, step 0.05) and `landing_sticky_frames`
+    (0–6, step 1). Both bulk-sync on profile switch like all other controller sliders.
+
+  - **Phase 2 (ledge magnetism + arc assist)** deferred until after first device feel
+    per `docs/research/assist_mechanics.md`. See DECISIONS.md for the rationale.
+
+- **Side quest: Two new test groups** (198 → 268 assertions, +70 total):
+  - Assisted added to all 13 existing per-profile test loops (+46 assertions covering
+    gravity ordering, jump cut, decel convergence, coyote/buffer countdowns, terminal
+    velocity, cross-profile invariants, slope, respawn, gravity band selection,
+    horizontal interpolation, movement params + 2 new Assisted-specific pair checks).
+  - **`_test_assisted_params`** (12 assertions): sticky params enabled on Assisted,
+    disabled on Snappy/Floaty/Momentum, Assisted coyote/buffer >= Floaty.
+  - **`_test_try_jump_logic`** (12 assertions): mirrors `player.gd::_try_jump` — the
+    buffer×coyote AND condition (previously the only major function in player.gd with
+    zero test coverage). Covers: jump fires with both timers live, no jump with buffer=0,
+    no jump with coyote=0, both=0 no-op, timer-zeroing after jump, per-profile vy.
+
+- Perf: no runtime cost change. `_was_on_floor_last_frame` is a single bool written
+  once per `_tick_timers` call. The sticky damping branch is a float multiply + bool
+  check per physics tick — negligible. Non-Assisted profiles skip it silently
+  (factor = 0 → `if 0.0 > 0.0` is false at compile time).
+- Bugs fixed: none.
+- New dev-menu controls: "Controller — Assist" subsection → "Sticky factor" + "Sticky frames" sliders.
+- Assets acquired: none.
+- Research added: none.
+- Needs human attention: **see "Open questions waiting on you" — on-device first run still the #1 unlocker.** Now with 4 profiles in the dropdown, first device feel gives you the full comparison set.
 
 ### [2026-05-10] — `claude/gifted-shannon-doncr` — iter 26: deceleration + visual facing tests + ANDROID.md signing docs
 
