@@ -170,3 +170,32 @@ Consequences: DevMenuOverlay reads from the scene tree during _build_ui().
 Falls back to hardcoded defaults (95 / 0.5) if no "touch_overlay" group member
 exists — correct for editor scenes without touch UI. Relies on the
 call_deferred ordering guarantee, which is stable in Godot 4.x.
+
+## 2026-05-10 — Camera pitch clamp restricted to ≤ 0 (above-horizontal only)
+
+Status: accepted
+Context: `camera_rig.gd::_desired_camera_position` used `absf(_pitch)` for the
+elevation angle. `_pitch` starts at -0.384 rad (-22°) and the clamp formerly
+allowed it to go up to +deg_to_rad(pitch_max_degrees). Dragging the camera
+upward pushes `_pitch` from -0.384 toward 0 (camera drops to horizontal), then
+past 0 into positive values — `absf` then rises again. This created a V-shape:
+the camera dips to horizontal and rebounds, with the 0-crossing reachable in
+~128 px of upward drag at default pitch_drag_sens 0.003 on a 1080p phone.
+Decision: (a) Restrict the clamp upper bound to 0.0 so `_pitch` stays ≤ 0 at all
+times (camera always above horizontal), and (b) change `absf(_pitch)` to
+`-_pitch` (equivalent when _pitch ≤ 0; monotonically correct). The camera can
+still tilt from horizontal (p=0) up to `pitch_min_degrees` (default 55°). The
+`pitch_max_degrees` export and its dev-menu slider are now inactive as guards
+(their original meaning — "how far below horizontal" — is no longer reachable).
+Alternatives considered:
+- Use `maxf(0.0, -_pitch)`: fixes the V-shape while keeping the clamp symmetric;
+  camera bottoms at horizontal instead of clamping there. Rejected as less clean —
+  the formula would silently pass meaningless positive _pitch values without the
+  clamp fix, and having two guards is confusing.
+- Allow below-horizontal (camera looking up at player): never useful in a
+  precision platformer — gives no landing information, clips through floors, and
+  is disorienting. Would require a complete sign-convention refactor.
+Consequences: `pitch_max_degrees` @export and dev-menu slider are retained for
+potential future use (e.g., minimum-elevation-above-horizontal constraint) but
+have no runtime effect. The V-turn bug is eliminated. The unit test group
+`_test_camera_pitch_formula` (~5 assertions) documents the invariant.

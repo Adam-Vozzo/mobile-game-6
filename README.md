@@ -5,10 +5,10 @@ A mobile 3D platformer. Brutalist megastructure inspired by *BLAME!*. Controller
 ## Status
 
 Current gate: **Gate 0 — Feel Lab**
-Last iteration: 2026-05-10 — iter 21: camera math unit tests + camera pitch V-turn issue logged
+Last iteration: 2026-05-10 — iter 22: camera pitch V-turn bug fixed + elevation formula tests
 Test device build: not yet — hand-authored scenes pending first Godot 4.6 import; see Open questions
 Performance: not yet measured on Nothing Phone 4(a) Pro
-Throttle level: **HARD — 21 iterations since last human direction. No new features. See Open questions.**
+Throttle level: **HARD — 22 iterations since last human direction. No new features. See Open questions.**
 
 If you only read one section, read **Open questions waiting on you** below.
 
@@ -16,10 +16,10 @@ If you only read one section, read **Open questions waiting on you** below.
 
 Things Claude can't decide alone, or where it's stalled and needs direction. Each is blocking some piece of forward progress.
 
-> **⚠ HARD THROTTLE — 21 iterations since last human direction.** Claude has been
-> building infrastructure (tests, research, refactors, debug tooling) for 21 iterations
-> without a human feel verdict or direction signal. All P0 items are blocked on the
-> first on-device run. The next iteration will continue hardening work only.
+> **⚠ HARD THROTTLE — 22 iterations since last human direction.** Claude has been
+> building infrastructure (tests, research, refactors, debug tooling, bug fixes) for 22
+> iterations without a human feel verdict or direction signal. All P0 items are blocked
+> on the first on-device run. The next iteration will continue hardening work only.
 >
 > **Suggested next directions (pick one or more):**
 > 1. Open the project in Godot 4.6, run the first-run checklist in `docs/ANDROID.md`,
@@ -94,6 +94,40 @@ Goal: store-ready build.
 The full iteration log lives here, newest first. Every iteration appends an entry. Skim the dates to find where you last left off.
 
 <!-- ITERATION ENTRIES BELOW — DO NOT REMOVE OLDER ENTRIES -->
+
+### [2026-05-10] — `claude/gifted-shannon-NQtLx` — iter 22: camera pitch V-turn bug fixed + elevation formula tests
+
+- **Throttle: HARD (22 iterations since last human direction).** Hardening only.
+- **Primary: Camera pitch V-turn bug fixed in `scripts/camera/camera_rig.gd`.**
+  `_desired_camera_position` used `absf(_pitch)` for the elevation angle. Since
+  `_pitch` starts at −0.384 rad and the clamp formerly allowed it up to
+  `+deg_to_rad(pitch_max_degrees)`, dragging the camera upward pushed `_pitch`
+  through 0 then positive — `absf` produced a V-shape: camera first drops to
+  horizontal, then rises again. On a 1080p phone the V-turn was reachable with
+  ~128 px of upward drag at default `pitch_drag_sens 0.003`.
+  - **Fix 1 (`_apply_drag_input`):** upper clamp bound changed from
+    `deg_to_rad(absf(pitch_max_degrees))` to `0.0`. `_pitch` is now always ≤ 0.
+  - **Fix 2 (`_desired_camera_position`):** `absf(_pitch)` → `-_pitch`. Since
+    `_pitch` is always ≤ 0, `-_pitch` ≥ 0 and is monotonically correct — higher
+    magnitude pitch = more camera elevation, with no reversal at 0.
+  - `pitch_max_degrees` export and dev-menu slider are retained but inactive as
+    guards; their original meaning ("how far below horizontal") is unreachable.
+    DECISIONS.md entry added.
+- **Side quest: `_test_camera_pitch_formula` added to `tests/test_controller_kinematics.gd`.**
+  5 assertions documenting the post-fix elevation invariant (pure math, no scene
+  tree instantiation, same pattern as the other camera test groups):
+  - Pitch 0.0 → elevation 0 (horizontal).
+  - Default pitch −22° → positive elevation (camera above player).
+  - −45° elevation > −22° elevation (monotonic, no V-turn regression).
+  - −55° elevation still positive (within full valid range).
+  - Elevation ≥ 0 across all valid above-horizontal angles [0°, 89°].
+  - Total assertions: ~123 → ~128.
+- Perf: no runtime cost change.
+- Bugs fixed: camera pitch V-turn (V-shape on upward drag, reachable in normal play).
+- New dev-menu controls: none.
+- Assets acquired: none.
+- Research added: none.
+- Needs human attention: **see "Open questions waiting on you" — hard throttle active (22 iterations).**
 
 ### [2026-05-10] — `claude/gifted-shannon-0yX7M` — iter 21: camera math unit tests + pitch V-turn issue logged
 

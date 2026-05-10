@@ -37,6 +37,7 @@ func _ready() -> void:
 	_test_camera_vertical_pull()
 	_test_camera_occlude_math()
 	_test_camera_lookahead_target()
+	_test_camera_pitch_formula()
 	_report()
 
 
@@ -518,3 +519,34 @@ func _test_camera_lookahead_target() -> void:
 	var weight_large := clampf(100.0 * DELTA, 0.0, 1.0)
 	_ok("large lookahead_lerp value: lerp weight clamped to 1.0",
 		_near(weight_large, 1.0))
+
+
+func _test_camera_pitch_formula() -> void:
+	## Verifies the elevation angle formula from camera_rig.gd::_desired_camera_position.
+	## After the V-turn fix: var p := -_pitch (was absf(_pitch)).
+	## _pitch is always ≤ 0 (clamped in _apply_drag_input), so -_pitch ≥ 0 always.
+	## sin(-_pitch) must be monotonically non-decreasing as _pitch becomes more negative.
+	print("\n-- Camera pitch elevation formula (V-turn fix) --")
+	# Camera at horizontal: pitch 0.0 → elevation 0
+	_ok("pitch 0.0: elevation is 0 (camera at horizontal)",
+		_near(_cam_pitch_elev(0.0), 0.0))
+	# Default pitch 22°: positive elevation (camera above player)
+	_ok("pitch -22°: positive elevation (camera above player)",
+		_cam_pitch_elev(-deg_to_rad(22.0)) > 0.0)
+	# More negative pitch = higher elevation (monotonic — no V-turn)
+	_ok("pitch -45° elevation > pitch -22° elevation (monotonic, no V-turn)",
+		_cam_pitch_elev(-deg_to_rad(45.0)) > _cam_pitch_elev(-deg_to_rad(22.0)))
+	# Max pitch -55°: still positive elevation
+	_ok("pitch -55°: elevation still positive (camera above horizontal)",
+		_cam_pitch_elev(-deg_to_rad(55.0)) > 0.0)
+	# Elevation is ≥ 0 across the full valid range [0°, 89°]
+	var all_non_negative := true
+	for deg: float in [0.0, 10.0, 22.0, 45.0, 55.0, 89.0]:
+		if _cam_pitch_elev(-deg_to_rad(deg)) < -1e-6:
+			all_non_negative = false
+	_ok("elevation >= 0 across all valid above-horizontal pitch angles", all_non_negative)
+
+
+func _cam_pitch_elev(pitch_rad: float) -> float:
+	## Mirrors camera_rig.gd::_desired_camera_position: p := -_pitch; sin(p) = Y component.
+	return sin(-pitch_rad)

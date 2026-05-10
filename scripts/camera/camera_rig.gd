@@ -60,7 +60,7 @@ class_name CameraRig
 @export_flags_3d_physics var occlusion_mask: int = 1
 
 var _yaw: float = 0.0
-var _pitch: float = 0.0  # radians, negative = looking down
+var _pitch: float = 0.0  # radians; always ≤ 0 after init. 0 = horizontal, negative = camera above player.
 var _lookahead: Vector3 = Vector3.ZERO
 var _last_drag_time: float = -1000.0
 var _target: Node3D
@@ -104,9 +104,10 @@ func _apply_drag_input(now: float) -> void:
 	var drag := TouchInput.consume_camera_drag_delta()
 	if drag.length_squared() > 0.0:
 		_yaw -= drag.x * yaw_drag_sens
+		# Upper bound 0.0: _pitch stays ≤ 0, keeping the camera above horizontal.
 		_pitch = clampf(_pitch - drag.y * pitch_drag_sens,
 			-deg_to_rad(absf(pitch_min_degrees)),
-			deg_to_rad(absf(pitch_max_degrees)))
+			0.0)
 		_last_drag_time = now
 
 
@@ -136,7 +137,9 @@ func _vertical_pull_offset(vel_y: float) -> float:
 
 
 func _desired_camera_position(rig_pos: Vector3) -> Vector3:
-	var p := absf(_pitch)
+	# _pitch <= 0 always; -_pitch gives the elevation angle (monotonically correct).
+	# absf(_pitch) was wrong: created a V-shape as _pitch passed through 0 on upward drag.
+	var p := -_pitch
 	var local_offset := Vector3(0.0, sin(p) * distance, cos(p) * distance)
 	return rig_pos + Basis(Vector3.UP, _yaw) * local_offset
 
