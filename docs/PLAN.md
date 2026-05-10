@@ -14,15 +14,18 @@ instrumented and tunable.
 
 ## Active iteration
 
-- Branch: `claude/gifted-shannon-f29MG`
-- Focus: iter 24. `_test_move_dir_rotation` (8 assertions: Basis(UP,yaw) formula
-  at 4 yaw values, length preservation, Y=0 invariant, over-length guard) +
-  `_test_gravity_band_selection` (12 assertions: 4 band-selection rules × 3 profiles)
-  → ~137 → ~157 total assertions. Side quest: `docs/research/assist_mechanics.md`
-  — Godot 4 implementation approaches for Assisted profile (ledge magnetism,
-  arc assist, sticky landing, edge-snap; 6 new ControllerProfile properties;
-  implementation order). Hard throttle (24 iterations since human direction).
-  **Items 1–4 still blocked on human on-device action.**
+- Branch: `claude/gifted-shannon-TuINF`
+- Focus: iter 25. Stale camera test cleanup: removed `_test_camera_yaw_recenter`
+  (8 assertions) and `_test_camera_lookahead_target` (5 assertions) — both tested
+  functions deleted in the tripod rewrite (`_update_yaw_recenter`, `_update_lookahead`
+  no longer exist). Replaced with `_test_tripod_placement` (6 assertions: placement
+  formula, Pythagorean identity, elevation edge cases) and `_test_tripod_drag_orbit`
+  (7 assertions: radius, phi derivation, pure-yaw orbit, clamp invariants). Net:
+  179 → 179 assertions (13 removed + 13 added; tests now cover live code).
+  Side quest: removed dead `pitch_min_degrees` @export and its dev-menu slider —
+  the lower clamp in `_apply_drag_input` is hardcoded to 0.0; only `pitch_max_degrees`
+  is used. Throttle: CLEAR (first autonomous iteration since 2026-05-11 human-direction
+  session). **Items 1–4 still blocked on human on-device action.**
 
 ## Queue (ranked, top is next)
 
@@ -142,6 +145,19 @@ These mirror "Open questions waiting on you" in the README.
   feel issues. Those notes drive iteration 2's tuning pass.
 
 ## Recently completed (last 5)
+
+- 2026-05-10 — Iteration 25. Stale camera test cleanup + tripod model tests.
+  Removed `_test_camera_yaw_recenter` and `_test_camera_lookahead_target` (13
+  assertions total) — tested `_update_yaw_recenter` and `_update_lookahead` which
+  were deleted in the 2026-05-11 tripod camera rewrite. Added `_test_tripod_placement`
+  (6 assertions: placement formula y/z/x components, Pythagorean-identity distance
+  check, above-horizontal invariant, elevation=0 edge case) and `_test_tripod_drag_orbit`
+  (7 assertions: radius/phi derivation from position, pure-yaw orbit sphere invariant,
+  pitch lower/upper clamp, _pitch_rad sign). Net assertion count unchanged: 179.
+  Side quest: removed dead `pitch_min_degrees` @export from `camera_rig.gd` and
+  its dev-menu "Pitch min deg" slider — the drag clamp's lower bound is hardcoded
+  to 0.0 in `_apply_drag_input` (camera always stays above horizontal); only
+  `pitch_max_degrees` is active. No behaviour change.
 
 - 2026-05-11 — Human-direction session. Camera + UX overhaul on direct
   human input (not an autonomous iteration; PR opened off `main`). (1) Camera

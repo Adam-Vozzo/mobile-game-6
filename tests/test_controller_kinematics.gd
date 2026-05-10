@@ -36,9 +36,9 @@ func _ready() -> void:
 	_test_movement_params()
 	_test_camera_vertical_pull()
 	_test_camera_occlude_math()
-	_test_camera_lookahead_target()
 	_test_camera_pitch_formula()
-	_test_camera_yaw_recenter()
+	_test_tripod_placement()
+	_test_tripod_drag_orbit()
 	_test_move_dir_rotation()
 	_test_gravity_band_selection()
 	_report()
@@ -489,40 +489,6 @@ func _cam_sd(hit_dist: float, margin: float, min_dist: float) -> float:
 	return maxf(min_dist, hit_dist - margin)
 
 
-func _test_camera_lookahead_target() -> void:
-	## Verifies the desired-lookahead computation from camera_rig.gd::_update_lookahead.
-	## When horiz speed > lookahead_min_speed: desired = horiz.normalized() * dist.
-	## The lerp weight is clamped [0, 1], preventing overshoot on any delta.
-	print("\n-- Camera lookahead target direction --")
-	const DIST: float = 1.2
-	const MIN_SPD: float = 0.15
-
-	# Below min_speed: desired is the zero vector
-	var horiz_slow := Vector3(0.05, 0.0, 0.0)
-	var desired_slow := horiz_slow.normalized() * DIST if horiz_slow.length() > MIN_SPD else Vector3.ZERO
-	_ok("below min_speed: desired lookahead is zero vector",
-		desired_slow.length_squared() < 1e-6)
-
-	# Above min_speed: desired has the correct length and direction
-	var horiz_fast := Vector3(3.0, 0.0, 0.0)
-	var desired_fast := horiz_fast.normalized() * DIST if horiz_fast.length() > MIN_SPD else Vector3.ZERO
-	_ok("above min_speed: desired lookahead length == lookahead_distance",
-		_near(desired_fast.length(), DIST, 1e-3))
-	_ok("above min_speed: desired lookahead is in velocity direction (x > 0, z ≈ 0)",
-		desired_fast.x > 0.0 and _near(desired_fast.z, 0.0))
-
-	# Diagonal velocity: X and Z components are equal after normalisation
-	var horiz_diag := Vector3(1.0, 0.0, 1.0)
-	var desired_diag := horiz_diag.normalized() * DIST if horiz_diag.length() > MIN_SPD else Vector3.ZERO
-	_ok("diagonal velocity: lookahead X and Z components are equal",
-		_near(desired_diag.x, desired_diag.z, 1e-3))
-
-	# Lerp weight is clamped so large lookahead_lerp values can't overshoot
-	const DELTA: float = 1.0 / 60.0
-	var weight_large := clampf(100.0 * DELTA, 0.0, 1.0)
-	_ok("large lookahead_lerp value: lerp weight clamped to 1.0",
-		_near(weight_large, 1.0))
-
 
 func _test_camera_pitch_formula() -> void:
 	## Verifies the elevation angle formula from camera_rig.gd::_desired_camera_position.
@@ -555,56 +521,111 @@ func _cam_pitch_elev(pitch_rad: float) -> float:
 	return sin(-pitch_rad)
 
 
-func _test_camera_yaw_recenter() -> void:
-	## Verifies the yaw auto-recenter math from camera_rig.gd::_update_yaw_recenter.
-	## Formula: diff = wrapf(desired_yaw - _yaw, -PI, PI)
-	##          _yaw += diff * minf(1.0, idle_recenter_speed * delta)
-	## wrapf ensures the camera rotates the short way around (shortest arc).
-	## minf(1.0, ...) prevents overshoot when idle_recenter_speed is large.
-	print("\n-- Camera yaw auto-recenter math --")
-	const DELTA := 1.0 / 60.0
 
-	# wrapf shortest-path: naive diff from +175° to -175° is -350°.
-	# wrapf wraps it to +10° — the short arc crossing the ±180° boundary.
-	var diff_far := wrapf(deg_to_rad(-175.0) - deg_to_rad(175.0), -PI, PI)
-	_ok("wrapf: 175° to -175° short arc is +10° (not -350°)",
-		_near(diff_far, deg_to_rad(10.0), 1e-4))
+func _test_tripod_placement() -> void:
+	## Verifies the initial camera placement formula from camera_rig.gd::_place_camera_initial.
+	## Formula (at default yaw=0, camera starts directly behind the player):
+	##   camera = target + (0, sin(elevation)*dist + aim_height, cos(elevation)*dist)
+	## where elevation = deg_to_rad(pitch_degrees) = -_pitch_rad.
+	## sin²(e) + cos²(e) = 1, so the 3D distance (excluding aim_height) equals dist exactly.
+	print("\n-- Tripod camera initial placement formula --")
+	const DIST   := 6.0
+	const ELEV_DEG := 22.0
+	const AIM_H  := 0.6
+	var elev := deg_to_rad(ELEV_DEG)
 
-	# Reverse: naive +350°; wrapf gives -10° (short arc, opposite direction).
-	var diff_rev := wrapf(deg_to_rad(175.0) - deg_to_rad(-175.0), -PI, PI)
-	_ok("wrapf: -175° to +175° short arc is -10° (not +350°)",
-		_near(diff_rev, deg_to_rad(-10.0), 1e-4))
+	# Vertical offset: sin(elev)*dist + aim_height
+	_ok("initial y-offset = sin(elev)*dist + aim_height",
+		_near(_tripod_cam_offset(elev, DIST, AIM_H).y, sin(elev) * DIST + AIM_H))
 
-	# Default idle_recenter_speed (1.5): weight per frame is small and smooth.
-	var weight := minf(1.0, 1.5 * DELTA)
-	_ok("default recenter speed (1.5): weight > 0 (makes progress each frame)", weight > 0.0)
-	_ok("default recenter speed (1.5): weight < 0.1 (smooth, not instant)", weight < 0.1)
+	# Horizontal (forward) offset at yaw=0: cos(elev)*dist
+	_ok("initial z-offset = cos(elev)*dist (camera behind player at yaw=0)",
+		_near(_tripod_cam_offset(elev, DIST, AIM_H).z, cos(elev) * DIST))
 
-	# Lerp step on a 90° diff must be strictly less than the diff — no overshoot.
-	_ok("default speed: recenter step < diff (no overshoot on 90° rotation)",
-		deg_to_rad(90.0) * weight < deg_to_rad(90.0))
+	# No lateral offset at yaw=0 (camera sits on the Z-axis behind the player)
+	_ok("initial x-offset = 0 at yaw=0 (no lateral displacement)",
+		_near(_tripod_cam_offset(elev, DIST, AIM_H).x, 0.0))
 
-	# High recenter_speed: minf clamps weight to 1.0 — one-frame snap.
-	var weight_fast := minf(1.0, 200.0 * DELTA)
-	_ok("high recenter_speed (200): weight clamped to 1.0 (snap, no overshoot past target)",
-		_near(weight_fast, 1.0))
+	# Pythagorean identity: 3D distance (excluding aim_height component) == dist
+	# Vector3(0, sin(e)*d, cos(e)*d).length() = d * sqrt(sin² + cos²) = d
+	var without_aim := Vector3(0.0, sin(elev) * DIST, cos(elev) * DIST)
+	_ok("3D distance (excluding aim_height) == distance (sin² + cos² = 1)",
+		_near(without_aim.length(), DIST, 1e-4))
 
-	# Convergence: simulate 30 frames of recenter from 0° toward 90°.
-	# Angular error (absolute diff to target) must shrink each frame.
-	var yaw := 0.0
-	var target := deg_to_rad(90.0)
-	var prev_err := absf(wrapf(target - yaw, -PI, PI))
-	var monotonic := true
-	for _i in 30:
-		var d := wrapf(target - yaw, -PI, PI)
-		yaw += d * weight
-		var err := absf(wrapf(target - yaw, -PI, PI))
-		if err > prev_err + 1e-6:
-			monotonic = false
-		prev_err = err
-	_ok("yaw recenter: angular error decreases monotonically over 30 frames", monotonic)
-	_ok("yaw recenter: > 50%% progress toward target after 30 frames",
-		prev_err < deg_to_rad(90.0) * 0.5)
+	# Camera is above the player at any positive elevation
+	_ok("camera is above the player when elevation > 0 (y-offset > 0)",
+		_tripod_cam_offset(elev, DIST, AIM_H).y > 0.0)
+
+	# Edge case: elevation = 0 → camera at the same height as aim, directly behind
+	_ok("elevation=0: y-offset = aim_height; z-offset = dist",
+		_near(_tripod_cam_offset(0.0, DIST, AIM_H).y, AIM_H) and
+		_near(_tripod_cam_offset(0.0, DIST, AIM_H).z, DIST))
+
+
+func _tripod_cam_offset(elevation: float, dist: float, aim_height: float) -> Vector3:
+	## Mirrors camera_rig.gd::_place_camera_initial at default yaw=0.
+	return Vector3(0.0, sin(elevation) * dist + aim_height, cos(elevation) * dist)
+
+
+func _test_tripod_drag_orbit() -> void:
+	## Verifies the orbital drag math from camera_rig.gd::_apply_drag_input.
+	## The drag converts the current camera position to spherical coords (radius,
+	## theta, phi), adjusts theta/phi by the drag deltas, clamps phi to [0, max],
+	## then reconstructs the new position on the same sphere. Key invariants:
+	##   - Pure yaw drag preserves radius and elevation (only theta changes).
+	##   - phi is always clamped ≥ 0 (camera stays at or above horizontal).
+	##   - phi is clamped ≤ deg_to_rad(pitch_max_degrees) (configurable upper limit).
+	##   - _pitch_rad = -phi, so it is always ≤ 0.
+	print("\n-- Tripod camera drag orbit math --")
+	const DIST     := 6.0
+	const ELEV_DEG := 22.0
+	const PITCH_MAX_DEG := 55.0
+	const YAW_SENS := 0.005
+	const PITCH_SENS := 0.003
+	var elev := deg_to_rad(ELEV_DEG)
+
+	# Initial camera position: directly behind at default elevation, yaw=0.
+	var cam := Vector3(0.0, sin(elev) * DIST, cos(elev) * DIST)
+	var target := Vector3.ZERO
+	var to_cam := cam - target
+	var radius := to_cam.length()
+	_ok("radius derived from default position == distance",
+		_near(radius, DIST, 1e-4))
+
+	var theta := atan2(to_cam.x, to_cam.z)
+	var phi   := asin(clampf(to_cam.y / radius, -1.0, 1.0))
+	_ok("phi derived from default position == elevation angle",
+		_near(phi, elev, 1e-4))
+
+	# Pure yaw drag (large positive x-drag): only theta changes, phi unchanged.
+	var new_theta := theta - 100.0 * YAW_SENS
+	var cos_phi := cos(phi)
+	var yawed_pos := Vector3(
+		radius * cos_phi * sin(new_theta),
+		radius * sin(phi),
+		radius * cos_phi * cos(new_theta))
+	_ok("pure yaw drag preserves 3D radius (orbit on sphere)",
+		_near(yawed_pos.length(), DIST, 1e-4))
+	_ok("pure yaw drag preserves elevation (y component unchanged)",
+		_near(yawed_pos.y, cam.y, 1e-4))
+
+	# Lower clamp: huge downward drag (drag.y > 0 reduces phi toward 0).
+	# phi must stay ≥ 0 — camera never goes below horizontal.
+	var phi_clamped_down := clampf(phi - 1000.0 * PITCH_SENS,
+		0.0, deg_to_rad(PITCH_MAX_DEG))
+	_ok("downward drag: phi clamped to ≥ 0 (camera never below horizontal)",
+		phi_clamped_down >= 0.0)
+
+	# Upper clamp: huge upward drag (drag.y < 0 increases phi toward max).
+	var phi_clamped_up := clampf(phi - (-1000.0) * PITCH_SENS,
+		0.0, deg_to_rad(PITCH_MAX_DEG))
+	_ok("upward drag: phi clamped to ≤ pitch_max_degrees",
+		phi_clamped_up <= deg_to_rad(PITCH_MAX_DEG) + 1e-6)
+
+	# _pitch_rad = -phi → always ≤ 0 (used by the elevation formula downstream)
+	var pitch_rad := -phi_clamped_down
+	_ok("_pitch_rad = -phi: value is always ≤ 0 (camera above horizontal)",
+		pitch_rad <= 0.0)
 
 
 func _test_move_dir_rotation() -> void:

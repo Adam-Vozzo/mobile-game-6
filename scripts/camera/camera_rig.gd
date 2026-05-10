@@ -35,7 +35,9 @@ class_name CameraRig
 @export_category("Manual override")
 @export_range(0.0001, 0.05, 0.0001) var yaw_drag_sens: float = 0.005
 @export_range(0.0001, 0.05, 0.0001) var pitch_drag_sens: float = 0.003
-@export_range(-89.0, 0.0, 1.0) var pitch_min_degrees: float = -55.0
+## Maximum elevation the player can drag the camera to, in degrees above horizontal.
+## The lower bound (camera at horizontal) is hardcoded 0.0 — the tripod model
+## always keeps the camera above the player.
 @export_range(0.0, 89.0, 1.0) var pitch_max_degrees: float = 55.0
 
 @export_category("Occlusion")
@@ -329,8 +331,6 @@ func _on_camera_param_changed(param_name: StringName, value: float) -> void:
 			occlusion_margin = value
 		&"aim_height":
 			aim_height = value
-		&"pitch_min_degrees":
-			pitch_min_degrees = value
 		&"pitch_max_degrees":
 			pitch_max_degrees = value
 		# Lookahead and auto-recenter sliders are no-ops in the tripod model.
