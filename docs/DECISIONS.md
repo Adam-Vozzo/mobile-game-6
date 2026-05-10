@@ -97,6 +97,30 @@ Consequences: faster iteration loop; PRs serve as traceability artefacts,
 not gates. If we ever want a stricter mode, the change is one line in
 CLAUDE.md.
 
+## 2026-05-09 — _make_slider: initial_value set before callbacks, not after
+
+Status: accepted
+Context: `_build_touch_section` and `_build_level_section` were setting slider values
+via `slider.value = x` AFTER connecting `value_changed` callbacks. This emitted
+`DevMenu.touch_param_changed` / `time_scale_changed` on init, routing back to
+`touch_overlay._on_touch_param` and overwriting whatever `_load_layout()` had
+loaded from `user://input.cfg`. Touch layout persistence was silently broken.
+Decision: Added `initial_value: float = NAN` to `_make_slider`. When provided, the
+value is set on the Range node BEFORE callbacks are connected, so `value_changed`
+fires internally but no listeners receive it. The val_label is then initialised from
+`slider.value` (which now reflects the initial_value). All callers that need a
+specific start display pass it as `initial_value`; profile sliders still get set by
+`_select_profile` after build (correct: they need to fire the callback to sync the
+display label).
+Alternatives considered:
+- `Range.set_value_no_signal` after connecting: would suppress the label update too,
+  requiring a separate manual label refresh.
+- Deferred emit from touch_overlay after load: requires the overlay to exist first
+  (another deferred frame), and the signal goes to _on_touch_param (self-loop).
+  More complex, addressed in refactor backlog under "touch slider display."
+Consequences: Camera rig and dev menu defaults must stay in sync by convention (no
+longer auto-corrected by broadcast on init). Touch layout persistence now works.
+
 ## 2026-05-09 — Camera occlusion via PhysicsDirectSpaceState3D raycast, not SpringArm3D
 
 Status: accepted
@@ -119,3 +143,59 @@ Consequences: `_occlude(aim, desired)` is a pure script function, easy to
 unit-test. Tunable via `occlusion_margin` and `occlusion_min_distance` exports,
 both now in the Camera section of the dev menu. Player RID is excluded from the
 query so the capsule doesn't occlude its own camera.
+
+## 2026-05-10 — Touch slider display: group-query approach
+
+Status: accepted
+Context: After the iter-17 silent-init fix, touch sliders correctly do not fire
+DevMenu.touch_param_changed during init — but they displayed hardcoded defaults
+(95 / 0.5) even when user://input.cfg had different values. The overlay itself
+was correct; only the slider display label was stale. A "loaded params" signal
+was the obvious fix but would require connecting before the signal fires, adding
+a new autoload signal that DevMenuOverlay would need to observe before build.
+Decision: TouchOverlay adds itself to the "touch_overlay" group in _ready().
+DevMenuOverlay._build_touch_section() queries that group just before building
+sliders and passes the actual loaded values as initial_value. Since
+DevMenuOverlay._ready() is triggered by call_deferred("_install_overlay") in
+DevMenu._ready(), the full scene tree — including TouchOverlay._ready() and its
+_load_layout() call — has already completed before the group query runs.
+Alternatives considered:
+- New DevMenu.touch_layout_loaded signal: requires knowing exact load timing;
+  adds a new autoload signal surface for a cosmetic fix.
+- Store params in DevMenu autoload: DevMenu doesn't own touch layout state;
+  creates confusing ownership. Also doubles as stale-on-scene-swap risk.
+- set_value_no_signal + manual label refresh: requires storing (slider, label)
+  pairs per row; more invasive refactor than the problem warrants.
+Consequences: DevMenuOverlay reads from the scene tree during _build_ui().
+Falls back to hardcoded defaults (95 / 0.5) if no "touch_overlay" group member
+exists — correct for editor scenes without touch UI. Relies on the
+call_deferred ordering guarantee, which is stable in Godot 4.x.
+
+## 2026-05-10 — Camera pitch clamp restricted to ≤ 0 (above-horizontal only)
+
+Status: accepted
+Context: `camera_rig.gd::_desired_camera_position` used `absf(_pitch)` for the
+elevation angle. `_pitch` starts at -0.384 rad (-22°) and the clamp formerly
+allowed it to go up to +deg_to_rad(pitch_max_degrees). Dragging the camera
+upward pushes `_pitch` from -0.384 toward 0 (camera drops to horizontal), then
+past 0 into positive values — `absf` then rises again. This created a V-shape:
+the camera dips to horizontal and rebounds, with the 0-crossing reachable in
+~128 px of upward drag at default pitch_drag_sens 0.003 on a 1080p phone.
+Decision: (a) Restrict the clamp upper bound to 0.0 so `_pitch` stays ≤ 0 at all
+times (camera always above horizontal), and (b) change `absf(_pitch)` to
+`-_pitch` (equivalent when _pitch ≤ 0; monotonically correct). The camera can
+still tilt from horizontal (p=0) up to `pitch_min_degrees` (default 55°). The
+`pitch_max_degrees` export and its dev-menu slider are now inactive as guards
+(their original meaning — "how far below horizontal" — is no longer reachable).
+Alternatives considered:
+- Use `maxf(0.0, -_pitch)`: fixes the V-shape while keeping the clamp symmetric;
+  camera bottoms at horizontal instead of clamping there. Rejected as less clean —
+  the formula would silently pass meaningless positive _pitch values without the
+  clamp fix, and having two guards is confusing.
+- Allow below-horizontal (camera looking up at player): never useful in a
+  precision platformer — gives no landing information, clips through floors, and
+  is disorienting. Would require a complete sign-convention refactor.
+Consequences: `pitch_max_degrees` @export and dev-menu slider are retained for
+potential future use (e.g., minimum-elevation-above-horizontal constraint) but
+have no runtime effect. The V-turn bug is eliminated. The unit test group
+`_test_camera_pitch_formula` (~5 assertions) documents the invariant.

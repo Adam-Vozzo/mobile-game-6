@@ -70,41 +70,60 @@ func _apply_profile_to_body() -> void:
 func _physics_process(delta: float) -> void:
 	if _is_rebooting:
 		return
-
-	# --- Timers ---
+	floor_max_angle = deg_to_rad(profile.max_floor_angle_degrees)
 	var on_floor := is_on_floor()
+	_tick_timers(delta, on_floor)
+	var jump_held := _collect_jump_input()
+	var jump_released := _was_jump_released(jump_held)
+	_jump_held_last_frame = jump_held
+	if Input.is_action_just_pressed(&"respawn"):
+		respawn()
+		return
+	var move_dir := _camera_relative_move_dir()
+	_apply_horizontal(delta, on_floor, move_dir)
+	_apply_gravity(delta, jump_held)
+	_try_jump()
+	_cut_jump(jump_released)
+	move_and_slide()
+	_update_visual_facing(delta)
+	if global_position.y < profile.fall_kill_y:
+		respawn()
+
+
+# ---------- physics sub-routines ----------
+
+func _tick_timers(delta: float, on_floor: bool) -> void:
 	if on_floor:
 		_coyote_timer = profile.coyote_time
 		_last_grounded_pos_y = global_position.y
 	else:
 		_coyote_timer = maxf(0.0, _coyote_timer - delta)
-
 	if _buffer_timer > 0.0:
 		_buffer_timer = maxf(0.0, _buffer_timer - delta)
 
-	# --- Input ---
-	var move_input := TouchInput.get_move_vector()
-	var jump_pressed_now := Input.is_action_just_pressed(&"jump")
-	var jump_held := TouchInput.is_jump_held() or Input.is_action_pressed(&"jump")
-	var jump_released_now := (
+
+func _collect_jump_input() -> bool:
+	if Input.is_action_just_pressed(&"jump"):
+		_buffer_timer = profile.jump_buffer
+	return TouchInput.is_jump_held() or Input.is_action_pressed(&"jump")
+
+
+func _was_jump_released(jump_held: bool) -> bool:
+	return (
 		Input.is_action_just_released(&"jump")
 		or (_jump_held_last_frame and not jump_held)
 	)
-	_jump_held_last_frame = jump_held
 
-	if jump_pressed_now:
-		_buffer_timer = profile.jump_buffer
 
-	if Input.is_action_just_pressed(&"respawn"):
-		respawn()
-		return
+func _camera_relative_move_dir() -> Vector3:
+	var move_input := TouchInput.get_move_vector()
+	var dir := Basis(Vector3.UP, _camera_yaw) * Vector3(move_input.x, 0.0, move_input.y)
+	if dir.length_squared() > 1.0:
+		dir = dir.normalized()
+	return dir
 
-	# --- Horizontal movement (camera-relative) ---
-	var camera_basis := Basis(Vector3.UP, _camera_yaw)
-	var move_dir := camera_basis * Vector3(move_input.x, 0.0, move_input.y)
-	if move_dir.length_squared() > 1.0:
-		move_dir = move_dir.normalized()
 
+func _apply_horizontal(delta: float, on_floor: bool, move_dir: Vector3) -> void:
 	var current_h := Vector3(velocity.x, 0.0, velocity.z)
 	var target_h := move_dir * profile.max_speed
 	var accel: float
@@ -117,11 +136,11 @@ func _physics_process(delta: float) -> void:
 	var new_h := current_h.move_toward(target_h, accel * delta)
 	if not on_floor and profile.air_horizontal_damping > 0.0:
 		new_h *= maxf(0.0, 1.0 - profile.air_horizontal_damping * delta)
-
 	velocity.x = new_h.x
 	velocity.z = new_h.z
 
-	# --- Gravity (three-band: rising-held / rising-released / falling) ---
+
+func _apply_gravity(delta: float, jump_held: bool) -> void:
 	var g: float
 	if velocity.y <= 0.0:
 		g = profile.gravity_after_apex
@@ -131,23 +150,17 @@ func _physics_process(delta: float) -> void:
 		g = profile.gravity_falling
 	velocity.y = maxf(-profile.terminal_velocity, velocity.y - g * delta)
 
-	# --- Jump (consumes coyote + buffer if both alive) ---
+
+func _try_jump() -> void:
 	if _buffer_timer > 0.0 and _coyote_timer > 0.0:
 		velocity.y = profile.jump_velocity
 		_buffer_timer = 0.0
 		_coyote_timer = 0.0
 
-	# --- Variable jump cut on early release ---
-	if jump_released_now and velocity.y > profile.jump_velocity * profile.release_velocity_ratio:
+
+func _cut_jump(jump_released: bool) -> void:
+	if jump_released and velocity.y > profile.jump_velocity * profile.release_velocity_ratio:
 		velocity.y = profile.jump_velocity * profile.release_velocity_ratio
-
-	move_and_slide()
-
-	_update_visual_facing(delta)
-
-	# --- Fall kill ---
-	if global_position.y < profile.fall_kill_y:
-		respawn()
 
 
 func _update_visual_facing(delta: float) -> void:
@@ -168,6 +181,11 @@ func respawn() -> void:
 		return
 	_is_rebooting = true
 	velocity = Vector3.ZERO
+	# Clear input timers so a buffered jump at death-time doesn't fire on the
+	# first frame after reboot. Timers don't tick while _is_rebooting is true,
+	# so without this they would still be "live" after a 0.5 s reboot sequence.
+	_buffer_timer = 0.0
+	_coyote_timer = 0.0
 	if has_node("/root/Game"):
 		Game.register_attempt()
 		Game.player_respawned.emit()
@@ -240,23 +258,30 @@ func _run_reboot_effect() -> void:
 func _spawn_sparks(origin: Vector3) -> void:
 	if not DevMenu.is_juice_on(&"particles"):
 		return
+	var rng := RandomNumberGenerator.new()
+	rng.randomize()
+	var mat := _build_spark_material()
+	var mi := MeshInstance3D.new()
+	mi.mesh = _build_spark_mesh(rng)
+	mi.material_override = mat
+	mi.cast_shadow = GeometryInstance3D.SHADOW_CASTING_SETTING_OFF
+	get_tree().root.add_child(mi)
+	mi.global_position = origin
+	_fade_and_free_spark(mi, mat)
 
-	var mesh := ImmediateMesh.new()
+
+func _build_spark_material() -> StandardMaterial3D:
 	var mat := StandardMaterial3D.new()
 	mat.shading_mode = BaseMaterial3D.SHADING_MODE_UNSHADED
 	mat.albedo_color = Color(1.0, 0.78, 0.12, 1.0)
 	mat.transparency = BaseMaterial3D.TRANSPARENCY_ALPHA
 	mat.no_depth_test = true
 	mat.cull_mode = BaseMaterial3D.CULL_DISABLED
+	return mat
 
-	var mi := MeshInstance3D.new()
-	mi.mesh = mesh
-	mi.material_override = mat
-	mi.cast_shadow = GeometryInstance3D.SHADOW_CASTING_SETTING_OFF
 
-	var rng := RandomNumberGenerator.new()
-	rng.randomize()
-
+func _build_spark_mesh(rng: RandomNumberGenerator) -> ImmediateMesh:
+	var mesh := ImmediateMesh.new()
 	mesh.surface_begin(Mesh.PRIMITIVE_LINES)
 	for _i in 12:
 		var dir := Vector3(
@@ -268,10 +293,10 @@ func _spawn_sparks(origin: Vector3) -> void:
 		mesh.surface_add_vertex(dir * 0.1)
 		mesh.surface_add_vertex(dir * (0.1 + length))
 	mesh.surface_end()
+	return mesh
 
-	get_tree().root.add_child(mi)
-	mi.global_position = origin
 
+func _fade_and_free_spark(mi: MeshInstance3D, mat: StandardMaterial3D) -> void:
 	var tween := mi.create_tween()
 	tween.tween_interval(0.07)
 	tween.tween_property(mat, "albedo_color:a", 0.0, 0.38)

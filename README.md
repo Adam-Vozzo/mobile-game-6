@@ -5,10 +5,10 @@ A mobile 3D platformer. Brutalist megastructure inspired by *BLAME!*. Controller
 ## Status
 
 Current gate: **Gate 0 — Feel Lab**
-Last iteration: 2026-05-09 — iter 9: level design references research + camera_rig refactor
+Last iteration: 2026-05-10 — iter 24: move-dir rotation tests + gravity band selection tests + assist mechanics research
 Test device build: not yet — hand-authored scenes pending first Godot 4.6 import; see Open questions
 Performance: not yet measured on Nothing Phone 4(a) Pro
-Throttle level: **HARD — 9 iterations since last human direction. No new features. See Open questions.**
+Throttle level: **HARD — 23 iterations since last human direction. No new features. See Open questions.**
 
 If you only read one section, read **Open questions waiting on you** below.
 
@@ -16,10 +16,10 @@ If you only read one section, read **Open questions waiting on you** below.
 
 Things Claude can't decide alone, or where it's stalled and needs direction. Each is blocking some piece of forward progress.
 
-> **⚠ HARD THROTTLE — 9 iterations since last human direction.** Claude has been
-> building infrastructure (tests, research, refactors, debug tooling) for 9 iterations
-> without a human feel verdict or direction signal. All P0 items are blocked on the
-> first on-device run. The next iteration will continue hardening work only.
+> **⚠ HARD THROTTLE — 23 iterations since last human direction.** Claude has been
+> building infrastructure (tests, research, refactors, debug tooling, bug fixes) for 23
+> iterations without a human feel verdict or direction signal. All P0 items are blocked
+> on the first on-device run. The next iteration will continue hardening work only.
 >
 > **Suggested next directions (pick one or more):**
 > 1. Open the project in Godot 4.6, run the first-run checklist in `docs/ANDROID.md`,
@@ -94,6 +94,563 @@ Goal: store-ready build.
 The full iteration log lives here, newest first. Every iteration appends an entry. Skim the dates to find where you last left off.
 
 <!-- ITERATION ENTRIES BELOW — DO NOT REMOVE OLDER ENTRIES -->
+
+### [2026-05-10] — `claude/gifted-shannon-f29MG` — iter 24: move-dir rotation tests + gravity band selection tests + assist mechanics research
+
+- **Throttle: HARD (24 iterations since last human direction).** Hardening only.
+- **Primary: two new test groups added to `tests/test_controller_kinematics.gd`.**
+  ~137 → ~157 total assertions (20 new). Both groups are pure math (no scene tree
+  instantiation), following the same pattern as all previous groups.
+
+  - **`_test_move_dir_rotation` (8 assertions)** — verifies `player.gd::_camera_relative_move_dir`:
+    `Basis(Vector3.UP, yaw) * Vector3(move_input.x, 0.0, move_input.y)`.
+    - `yaw=0, stick up` → world z ≈ −1 (forward); `yaw=0, stick right` → world x ≈ +1.
+    - `yaw=PI, stick up` → world z ≈ +1 (camera reversed).
+    - `yaw=PI/2, stick up` → world x ≈ −1 (camera pivoted 90° CCW).
+    - Y component always 0 (Basis(UP, yaw) rotation preserves the XZ plane).
+    - Rotation preserves vector length (orthogonal transformation invariant).
+    - Over-length guard: dir > 1 is normalised (belt-and-braces in player.gd).
+    - Helper `_move_dir(move_input, yaw)` mirrors the formula exactly.
+
+  - **`_test_gravity_band_selection` (12 assertions = 4 rules × 3 profiles)** — verifies
+    `player.gd::_apply_gravity` if/elif band selection:
+    - `vel_y < 0` (falling) → `gravity_after_apex` on all 3 profiles.
+    - `vel_y > 0 + jump_held` → `gravity_rising` on all 3.
+    - `vel_y > 0 + jump released` → `gravity_falling` on all 3.
+    - `vel_y == 0` (apex frame, `<= 0` is true) → `gravity_after_apex` on all 3.
+    - Helper `_select_gravity(p, vel_y, jump_held)` mirrors the if/elif exactly.
+
+- **Side quest: `docs/research/assist_mechanics.md`** — closes the research gap
+  for PLAN P0 item 4 (Assisted profile). Bridges the design targets already in
+  `mobile_touch_ux.md` and `character_controllers.md` to concrete Godot 4
+  implementation sketches for `CharacterBody3D`:
+  - **Ledge magnetism**: `PhysicsDirectSpaceState3D.intersect_shape` with small
+    sphere, fired once at `_try_jump()`, 2 rays (left/right of capsule edge),
+    ≤ `ledge_magnet_strength` m/s impulse, new properties `ledge_magnet_radius`
+    and `ledge_magnet_strength` (both default 0 on all existing profiles).
+  - **Arc assist**: 20-step parabola simulation using current velocity + gravity,
+    ShapeCast per step, lateral correction ≤ 15% `jump_velocity`. New property
+    `arc_assist_max` (default 0).
+  - **Sticky landing**: `_was_on_floor_last_frame` tracks landing frame, applies
+    `(1 - landing_sticky_factor)` multiplier to horizontal velocity for
+    `landing_sticky_frames` (2 frames, 20%). Properties default 0.
+  - **Edge-snap**: post-`move_and_slide()` position correction, most complex,
+    implement last. Property `edge_snap_dist` (default 0).
+  - **Implementation order**: sticky landing → ledge magnetism → arc assist →
+    edge-snap. All 6 new properties default to 0 — backwards-compatible with
+    all existing profiles.
+  - **Key implication**: `_was_on_floor_last_frame` doubles as the juice-system
+    landing-squash trigger — extract to a single `_landed_this_frame` bool
+    computed once per `_physics_process` to avoid duplicate `is_on_floor()` calls.
+  - INDEX.md updated; "Assist mechanics" entry added under Character controllers.
+
+- Perf: no runtime change (tests + docs only).
+- Bugs fixed: none.
+- New dev-menu controls: none.
+- Assets acquired: none.
+- Research added: `docs/research/assist_mechanics.md`; INDEX.md updated.
+- Needs human attention: **see "Open questions waiting on you" — hard throttle active (24 iterations).**
+
+### [2026-05-10] — `claude/gifted-shannon-BNuNf` — iter 23: yaw recenter tests + Compatibility renderer research
+
+- **Throttle: HARD (23 iterations since last human direction).** Hardening only.
+- **Primary: `_test_camera_yaw_recenter` added to `tests/test_controller_kinematics.gd`.**
+  `_update_yaw_recenter` was the only camera sub-function without a dedicated test group.
+  9 new assertions, all pure math (no scene instantiation), following the same pattern as
+  the other camera groups:
+  - **`wrapf` shortest-path**: 175°→-175° yields +10° (not -350°); -175°→+175° yields
+    -10° (not +350°). Catches a potential bug where the camera would spin the long way
+    around when the player reverses direction near the ±180° boundary.
+  - **Lerp weight plausibility** at default speed (1.5): weight > 0 (makes progress) and
+    weight < 0.1 (smooth, not an instant snap).
+  - **No overshoot**: step = diff × weight < diff on a 90° rotation with default params.
+  - **High-speed clamp**: `minf(1.0, 200 × delta)` is exactly 1.0 — confirms the guard
+    prevents overshoot even at extreme recenter_speed values.
+  - **Convergence**: 30-frame simulation from 0° toward 90° — angular error decreases
+    monotonically each frame, and > 50% progress is made by frame 30.
+  - Total assertions: ~128 → ~137.
+- **Side quest: `docs/research/compatibility_renderer.md`** — closes the P2 PLAN item
+  "Investigate Godot's Compatibility renderer fallback for very-low-end devices."
+  - Feature comparison table: every Void-used feature (StandardMaterial3D, exponential
+    fog, LightmapGI, GPUParticles3D) is present in Compatibility. Missing features
+    (volumetric fog, decals, SDFGI, screen-space reflections) are already absent from the
+    Mobile renderer or not planned.
+  - Per-GPU-tier perf: Adreno 506 era → Compatibility 20–40% faster (Vulkan driver
+    immaturity). Adreno 710 (test device) → Mobile wins by 5–15%.
+  - Visual delta: negligible for the brutalist-fog-darkness aesthetic.
+  - Recommendation: keep Mobile as primary; a second Compatibility export preset is
+    viable at Gate 2+ for low-end market expansion, zero code changes, one new preset.
+  - Custom shaders (if added) need GLSL ES 3.0 variants — plan before Gate 3.
+  - INDEX.md updated; P2 open item closed.
+- Perf: no runtime change.
+- Bugs fixed: none.
+- New dev-menu controls: none.
+- Assets acquired: none.
+- Research added: `docs/research/compatibility_renderer.md`; INDEX.md updated.
+- Needs human attention: **see "Open questions waiting on you" — hard throttle active (23 iterations).**
+
+### [2026-05-10] — `claude/gifted-shannon-NQtLx` — iter 22: camera pitch V-turn bug fixed + elevation formula tests
+
+- **Throttle: HARD (22 iterations since last human direction).** Hardening only.
+- **Primary: Camera pitch V-turn bug fixed in `scripts/camera/camera_rig.gd`.**
+  `_desired_camera_position` used `absf(_pitch)` for the elevation angle. Since
+  `_pitch` starts at −0.384 rad and the clamp formerly allowed it up to
+  `+deg_to_rad(pitch_max_degrees)`, dragging the camera upward pushed `_pitch`
+  through 0 then positive — `absf` produced a V-shape: camera first drops to
+  horizontal, then rises again. On a 1080p phone the V-turn was reachable with
+  ~128 px of upward drag at default `pitch_drag_sens 0.003`.
+  - **Fix 1 (`_apply_drag_input`):** upper clamp bound changed from
+    `deg_to_rad(absf(pitch_max_degrees))` to `0.0`. `_pitch` is now always ≤ 0.
+  - **Fix 2 (`_desired_camera_position`):** `absf(_pitch)` → `-_pitch`. Since
+    `_pitch` is always ≤ 0, `-_pitch` ≥ 0 and is monotonically correct — higher
+    magnitude pitch = more camera elevation, with no reversal at 0.
+  - `pitch_max_degrees` export and dev-menu slider are retained but inactive as
+    guards; their original meaning ("how far below horizontal") is unreachable.
+    DECISIONS.md entry added.
+- **Side quest: `_test_camera_pitch_formula` added to `tests/test_controller_kinematics.gd`.**
+  5 assertions documenting the post-fix elevation invariant (pure math, no scene
+  tree instantiation, same pattern as the other camera test groups):
+  - Pitch 0.0 → elevation 0 (horizontal).
+  - Default pitch −22° → positive elevation (camera above player).
+  - −45° elevation > −22° elevation (monotonic, no V-turn regression).
+  - −55° elevation still positive (within full valid range).
+  - Elevation ≥ 0 across all valid above-horizontal angles [0°, 89°].
+  - Total assertions: ~123 → ~128.
+- Perf: no runtime cost change.
+- Bugs fixed: camera pitch V-turn (V-shape on upward drag, reachable in normal play).
+- New dev-menu controls: none.
+- Assets acquired: none.
+- Research added: none.
+- Needs human attention: **see "Open questions waiting on you" — hard throttle active (22 iterations).**
+
+### [2026-05-10] — `claude/gifted-shannon-0yX7M` — iter 21: camera math unit tests + pitch V-turn issue logged
+
+- **Throttle: HARD (21 iterations since last human direction).** Hardening only.
+- **Primary: Camera math unit test groups added to `tests/test_controller_kinematics.gd`.**
+  Three new test groups, all pure math (no scene-tree instantiation), following the
+  same assertion pattern as the kinematics groups. +17 assertions → ~123 total.
+  - `_test_camera_vertical_pull` (6 assertions) — tests `camera_rig.gd::_vertical_pull_offset`
+    formula (`vel_y >= 0 → 0`, `vel_y < 0 → vel_y * pull * 0.05`): rising/stopped gives 0,
+    falling gives negative proportional offset, zero-pull coefficient gives 0,
+    terminal-velocity pull (-40 m/s × 0.18 × 0.05 = -0.36 m) stays within -1 m.
+    Helper `_cam_vp(vel_y, pull)` mirrors the formula.
+  - `_test_camera_occlude_math` (6 assertions) — tests `camera_rig.gd::_occlude`
+    safe-distance formula (`maxf(min_dist, hit_dist - margin)`): typical hit (3 m →
+    2.7 m), close clamp (0.5 m → 0.8 m min), margin == hit (→ min), zero margin,
+    oversized margin, loop invariant (safe_dist ≥ min for 6 hit distances).
+    Helper `_cam_sd(hit_dist, margin, min_dist)` mirrors the formula.
+  - `_test_camera_lookahead_target` (5 assertions) — tests desired-lookahead
+    computation: below min_speed → zero vector; above min_speed → correct length
+    and direction; diagonal velocity → equal X/Z; large lerp value → weight
+    clamped to 1.0 (no overshoot).
+- **Side quest: Camera pitch V-turn issue documented in PLAN.md refactor backlog.**
+  `_desired_camera_position` uses `absf(_pitch)` for the camera elevation angle.
+  Since `_pitch` starts at −0.384 rad (22°) and the clamp allows up to +0.96 rad,
+  dragging upward pushes `_pitch` through 0 then positive — `absf` creates a
+  V-shape: camera first drops to horizontal, then rises again. At default
+  `pitch_drag_sens 0.003`, the 0-crossing requires ~128 px of upward drag on
+  a 1080p phone — reachable in normal play. Fix options logged in refactor backlog;
+  needs on-device feel confirmation before committing either fix.
+- Perf: no runtime change.
+- Bugs fixed: none.
+- New dev-menu controls: none.
+- Assets acquired: none.
+- Research added: none.
+- Needs human attention: **see "Open questions waiting on you" — hard throttle active (21 iterations).**
+
+### [2026-05-10] — `claude/gifted-shannon-5UrSF` — iter 20: test suite expansion + dead zone calibration research
+
+- **Throttle: HARD (20 iterations since last human direction).** Hardening only.
+- **Primary: Test suite — 3 remaining Snappy-only groups expanded to all profiles.**
+  `_test_horizontal_interpolation`, `_test_coyote_countdown`, and
+  `_test_buffer_countdown` previously tested only Snappy (matching how iter 11
+  expanded `_test_jump_cut_math` and `_test_terminal_velocity`). All three now
+  loop over Snappy / Floaty / Momentum using the same assertion structure.
+  Net +20 assertions:
+  - `_test_horizontal_interpolation`: +6 (converges within 5 s, within 0.01 m/s,
+    within 30 frames — × 3 profiles). Note: Snappy ~6 frames, Floaty ~12,
+    Momentum ~12 — all within the 30-frame cap.
+  - `_test_coyote_countdown`: +8 (expires, never negative, ends at 0.0, within
+    2× expected frame count — × 3 profiles).
+  - `_test_buffer_countdown`: +6 (expires, never negative, buffer ≥ coyote
+    — × 3 profiles).
+  - Total: ~86 → ~106 assertions. Every shipped profile is now covered by every
+    test group. No behaviour change.
+- **Side quest: `docs/research/touch_dead_zone_calibration.md`.**
+  Closes the "Genshin Impact dead zone tuning specifics" open item in INDEX.md.
+  - **Truncating vs. remapping dead zone** — formulae and tradeoffs. Current
+    Project Void implementation (truncating at 15%) is correct for a precision
+    platformer; the discontinuity at threshold is imperceptible in active play.
+  - **Genshin Impact** — 8–10% inner dead zone, 90–95% outer dead zone (sprint
+    ergonomics), floating stick, narrow camera safety band between zones.
+  - **Sky** — fixed stick, ~5% dead zone, gesture-driven camera.
+  - **HCI guidance** — 10–20% recommended for touch virtual sticks; below 10%
+    causes drift; above 20% feels sticky.
+  - **5 implications for Project Void:** current DZ is correct for Gate 0; Floaty
+    may later benefit from remapping; outer DZ at 93% for sprint ergonomics; camera
+    safety band worth adding if interference observed; dead zone is input hardware
+    calibration, not a controller physics param.
+- Perf: no runtime change.
+- Bugs fixed: none.
+- New dev-menu controls: none.
+- Assets acquired: none.
+- Research added: `docs/research/touch_dead_zone_calibration.md`; INDEX.md updated.
+- Needs human attention: **see "Open questions waiting on you" — hard throttle active (20 iterations).**
+
+### [2026-05-10] — `claude/gifted-shannon-80jFq` — iter 19: dev_menu_overlay controller-section refactor + movement param tests
+
+- **Throttle: HARD (19 iterations since last human direction).** Hardening only.
+- **Primary: `_build_controller_section` refactor in `tools/dev_menu/dev_menu_overlay.gd`.**
+  The function was 42 lines — just over the 40-line threshold. Extracted four focused
+  sub-builders with no behaviour change:
+  - `_build_controller_movement(vbox)` (13 lines) — Max speed, Ground accel/decel,
+    Air accel, Air damping sliders.
+  - `_build_controller_jump(vbox)` (19 lines) — Jump velocity, three gravity bands,
+    Terminal velocity, Coyote, Buffer, Release ratio sliders.
+  - `_build_controller_respawn(vbox)` (7 lines) — Reboot dur, Fall kill Y sliders.
+  - `_build_controller_slope(vbox)` (5 lines) — Max floor° slider.
+  - `_build_controller_section` is now 7 lines (sep + 4 sub-builder calls). Every
+    method in the file is now under 40 lines. No behaviour change.
+- **Side quest: `_test_movement_params()` added to `tests/test_controller_kinematics.gd`.**
+  10 new assertions covering properties not previously tested:
+  - `ground_deceleration > 0` (all 3 profiles) — not covered by cross-invariants.
+  - `air_acceleration > 0` (all 3 profiles) — not covered by cross-invariants.
+  - `momentum.max_speed > snappy.max_speed` — documents speed-profile design intent
+    (Momentum is the fastest profile).
+  - `floaty.max_speed < snappy.max_speed` — Floaty is the controlled/slower profile.
+  - `momentum.air_horizontal_damping == 0.0` — Momentum fully preserves horizontal
+    velocity (same as Snappy; Floaty is the only damped profile).
+  - `momentum.ground_deceleration < momentum.ground_acceleration` — Momentum
+    intentionally decelerates slowly; stopping takes longer than reaching max speed.
+  - Total assertions: ~76 → ~86.
+- Perf: no runtime change.
+- Bugs fixed: none.
+- New dev-menu controls: none.
+- Assets acquired: none.
+- Research added: none.
+- Needs human attention: **see "Open questions waiting on you" — hard throttle active (19 iterations).**
+
+### [2026-05-10] — `claude/gifted-shannon-iG0FA` — iter 18: touch slider display fix + respawn param tests
+
+- **Throttle: HARD (18 iterations since last human direction).** Hardening only.
+- **Primary: Touch slider display now reflects loaded layout values.**
+  The dev menu "Jump radius" and "Stick zone %" sliders were showing hardcoded
+  defaults (95 / 0.5) even when `user://input.cfg` had different values. The
+  touch overlay itself was loading correctly; only the slider display label was
+  stale. Root cause: `_build_touch_section` used hardcoded constants as
+  `initial_value` because it had no way to query the overlay at build time.
+  - Fix: `TouchOverlay._ready()` now adds itself to the `"touch_overlay"` group.
+    `DevMenuOverlay._build_touch_section()` queries that group just before building
+    sliders and uses the actual loaded values as `initial_value`. The deferred
+    `_install_overlay` call guarantees the scene tree (including
+    `TouchOverlay._load_layout()`) has completed before the group query runs.
+    Falls back to 95 / 0.5 if no overlay is in the tree.
+  - DECISIONS.md entry added (group-query vs. signal vs. store-in-autoload
+    comparison).
+  - Closes "Touch slider display doesn't reflect loaded layout" from refactor
+    backlog.
+- **Side quest: `_test_respawn_params()` added to `tests/test_controller_kinematics.gd`.**
+  - Phase-fraction sum check: `0.12 + 0.35 + 0.35 + 0.18 == 1.0` — documents
+    the beat percentages in `player.gd::_run_reboot_effect()` so future edits
+    that change a fraction are caught here.
+  - Per-profile: `reboot_duration` in `(0, 1.5]` (matches slider range);
+    `fall_kill_y < 0` (must be below ground); `fall_kill_y >= -200` (matches
+    slider min). All three profiles pass.
+  - +13 assertions; total ~76 (was ~63).
+- Perf: no runtime change.
+- Bugs fixed: touch slider display showing stale defaults after loading layout.
+- New dev-menu controls: none.
+- Assets acquired: none.
+- Research added: none.
+- Needs human attention: **see "Open questions waiting on you" — hard throttle active (18 iterations).**
+
+### [2026-05-09] — `claude/gifted-shannon-QnzBx` — iter 17: touch layout persistence fix + holistic level design research
+
+- **Throttle: HARD (17 iterations since last human direction).** Hardening only.
+- **Primary: `dev_menu_overlay.gd::_make_slider` silent-init bug fix.**
+  Touch layout persistence (`user://input.cfg`) was silently broken on every startup.
+  The root cause: `_build_touch_section` called `.value = 95.0` on a freshly-built
+  slider *after* `value_changed` callbacks were already connected. This caused
+  `DevMenu.touch_param_changed` to fire immediately, routing to
+  `touch_overlay._on_touch_param`, which set `jump_button_radius = 95.0` and
+  `stick_zone_ratio = 0.5` — overwriting whatever `_load_layout()` had just loaded
+  from disk. The same pattern existed in `_build_level_section` (time scale slider)
+  and `_make_cam_slider` (all camera sliders).
+  - Fix: `_make_slider` now accepts `initial_value: float = NAN`. When provided, the
+    value is applied to the Range node *before* any `value_changed` callbacks are
+    connected, so the signal fires internally but no listeners receive it. The
+    val_label is then initialised from `slider.value` (reflecting the initial_value).
+  - Updated `_make_cam_slider`: passes `default_val` as `initial_value` instead of
+    setting `.value` post-return. Camera `@export` defaults match the dev menu
+    defaults by convention (verified — all 15 camera params match).
+  - Updated `_build_touch_section`: passes 95.0 / 0.5 as `initial_value`. A
+    returning user's layout is now preserved; a new install starts at defaults. ✓
+  - Updated `_build_level_section`: passes 1.0 as `initial_value`. `Engine.time_scale`
+    is already 1.0 by default; no observable change for any user.
+  - Remaining gap (noted in refactor backlog): touch sliders display their defaults
+    (95 / 0.5) even when a different value is loaded from disk. Values are correct
+    in the overlay; only the slider display is stale. Fixing it needs a "loaded
+    params" signal — deferred, low priority.
+  - DECISIONS.md entry added.
+- **Side quest: `docs/research/holistic_level_design.md`** — Steve Lee GDC 2017
+  ("An Approach to Holistic Level Design") + GMTK synthesis (3D platformer pacing).
+  - Steve Lee's three integrated dimensions: gameplay / presentation / narrative.
+    Authoring pipeline: decide the mechanic first, then shape geometry that makes
+    it self-evident, then give it a world-reason. "Intentionality" — the player
+    understands what the space asks without a UI prompt. If a popup is needed,
+    the geometry shape is wrong. Lee's pipeline = Alexander's parti pris, operationalised
+    as a production sequence.
+  - GMTK Kishōtenketsu 4-beat arc (Ki→Shō→Ten→Ketsu): Intro (safe learning) →
+    Development (escalation, same mechanic) → Twist (recontextualise, not just
+    harder) → Resolution (mastery + optional depth). ~5-minute arc; discard the
+    mechanic after Ketsu. Hayashida's rule: the Twist beat is required, not optional.
+    This adds the explicit "Ten" to the SMB introduce-then-combine pattern already
+    in level_design_references.md.
+  - GMTK Odyssey density-over-span: compressed verticality (apex visible from start),
+    no monotonic ascent (one path, one floor plane, 3 minutes of climbing = bad).
+    Confirms 3-floor-plane rule; adds specific: **keep the destination in the
+    player's FOV throughout the ascent.**
+  - 6 concrete implications for Gate 1: holistic affordance pipeline per beat,
+    Twist beat required, brutalist expressed structure = free affordances (no glowing
+    arrows needed), apex-visibility rule for ascent sequences, Twist beat recipe for
+    precision platformers (combine mastered mechanic + momentum reversal), intentionality
+    check before committing any kit piece.
+  - INDEX.md updated; Steve Lee and GMTK open items marked done.
+- Perf: no runtime change.
+- Bugs fixed: `dev_menu_overlay.gd` touch layout persistence overwrite on startup.
+- New dev-menu controls: none.
+- Assets acquired: none.
+- Research added: `docs/research/holistic_level_design.md`; INDEX.md updated.
+- Needs human attention: **see "Open questions waiting on you" — hard throttle active (17 iterations).**
+
+### [2026-05-09] — `claude/gifted-shannon-6ZYeJ` — iter 16: camera dev-menu tunables + debug draw perf
+
+- **Throttle: HARD (16 iterations since last human direction).** Hardening only.
+- **Primary: Camera dev-menu extended with 6 previously inspector-only tunables.**
+  Before this iteration, `aim_height`, `lookahead_lerp`, `lookahead_min_speed`,
+  `pitch_min_degrees`, `pitch_max_degrees`, and `recenter_min_speed` were only
+  adjustable via the Godot inspector — useless during a device tuning session where
+  the editor isn't open. Added a "Camera — Tuning" sub-section to the dev menu with
+  live sliders for all six. `camera_rig.gd::_on_camera_param_changed` gained 6 match
+  arms to apply them. All defaults match the existing `@export_range` defaults so
+  the behaviour is unchanged at startup; sliders become live the moment they're moved.
+  - Aim height (0–3 m, step 0.05, default 0.6) — vertical offset of the camera look-at
+    point above the player's feet; affects how much ceiling headroom the framing reveals.
+  - Look lerp (0.5–20, step 0.5, default 4.0) — how quickly the lookahead vector
+    catches up to the player's horizontal velocity direction. Lower = smoother/laggy;
+    higher = snappy/jerky.
+  - Look min spd (0–5 m/s, step 0.05, default 0.15) — velocity below which lookahead
+    decays to zero. Prevents the camera drifting when the player is nearly stopped.
+  - Pitch min/max deg (range −89–0 / 0–89, step 1, defaults −55/55) — clamps how far
+    up and down the player can drag-tilt the camera in manual override.
+  - Rctr min spd (0–10 m/s, step 0.1, default 0.5) — minimum player horizontal speed
+    required for the auto-recenter to kick in (prevents recenter while standing still).
+- **Side quest: `player_debug_draw.gd` per-frame overhead reduction.** Before this
+  change, `_process` called `_find_player()` (a scene-tree group search) and ran
+  four `DevMenu.is_debug_viz_on()` dictionary lookups every physics frame even when
+  all four overlays were disabled (the default state). Added `_viz_active: bool`
+  cached via `DevMenu.debug_viz_changed` signal (re-evaluated only when a checkbox
+  changes, not every frame). Restructured `_process`: now returns early after
+  `clear_surfaces()` if `_viz_active` is false, skipping the group search entirely.
+  When all overlays are off (the typical in-development state) the per-frame cost
+  drops to one bool check + one `clear_surfaces()` on an already-empty mesh.
+- Perf: no runtime cost increase. On-device baseline still pending first human build.
+- Bugs fixed: none new.
+- New dev-menu controls: "Camera — Tuning" subsection — Aim height, Look lerp,
+  Look min spd, Pitch min deg, Pitch max deg, Rctr min spd (6 new sliders).
+- Assets acquired: none.
+- Research added: none.
+- Needs human attention: **see "Open questions waiting on you" — hard throttle active (16 iterations).**
+
+### [2026-05-09] — `claude/gifted-shannon-b8hWF` — iter 15: respawn timer bug fix + slope tunable
+
+- **Throttle: HARD (15 iterations since last human direction).** Hardening only.
+- **Primary: Two targeted fixes.**
+  - **Bug fixed — `player.gd::respawn()` leaving timers live.** `_buffer_timer` and
+    `_coyote_timer` do not tick while `_is_rebooting = true` (physics returns early). A
+    jump press in the last 120 ms before death would freeze `_buffer_timer` at a non-zero
+    value; after the 0.5 s reboot sequence the timer was still "live." On the first frame
+    post-reboot, `_try_jump` would fire if the player landed at the spawn point, producing
+    an unintended jump. Fixed by zeroing both timers in `respawn()` before the reboot
+    sequence starts. The comment explains the why (non-obvious frozen-timer invariant).
+  - **`max_floor_angle_degrees` now live-tunable from the dev menu.** The property existed
+    in `ControllerProfile` but was only applied once (in `_apply_profile_to_body` on profile
+    load). A dev-menu slider would mutate the resource but not update `CharacterBody3D`'s
+    `floor_max_angle`. Fixed: `floor_max_angle = deg_to_rad(profile.max_floor_angle_degrees)`
+    moved to the top of `_physics_process` (after `_is_rebooting` guard) so it refreshes
+    every tick. A "Controller — Slope" subsection with a "Max floor°" slider (20–70°, step 1°)
+    added to the dev menu controller section. Slider is registered in `_profile_sliders` so it
+    bulk-syncs on profile switch like all other controller params.
+- **Side quest: slope param test group.** `_test_slope_params()` added to
+  `tests/test_controller_kinematics.gd` (7 assertions across 3 profiles). Checks
+  `max_floor_angle_degrees` in valid range [20, 70] and that Floaty ≥ Snappy (the
+  accessibility profile should be at least as forgiving on slopes). Total assertions: ~56 → ~63.
+- Perf: no runtime cost change. `floor_max_angle` assignment is a single float write per
+  physics tick — negligible. On-device baseline still pending.
+- Bugs fixed: respawn post-death unintended jump (buffer timer not cleared).
+- New dev-menu controls: "Controller — Slope" subsection → "Max floor°" slider.
+- Assets acquired: none.
+- Research added: none.
+- Needs human attention: **see "Open questions waiting on you" — hard throttle still active (15 iterations).**
+
+### [2026-05-09] — `claude/gifted-shannon-72KFx` — iter 14: dev_menu_overlay bug fix + Alexander research
+
+- **Throttle: HARD (14 iterations since last human direction).** Hardening only.
+- **Primary: `dev_menu_overlay.gd` bug fix + magic-number refactor.**
+  - **Bug fixed**: `_on_save_confirmed` — when a profile is saved via the "Save as…"
+    button, `_profile_dropdown.selected = n` was set but `_select_profile(name)` was
+    never called. `OptionButton.selected` set programmatically does NOT emit
+    `item_selected`, so `_current_profile` continued pointing at the original resource.
+    Subsequent slider edits went to the wrong resource; the saved copy was frozen at
+    save-time values. Fixed by adding `_select_profile(name)` at the end of
+    `_on_save_confirmed`. One line, no behaviour change except the bug is now gone.
+  - **Refactor**: 6 inline UI layout magic numbers promoted to named class constants:
+    `_PANEL_W = 400`, `_SCROLL_H = 600`, `_SECTION_SEP = 6`, `_SL_LABEL_W = 110`,
+    `_SL_TRACK_W = 160`, `_SL_TRACK_H = 24`, `_SL_VAL_W = 54`. The column-sum comment
+    (`110+160+54 = 324 fits in 400`) makes the layout budget readable at a glance.
+- **Side quest: Christopher Alexander research note** — `docs/research/alexander_pattern_language.md`.
+  Synthesises three Alexander texts as applied to Void level design:
+  - *Notes on the Synthesis of Form*: form resolves a network of forces; every level beat
+    must satisfy ≥ 3 forces simultaneously (challenge + navigation + one of
+    spectacle/pacing/orientation). Beats satisfying only "challenge" are obstacle-course
+    padding.
+  - Parti pris: every beat needs a one-sentence organizing concept before geometry is
+    placed. The SMB "one governing idea per room" rule is parti thinking — Alexander
+    arrived at the same principle from architecture in 1964.
+  - *A Pattern Language*: named reusable solutions mapped to a Void kit vocabulary —
+    Compression–Release, Threshold, Landmark in Darkness, Rest Alcove, Gauntlet Ascent,
+    Overlook, Desire Line. Each `kit/` scene in Gate 1 should be named after a pattern.
+  - 8 concrete implications: parti-per-beat discipline, ≥ 3 forces per beat,
+    Compression–Release as the primary procession unit for brutalist megastructure,
+    structural (not decorative) landmarks, Stray-red as the structural centre of the
+    spatial field, desire line = par route, kit naming enforces patterns.
+  - INDEX.md and "Christopher Alexander" open items in Brutalism/BLAME section updated.
+- Perf: no runtime change.
+- Bugs fixed: `dev_menu_overlay.gd::_on_save_confirmed` profile-switch missing after save.
+- New dev-menu controls: none.
+- Assets acquired: none.
+- Research added: `docs/research/alexander_pattern_language.md`; INDEX.md updated.
+- Needs human attention: **see "Open questions waiting on you" — hard throttle still active (14 iterations).**
+
+### [2026-05-09] — `iter/spawn-sparks-refactor` — iter 13: _spawn_sparks refactor + juice density research
+
+- **Throttle: HARD (13 iterations since last human direction).** Hardening only.
+- **Primary: `player.gd::_spawn_sparks` method-size refactor.** The function was
+  41 lines (just over the 40-line budget). Extracted three focused helpers with no
+  behaviour change:
+  - `_build_spark_material() → StandardMaterial3D` (10 lines) — all material property
+    setup in one place; spark colour and alpha-blend settings readable at a glance.
+  - `_build_spark_mesh(rng: RandomNumberGenerator) → ImmediateMesh` (16 lines) — the
+    12-line-segment hemispherical burst geometry, self-contained.
+  - `_fade_and_free_spark(mi, mat)` (7 lines) — the tween sequence (0.07 s delay →
+    alpha fade → queue_free).
+  - `_spawn_sparks` is now 15 lines. Only `_run_reboot_effect` (45 lines) remains in
+    the backlog as "leave as-is" — sequential `await` beats make further extraction
+    awkward in GDScript without coroutine indirection.
+- **Side quest: juice density research note** — `docs/research/juice_density.md`.
+  Synthesises Astro's Playroom / Astro Bot "layered receipt" model (audio+visual+world
+  per action), Super Meat Boy sparse-juice contrast, mobile-specific considerations
+  (UI feedback compensates for no haptics), and draw-call cost of each juice type.
+  - Gate 1 priority ranking: landing squash → jump stretch → jump puff →
+    pre-jump anticipation. All gated behind existing `squash_stretch` / `particles`
+    dev-menu toggles.
+  - Key implication: Void should sit closer to SMB density than Astro Bot — brutalist
+    tone calls for restraint; heavy particle clusters undercut the atmosphere.
+  - INDEX.md updated; "Astro's Playroom — juice density" open item marked done.
+- Perf: no runtime change (pure refactor + docs).
+- Bugs fixed: none.
+- New dev-menu controls: none.
+- Assets acquired: none.
+- Research added: `docs/research/juice_density.md`; INDEX.md updated.
+- Needs human attention: **see "Open questions waiting on you" — hard throttle still active (13 iterations).**
+
+### [2026-05-09] — `claude/gifted-shannon-j5hhr` — iter 12: touch_overlay.gd refactor + draw-call budget fix
+
+- **Throttle: HARD (12 iterations since last human direction).** Hardening only.
+- **Primary: `touch_overlay.gd` method-size refactor.** Two functions were over the
+  40-line threshold and have been replaced with lean dispatchers + extracted helpers:
+  - `_handle_repo_input` (was 62 lines) → lean dispatcher (8 lines) calling four new
+    helpers: `_parse_repo_event` (parses any `InputEvent` subtype into a common
+    `{pos, pressed, released, moved}` dict), `_on_repo_press`, `_on_repo_move`,
+    `_on_repo_release`. Each helper is ≤ 15 lines. No behaviour change.
+  - `_draw_reposition` (was 56 lines) → lean dispatcher (9 lines) calling seven new
+    draw helpers: `_draw_dim_overlay`, `_draw_zone_divider`, `_draw_jump_button_repo`,
+    `_draw_resize_handle_repo`, `_draw_done_button_repo`, `_draw_preset_buttons_repo`,
+    `_draw_repo_header`. Two font-size constants (`_REPO_FONT_SM = 13`,
+    `_REPO_FONT_NM = 18`) extracted from magic literals. No behaviour change.
+- **Side quest: `DRAW_CALL_BUDGET` corrected.** `perf_budget.gd` had
+  `DRAW_CALL_BUDGET := 200` — four times the Gate 1 target of ≤ 50 draw calls
+  established in `docs/research/godot_mobile_perf.md`. Updated to 50 so
+  `over_budget()` flags correctly. Comment references the research note.
+- Perf: no runtime change (pure structural refactor + constant adjustment).
+- Bugs fixed: `DRAW_CALL_BUDGET` was too lenient (200 vs. research-backed 50).
+- New dev-menu controls: none.
+- Assets acquired: none.
+- Research added: none.
+- Needs human attention: **see "Open questions waiting on you" — hard throttle still
+  active (12 iterations).**
+
+### [2026-05-09] — `claude/gifted-shannon-DCTEK` — iter 11: perf frametime fix + dead code removal + test coverage
+
+- **Throttle: HARD (11 iterations since last human direction).** Hardening only.
+- **Bug fixed — `perf_budget.gd` frametime accuracy.** `last_frametime_ms` was
+  computed as `1000.0 / Engine.get_frames_per_second()`. That value is a 0.5-second
+  rolling average, so a 25 ms spike frame was reported as ~17 ms. Fixed to use
+  `delta * 1000.0` (actual last-frame time). The `over_budget()` check now catches
+  real hitches; the HUD corner display shows honest numbers.
+- **Dead code removed — `touch_input.gd::set_camera_drag_delta`.** The method's
+  stale comment claimed it was "called by the touch overlay each frame," but the
+  overlay calls `add_camera_drag_delta` (the accumulating variant). `set_camera_drag_delta`
+  was never called anywhere. Removed; `add_camera_drag_delta` comment updated.
+- **Test coverage expansion (side quest).** `_test_jump_cut_math` and
+  `_test_terminal_velocity` in `tests/test_controller_kinematics.gd` previously
+  tested only the Snappy profile. Both now loop over all three shipped profiles
+  (Snappy / Floaty / Momentum), adding 2×8 = 16 new assertions. Test labels
+  include the profile name for easy identification in Output panel.
+  Total assertions: was ~40, now ~56.
+- Perf: no runtime change (perf_budget fix changes the value of `last_frametime_ms`
+  but not any other computation; dead code removal has zero cost).
+- Bugs fixed: `perf_budget.gd` spike-frame underreporting.
+- New dev-menu controls: none.
+- Assets acquired: none.
+- Research added: none.
+- Needs human attention: **see "Open questions waiting on you" — hard throttle still active.**
+
+### [2026-05-09] — `claude/gifted-shannon-wIoiG` — iter 10: player.gd refactor + ghost trail research
+
+- **Throttle: HARD (10 iterations since last human direction).** Feature work stopped;
+  hardening only. See "Open questions waiting on you" for suggested next directions.
+- Primary: **`player.gd::_physics_process` refactor.** Was 79 lines — well over the
+  40-line threshold. Extracted 8 focused private sub-routines with no behaviour change:
+  - `_tick_timers(delta, on_floor)` — coyote/buffer countdown
+  - `_collect_jump_input()` — keyboard just-press → buffer; returns held state
+  - `_was_jump_released(jump_held)` — detects both keyboard and touch release
+  - `_camera_relative_move_dir()` — TouchInput vector rotated by camera yaw
+  - `_apply_horizontal(delta, on_floor, move_dir)` — accel/decel + air damping
+  - `_apply_gravity(delta, jump_held)` — three-band gravity
+  - `_try_jump()` — consumes coyote + buffer
+  - `_cut_jump(jump_released)` — variable jump height cut
+  - `_physics_process` is now 22 lines. All sub-routines are ≤16 lines each.
+  - `_run_reboot_effect` (44 lines, `await`-chained sequence) noted in refactor
+    backlog — sequential awaits make further extraction awkward without coroutine
+    indirection; leave as-is until the function needs to grow.
+- Side quest: **Ghost trail prototype research note** — `docs/research/ghost_trail_prototype.md`.
+  Synthesises SMB's attempt-replay overlay (pedagogical design intent, why dense ghost
+  clusters mark death walls, recency-alpha formula), evaluates four Godot 4 approaches
+  (MultiMesh recommended at 1 draw call / 300 instances; ImmediateMesh fallback; GPU ring
+  buffer for Gate 2+; physics replay discarded), and provides a concrete GDScript sketch
+  for `game.gd` recorder + `GhostTrailRenderer`. 6 implications for Void including: wire
+  existing `Game.player_respawned` signal, default ghost_trails juice toggle OFF until
+  level exists, cold blue-grey colour to protect the Stray's red.
+- Note: PR #21 ("Fix ControllerProfile parse errors in player.gd and camera_rig.gd")
+  landed between iter 9 and iter 10 but wasn't reflected in README or PLAN — documented
+  here retroactively.
+- Perf: no runtime change (pure refactor + research note).
+- Bugs fixed: none new.
+- New dev-menu controls: none.
+- Assets acquired: none.
+- Research added: `docs/research/ghost_trail_prototype.md`; INDEX.md updated.
+- Needs human attention: **see "Open questions waiting on you" — hard throttle active.**
 
 ### [2026-05-09] — `claude/gifted-shannon-tfUYS` — iter 9: level design references research + camera_rig refactor
 

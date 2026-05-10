@@ -34,13 +34,8 @@ func set_jump_held(pressed: bool) -> void:
 		jump_released.emit()
 
 
-## Called by the touch overlay each frame for right-side drag delta in pixels.
-func set_camera_drag_delta(delta: Vector2) -> void:
-	camera_drag_delta = delta
-
-
-## Adds to the accumulated drag delta. Used by the touch overlay to push
-## per-event drag and by the mouse fallback below.
+## Adds to the accumulated drag delta. Called by touch_overlay on each
+## InputEventScreenDrag and by the mouse-fallback handler below.
 func add_camera_drag_delta(delta: Vector2) -> void:
 	camera_drag_delta += delta
 

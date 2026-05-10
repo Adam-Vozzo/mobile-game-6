@@ -14,10 +14,15 @@ instrumented and tunable.
 
 ## Active iteration
 
-- Branch: `claude/gifted-shannon-tfUYS`
-- Focus: iter 9. Level design references research note (primary) + camera_rig
-  `_process()` refactor (side quest). Hard throttle (9 iterations since human
-  direction). **Items 1–4 still blocked on human on-device action.**
+- Branch: `claude/gifted-shannon-f29MG`
+- Focus: iter 24. `_test_move_dir_rotation` (8 assertions: Basis(UP,yaw) formula
+  at 4 yaw values, length preservation, Y=0 invariant, over-length guard) +
+  `_test_gravity_band_selection` (12 assertions: 4 band-selection rules × 3 profiles)
+  → ~137 → ~157 total assertions. Side quest: `docs/research/assist_mechanics.md`
+  — Godot 4 implementation approaches for Assisted profile (ledge magnetism,
+  arc assist, sticky landing, edge-snap; 6 new ControllerProfile properties;
+  implementation order). Hard throttle (24 iterations since human direction).
+  **Items 1–4 still blocked on human on-device action.**
 
 ## Queue (ranked, top is next)
 
@@ -107,10 +112,16 @@ The next iteration should pull from the top of this list. Items marked
   `docs/research/godot_mobile_perf.md` — TBDR architecture, draw call /
   triangle budgets, ASTC, baked lighting rationale, Jolt profiling tips.
   Implications logged there; 8 concrete "Implications for Project Void."
-- Research a "ghost trail" prototype (point-based polyline that fades)
-  for the Gate 1 attempt-replay overlay. Don't ship; just sketch.
-- Investigate Godot's Compatibility renderer fallback for very-low-end
-  devices. Don't switch; just measure.
+- ~~**Ghost trail prototype research.**~~ Done (iter 10).
+  `docs/research/ghost_trail_prototype.md` — SMB trail design intent, four Godot 4
+  options (MultiMesh recommended, 1 draw call, 300 instances), GDScript sketch for
+  `game.gd` recorder + `GhostTrailRenderer`, alpha-by-recency formula, 6 implications.
+  Gate 1 implementation task: wire `Game.player_respawned` → recorder, add
+  `GhostTrailRenderer` to the vertical slice level.
+- ~~Investigate Godot's Compatibility renderer fallback for very-low-end
+  devices.~~ Done (iter 23). `docs/research/compatibility_renderer.md` —
+  no switch needed; Compatibility APK is viable at Gate 2+ as a second
+  export preset, zero code changes required.
 - Investigate signing-key handling via gradle env vars so a future
   Play Store build doesn't require touching the editor settings.
 - Consider upgrading camera occlusion from point ray to ShapeCast3D
@@ -131,6 +142,156 @@ These mirror "Open questions waiting on you" in the README.
   feel issues. Those notes drive iteration 2's tuning pass.
 
 ## Recently completed (last 5)
+
+- 2026-05-10 — Iteration 24. `_test_move_dir_rotation` (8 assertions) +
+  `_test_gravity_band_selection` (12 assertions = 4 rules × 3 profiles) added to
+  `tests/test_controller_kinematics.gd`. Covers: Basis(UP,yaw) formula at yaw=0,
+  PI, PI/2; length preservation (orthogonal rotation invariant); Y=0 invariant;
+  over-length guard; gravity band selection (falling → after_apex, rising+held →
+  rising, rising+released → falling, apex frame → after_apex). ~137 → ~157 total.
+  Side quest: `docs/research/assist_mechanics.md` — concrete Godot 4 implementation
+  for ledge magnetism (ShapeCast at jump time, 2 rays), arc assist (20-step parabola
+  simulation), sticky landing (2-frame speed reduction), edge-snap (post-slide
+  position correction); 6 new ControllerProfile properties (all default 0 = off);
+  implementation order; `_landed_this_frame` shared tracker proposal. INDEX.md updated.
+
+- 2026-05-10 — Iteration 23. `_test_camera_yaw_recenter` (9 assertions) added
+  to `tests/test_controller_kinematics.gd`. Covers: `wrapf` shortest-path
+  rotation (175°→-175° = +10° not -350°; reverse = -10° not +350°), default
+  lerp weight plausibility (>0, <0.1), no-overshoot guarantee (step < diff),
+  high-speed weight clamp to 1.0, 30-frame convergence monotonicity, and >50%
+  progress after 30 frames. ~128 → ~137 assertions.
+  Side quest: `docs/research/compatibility_renderer.md` — Mobile vs Compatibility
+  feature matrix (all Void features present in Compatibility), per-GPU-tier
+  performance expectations (Adreno 506: +20-40%; Adreno 710: -5-15%), visual
+  delta analysis (minimal in brutalist-fog aesthetic), recommendation (no switch;
+  low-end APK preset viable at Gate 2+). P2 open item closed. INDEX.md updated.
+
+- 2026-05-10 — Iteration 22. Camera pitch V-turn bug fixed: `absf(_pitch)` →
+  `-_pitch` in `camera_rig.gd::_desired_camera_position`; clamp upper bound
+  changed from `deg_to_rad(absf(pitch_max_degrees))` to `0.0` in
+  `_apply_drag_input`. `_pitch` is now always ≤ 0 (camera above horizontal);
+  V-shape on upward drag (~128 px to reach 0-crossing at default sensitivity)
+  eliminated. Side quest: `_test_camera_pitch_formula` (5 assertions) added to
+  `tests/test_controller_kinematics.gd` — documents monotonic elevation invariant.
+  DECISIONS.md entry added. ~123 → ~128 assertions.
+
+- 2026-05-10 — Iteration 21. Camera math unit tests: `_test_camera_vertical_pull`
+  (6 assertions — rising/stopped→0, falling magnitude, zero-pull, terminal swing),
+  `_test_camera_occlude_math` (6 assertions — typical hit, close clamp, margin=hit,
+  zero margin, large margin, loop invariant), `_test_camera_lookahead_target`
+  (5 assertions — below/above min_speed, diagonal direction, lerp weight clamp).
+  +17 assertions total: ~106 → ~123. No behaviour change.
+  Side quest: camera pitch V-turn issue added to refactor backlog — `absf(_pitch)`
+  in `_desired_camera_position` creates a V-shape when `_pitch` crosses 0 via
+  upward drag; reaches 0-crossing in ~128 px of drag at default sensitivity.
+
+- 2026-05-10 — Iteration 20. Test suite expansion: `_test_horizontal_interpolation`,
+  `_test_coyote_countdown`, and `_test_buffer_countdown` now loop over all three
+  shipped profiles (was Snappy-only, matching iter 11's expansion of jump_cut and
+  terminal_velocity). Net +20 assertions: +6 (interpolation, 3 assertions × 3
+  profiles), +8 (coyote, 4 assertions × 3 profiles), +6 (buffer, 3 assertions ×
+  3 profiles). Total: ~86 → ~106. No behaviour change.
+  Side quest: `docs/research/touch_dead_zone_calibration.md` — truncating vs.
+  remapping dead zones (formulae), Genshin observations (8–10% inner DZ, 90–95%
+  outer DZ, safety band), Sky/Alto notes, HCI sizing guidance. 5 implications:
+  current 15% truncating DZ is correct for Gate 0; Floaty may need remapping;
+  outer DZ at 93% for sprint ergonomics; camera safety band; DZ belongs in
+  touch_overlay not ControllerProfile. INDEX.md updated; Genshin open item closed.
+
+- 2026-05-10 — Iteration 19. `dev_menu_overlay.gd::_build_controller_section` refactor:
+  extracted `_build_controller_movement` (13 lines), `_build_controller_jump` (19 lines),
+  `_build_controller_respawn` (7 lines), `_build_controller_slope` (5 lines). Dispatcher
+  is now 7 lines. Every method in the file is under 40 lines. No behaviour change.
+  Side quest: `_test_movement_params()` in `tests/test_controller_kinematics.gd` — 10
+  new assertions: `ground_deceleration > 0` and `air_acceleration > 0` per profile;
+  speed ordering (Momentum > Snappy, Floaty < Snappy); Momentum zero air-damping;
+  Momentum loose-decel (decel < accel). Total assertions: ~76 → ~86.
+
+- 2026-05-10 — Iteration 18. Touch slider display fix + respawn param tests:
+  `TouchOverlay._ready()` adds itself to group `"touch_overlay"`.
+  `DevMenuOverlay._build_touch_section()` queries that group to read actual
+  `jump_button_radius` / `stick_zone_ratio` values as `initial_value` rather
+  than hardcoded defaults. Closes refactor backlog item "Touch slider display
+  doesn't reflect loaded layout." Side quest: `_test_respawn_params()` in
+  `tests/test_controller_kinematics.gd` — reboot_duration range (0, 1.5],
+  fall_kill_y sign/range, phase-fraction sum (0.12+0.35+0.35+0.18=1.0).
+  +13 assertions, ~76 total. DECISIONS.md updated.
+
+- 2026-05-09 — Iteration 17. `dev_menu_overlay.gd` silent-init fix + holistic level design research:
+  `_make_slider` gets `initial_value: float = NAN` param — value is set before callbacks connect,
+  so the slider's on_changed is never fired during init. `_make_cam_slider` passes `default_val`
+  as `initial_value` (no post-return `.value =`). `_build_touch_section` and `_build_level_section`
+  likewise. Touch layout persistence (user://input.cfg) now works correctly for returning users —
+  previously the dev menu init overwrote loaded values silently on every startup.
+  Side quest: `docs/research/holistic_level_design.md` — Steve Lee GDC 2017 holistic three
+  dimensions + GMTK Kishōtenketsu 4-beat arc (Ki/Shō/Ten/Ketsu, ~5 min arc, discard after
+  ketsu) + Odyssey density-over-span (compressed verticality, apex always visible). 6 implications
+  for Gate 1. INDEX.md updated; open research items for Steve Lee and GMTK marked done.
+  PLAN.md refactor backlog: "touch slider display doesn't reflect loaded layout value" added.
+
+- 2026-05-09 — Iteration 16. Camera dev-menu tunables + debug draw perf (primary/side):
+  6 camera `@export` params wired to new "Camera — Tuning" dev-menu sub-section
+  (`aim_height`, `lookahead_lerp`, `lookahead_min_speed`, `pitch_min/max_degrees`,
+  `recenter_min_speed`); `camera_rig.gd::_on_camera_param_changed` gains 6 match arms.
+  `player_debug_draw.gd`: `_viz_active: bool` cached via `DevMenu.debug_viz_changed`
+  signal; `_process` now returns early after `clear_surfaces()` when all overlays off,
+  skipping the scene-tree group search. Hard throttle (16 iterations).
+
+- 2026-05-09 — Iteration 15. `player.gd` respawn timer bug fix + slope tunable (primary):
+  `respawn()` zeroes `_buffer_timer` and `_coyote_timer` before the reboot sequence —
+  timers don't tick while `_is_rebooting`, so a buffered jump press at death-time would
+  survive the full 0.5 s reboot and fire on the first frame back. `floor_max_angle` moved
+  to `_physics_process` top so it refreshes every tick; "Controller — Slope / Max floor°"
+  slider (20–70°) added to dev menu, registered in `_profile_sliders` for bulk-sync.
+  Side quest: `_test_slope_params()` added to kinematics tests — 7 assertions (in-range
+  check + floaty ≥ snappy accessibility invariant). ~56 → ~63 total assertions.
+
+- 2026-05-09 — Iteration 14. `dev_menu_overlay.gd` bug fix + refactor (primary):
+  Fixed `_on_save_confirmed` — after saving a profile, `OptionButton.selected = n` does
+  NOT emit `item_selected`, so `_current_profile` was never updated; added `_select_profile(name)`
+  at the end of `_on_save_confirmed` so subsequent slider edits affect the saved copy.
+  Extracted 6 UI layout magic numbers to named class constants (`_PANEL_W`, `_SCROLL_H`,
+  `_SECTION_SEP`, `_SL_LABEL_W`, `_SL_TRACK_W`, `_SL_TRACK_H`, `_SL_VAL_W`).
+  Side quest: Christopher Alexander research note (`docs/research/alexander_pattern_language.md`)
+  — parti pris, form synthesis, Pattern Language mapped to Void's level kit, 8 implications
+  including parti-per-beat discipline, ≥ 3 forces per beat, compression–release as primary
+  procession unit, structural (not decorative) landmarks, kit naming by pattern.
+
+- 2026-05-09 — Iteration 13. `player.gd::_spawn_sparks` method-size refactor (primary):
+  was 41 lines, now 15. Extracted `_build_spark_material` (10 lines), `_build_spark_mesh`
+  (16 lines), `_fade_and_free_spark` (7 lines). No behaviour change. `_run_reboot_effect`
+  (45 lines) remains in the backlog as "leave as-is" per sequential-await constraint.
+  Side quest: juice density research note (`docs/research/juice_density.md`) — Astro's
+  Playroom "layered receipt" model, SMB sparse-juice contrast, mobile haptics gap, draw-call
+  budget per juice type, Gate 1 priority ranking (landing squash first).
+
+- 2026-05-09 — Iteration 12. `touch_overlay.gd` method-size refactor (primary):
+  `_handle_repo_input` (62 lines) replaced with lean dispatcher + `_parse_repo_event`,
+  `_on_repo_press`, `_on_repo_move`, `_on_repo_release`. `_draw_reposition` (56 lines)
+  replaced with lean dispatcher + 7 draw helpers; font-size magic numbers promoted to
+  `_REPO_FONT_SM`/`_REPO_FONT_NM` constants. All methods now ≤ 15 lines. No behaviour
+  change. Side quest: `DRAW_CALL_BUDGET` in `perf_budget.gd` corrected from 200 to 50
+  (per `godot_mobile_perf.md` Gate 1 target). `over_budget()` now flags correctly.
+
+- 2026-05-09 — Iteration 11. `perf_budget.gd` frametime bug fix (primary):
+  `last_frametime_ms` was `1000.0 / Engine.get_frames_per_second()` (smoothed,
+  hides spikes) → `delta * 1000.0` (actual frame time, catches hitches). Dead code
+  removed: `touch_input.gd::set_camera_drag_delta` (never called; stale comment
+  claimed it was the touch overlay's entry point but overlay uses
+  `add_camera_drag_delta`). Side quest: kinematics tests expanded — `_test_jump_cut_math`
+  and `_test_terminal_velocity` now loop over all three profiles (was Snappy only);
+  ~40 → ~56 assertions total.
+
+- 2026-05-09 — Iteration 10. `player.gd::_physics_process` refactor (primary):
+  79 → 22 lines. Extracted 8 private sub-routines (`_tick_timers`, `_collect_jump_input`,
+  `_was_jump_released`, `_camera_relative_move_dir`, `_apply_horizontal`, `_apply_gravity`,
+  `_try_jump`, `_cut_jump`). No behaviour change — pure structural refactor; every
+  sub-routine is under 40 lines. `_run_reboot_effect` (44 lines, await-chained) noted in
+  refactor backlog. Side quest: ghost trail prototype research note
+  (`docs/research/ghost_trail_prototype.md`) — SMB trail design, MultiMesh approach sketch,
+  GDScript recorder + renderer sketch, 6 implications. INDEX.md updated.
+  **Throttle: HARD (10 iterations).**
 
 - 2026-05-09 — Iteration 9. Level design references research note (primary):
   `docs/research/level_design_references.md` — SMB grammar (short focused rooms,
@@ -243,8 +404,27 @@ These mirror "Open questions waiting on you" in the README.
 
 ## Refactor backlog
 
+- ~~**Touch slider display doesn't reflect loaded layout.**~~ Done (iter 18).
+  `TouchOverlay` now adds itself to the `"touch_overlay"` group; `_build_touch_section`
+  queries that group for actual values. DECISIONS.md updated.
+- ~~**`_build_controller_section` over 40 lines.**~~ Done (iter 19). Extracted 4
+  sub-builders; dispatcher now 7 lines. No behaviour change.
+- `perf_budget.gd::active_particles` is never updated — always 0. The `over_budget()`
+  check includes `active_particles > ACTIVE_PARTICLES_BUDGET` which is always false.
+  Current spark system uses `ImmediateMesh` (not `GPUParticles3D`) so there's no
+  built-in counter. Fix options: (a) expose a `register_particles(n)` /
+  `unregister_particles(n)` public API and call from any particle-emitting code, or
+  (b) enumerate `GPUParticles3D` nodes in-scene and sum `amount`. Either requires a
+  concrete particle system to test against — defer to Gate 1 when `GPUParticles3D`
+  nodes are added.
 - Momentum profile speed ramp: add `speed_ramp_rate` + `ramp_max_speed`
   to `ControllerProfile`, add `_ramp_speed: float` to `player.gd`. Hold
   until after first on-device feel of current Momentum approximation.
 - Camera occlusion upgrade to ShapeCast3D if point-ray poke-through
   observed in Gate 1 geometry.
+- `player.gd::_run_reboot_effect` is 44 lines (just over threshold). The
+  sequential `await` beats make sub-method extraction awkward in GDScript
+  without coroutine indirection. Leave as-is; revisit if it grows further.
+- ~~**Camera pitch manual override V-turn.**~~ Fixed (iter 22). Clamp upper
+  bound → 0.0; `absf(_pitch)` → `-_pitch` in `_desired_camera_position`.
+  DECISIONS.md entry logged.

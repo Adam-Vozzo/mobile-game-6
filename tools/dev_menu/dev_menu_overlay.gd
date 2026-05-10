@@ -130,6 +130,13 @@ func _build_profile_section(vbox: VBoxContainer) -> void:
 
 func _build_controller_section(vbox: VBoxContainer) -> void:
 	vbox.add_child(_make_sep())
+	_build_controller_movement(vbox)
+	_build_controller_jump(vbox)
+	_build_controller_respawn(vbox)
+	_build_controller_slope(vbox)
+
+
+func _build_controller_movement(vbox: VBoxContainer) -> void:
 	vbox.add_child(_make_label("Controller — Movement", SECTION_FONT_SIZE, true))
 	_profile_sliders[&"max_speed"] = _make_profile_slider(vbox,
 		"Max speed",          2.0,   20.0,  0.1,  &"max_speed")
@@ -142,6 +149,9 @@ func _build_controller_section(vbox: VBoxContainer) -> void:
 	_profile_sliders[&"air_horizontal_damping"] = _make_profile_slider(vbox,
 		"Air damping",        0.0,    5.0,  0.05, &"air_horizontal_damping")
 
+
+
+func _build_controller_jump(vbox: VBoxContainer) -> void:
 	vbox.add_child(_make_label("Controller — Jump", SECTION_FONT_SIZE, true))
 	_profile_sliders[&"jump_velocity"] = _make_profile_slider(vbox,
 		"Jump velocity",      4.0,   20.0,  0.1,  &"jump_velocity")
@@ -160,11 +170,20 @@ func _build_controller_section(vbox: VBoxContainer) -> void:
 	_profile_sliders[&"release_velocity_ratio"] = _make_profile_slider(vbox,
 		"Release ratio",      0.1,    1.0,  0.01, &"release_velocity_ratio")
 
+
+
+func _build_controller_respawn(vbox: VBoxContainer) -> void:
 	vbox.add_child(_make_label("Controller — Respawn", SECTION_FONT_SIZE, true))
 	_profile_sliders[&"reboot_duration"] = _make_profile_slider(vbox,
 		"Reboot dur (s)",     0.05,   1.5,  0.05, &"reboot_duration")
 	_profile_sliders[&"fall_kill_y"] = _make_profile_slider(vbox,
 		"Fall kill Y",      -200.0,   0.0,  0.5,  &"fall_kill_y")
+
+
+func _build_controller_slope(vbox: VBoxContainer) -> void:
+	vbox.add_child(_make_label("Controller — Slope", SECTION_FONT_SIZE, true))
+	_profile_sliders[&"max_floor_angle_degrees"] = _make_profile_slider(vbox,
+		"Max floor°",         20.0,  70.0,  1.0,  &"max_floor_angle_degrees")
 
 
 func _build_camera_section(vbox: VBoxContainer) -> void:
@@ -177,6 +196,12 @@ func _build_camera_section(vbox: VBoxContainer) -> void:
 	_make_cam_slider(vbox, "Pitch sens",      &"pitch_drag_sens",    0.001,  0.05, 0.001, 0.003)
 	_make_cam_slider(vbox, "Occl. margin",    &"occlusion_margin",   0.1,    1.0,  0.05,  0.3)
 
+	vbox.add_child(_make_label("Camera — Tuning", SECTION_FONT_SIZE, true))
+	_make_cam_slider(vbox, "Aim height",      &"aim_height",          0.0,   3.0,  0.05,  0.6)
+	_make_cam_slider(vbox, "Pitch min deg",   &"pitch_min_degrees",  -89.0,  0.0,  1.0,  -55.0)
+	_make_cam_slider(vbox, "Pitch max deg",   &"pitch_max_degrees",   0.0,  89.0,  1.0,   55.0)
+	# Lookahead / recenter sliders removed — tripod camera doesn't use them.
+
 
 func _build_level_section(vbox: VBoxContainer) -> void:
 	vbox.add_child(_make_sep())
@@ -185,8 +210,8 @@ func _build_level_section(vbox: VBoxContainer) -> void:
 		0.25, 2.0, 0.05,
 		func(v: float) -> void:
 			Engine.time_scale = v
-			DevMenu.time_scale_changed.emit(v))
-	_slider_time_scale.value = 1.0
+			DevMenu.time_scale_changed.emit(v),
+		1.0)
 
 
 func _build_touch_section(vbox: VBoxContainer) -> void:
@@ -194,14 +219,26 @@ func _build_touch_section(vbox: VBoxContainer) -> void:
 	vbox.add_child(_make_label("Touch Controls", SECTION_FONT_SIZE, true))
 	_make_button(vbox, "Reposition controls…",
 		func() -> void: DevMenu.reposition_controls_requested.emit())
+	# Read actual loaded values from the touch overlay rather than using
+	# hardcoded defaults. DevMenuOverlay._ready() is triggered via
+	# DevMenu.call_deferred("_install_overlay"), so the full scene tree —
+	# including TouchOverlay._ready() → _load_layout() — has completed
+	# before this runs. Falls back to @export defaults if no overlay is
+	# found (e.g. editor scenes without touch UI).
+	var jump_radius := 95.0
+	var stick_zone  := 0.5
+	var touch_nodes := get_tree().get_nodes_in_group(&"touch_overlay")
+	if not touch_nodes.is_empty():
+		jump_radius = float(touch_nodes[0].get(&"jump_button_radius"))
+		stick_zone  = float(touch_nodes[0].get(&"stick_zone_ratio"))
 	_make_slider(vbox, "Jump radius",
 		40.0, 200.0, 1.0,
-		func(v: float) -> void: DevMenu.touch_param_changed.emit(&"jump_radius", v)
-	).value = 115.0
+		func(v: float) -> void: DevMenu.touch_param_changed.emit(&"jump_radius", v),
+		jump_radius)
 	_make_slider(vbox, "Stick zone %",
 		0.30, 0.70, 0.01,
-		func(v: float) -> void: DevMenu.touch_param_changed.emit(&"stick_zone_ratio", v)
-	).value = 0.5
+		func(v: float) -> void: DevMenu.touch_param_changed.emit(&"stick_zone_ratio", v),
+		stick_zone)
 
 
 func _build_juice_section(vbox: VBoxContainer) -> void:
@@ -292,9 +329,10 @@ func _make_button(parent: Node, label_text: String, callback: Callable) -> Butto
 	return btn
 
 
+## Pass initial_value to show a start value without firing on_changed.
 func _make_slider(parent: Node, label_text: String,
 		mn: float, mx: float, step: float,
-		on_changed: Callable) -> HSlider:
+		on_changed: Callable, initial_value: float = NAN) -> HSlider:
 	var row := HBoxContainer.new()
 	row.add_theme_constant_override("separation", 18)
 	parent.add_child(row)
@@ -315,6 +353,10 @@ func _make_slider(parent: Node, label_text: String,
 	# itself stays default-sized but anywhere on the row registers.
 	slider.custom_minimum_size = Vector2(320, 64)
 	row.add_child(slider)
+
+	# Set before connecting so value_changed fires with no listeners → silent.
+	if not is_nan(initial_value):
+		slider.value = initial_value
 
 	var val_label := Label.new()
 	val_label.custom_minimum_size = Vector2(110, 64)
@@ -341,15 +383,12 @@ func _make_profile_slider(parent: Node, label_text: String,
 				DevMenu.controller_param_changed.emit(prop, v))
 
 
-## Camera-param slider: fires DevMenu.camera_param_changed and sets an initial value.
+## Camera-param slider: silent init (camera rig uses its own @export defaults).
 func _make_cam_slider(parent: Node, label_text: String, param: StringName,
 		mn: float, mx: float, step: float, default_val: float) -> HSlider:
-	var slider := _make_slider(parent, label_text, mn, mx, step,
-		func(v: float) -> void: DevMenu.camera_param_changed.emit(param, v))
-	# Set value after connecting; value_changed updates the display label and
-	# broadcasts the initial default to the camera rig if it's already live.
-	slider.value = default_val
-	return slider
+	return _make_slider(parent, label_text, mn, mx, step,
+		func(v: float) -> void: DevMenu.camera_param_changed.emit(param, v),
+		default_val)
 
 
 func _make_viz_checkbox(parent: Node, label_text: String, key: StringName) -> void:
@@ -425,6 +464,10 @@ func _on_save_confirmed() -> void:
 	# Persist to user://profiles/ so it survives the session.
 	DirAccess.make_dir_recursive_absolute("user://profiles")
 	ResourceSaver.save(new_p, "user://profiles/" + profile_name + ".tres")
+	# Switch to the saved copy so subsequent slider edits affect it, not the
+	# original. OptionButton.selected = n does NOT emit item_selected, so we
+	# must call _select_profile explicitly.
+	_select_profile(profile_name)
 
 
 # ---- profile logic ----------------------------------------------------------

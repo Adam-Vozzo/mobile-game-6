@@ -9,7 +9,7 @@ extends Node
 const TARGET_FPS := 60
 const FRAMETIME_BUDGET_MS := 9.0
 const TRIANGLE_BUDGET := 80_000
-const DRAW_CALL_BUDGET := 200
+const DRAW_CALL_BUDGET := 50    # research target: ≤ 50 at Gate 1 (godot_mobile_perf.md)
 const ACTIVE_PARTICLES_BUDGET := 256
 
 var triangles_in_frame: int = 0
@@ -22,8 +22,10 @@ func _ready() -> void:
 	process_mode = Node.PROCESS_MODE_ALWAYS
 
 
-func _process(_delta: float) -> void:
-	last_frametime_ms = 1000.0 / max(1.0, Engine.get_frames_per_second())
+func _process(delta: float) -> void:
+	# Use actual frame delta so spike frames (e.g. 25 ms hitches) show up
+	# correctly rather than being smoothed away by Engine.get_frames_per_second().
+	last_frametime_ms = delta * 1000.0
 	triangles_in_frame = int(RenderingServer.get_rendering_info(
 		RenderingServer.RENDERING_INFO_TOTAL_PRIMITIVES_IN_FRAME))
 	draw_calls_in_frame = int(RenderingServer.get_rendering_info(

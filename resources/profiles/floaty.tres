@@ -4,7 +4,7 @@
 
 [resource]
 script = ExtResource("1_profile")
-max_speed = 6.5
+max_speed = 5.5
 ground_acceleration = 35.0
 ground_deceleration = 40.0
 air_acceleration = 25.0

@@ -45,8 +45,11 @@ class_name CameraRig
 
 var _target: Node3D
 var _initialized: bool = false
-# Working pitch in radians, negative = looking down. Initialised from
-# `pitch_degrees` and updated by manual drag.
+# Working pitch in radians, always ≤ 0 (0 = horizontal, negative = camera
+# above player). Negated to get the elevation angle. Initialised from
+# `pitch_degrees`; updated by manual drag. Kept ≤ 0 to avoid the V-shape
+# the old `absf(_pitch)` formula produced as drag crossed horizontal
+# (see iter 22 in main).
 var _pitch_rad: float = 0.0
 
 @onready var _camera: Camera3D = $Camera
@@ -82,7 +85,10 @@ func _process(_delta: float) -> void:
 		cam_pos.x += dir.x * dist_error
 		cam_pos.z += dir.z * dist_error
 	var fall_offset := _vertical_pull_offset(_get_target_velocity().y)
-	cam_pos.y = target_pos.y + sin(absf(_pitch_rad)) * distance + aim_height + fall_offset
+	# `_pitch_rad` is ≤ 0; -_pitch_rad is the elevation angle. Using `absf`
+	# would V-shape as the drag crosses horizontal — see iter 22 fix on main.
+	var elevation := -_pitch_rad
+	cam_pos.y = target_pos.y + sin(elevation) * distance + aim_height + fall_offset
 
 	_camera.global_position = _occlude(aim_point, cam_pos)
 	_camera.look_at(aim_point, Vector3.UP)
@@ -99,10 +105,11 @@ func _process(_delta: float) -> void:
 
 
 func _place_camera_initial(target_pos: Vector3) -> void:
+	var elevation := -_pitch_rad
 	_camera.global_position = target_pos + Vector3(
 		0.0,
-		sin(absf(_pitch_rad)) * distance + aim_height,
-		cos(absf(_pitch_rad)) * distance,
+		sin(elevation) * distance + aim_height,
+		cos(elevation) * distance,
 	)
 
 
@@ -121,12 +128,15 @@ func _apply_drag_input(target_pos: Vector3) -> void:
 	var theta := atan2(to_cam.x, to_cam.z)
 	var phi := asin(clampf(to_cam.y / radius, -1.0, 1.0))
 	theta -= drag.x * yaw_drag_sens
+	# Upper bound clamped to pitch_max (camera at horizontal); lower bound is
+	# 0 so the camera never drops below the player. _pitch_rad therefore stays
+	# ≤ 0, which is what the V-turn fix relies on.
 	phi = clampf(
 		phi - drag.y * pitch_drag_sens,
-		deg_to_rad(pitch_min_degrees),
+		0.0,
 		deg_to_rad(pitch_max_degrees),
 	)
-	_pitch_rad = -phi  # negative = looking down
+	_pitch_rad = -phi
 	var cos_phi := cos(phi)
 	_camera.global_position = target_pos + Vector3(
 		radius * cos_phi * sin(theta),
@@ -187,6 +197,12 @@ func _on_camera_param_changed(param_name: StringName, value: float) -> void:
 			vertical_pull = value
 		&"occlusion_margin":
 			occlusion_margin = value
+		&"aim_height":
+			aim_height = value
+		&"pitch_min_degrees":
+			pitch_min_degrees = value
+		&"pitch_max_degrees":
+			pitch_max_degrees = value
 		# Lookahead and auto-recenter sliders are no-ops in the tripod model.
 		_:
 			pass

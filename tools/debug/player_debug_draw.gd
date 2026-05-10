@@ -25,6 +25,9 @@ const _C_ARC     := Color(1.0, 0.45, 0.1)
 
 var _imesh: ImmediateMesh
 var _player: Player
+# Cached OR of all four viz flags — updated via signal rather than 4 dict
+# lookups per frame. Avoids the scene-tree group search when all overlays off.
+var _viz_active: bool = false
 
 
 func _ready() -> void:
@@ -37,18 +40,30 @@ func _ready() -> void:
 	mi.mesh = _imesh
 	mi.material_override = mat
 	add_child(mi)
+	if has_node("/root/DevMenu"):
+		DevMenu.debug_viz_changed.connect(_on_viz_changed)
+	_refresh_viz_active()
+
+
+func _refresh_viz_active() -> void:
+	_viz_active = (
+		DevMenu.is_debug_viz_on(&"collision_capsule") or
+		DevMenu.is_debug_viz_on(&"velocity_arrow") or
+		DevMenu.is_debug_viz_on(&"ground_normal") or
+		DevMenu.is_debug_viz_on(&"jump_arc"))
+
+
+func _on_viz_changed(_key: StringName, _enabled: bool) -> void:
+	_refresh_viz_active()
 
 
 func _process(_delta: float) -> void:
+	_imesh.clear_surfaces()
+	if not _viz_active:
+		return
 	if _player == null or not is_instance_valid(_player):
 		_find_player()
-	_imesh.clear_surfaces()
 	if _player == null:
-		return
-	if not (DevMenu.is_debug_viz_on(&"collision_capsule") or
-			DevMenu.is_debug_viz_on(&"velocity_arrow") or
-			DevMenu.is_debug_viz_on(&"ground_normal") or
-			DevMenu.is_debug_viz_on(&"jump_arc")):
 		return
 	_imesh.surface_begin(Mesh.PRIMITIVE_LINES)
 	var origin := _player.global_position
