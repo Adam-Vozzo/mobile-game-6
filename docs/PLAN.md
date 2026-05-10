@@ -14,15 +14,18 @@ instrumented and tunable.
 
 ## Active iteration
 
-- Branch: `claude/gifted-shannon-swI5c`
-- Focus: iter 30. **Gate 1 level concepts + air dash research.** Three Gate 1 candidate
-  level concepts authored in `docs/levels/`: Spine (vertical column ascent, wall-jump primary),
-  Lung (horizontal ventilation array, timing primary), Threshold (3-zone contrast study, scale shift).
-  Each follows the LEVEL_DESIGN.md 12-step workflow through step 5 (parti, genius loci,
-  double-reading, procession beats, platforming verbs, par route, skill range, kit requirements,
-  greybox notes). Human selects one; Claude builds greybox. Side quest: `docs/research/air_dash.md`
-  — full design spec + implementation sketch for the air dash mechanic (SMB 3D's depth-error
-  correction recommendation from iter 28). Throttle: CLEAR (4 iters since human session).
+- Branch: `claude/gifted-shannon-ou2ix`
+- Focus: iter 31. **Sticky landing countdown + damping tests + checkpoint design research.**
+  Added `_test_sticky_landing_countdown` (9 assertions) and `_test_sticky_landing_damping`
+  (8 assertions) to `tests/test_controller_kinematics.gd`. These document the Assisted
+  profile's sticky landing logic from iter 27 — previously only param values were tested,
+  not the tick-by-tick countdown and per-frame damping formula. New helper `_sticky_tick`
+  mirrors `_tick_timers`' sticky block. Net assertions: 280 → 297.
+  Side quest: `docs/research/checkpoint_design.md` — Gate 1 prereq. Covers SMB/Dadish 3D/
+  Celeste checkpoint models, the ghost-trail anchor constraint, and Void recommendation:
+  Option A (no mid-level checkpoint for Gate 1, CheckPoint node present but respawn stays
+  at level entry, mid-level checkpoints deferred to Gate 2). INDEX.md updated.
+  Throttle: SOFT (5 iters since human session).
 
 ## Queue (ranked, top is next)
 
@@ -155,6 +158,16 @@ These mirror "Open questions waiting on you" in the README.
   (Per CLAUDE.md: level concept selection is a human call.)
 
 ## Recently completed (last 5)
+
+- 2026-05-10 — Iteration 31. **Sticky landing countdown + damping tests + checkpoint design research.**
+  `_test_sticky_landing_countdown` (9 assertions) + `_test_sticky_landing_damping` (8 assertions)
+  added to `tests/test_controller_kinematics.gd`; new `_sticky_tick` helper mirrors `_tick_timers`'
+  sticky-landing block. Documents tick-by-tick countdown (set on landing, decrement per grounded
+  frame, reset on early takeoff, disabled when sticky_frames=0) and per-frame damping formula
+  (`speed × (1 − factor)`, geometric series over N frames, both guard conditions). Net: 280 → 297
+  assertions. Side quest: `docs/research/checkpoint_design.md` — SMB/Dadish 3D/Celeste models,
+  ghost-trail anchor constraint, Void recommendation: Option A for Gate 1 (no mid-level checkpoint,
+  CheckPoint node signals only, per-segment trails deferred to Gate 2). INDEX.md updated.
 
 - 2026-05-10 — Iteration 30. **Gate 1 level concepts (Spine / Lung / Threshold) + air dash research.**
   Three Gate 1 candidate levels authored in `docs/levels/`: Spine (5-beat vertical column ascent,

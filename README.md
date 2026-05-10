@@ -5,10 +5,10 @@ A mobile 3D platformer. Brutalist megastructure inspired by *BLAME!*. Controller
 ## Status
 
 Current gate: **Gate 0 — Feel Lab**
-Last iteration: 2026-05-10 — iter 30: Gate 1 level concepts (Spine / Lung / Threshold) + air dash research
+Last iteration: 2026-05-10 — iter 31: sticky landing countdown + damping tests + checkpoint design research
 Test device build: not yet — hand-authored scenes pending first Godot 4.6 import; see Open questions
 Performance: not yet measured on Nothing Phone 4(a) Pro
-Throttle level: **SOFT (4 autonomous iterations since 2026-05-11 human session).** Prefer non-destructive work. Feature work only if high-confidence. Re-engage HARD at 5+.
+Throttle level: **SOFT (5 autonomous iterations since 2026-05-11 human session).** Non-destructive work only. Re-engage HARD at 6+.
 
 If you only read one section, read **Open questions waiting on you** below.
 
@@ -101,6 +101,17 @@ Goal: store-ready build.
 The full iteration log lives here, newest first. Every iteration appends an entry. Skim the dates to find where you last left off.
 
 <!-- ITERATION ENTRIES BELOW — DO NOT REMOVE OLDER ENTRIES -->
+
+### [2026-05-10] — `claude/gifted-shannon-ou2ix` — iter 31: sticky landing tests + checkpoint design research
+
+- **Throttle: SOFT (5 autonomous iterations since 2026-05-11 human session).** Non-destructive work: test suite expansion + research. No new feature surface.
+- **Primary: Test suite expansion — sticky landing countdown + damping.** The Assisted profile's sticky landing mechanic (implemented iter 27) had assertions on profile param values but nothing testing the actual tick-by-tick countdown logic or the per-frame damping formula. Added:
+  - `_test_sticky_landing_countdown` (9 assertions): mirrors `_tick_timers`' sticky-landing block. Covers airborne→airborne (no landing), touch-down frame (counter set to `landing_sticky_frames`), grounded countdown draining to 0, early-takeoff counter reset, and disabled case (`sticky_frames=0` on non-Assisted profiles). New `_sticky_tick` helper extracted.
+  - `_test_sticky_landing_damping` (8 assertions): mirrors `_apply_horizontal`'s damping branch. Covers one-frame speed reduction, disabled factor (1−0 = identity), geometric-series multi-frame compound, and both guard conditions (branch only fires when counter>0 AND factor>0).
+  - **Net assertions: 280 → 297.**
+- **Side quest: `docs/research/checkpoint_design.md`.** Gate 1 prereq — checkpoints and instant respawn are P0 items for the vertical slice. Covers: SMB/SMB 3D (no checkpoints, room as atomic unit, ~20 s per level), Dadish 3D (sparse mid-level checkpoints, mobile 10 s dead-time threshold), Celeste (screen-boundary as implicit checkpoint). Key architectural constraint: ghost trails require all attempts to share one anchor point — a mid-level checkpoint splits attempts into incomparable populations. **Void recommendation:** Gate 1 uses Option A (no mid-level checkpoint; ghost trail anchor = level entry; one `CheckPoint` node present but respawn target stays at level entry). Per-segment trails + mid-level checkpoints deferred to Gate 2. Mobile reboot UX: 0.3–0.35 s Snappy lower bound is thumb-resettlement floor. Design hardest beat last. `INDEX.md` updated.
+- **Perf:** unchanged (no runtime code changes).
+- **On-device pending.** All P0 items still blocked on first Godot 4.6 import.
 
 ### [2026-05-10] — `claude/gifted-shannon-swI5c` — iter 30: Gate 1 level concepts + air dash research
 

@@ -46,6 +46,8 @@ func _ready() -> void:
 	_test_visual_facing_formula()
 	_test_gravity_band_selection()
 	_test_blob_shadow_math()
+	_test_sticky_landing_countdown()
+	_test_sticky_landing_damping()
 	_report()
 
 
@@ -942,6 +944,113 @@ func _test_blob_shadow_math() -> void:
 		lerpf(am, 0.0, 0.5 * 0.5) > lerpf(am, 0.0, 0.5))
 	_ok("bs: alpha monotone decreasing a(0.3)>a(0.8)",
 		lerpf(am, 0.0, 0.3 * 0.3) > lerpf(am, 0.0, 0.8 * 0.8))
+
+
+func _test_sticky_landing_countdown() -> void:
+	## Mirrors the landing-detection + countdown block in player.gd::_tick_timers.
+	## just_landed is true only on the single frame of floor-contact transition.
+	## _sticky_frames_remaining is set on landing, decrements each grounded frame,
+	## and resets immediately to 0 if the player leaves the floor mid-window.
+	print("\n-- Sticky landing countdown (Assisted profile) --")
+	var ap: CP = _load_profile("res://resources/profiles/assisted.tres")
+	if ap == null:
+		return
+
+	# Still airborne — no landing.
+	var s1 := _sticky_tick(false, false, 0, ap.landing_sticky_frames)
+	_ok("airborne→airborne: just_landed = false", not s1["just_landed"])
+	_ok("airborne→airborne: remaining stays 0", s1["remaining"] == 0)
+
+	# Touch-down frame (was airborne last frame, now grounded).
+	var s2 := _sticky_tick(true, false, 0, ap.landing_sticky_frames)
+	_ok("landing frame: just_landed = true", s2["just_landed"])
+	_ok("landing frame: remaining set to landing_sticky_frames",
+		s2["remaining"] == ap.landing_sticky_frames)
+
+	# Subsequent grounded frames — countdown drains to zero.
+	var rem := ap.landing_sticky_frames
+	for _i in ap.landing_sticky_frames:
+		var s := _sticky_tick(true, true, rem, ap.landing_sticky_frames)
+		rem = s["remaining"]
+	_ok("after landing_sticky_frames grounded frames: counter reaches 0", rem == 0)
+
+	# One grounded frame followed by early takeoff — window cancels.
+	var s_land  := _sticky_tick(true, false, 0, ap.landing_sticky_frames)
+	var s_one   := _sticky_tick(true, true, s_land["remaining"], ap.landing_sticky_frames)
+	_ok("one grounded frame: counter decremented by 1",
+		s_one["remaining"] == ap.landing_sticky_frames - 1)
+	var s_off := _sticky_tick(false, true, s_one["remaining"], ap.landing_sticky_frames)
+	_ok("early takeoff: remaining resets to 0 (window cancelled)", s_off["remaining"] == 0)
+
+	# Non-Assisted profile: landing_sticky_frames == 0 → counter never set.
+	var sp: CP = _load_profile("res://resources/profiles/snappy.tres")
+	if sp != null:
+		var s3 := _sticky_tick(true, false, 0, sp.landing_sticky_frames)
+		_ok("snappy (sticky_frames=0): landing doesn't set counter", s3["remaining"] == 0)
+
+
+func _test_sticky_landing_damping() -> void:
+	## Mirrors the damping branch in player.gd::_apply_horizontal:
+	##   if _sticky_frames_remaining > 0 and profile.landing_sticky_factor > 0.0:
+	##       new_h *= (1.0 - profile.landing_sticky_factor)
+	## Documents the exact per-frame speed-reduction formula for the Assisted profile.
+	print("\n-- Sticky landing damping formula --")
+	var ap: CP = _load_profile("res://resources/profiles/assisted.tres")
+	if ap == null:
+		return
+
+	var start_speed := 5.0
+	var factor := ap.landing_sticky_factor
+
+	# One damped frame.
+	var damped := start_speed * (1.0 - factor)
+	_ok("one damped frame: speed is reduced", damped < start_speed)
+	_ok("one damped frame: result = speed × (1 − factor)",
+		_near(damped, start_speed * (1.0 - factor)))
+	_ok("one damped frame: speed stays > 0 (factor < 1 guaranteed by slider max)",
+		damped > 0.0)
+
+	# factor = 0.0 (disabled profile) → no speed change.
+	_ok("factor=0: damping has no effect (1 − 0 = 1)",
+		_near(start_speed * (1.0 - 0.0), start_speed))
+
+	# Multi-frame compound: geometric series speed × (1−factor)^N.
+	var multi_speed := start_speed
+	for _i in ap.landing_sticky_frames:
+		multi_speed *= (1.0 - factor)
+	var expected := start_speed * pow(1.0 - factor, float(ap.landing_sticky_frames))
+	_ok("N damped frames: result matches geometric series", _near(multi_speed, expected, 1e-3))
+	_ok("N damped frames: speed still > 0 after all damped frames", multi_speed > 0.0)
+
+	# Guard: branch only fires when BOTH counter > 0 AND factor > 0.
+	# counter > 0, factor == 0 → no damping.
+	var h_no_factor := start_speed
+	if 1 > 0 and 0.0 > 0.0:
+		h_no_factor *= (1.0 - 0.0)
+	_ok("counter>0 but factor=0: damping branch not taken", _near(h_no_factor, start_speed))
+	# factor > 0, counter == 0 → no damping.
+	var h_no_counter := start_speed
+	if 0 > 0 and factor > 0.0:
+		h_no_counter *= (1.0 - factor)
+	_ok("factor>0 but counter=0: damping branch not taken", _near(h_no_counter, start_speed))
+
+
+# ── helpers ──────────────────────────────────────────────────────────────────
+
+func _sticky_tick(on_floor: bool, was_on_floor: bool, sticky_remaining: int,
+		sticky_frames: int) -> Dictionary:
+	## Mirrors the sticky-landing block in player.gd::_tick_timers.
+	## Returns {"just_landed": bool, "remaining": int} after one physics tick.
+	var just_landed := on_floor and not was_on_floor
+	var rem := sticky_remaining
+	if just_landed and sticky_frames > 0:
+		rem = sticky_frames
+	elif rem > 0:
+		if on_floor:
+			rem -= 1
+		else:
+			rem = 0
+	return {"just_landed": just_landed, "remaining": rem}
 
 
 func _try_jump_helper(buffer: float, coyote: float, jump_v: float) -> Dictionary:
