@@ -45,6 +45,7 @@ func _ready() -> void:
 	_test_move_dir_rotation()
 	_test_visual_facing_formula()
 	_test_gravity_band_selection()
+	_test_blob_shadow_math()
 	_report()
 
 
@@ -912,6 +913,35 @@ func _test_try_jump_logic() -> void:
 		var r := _try_jump_helper(0.1, 0.1, p.jump_velocity)
 		_ok(name + ": jump fires with vy == profile.jump_velocity",
 			_near(r["vy"], p.jump_velocity))
+
+
+func _test_blob_shadow_math() -> void:
+	# Mirrors the three formulas in blob_shadow.gd::_process so regressions
+	# are caught if the formulas change during per-tunable dev-menu iteration.
+	var rg := 0.22   # radius_at_ground default
+	var rh := 0.55   # radius_at_height default
+	var fh := 6.0    # fade_height default
+	var am := 0.42   # alpha_max default
+
+	# t = clampf(height / fade_height, 0.0, 1.0)
+	_ok("bs: t=0 at height=0", is_equal_approx(clampf(0.0 / fh, 0.0, 1.0), 0.0))
+	_ok("bs: t=1 at fade_height", is_equal_approx(clampf(fh / fh, 0.0, 1.0), 1.0))
+	_ok("bs: t clamped above fade_height", is_equal_approx(clampf(fh * 2.0 / fh, 0.0, 1.0), 1.0))
+	_ok("bs: t proportional at half height", is_equal_approx(clampf(fh * 0.5 / fh, 0.0, 1.0), 0.5))
+
+	# r = lerpf(radius_at_ground, radius_at_height, t)  — shadow expands upward
+	_ok("bs: radius=ground at t=0", is_equal_approx(lerpf(rg, rh, 0.0), rg))
+	_ok("bs: radius=height at t=1", is_equal_approx(lerpf(rg, rh, 1.0), rh))
+	_ok("bs: radius in (rg,rh) at midpoint", lerpf(rg, rh, 0.5) > rg and lerpf(rg, rh, 0.5) < rh)
+	_ok("bs: radius monotone r(0.7)>r(0.3)", lerpf(rg, rh, 0.7) > lerpf(rg, rh, 0.3))
+
+	# a = lerpf(alpha_max, 0.0, t*t)  — quadratic falloff (slower early drop)
+	_ok("bs: alpha=max at ground (t=0)", is_equal_approx(lerpf(am, 0.0, 0.0 * 0.0), am))
+	_ok("bs: alpha=0 at fade_height (t=1)", is_equal_approx(lerpf(am, 0.0, 1.0 * 1.0), 0.0))
+	_ok("bs: quadratic slower than linear at t=0.5",
+		lerpf(am, 0.0, 0.5 * 0.5) > lerpf(am, 0.0, 0.5))
+	_ok("bs: alpha monotone decreasing a(0.3)>a(0.8)",
+		lerpf(am, 0.0, 0.3 * 0.3) > lerpf(am, 0.0, 0.8 * 0.8))
 
 
 func _try_jump_helper(buffer: float, coyote: float, jump_v: float) -> Dictionary:

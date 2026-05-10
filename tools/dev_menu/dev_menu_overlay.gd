@@ -265,6 +265,15 @@ func _build_juice_section(vbox: VBoxContainer) -> void:
 			DevMenu.juice_state[key],
 			func(pressed: bool) -> void: DevMenu.set_juice(captured_key, pressed))
 		_juice_boxes[key] = btn
+	_build_blob_shadow_tuning(vbox)
+
+
+func _build_blob_shadow_tuning(vbox: VBoxContainer) -> void:
+	vbox.add_child(_make_label("Blob Shadow — Tuning", SECTION_FONT_SIZE, false))
+	_make_blob_slider(vbox, "Radius ground",  &"radius_at_ground",  0.05, 1.0,  0.01, 0.22)
+	_make_blob_slider(vbox, "Radius height",  &"radius_at_height",  0.1,  2.0,  0.01, 0.55)
+	_make_blob_slider(vbox, "Fade height",    &"fade_height",        1.0,  20.0, 0.5,  6.0)
+	_make_blob_slider(vbox, "Max alpha",      &"alpha_max",          0.05, 1.0,  0.01, 0.42)
 
 
 func _build_debug_section(vbox: VBoxContainer) -> void:
@@ -398,6 +407,16 @@ func _make_cam_slider(parent: Node, label_text: String, param: StringName,
 		mn: float, mx: float, step: float, default_val: float) -> HSlider:
 	return _make_slider(parent, label_text, mn, mx, step,
 		func(v: float) -> void: DevMenu.camera_param_changed.emit(param, v),
+		default_val)
+
+
+## Blob-shadow-param slider: initial value matches @export_range defaults in
+## blob_shadow.gd — the slider and the Inspector are parallel entry points
+## for the same @export vars; the signal keeps them in sync at runtime.
+func _make_blob_slider(parent: Node, label_text: String, param: StringName,
+		mn: float, mx: float, step: float, default_val: float) -> void:
+	_make_slider(parent, label_text, mn, mx, step,
+		func(v: float) -> void: DevMenu.blob_shadow_param_changed.emit(param, v),
 		default_val)
 
 

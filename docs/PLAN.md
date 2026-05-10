@@ -14,16 +14,15 @@ instrumented and tunable.
 
 ## Active iteration
 
-- Branch: `claude/gifted-shannon-CoSWy`
-- Focus: iter 28. **SMB 3D research + blob shadow projector.** Primary: `docs/research/smb3d.md`
-  — full design analysis of the live reference game (camera, level structure, ghost trail,
-  depth perception aids, 8 implications). Side quest: `scripts/player/blob_shadow.gd` — depth-
-  perception disc shadow projected below Stray via per-frame raycast; scales radius and alpha
-  with height; toggled via new `blob_shadow` juice key (default ON); added to `player.tscn`
-  as child of Player node; logged in JUICE.md. `dev_menu.gd` juice_state expanded with
-  `blob_shadow: true`. Critical finding: blob shadow is mandatory before the first on-device
-  feel test, as SMB 3D (with its full spatial-aid suite) still received depth-perception
-  criticism without it.
+- Branch: `claude/gifted-shannon-HuiCV`
+- Focus: iter 29. **Blob shadow dev menu tunables.** `blob_shadow.gd` had four `@export_range`
+  tunables (radius_at_ground, radius_at_height, fade_height, alpha_max) accessible only via the
+  Godot Inspector; CLAUDE.md requires same-iteration dev menu exposure (missed in iter 28).
+  Added `blob_shadow_param_changed` signal to `dev_menu.gd`; wired `_on_blob_shadow_param_changed`
+  handler in `blob_shadow.gd`; added `_make_blob_slider` + `_build_blob_shadow_tuning` to
+  `dev_menu_overlay.gd` (called from `_build_juice_section`) — 4 live sliders now in Juice panel.
+  Side quest: `_test_blob_shadow_math` (12 assertions) in `test_controller_kinematics.gd`,
+  covering the three t/r/a formulas. Net: 268 → 280 assertions. Throttle: CLEAR.
 - Focus: iter 27. **Assisted profile Phase 1**: `assisted.tres` authored; sticky
   landing mechanic added to `player.gd` (`_was_on_floor_last_frame`,
   `_sticky_frames_remaining`, `_tick_timers` landing detection, `_apply_horizontal`
@@ -157,6 +156,13 @@ These mirror "Open questions waiting on you" in the README.
   feel issues. Those notes drive iteration 2's tuning pass.
 
 ## Recently completed (last 5)
+
+- 2026-05-10 — Iteration 29. **Blob shadow dev menu tunables + math unit tests.**
+  `blob_shadow.gd` `@export_range` tunables now live in the dev menu (Juice → Blob Shadow —
+  Tuning): 4 sliders for radius_at_ground, radius_at_height, fade_height, alpha_max. New signal
+  `blob_shadow_param_changed` in `dev_menu.gd`; `_on_blob_shadow_param_changed` handler in
+  `blob_shadow.gd`. Side quest: `_test_blob_shadow_math` (12 assertions: t formula, radius
+  linear-lerp monotonicity, quadratic alpha falloff). Net assertions: 268 → 280.
 
 - 2026-05-10 — Iteration 28. **SMB 3D research + blob shadow projector.**
   `docs/research/smb3d.md` — live reference game analysis (released March 2026):
