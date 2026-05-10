@@ -46,6 +46,19 @@ Suggested:
 - ~~Christopher Alexander on parti and pattern~~ Done (iter 14, `alexander_pattern_language.md`).
 - Deeper *BLAME!* volume-by-volume architectural analysis (each volume of the manga has a distinct spatial character worth mapping).
 
+## Checkpoint and respawn design
+
+- [`checkpoint_design.md`](checkpoint_design.md) — Gate 1 prereq. How SMB / SMB 3D (no
+  checkpoints, room-as-unit), Dadish 3D (sparse mid-level checkpoints, mobile tolerance
+  ~10 s dead time), and Celeste (screen-boundary as implicit checkpoint) handle checkpoints.
+  Key constraint: ghost trails require all replayed attempts to share one anchor point —
+  mid-level checkpoints break this unless per-segment trails are implemented (Gate 2 work).
+  **Void recommendation:** Gate 1 uses Option A (no mid-level checkpoint, level entry as
+  ghost-trail anchor, single `CheckPoint` node that signals but doesn't change respawn
+  target yet). Mid-level checkpoints + per-segment ghost trails deferred to Gate 2.
+  Mobile-specific reboot UX: 0.3–0.35 s for Snappy (thumb re-settle floor), 0.5 s for
+  Floaty/Assisted acceptable. Design hardest beat last to minimise restart-to-action time.
+
 ## Ghost trail / attempt-replay overlay
 
 - [`ghost_trail_prototype.md`](ghost_trail_prototype.md) — SMB ghost trail design (what it
