@@ -85,8 +85,10 @@ Suggested (still open):
 
 - [`godot_mobile_perf.md`](godot_mobile_perf.md) — Godot 4 Mobile renderer capabilities/limits, TBDR tile-based GPU architecture (Adreno/Mali), draw call and triangle budgets, ASTC texture notes, baked vs dynamic lighting tradeoffs, Jolt physics profiling tips, in-game profiling steps. Implications: bake lights before Gate 1; keep alpha-blended objects exceptional; target ≤ 50 draw calls at Gate 1; no MSAA; profile Jolt separately.
 
+- [`compatibility_renderer.md`](compatibility_renderer.md) — Feature comparison: Mobile (Vulkan) vs Compatibility (GLES3) for every feature Void uses. Key finding: all current Void features are present in Compatibility; visual delta is minimal given the brutalist-fog-darkness aesthetic. Performance: Compatibility is faster on Adreno 506-era hardware (20–40%), comparable or slower on modern Adreno 710 (test device). Recommendation: keep Mobile as primary; a secondary Compatibility export preset is viable at Gate 2+ for low-end Android market expansion, zero code changes required, just a second export preset.
+
 Suggested:
-- Godot Mobile renderer best practices.
+- ~~Godot's Compatibility renderer fallback for very-low-end devices.~~ Done (iter 23, `compatibility_renderer.md`).
 - Tile-based deferred mobile GPU costs (PowerVR/Mali/Adreno).
 
 ---

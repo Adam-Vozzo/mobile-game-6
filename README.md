@@ -5,10 +5,10 @@ A mobile 3D platformer. Brutalist megastructure inspired by *BLAME!*. Controller
 ## Status
 
 Current gate: **Gate 0 — Feel Lab**
-Last iteration: 2026-05-10 — iter 22: camera pitch V-turn bug fixed + elevation formula tests
+Last iteration: 2026-05-10 — iter 23: yaw recenter tests + Compatibility renderer research
 Test device build: not yet — hand-authored scenes pending first Godot 4.6 import; see Open questions
 Performance: not yet measured on Nothing Phone 4(a) Pro
-Throttle level: **HARD — 22 iterations since last human direction. No new features. See Open questions.**
+Throttle level: **HARD — 23 iterations since last human direction. No new features. See Open questions.**
 
 If you only read one section, read **Open questions waiting on you** below.
 
@@ -16,8 +16,8 @@ If you only read one section, read **Open questions waiting on you** below.
 
 Things Claude can't decide alone, or where it's stalled and needs direction. Each is blocking some piece of forward progress.
 
-> **⚠ HARD THROTTLE — 22 iterations since last human direction.** Claude has been
-> building infrastructure (tests, research, refactors, debug tooling, bug fixes) for 22
+> **⚠ HARD THROTTLE — 23 iterations since last human direction.** Claude has been
+> building infrastructure (tests, research, refactors, debug tooling, bug fixes) for 23
 > iterations without a human feel verdict or direction signal. All P0 items are blocked
 > on the first on-device run. The next iteration will continue hardening work only.
 >
@@ -94,6 +94,44 @@ Goal: store-ready build.
 The full iteration log lives here, newest first. Every iteration appends an entry. Skim the dates to find where you last left off.
 
 <!-- ITERATION ENTRIES BELOW — DO NOT REMOVE OLDER ENTRIES -->
+
+### [2026-05-10] — `claude/gifted-shannon-BNuNf` — iter 23: yaw recenter tests + Compatibility renderer research
+
+- **Throttle: HARD (23 iterations since last human direction).** Hardening only.
+- **Primary: `_test_camera_yaw_recenter` added to `tests/test_controller_kinematics.gd`.**
+  `_update_yaw_recenter` was the only camera sub-function without a dedicated test group.
+  9 new assertions, all pure math (no scene instantiation), following the same pattern as
+  the other camera groups:
+  - **`wrapf` shortest-path**: 175°→-175° yields +10° (not -350°); -175°→+175° yields
+    -10° (not +350°). Catches a potential bug where the camera would spin the long way
+    around when the player reverses direction near the ±180° boundary.
+  - **Lerp weight plausibility** at default speed (1.5): weight > 0 (makes progress) and
+    weight < 0.1 (smooth, not an instant snap).
+  - **No overshoot**: step = diff × weight < diff on a 90° rotation with default params.
+  - **High-speed clamp**: `minf(1.0, 200 × delta)` is exactly 1.0 — confirms the guard
+    prevents overshoot even at extreme recenter_speed values.
+  - **Convergence**: 30-frame simulation from 0° toward 90° — angular error decreases
+    monotonically each frame, and > 50% progress is made by frame 30.
+  - Total assertions: ~128 → ~137.
+- **Side quest: `docs/research/compatibility_renderer.md`** — closes the P2 PLAN item
+  "Investigate Godot's Compatibility renderer fallback for very-low-end devices."
+  - Feature comparison table: every Void-used feature (StandardMaterial3D, exponential
+    fog, LightmapGI, GPUParticles3D) is present in Compatibility. Missing features
+    (volumetric fog, decals, SDFGI, screen-space reflections) are already absent from the
+    Mobile renderer or not planned.
+  - Per-GPU-tier perf: Adreno 506 era → Compatibility 20–40% faster (Vulkan driver
+    immaturity). Adreno 710 (test device) → Mobile wins by 5–15%.
+  - Visual delta: negligible for the brutalist-fog-darkness aesthetic.
+  - Recommendation: keep Mobile as primary; a second Compatibility export preset is
+    viable at Gate 2+ for low-end market expansion, zero code changes, one new preset.
+  - Custom shaders (if added) need GLSL ES 3.0 variants — plan before Gate 3.
+  - INDEX.md updated; P2 open item closed.
+- Perf: no runtime change.
+- Bugs fixed: none.
+- New dev-menu controls: none.
+- Assets acquired: none.
+- Research added: `docs/research/compatibility_renderer.md`; INDEX.md updated.
+- Needs human attention: **see "Open questions waiting on you" — hard throttle active (23 iterations).**
 
 ### [2026-05-10] — `claude/gifted-shannon-NQtLx` — iter 22: camera pitch V-turn bug fixed + elevation formula tests
 

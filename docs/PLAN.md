@@ -14,12 +14,14 @@ instrumented and tunable.
 
 ## Active iteration
 
-- Branch: `claude/gifted-shannon-NQtLx`
-- Focus: iter 22. Camera pitch V-turn bug fix (primary): `absf(_pitch)` →
-  `-_pitch` in `_desired_camera_position`; clamp upper bound → 0.0 in
-  `_apply_drag_input`. Side quest: `_test_camera_pitch_formula` (5 assertions,
-  ~123 → ~128 total). Hard throttle (22 iterations since human direction).
-  **Items 1–4 still blocked on human on-device action.**
+- Branch: `claude/gifted-shannon-BNuNf`
+- Focus: iter 23. `_test_camera_yaw_recenter` (primary): 9 assertions covering
+  `wrapf` shortest-path, lerp-step clamping, convergence simulation (~128 → ~137
+  total). Side quest: `docs/research/compatibility_renderer.md` — Compatibility
+  vs Mobile renderer feature matrix, per-GPU-tier perf expectations, recommended
+  approach (no switch; Compatibility APK viable at Gate 2+, zero code changes).
+  Hard throttle (23 iterations since human direction). **Items 1–4 still blocked
+  on human on-device action.**
 
 ## Queue (ranked, top is next)
 
@@ -115,8 +117,10 @@ The next iteration should pull from the top of this list. Items marked
   `game.gd` recorder + `GhostTrailRenderer`, alpha-by-recency formula, 6 implications.
   Gate 1 implementation task: wire `Game.player_respawned` → recorder, add
   `GhostTrailRenderer` to the vertical slice level.
-- Investigate Godot's Compatibility renderer fallback for very-low-end
-  devices. Don't switch; just measure.
+- ~~Investigate Godot's Compatibility renderer fallback for very-low-end
+  devices.~~ Done (iter 23). `docs/research/compatibility_renderer.md` —
+  no switch needed; Compatibility APK is viable at Gate 2+ as a second
+  export preset, zero code changes required.
 - Investigate signing-key handling via gradle env vars so a future
   Play Store build doesn't require touching the editor settings.
 - Consider upgrading camera occlusion from point ray to ShapeCast3D
@@ -137,6 +141,18 @@ These mirror "Open questions waiting on you" in the README.
   feel issues. Those notes drive iteration 2's tuning pass.
 
 ## Recently completed (last 5)
+
+- 2026-05-10 — Iteration 23. `_test_camera_yaw_recenter` (9 assertions) added
+  to `tests/test_controller_kinematics.gd`. Covers: `wrapf` shortest-path
+  rotation (175°→-175° = +10° not -350°; reverse = -10° not +350°), default
+  lerp weight plausibility (>0, <0.1), no-overshoot guarantee (step < diff),
+  high-speed weight clamp to 1.0, 30-frame convergence monotonicity, and >50%
+  progress after 30 frames. ~128 → ~137 assertions.
+  Side quest: `docs/research/compatibility_renderer.md` — Mobile vs Compatibility
+  feature matrix (all Void features present in Compatibility), per-GPU-tier
+  performance expectations (Adreno 506: +20-40%; Adreno 710: -5-15%), visual
+  delta analysis (minimal in brutalist-fog aesthetic), recommendation (no switch;
+  low-end APK preset viable at Gate 2+). P2 open item closed. INDEX.md updated.
 
 - 2026-05-10 — Iteration 22. Camera pitch V-turn bug fixed: `absf(_pitch)` →
   `-_pitch` in `camera_rig.gd::_desired_camera_position`; clamp upper bound

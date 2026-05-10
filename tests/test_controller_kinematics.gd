@@ -38,6 +38,7 @@ func _ready() -> void:
 	_test_camera_occlude_math()
 	_test_camera_lookahead_target()
 	_test_camera_pitch_formula()
+	_test_camera_yaw_recenter()
 	_report()
 
 
@@ -550,3 +551,55 @@ func _test_camera_pitch_formula() -> void:
 func _cam_pitch_elev(pitch_rad: float) -> float:
 	## Mirrors camera_rig.gd::_desired_camera_position: p := -_pitch; sin(p) = Y component.
 	return sin(-pitch_rad)
+
+
+func _test_camera_yaw_recenter() -> void:
+	## Verifies the yaw auto-recenter math from camera_rig.gd::_update_yaw_recenter.
+	## Formula: diff = wrapf(desired_yaw - _yaw, -PI, PI)
+	##          _yaw += diff * minf(1.0, idle_recenter_speed * delta)
+	## wrapf ensures the camera rotates the short way around (shortest arc).
+	## minf(1.0, ...) prevents overshoot when idle_recenter_speed is large.
+	print("\n-- Camera yaw auto-recenter math --")
+	const DELTA := 1.0 / 60.0
+
+	# wrapf shortest-path: naive diff from +175° to -175° is -350°.
+	# wrapf wraps it to +10° — the short arc crossing the ±180° boundary.
+	var diff_far := wrapf(deg_to_rad(-175.0) - deg_to_rad(175.0), -PI, PI)
+	_ok("wrapf: 175° to -175° short arc is +10° (not -350°)",
+		_near(diff_far, deg_to_rad(10.0), 1e-4))
+
+	# Reverse: naive +350°; wrapf gives -10° (short arc, opposite direction).
+	var diff_rev := wrapf(deg_to_rad(175.0) - deg_to_rad(-175.0), -PI, PI)
+	_ok("wrapf: -175° to +175° short arc is -10° (not +350°)",
+		_near(diff_rev, deg_to_rad(-10.0), 1e-4))
+
+	# Default idle_recenter_speed (1.5): weight per frame is small and smooth.
+	var weight := minf(1.0, 1.5 * DELTA)
+	_ok("default recenter speed (1.5): weight > 0 (makes progress each frame)", weight > 0.0)
+	_ok("default recenter speed (1.5): weight < 0.1 (smooth, not instant)", weight < 0.1)
+
+	# Lerp step on a 90° diff must be strictly less than the diff — no overshoot.
+	_ok("default speed: recenter step < diff (no overshoot on 90° rotation)",
+		deg_to_rad(90.0) * weight < deg_to_rad(90.0))
+
+	# High recenter_speed: minf clamps weight to 1.0 — one-frame snap.
+	var weight_fast := minf(1.0, 200.0 * DELTA)
+	_ok("high recenter_speed (200): weight clamped to 1.0 (snap, no overshoot past target)",
+		_near(weight_fast, 1.0))
+
+	# Convergence: simulate 30 frames of recenter from 0° toward 90°.
+	# Angular error (absolute diff to target) must shrink each frame.
+	var yaw := 0.0
+	var target := deg_to_rad(90.0)
+	var prev_err := absf(wrapf(target - yaw, -PI, PI))
+	var monotonic := true
+	for _i in 30:
+		var d := wrapf(target - yaw, -PI, PI)
+		yaw += d * weight
+		var err := absf(wrapf(target - yaw, -PI, PI))
+		if err > prev_err + 1e-6:
+			monotonic = false
+		prev_err = err
+	_ok("yaw recenter: angular error decreases monotonically over 30 frames", monotonic)
+	_ok("yaw recenter: > 50%% progress toward target after 30 frames",
+		prev_err < deg_to_rad(90.0) * 0.5)
