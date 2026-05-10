@@ -5,10 +5,10 @@ A mobile 3D platformer. Brutalist megastructure inspired by *BLAME!*. Controller
 ## Status
 
 Current gate: **Gate 0 — Feel Lab**
-Last iteration: 2026-05-10 — iter 18: touch slider display fix + respawn param tests
+Last iteration: 2026-05-10 — iter 19: dev_menu_overlay controller-section refactor + movement param tests
 Test device build: not yet — hand-authored scenes pending first Godot 4.6 import; see Open questions
 Performance: not yet measured on Nothing Phone 4(a) Pro
-Throttle level: **HARD — 18 iterations since last human direction. No new features. See Open questions.**
+Throttle level: **HARD — 19 iterations since last human direction. No new features. See Open questions.**
 
 If you only read one section, read **Open questions waiting on you** below.
 
@@ -16,8 +16,8 @@ If you only read one section, read **Open questions waiting on you** below.
 
 Things Claude can't decide alone, or where it's stalled and needs direction. Each is blocking some piece of forward progress.
 
-> **⚠ HARD THROTTLE — 18 iterations since last human direction.** Claude has been
-> building infrastructure (tests, research, refactors, debug tooling) for 17 iterations
+> **⚠ HARD THROTTLE — 19 iterations since last human direction.** Claude has been
+> building infrastructure (tests, research, refactors, debug tooling) for 18 iterations
 > without a human feel verdict or direction signal. All P0 items are blocked on the
 > first on-device run. The next iteration will continue hardening work only.
 >
@@ -94,6 +94,39 @@ Goal: store-ready build.
 The full iteration log lives here, newest first. Every iteration appends an entry. Skim the dates to find where you last left off.
 
 <!-- ITERATION ENTRIES BELOW — DO NOT REMOVE OLDER ENTRIES -->
+
+### [2026-05-10] — `claude/gifted-shannon-80jFq` — iter 19: dev_menu_overlay controller-section refactor + movement param tests
+
+- **Throttle: HARD (19 iterations since last human direction).** Hardening only.
+- **Primary: `_build_controller_section` refactor in `tools/dev_menu/dev_menu_overlay.gd`.**
+  The function was 42 lines — just over the 40-line threshold. Extracted four focused
+  sub-builders with no behaviour change:
+  - `_build_controller_movement(vbox)` (13 lines) — Max speed, Ground accel/decel,
+    Air accel, Air damping sliders.
+  - `_build_controller_jump(vbox)` (19 lines) — Jump velocity, three gravity bands,
+    Terminal velocity, Coyote, Buffer, Release ratio sliders.
+  - `_build_controller_respawn(vbox)` (7 lines) — Reboot dur, Fall kill Y sliders.
+  - `_build_controller_slope(vbox)` (5 lines) — Max floor° slider.
+  - `_build_controller_section` is now 7 lines (sep + 4 sub-builder calls). Every
+    method in the file is now under 40 lines. No behaviour change.
+- **Side quest: `_test_movement_params()` added to `tests/test_controller_kinematics.gd`.**
+  10 new assertions covering properties not previously tested:
+  - `ground_deceleration > 0` (all 3 profiles) — not covered by cross-invariants.
+  - `air_acceleration > 0` (all 3 profiles) — not covered by cross-invariants.
+  - `momentum.max_speed > snappy.max_speed` — documents speed-profile design intent
+    (Momentum is the fastest profile).
+  - `floaty.max_speed < snappy.max_speed` — Floaty is the controlled/slower profile.
+  - `momentum.air_horizontal_damping == 0.0` — Momentum fully preserves horizontal
+    velocity (same as Snappy; Floaty is the only damped profile).
+  - `momentum.ground_deceleration < momentum.ground_acceleration` — Momentum
+    intentionally decelerates slowly; stopping takes longer than reaching max speed.
+  - Total assertions: ~76 → ~86.
+- Perf: no runtime change.
+- Bugs fixed: none.
+- New dev-menu controls: none.
+- Assets acquired: none.
+- Research added: none.
+- Needs human attention: **see "Open questions waiting on you" — hard throttle active (19 iterations).**
 
 ### [2026-05-10] — `claude/gifted-shannon-iG0FA` — iter 18: touch slider display fix + respawn param tests
 

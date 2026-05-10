@@ -33,6 +33,7 @@ func _ready() -> void:
 	_test_profile_cross_invariants()
 	_test_slope_params()
 	_test_respawn_params()
+	_test_movement_params()
 	_report()
 
 
@@ -364,3 +365,41 @@ func _test_respawn_params() -> void:
 		_ok(name + ": reboot_duration <= 1.5 (slider max)", p.reboot_duration <= 1.5)
 		_ok(name + ": fall_kill_y < 0 (below ground)", p.fall_kill_y < 0.0)
 		_ok(name + ": fall_kill_y >= -200 (slider min)", p.fall_kill_y >= -200.0)
+
+
+func _test_movement_params() -> void:
+	## Per-profile movement parameter sanity checks not covered by
+	## _test_profile_cross_invariants: ground_deceleration, air_acceleration,
+	## and cross-profile design intent for speed ordering and damping.
+	print("\n-- Movement parameters --")
+	var profiles := [
+		["snappy",   "res://resources/profiles/snappy.tres"],
+		["floaty",   "res://resources/profiles/floaty.tres"],
+		["momentum", "res://resources/profiles/momentum.tres"],
+	]
+	for entry in profiles:
+		var name: String = entry[0]
+		var p: CP = _load_profile(entry[1])
+		if p == null:
+			continue
+		_ok(name + ": ground_deceleration > 0", p.ground_deceleration > 0.0)
+		_ok(name + ": air_acceleration > 0", p.air_acceleration > 0.0)
+
+	# Speed-profile design intent: Momentum is the fastest, Floaty is the
+	# most controlled (slower cap for precise landings on mobile).
+	var sp: CP = _load_profile("res://resources/profiles/snappy.tres")
+	var fp: CP = _load_profile("res://resources/profiles/floaty.tres")
+	var mp: CP = _load_profile("res://resources/profiles/momentum.tres")
+	if sp == null or fp == null or mp == null:
+		return
+	_ok("momentum max_speed > snappy max_speed", mp.max_speed > sp.max_speed)
+	_ok("floaty max_speed < snappy max_speed (controlled profile)", fp.max_speed < sp.max_speed)
+	# Momentum preserves velocity fully: zero air damping, like Snappy.
+	# Floaty is the only profile with non-zero damping (covered in _test_air_damping too).
+	_ok("momentum air_horizontal_damping == 0 (full velocity preservation)",
+		mp.air_horizontal_damping == 0.0)
+	# Momentum intentionally decelerates slowly on the ground (high-momentum feel).
+	# ground_deceleration < ground_acceleration means it takes longer to stop than
+	# to reach max speed — the opposite of Snappy and Floaty which stop quickly.
+	_ok("momentum ground_deceleration < momentum ground_acceleration (loose decel feel)",
+		mp.ground_deceleration < mp.ground_acceleration)
