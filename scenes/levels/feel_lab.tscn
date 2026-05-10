@@ -1,0 +1,146 @@
+[gd_scene load_steps=14 format=3 uid="uid://cnjbhfdp3q8m"]
+
+[ext_resource type="PackedScene" path="res://scenes/player/player.tscn" id="1_player"]
+[ext_resource type="PackedScene" path="res://scenes/player/camera_rig.tscn" id="2_camrig"]
+[ext_resource type="Script" path="res://scripts/ui/hud.gd" id="3_hud"]
+[ext_resource type="Script" path="res://scripts/ui/virtual_joystick.gd" id="4_joystick"]
+[ext_resource type="Script" path="res://scripts/ui/jump_button.gd" id="5_jump"]
+[ext_resource type="Script" path="res://scripts/ui/camera_drag.gd" id="6_camdrag"]
+
+[sub_resource type="Environment" id="Environment_001"]
+background_mode = 1
+background_color = Color(0.28, 0.28, 0.3, 1)
+ambient_light_source = 2
+ambient_light_color = Color(0.28, 0.28, 0.32, 1)
+ambient_light_energy = 0.5
+fog_enabled = true
+fog_light_color = Color(0.28, 0.28, 0.3, 1)
+fog_light_energy = 1.0
+fog_density = 0.04
+
+[sub_resource type="StandardMaterial3D" id="ConcreteMat_001"]
+albedo_color = Color(0.45, 0.45, 0.46, 1)
+roughness = 0.95
+metallic = 0.0
+
+[sub_resource type="BoxMesh" id="BoxMesh_Ground"]
+size = Vector3(40, 1, 40)
+
+[sub_resource type="BoxShape3D" id="BoxShape_Ground"]
+size = Vector3(40, 1, 40)
+
+[sub_resource type="BoxMesh" id="BoxMesh_Platform"]
+size = Vector3(4, 0.4, 4)
+
+[sub_resource type="BoxShape3D" id="BoxShape_Platform"]
+size = Vector3(4, 0.4, 4)
+
+[sub_resource type="BoxMesh" id="BoxMesh_Narrow"]
+size = Vector3(2, 0.4, 2)
+
+[sub_resource type="BoxShape3D" id="BoxShape_Narrow"]
+size = Vector3(2, 0.4, 2)
+
+[node name="FeelLab" type="Node3D"]
+
+[node name="WorldEnvironment" type="WorldEnvironment" parent="."]
+environment = SubResource("Environment_001")
+
+[node name="DirectionalLight3D" type="DirectionalLight3D" parent="."]
+transform = Transform3D(0.866, -0.354, 0.354, 0, 0.707, 0.707, -0.5, -0.612, 0.612, 0, 10, 0)
+light_color = Color(0.9, 0.92, 1.0)
+light_energy = 1.1
+
+[node name="Ground" type="StaticBody3D" parent="."]
+position = Vector3(0, -0.5, 0)
+
+[node name="CollisionShape3D" type="CollisionShape3D" parent="Ground"]
+shape = SubResource("BoxShape_Ground")
+
+[node name="MeshInstance3D" type="MeshInstance3D" parent="Ground"]
+mesh = SubResource("BoxMesh_Ground")
+surface_material_override/0 = SubResource("ConcreteMat_001")
+
+[node name="Platform1" type="StaticBody3D" parent="."]
+position = Vector3(8, 0.7, 0)
+
+[node name="CollisionShape3D" type="CollisionShape3D" parent="Platform1"]
+shape = SubResource("BoxShape_Platform")
+
+[node name="MeshInstance3D" type="MeshInstance3D" parent="Platform1"]
+mesh = SubResource("BoxMesh_Platform")
+surface_material_override/0 = SubResource("ConcreteMat_001")
+
+[node name="Platform2" type="StaticBody3D" parent="."]
+position = Vector3(14, 1.15, 0)
+
+[node name="CollisionShape3D" type="CollisionShape3D" parent="Platform2"]
+shape = SubResource("BoxShape_Platform")
+
+[node name="MeshInstance3D" type="MeshInstance3D" parent="Platform2"]
+mesh = SubResource("BoxMesh_Platform")
+surface_material_override/0 = SubResource("ConcreteMat_001")
+
+[node name="Platform3" type="StaticBody3D" parent="."]
+position = Vector3(20, 1.35, 0)
+
+[node name="CollisionShape3D" type="CollisionShape3D" parent="Platform3"]
+shape = SubResource("BoxShape_Platform")
+
+[node name="MeshInstance3D" type="MeshInstance3D" parent="Platform3"]
+mesh = SubResource("BoxMesh_Platform")
+surface_material_override/0 = SubResource("ConcreteMat_001")
+
+[node name="NarrowPlatform" type="StaticBody3D" parent="."]
+position = Vector3(25.5, 1.55, 0)
+
+[node name="CollisionShape3D" type="CollisionShape3D" parent="NarrowPlatform"]
+shape = SubResource("BoxShape_Narrow")
+
+[node name="MeshInstance3D" type="MeshInstance3D" parent="NarrowPlatform"]
+mesh = SubResource("BoxMesh_Narrow")
+surface_material_override/0 = SubResource("ConcreteMat_001")
+
+[node name="Player" parent="." instance=ExtResource("1_player")]
+position = Vector3(0, 1, 0)
+
+[node name="CameraRig" parent="." instance=ExtResource("2_camrig")]
+target = NodePath("../Player")
+
+[node name="TouchControls" type="CanvasLayer" parent="."]
+layer = 1
+
+[node name="VirtualJoystick" type="Control" parent="TouchControls"]
+layout_mode = 3
+anchors_preset = 15
+anchor_right = 1.0
+anchor_bottom = 1.0
+grow_horizontal = 2
+grow_vertical = 2
+mouse_filter = 2
+script = ExtResource("4_joystick")
+
+[node name="JumpButton" type="Control" parent="TouchControls"]
+layout_mode = 3
+anchor_left = 0.7
+anchor_top = 0.6
+anchor_right = 0.95
+anchor_bottom = 0.95
+grow_horizontal = 2
+grow_vertical = 2
+mouse_filter = 2
+script = ExtResource("5_jump")
+
+[node name="CameraDrag" type="Control" parent="TouchControls"]
+layout_mode = 3
+anchors_preset = 15
+anchor_right = 1.0
+anchor_bottom = 1.0
+grow_horizontal = 2
+grow_vertical = 2
+mouse_filter = 2
+script = ExtResource("6_camdrag")
+
+[node name="HUD" type="CanvasLayer" parent="."]
+layer = 5
+script = ExtResource("3_hud")
