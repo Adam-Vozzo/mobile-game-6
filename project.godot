@@ -15,9 +15,9 @@ config/description="Mobile 3D platformer — brutalist megastructure inspired by
 config/version="0.0.1"
 run/main_scene="res://scenes/levels/feel_lab.tscn"
 config/features=PackedStringArray("4.6", "GL Compatibility", "Mobile")
-config/icon="res://icon.svg"
-boot_splash/show_image=false
 boot_splash/bg_color=Color(0.04, 0.04, 0.05, 1)
+boot_splash/show_image=false
+config/icon="res://icon.svg"
 
 [autoload]
 
@@ -42,7 +42,6 @@ window/size/viewport_height=1080
 window/stretch/mode="canvas_items"
 window/stretch/aspect="expand"
 window/handheld/orientation=4
-window/vsync/vsync_mode=1
 
 [input]
 
@@ -102,17 +101,12 @@ pointing/emulate_touch_from_mouse=true
 [physics]
 
 3d/physics_engine="Jolt Physics"
-common/physics_ticks_per_second=60
-common/max_physics_steps_per_frame=8
 
 [rendering]
 
-renderer/rendering_method="mobile"
-renderer/rendering_method.mobile="mobile"
-rendering_device/driver.windows="d3d12"
-textures/vram_compression/import_etc2_astc=true
 textures/canvas_textures/default_texture_filter=0
-anti_aliasing/quality/msaa_3d.mobile=1
+rendering_device/driver.windows="d3d12"
+renderer/rendering_method="mobile"
+textures/vram_compression/import_etc2_astc=true
 environment/defaults/default_clear_color=Color(0.04, 0.04, 0.05, 1)
-lights_and_shadows/directional_shadow/size.mobile=2048
-lights_and_shadows/positional_shadow/atlas_size.mobile=2048
+anti_aliasing/quality/msaa_3d.mobile=1

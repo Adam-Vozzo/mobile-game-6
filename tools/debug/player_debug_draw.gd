@@ -24,7 +24,7 @@ const _C_NORMAL  := Color(0.2, 1.0, 0.2)
 const _C_ARC     := Color(1.0, 0.45, 0.1)
 
 var _imesh: ImmediateMesh
-var _player: CharacterBody3D
+var _player: Player
 
 
 func _ready() -> void:
@@ -120,7 +120,7 @@ func _draw_ground_normal(origin: Vector3) -> void:
 
 
 func _draw_jump_arc(origin: Vector3) -> void:
-	var p := _player.profile as ControllerProfile
+	var p := _player.profile
 	if p == null:
 		return
 	_imesh.surface_set_color(_C_ARC)
@@ -186,4 +186,4 @@ func _find_player() -> void:
 		return
 	var group := get_tree().get_nodes_in_group(&"player")
 	if group.size() > 0:
-		_player = group[0] as CharacterBody3D
+		_player = group[0] as Player

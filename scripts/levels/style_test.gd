@@ -16,7 +16,7 @@ extends Node3D
 func _ready() -> void:
 	if _spawn == null:
 		return
-	for player in get_tree().get_nodes_in_group(&"player"):
+	for player: Node in get_tree().get_nodes_in_group(&"player"):
 		if player is Node3D:
 			(player as Node3D).global_transform = _spawn.global_transform
 

@@ -14,6 +14,14 @@ class_name Player
 @export var profile: ControllerProfile:
 	set = set_profile
 
+@export_category("Visual")
+## How fast the visual capsule rotates to face horizontal movement direction.
+## Higher = snappier turning.
+@export_range(1.0, 30.0, 0.5) var visual_turn_speed: float = 12.0
+## Below this horizontal speed (m/s) the visual stops chasing heading and
+## holds its last orientation — prevents jitter at near-zero velocity.
+@export_range(0.0, 2.0, 0.05) var visual_turn_min_speed: float = 0.2
+
 var _camera_yaw: float = 0.0
 var _coyote_timer: float = 0.0
 var _buffer_timer: float = 0.0
@@ -25,7 +33,6 @@ var _override_material: StandardMaterial3D
 
 @onready var _visual: Node3D = $Visual
 @onready var _body_mesh: MeshInstance3D = $Visual/Body
-@onready var _accent_mesh: MeshInstance3D = $Visual/Accent
 
 
 func _ready() -> void:
@@ -136,9 +143,24 @@ func _physics_process(delta: float) -> void:
 
 	move_and_slide()
 
+	_update_visual_facing(delta)
+
 	# --- Fall kill ---
 	if global_position.y < profile.fall_kill_y:
 		respawn()
+
+
+func _update_visual_facing(delta: float) -> void:
+	if _visual == null:
+		return
+	var horiz_speed := Vector2(velocity.x, velocity.z).length()
+	if horiz_speed < visual_turn_min_speed:
+		return
+	# Character faces the movement direction with its local -Z (Godot forward),
+	# so target yaw rotates local -Z onto the horizontal velocity vector.
+	var target_yaw := atan2(-velocity.x, -velocity.z)
+	_visual.rotation.y = lerp_angle(_visual.rotation.y, target_yaw,
+		clampf(visual_turn_speed * delta, 0.0, 1.0))
 
 
 func respawn() -> void:
@@ -166,8 +188,8 @@ func _on_jump_pressed() -> void:
 
 
 func _on_dev_profile_changed(new_profile: Resource) -> void:
-	if new_profile != null:
-		set_profile(new_profile as ControllerProfile)
+	if new_profile is ControllerProfile:
+		set_profile(new_profile)
 
 
 func _run_reboot_effect() -> void:

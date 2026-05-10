@@ -2,8 +2,11 @@ extends Node
 ## Game-wide state autoload. Currently a stub; will own scene flow, run state,
 ## attempt counters, and scoring once Gate 1 lands.
 
+@warning_ignore("unused_signal")
 signal player_respawned
+@warning_ignore("unused_signal")
 signal checkpoint_reached(checkpoint_id: StringName)
+@warning_ignore("unused_signal")
 signal level_completed
 
 var current_level_path: String = ""

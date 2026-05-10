@@ -17,8 +17,14 @@ class_name TouchOverlay
 @export_range(0.3, 0.7, 0.01) var stick_zone_ratio: float = 0.5
 
 @export_category("Jump button")
-@export var jump_button_anchor: Vector2 = Vector2(1720.0, 900.0)
-@export_range(40.0, 200.0, 1.0) var jump_button_radius: float = 95.0
+## Centre of the jump button in viewport pixels. By default this is computed
+## from `jump_button_margin` so the button anchors to the bottom-right corner;
+## drag-to-place layout can override and persist a custom value.
+@export var jump_button_anchor: Vector2 = Vector2(1750.0, 910.0)
+@export_range(40.0, 200.0, 1.0) var jump_button_radius: float = 115.0
+## Inset from the viewport's right and bottom edges, in pixels, used when
+## auto-anchoring to the bottom-right corner.
+@export var jump_button_margin: Vector2 = Vector2(60.0, 60.0)
 
 # --- touch classification ---
 const KIND_NONE  := 0
@@ -37,24 +43,51 @@ var _repo_drag_jump:   bool = false    # currently moving the jump circle
 var _repo_drag_resize: bool = false    # currently resizing the jump circle
 
 # Thumb-zone presets in the same coordinate space as jump_button_anchor.
-# "zone" is stick_zone_ratio (0.0–1.0 fraction of viewport width).
-const _PRESETS: Array = [
-	{"name": "Default", "anchor": Vector2(1720, 900),  "radius": 95.0,  "zone": 0.50},
-	{"name": "Closer",  "anchor": Vector2(1580, 900),  "radius": 90.0,  "zone": 0.45},
-	{"name": "Wider",   "anchor": Vector2(1830, 950),  "radius": 100.0, "zone": 0.55},
+# "zone" is stick_zone_ratio (0.0–1.0 fraction of viewport width). The
+# Default preset is recomputed at runtime from `jump_button_margin` so the
+# button stays pinned to the bottom-right at any viewport size.
+var _presets: Array = [
+	{"name": "Default", "anchor": Vector2(1750, 910), "radius": 115.0, "zone": 0.50},
+	{"name": "Closer",  "anchor": Vector2(1620, 910), "radius": 105.0, "zone": 0.45},
+	{"name": "Wider",   "anchor": Vector2(1840, 920), "radius": 125.0, "zone": 0.55},
 ]
 
 const CFG_PATH    := "user://input.cfg"
 const CFG_SECTION := "touch"
+## Bump when default jump-button geometry changes so existing saves get
+## ignored and re-anchored to the new defaults.
+const CFG_VERSION := 2
 
 
 func _ready() -> void:
 	mouse_filter = Control.MOUSE_FILTER_IGNORE
 	set_anchors_and_offsets_preset(Control.PRESET_FULL_RECT)
+	_apply_bottom_right_default()
 	_load_layout()
+	get_viewport().size_changed.connect(_on_viewport_resize)
 	if has_node("/root/DevMenu"):
 		DevMenu.touch_param_changed.connect(_on_touch_param)
 		DevMenu.reposition_controls_requested.connect(enter_reposition_mode)
+
+
+# Computes the default bottom-right anchor from the current viewport size and
+# `jump_button_margin`. Also refreshes the in-place "Default" preset entry so
+# the reposition mode's snap target follows the same rule.
+func _apply_bottom_right_default() -> void:
+	var vp := get_viewport_rect().size
+	var anchor := Vector2(
+		vp.x - jump_button_margin.x - jump_button_radius,
+		vp.y - jump_button_margin.y - jump_button_radius,
+	)
+	jump_button_anchor = anchor
+	if _presets.size() > 0:
+		_presets[0]["anchor"] = anchor
+		_presets[0]["radius"] = jump_button_radius
+
+
+func _on_viewport_resize() -> void:
+	_apply_bottom_right_default()
+	queue_redraw()
 
 
 func _input(event: InputEvent) -> void:
@@ -231,10 +264,10 @@ func _preset_rects() -> Array:
 	var vp  := get_viewport_rect().size
 	var bw  := 110.0
 	var gap := 12.0
-	var total := bw * _PRESETS.size() + gap * (_PRESETS.size() - 1)
+	var total := bw * _presets.size() + gap * (_presets.size() - 1)
 	var x0  := vp.x * 0.5 - total * 0.5
 	var rects: Array = []
-	for i in _PRESETS.size():
+	for i in _presets.size():
 		rects.append(Rect2(x0 + i * (bw + gap), 76.0, bw, 44.0))
 	return rects
 
@@ -250,7 +283,7 @@ func _draw() -> void:
 
 func _draw_play() -> void:
 	var jump_pressed := false
-	for kind in _touches.values():
+	for kind: int in _touches.values():
 		if kind == KIND_JUMP:
 			jump_pressed = true
 			break
@@ -311,9 +344,10 @@ func _draw_reposition() -> void:
 		draw_rect(r, Color(0.15, 0.35, 0.75, 0.88), true, -1.0)
 		draw_rect(r, Color(1, 1, 1, 0.7), false, 1.5)
 		if font:
+			var preset_name: String = _presets[i]["name"]
 			draw_string(font,
 				Vector2(r.position.x, r.position.y + r.size.y * 0.5 + fsm * 0.38),
-				_PRESETS[i]["name"], HORIZONTAL_ALIGNMENT_CENTER, r.size.x,
+				preset_name, HORIZONTAL_ALIGNMENT_CENTER, r.size.x,
 				fsm, Color(1, 1, 1, 0.95))
 
 	# Header instruction.
@@ -326,10 +360,10 @@ func _draw_reposition() -> void:
 # ── presets ───────────────────────────────────────────────────────────────────
 
 func _apply_preset(idx: int) -> void:
-	var p: Dictionary = _PRESETS[idx]
-	jump_button_anchor = p["anchor"]
-	jump_button_radius = p["radius"]
-	stick_zone_ratio   = p["zone"]
+	var p: Dictionary = _presets[idx]
+	jump_button_anchor = p["anchor"] as Vector2
+	jump_button_radius = p["radius"] as float
+	stick_zone_ratio   = p["zone"] as float
 	queue_redraw()
 
 
@@ -337,6 +371,7 @@ func _apply_preset(idx: int) -> void:
 
 func _save_layout() -> void:
 	var cfg := ConfigFile.new()
+	cfg.set_value(CFG_SECTION, "version",       CFG_VERSION)
 	cfg.set_value(CFG_SECTION, "jump_anchor_x", jump_button_anchor.x)
 	cfg.set_value(CFG_SECTION, "jump_anchor_y", jump_button_anchor.y)
 	cfg.set_value(CFG_SECTION, "jump_radius",   jump_button_radius)
@@ -348,10 +383,15 @@ func _load_layout() -> void:
 	var cfg := ConfigFile.new()
 	if cfg.load(CFG_PATH) != OK:
 		return
-	jump_button_anchor.x = cfg.get_value(CFG_SECTION, "jump_anchor_x", jump_button_anchor.x)
-	jump_button_anchor.y = cfg.get_value(CFG_SECTION, "jump_anchor_y", jump_button_anchor.y)
-	jump_button_radius   = cfg.get_value(CFG_SECTION, "jump_radius",   jump_button_radius)
-	stick_zone_ratio     = cfg.get_value(CFG_SECTION, "stick_zone",    stick_zone_ratio)
+	# Stale saves (pre-bottom-right default) are discarded so users get the
+	# new anchor instead of being stuck with whatever was on disk.
+	var saved_version: int = int(cfg.get_value(CFG_SECTION, "version", 0))
+	if saved_version != CFG_VERSION:
+		return
+	jump_button_anchor.x = float(cfg.get_value(CFG_SECTION, "jump_anchor_x", jump_button_anchor.x))
+	jump_button_anchor.y = float(cfg.get_value(CFG_SECTION, "jump_anchor_y", jump_button_anchor.y))
+	jump_button_radius   = float(cfg.get_value(CFG_SECTION, "jump_radius",   jump_button_radius))
+	stick_zone_ratio     = float(cfg.get_value(CFG_SECTION, "stick_zone",    stick_zone_ratio))
 
 
 func _on_touch_param(param: StringName, value: Variant) -> void:

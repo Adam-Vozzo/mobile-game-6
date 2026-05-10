@@ -7,18 +7,30 @@ extends Node
 const OVERLAY_SCENE := preload("res://tools/dev_menu/dev_menu_overlay.tscn")
 const HUD_OVERLAY_SCRIPT := preload("res://tools/debug/hud_overlay.gd")
 
+# Signals are emitted from the dev menu overlay scene (which lives outside this
+# autoload) and consumed by gameplay code. The autoload itself only declares
+# them so listeners can connect via the global namespace.
+@warning_ignore("unused_signal")
 signal controller_profile_changed(profile_resource: Resource)
+@warning_ignore("unused_signal")
 signal controller_param_changed(param_name: StringName, value: float)
+@warning_ignore("unused_signal")
 signal camera_param_changed(param_name: StringName, value: float)
+@warning_ignore("unused_signal")
 signal juice_toggle_changed(toggle_name: StringName, enabled: bool)
+@warning_ignore("unused_signal")
 signal time_scale_changed(scale: float)
+@warning_ignore("unused_signal")
 signal teleport_requested(checkpoint_id: StringName)
+@warning_ignore("unused_signal")
 signal debug_viz_changed(key: StringName, enabled: bool)
+@warning_ignore("unused_signal")
 signal touch_param_changed(param: StringName, value: Variant)
+@warning_ignore("unused_signal")
 signal reposition_controls_requested
 
 var is_open: bool = false
-var juice_state: Dictionary = {
+var juice_state: Dictionary[StringName, bool] = {
 	&"screen_shake": true,
 	&"hitstop": true,
 	&"particles": true,
@@ -26,7 +38,7 @@ var juice_state: Dictionary = {
 	&"squash_stretch": true,
 	&"sound_layers": true,
 }
-var debug_viz_state: Dictionary = {
+var debug_viz_state: Dictionary[StringName, bool] = {
 	&"perf_hud": true,
 	&"velocity_vec": false,
 	&"collision_capsule": false,
@@ -78,7 +90,7 @@ func set_juice(toggle_name: StringName, enabled: bool) -> void:
 
 
 func is_juice_on(toggle_name: StringName) -> bool:
-	return bool(juice_state.get(toggle_name, true))
+	return juice_state.get(toggle_name, true)
 
 
 func set_debug_viz(key: StringName, enabled: bool) -> void:
@@ -87,7 +99,7 @@ func set_debug_viz(key: StringName, enabled: bool) -> void:
 
 
 func is_debug_viz_on(key: StringName) -> bool:
-	return bool(debug_viz_state.get(key, false))
+	return debug_viz_state.get(key, false)
 
 
 func _unhandled_input(event: InputEvent) -> void:

@@ -13,13 +13,13 @@
 background_mode = 1
 background_color = Color(0.04, 0.04, 0.05, 1)
 ambient_light_source = 2
-ambient_light_color = Color(0.18, 0.19, 0.22, 1)
-ambient_light_energy = 0.4
+ambient_light_color = Color(0.32, 0.34, 0.38, 1)
+ambient_light_energy = 0.75
 tonemap_mode = 2
 fog_enabled = true
-fog_light_color = Color(0.07, 0.075, 0.09, 1)
+fog_light_color = Color(0.18, 0.19, 0.22, 1)
 fog_light_energy = 1.0
-fog_density = 0.045
+fog_density = 0.012
 fog_aerial_perspective = 0.5
 fog_sky_affect = 0.0
 
@@ -97,6 +97,12 @@ transform = Transform3D(1, 0, 0, 0, 0.6428, -0.766, 0, 0.766, 0.6428, 0, 20, 0)
 light_color = Color(1, 0.85, 0.55, 1)
 light_energy = 1.5
 shadow_enabled = true
+
+[node name="FillLight" type="DirectionalLight3D" parent="."]
+transform = Transform3D(-1, 0, 0, 0, 0.866, 0.5, 0, 0.5, -0.866, 0, 12, 0)
+light_color = Color(0.55, 0.6, 0.78, 1)
+light_energy = 0.45
+shadow_enabled = false
 
 [node name="PlayerSpawn" type="Marker3D" parent="."]
 transform = Transform3D(1, 0, 0, 0, 1, 0, 0, 0, 1, 0, 1, 0)

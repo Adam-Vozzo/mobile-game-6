@@ -1,10 +1,10 @@
-[gd_resource type="ControllerProfile" load_steps=2 format=3]
+[gd_resource type="Resource" load_steps=2 format=3]
 
 [ext_resource type="Script" path="res://scripts/controller/controller_profile.gd" id="1_profile"]
 
 [resource]
 script = ExtResource("1_profile")
-max_speed = 8.0
+max_speed = 6.5
 ground_acceleration = 80.0
 ground_deceleration = 90.0
 air_acceleration = 50.0

@@ -12,7 +12,7 @@ const SNAPPY_PROFILE := preload("res://resources/profiles/snappy.tres")
 const FLOATY_PROFILE := preload("res://resources/profiles/floaty.tres")
 const MOMENTUM_PROFILE := preload("res://resources/profiles/momentum.tres")
 
-var _profiles: Dictionary = {
+var _profiles: Dictionary[String, Resource] = {
 	"Snappy": SNAPPY_PROFILE,
 	"Floaty": FLOATY_PROFILE,
 	"Momentum": MOMENTUM_PROFILE,
@@ -23,9 +23,9 @@ var _current_profile: Resource
 var _profile_dropdown: OptionButton
 ## All controller-param sliders keyed by ControllerProfile property StringName.
 ## _select_profile iterates this to bulk-sync when switching profiles.
-var _profile_sliders: Dictionary = {}
+var _profile_sliders: Dictionary[StringName, HSlider] = {}
 var _slider_time_scale: HSlider
-var _juice_boxes: Dictionary = {}
+var _juice_boxes: Dictionary[StringName, Button] = {}
 var _perf_label: Label
 var _save_as_row: HBoxContainer
 var _save_name_field: LineEdit
@@ -38,25 +38,47 @@ func _ready() -> void:
 	_select_profile("Snappy")
 
 
+## Width of the menu panel as a fraction of the viewport width. The panel is
+## anchored to the right edge and fills the full screen height; the scroll
+## container inside handles overflow so the sliders themselves can be large.
+const PANEL_WIDTH_FRAC := 0.40
+## Base font size applied to every control inside the panel via a Theme.
+## Slider rows scale around this — bump it to scale the whole menu.
+const BASE_FONT_SIZE := 24
+## Section header (e.g., "Camera", "Controller — Movement") font size.
+const SECTION_FONT_SIZE := 28
+## Top-level "Dev Menu" title font size.
+const TITLE_FONT_SIZE := 36
+
 func _build_ui() -> void:
 	var panel := PanelContainer.new()
-	panel.set_anchors_and_offsets_preset(Control.PRESET_TOP_LEFT)
-	panel.position = Vector2(20, 20)
-	panel.custom_minimum_size = Vector2(400, 0)
+	# Anchor to the full right side. Left anchor < 1 sets the panel width as a
+	# fraction of the viewport; offsets stay zero so the panel resizes with the
+	# window.
+	panel.anchor_left = 1.0 - PANEL_WIDTH_FRAC
+	panel.anchor_top = 0.0
+	panel.anchor_right = 1.0
+	panel.anchor_bottom = 1.0
+	panel.offset_left = 0.0
+	panel.offset_top = 0.0
+	panel.offset_right = 0.0
+	panel.offset_bottom = 0.0
 	panel.mouse_filter = Control.MOUSE_FILTER_STOP
+	panel.theme = _build_theme()
 	add_child(panel)
 
 	var scroll := ScrollContainer.new()
-	scroll.custom_minimum_size = Vector2(400, 600)
+	scroll.size_flags_horizontal = Control.SIZE_EXPAND_FILL
+	scroll.size_flags_vertical = Control.SIZE_EXPAND_FILL
 	scroll.horizontal_scroll_mode = ScrollContainer.SCROLL_MODE_DISABLED
 	panel.add_child(scroll)
 
 	var vbox := VBoxContainer.new()
-	vbox.add_theme_constant_override("separation", 6)
+	vbox.add_theme_constant_override("separation", 18)
 	vbox.size_flags_horizontal = Control.SIZE_EXPAND_FILL
 	scroll.add_child(vbox)
 
-	vbox.add_child(_make_label("Dev Menu", 20, true))
+	vbox.add_child(_make_label("Dev Menu", TITLE_FONT_SIZE, true))
 	_build_profile_section(vbox)
 	_build_controller_section(vbox)
 	_build_camera_section(vbox)
@@ -71,9 +93,10 @@ func _build_ui() -> void:
 
 func _build_profile_section(vbox: VBoxContainer) -> void:
 	vbox.add_child(_make_sep())
-	vbox.add_child(_make_label("Profile", 14, true))
+	vbox.add_child(_make_label("Profile", SECTION_FONT_SIZE, true))
 	_profile_dropdown = OptionButton.new()
-	for profile_name in _profiles:
+	_profile_dropdown.custom_minimum_size = Vector2(0, 64)
+	for profile_name: String in _profiles:
 		_profile_dropdown.add_item(profile_name)
 	vbox.add_child(_profile_dropdown)
 	_profile_dropdown.item_selected.connect(_on_profile_selected)
@@ -81,20 +104,24 @@ func _build_profile_section(vbox: VBoxContainer) -> void:
 	_make_button(vbox, "Save as…", _toggle_save_row)
 
 	_save_as_row = HBoxContainer.new()
+	_save_as_row.add_theme_constant_override("separation", 12)
 	vbox.add_child(_save_as_row)
 
 	_save_name_field = LineEdit.new()
 	_save_name_field.placeholder_text = "profile name"
 	_save_name_field.size_flags_horizontal = Control.SIZE_EXPAND_FILL
+	_save_name_field.custom_minimum_size = Vector2(0, 64)
 	_save_as_row.add_child(_save_name_field)
 
 	var save_btn := Button.new()
 	save_btn.text = "Save"
+	save_btn.custom_minimum_size = Vector2(0, 64)
 	save_btn.pressed.connect(_on_save_confirmed)
 	_save_as_row.add_child(save_btn)
 
 	var cancel_btn := Button.new()
 	cancel_btn.text = "✕"
+	cancel_btn.custom_minimum_size = Vector2(64, 64)
 	cancel_btn.pressed.connect(func() -> void: _save_as_row.visible = false)
 	_save_as_row.add_child(cancel_btn)
 
@@ -103,7 +130,7 @@ func _build_profile_section(vbox: VBoxContainer) -> void:
 
 func _build_controller_section(vbox: VBoxContainer) -> void:
 	vbox.add_child(_make_sep())
-	vbox.add_child(_make_label("Controller — Movement", 14, true))
+	vbox.add_child(_make_label("Controller — Movement", SECTION_FONT_SIZE, true))
 	_profile_sliders[&"max_speed"] = _make_profile_slider(vbox,
 		"Max speed",          2.0,   20.0,  0.1,  &"max_speed")
 	_profile_sliders[&"ground_acceleration"] = _make_profile_slider(vbox,
@@ -115,7 +142,7 @@ func _build_controller_section(vbox: VBoxContainer) -> void:
 	_profile_sliders[&"air_horizontal_damping"] = _make_profile_slider(vbox,
 		"Air damping",        0.0,    5.0,  0.05, &"air_horizontal_damping")
 
-	vbox.add_child(_make_label("Controller — Jump", 14, true))
+	vbox.add_child(_make_label("Controller — Jump", SECTION_FONT_SIZE, true))
 	_profile_sliders[&"jump_velocity"] = _make_profile_slider(vbox,
 		"Jump velocity",      4.0,   20.0,  0.1,  &"jump_velocity")
 	_profile_sliders[&"gravity_rising"] = _make_profile_slider(vbox,
@@ -133,7 +160,7 @@ func _build_controller_section(vbox: VBoxContainer) -> void:
 	_profile_sliders[&"release_velocity_ratio"] = _make_profile_slider(vbox,
 		"Release ratio",      0.1,    1.0,  0.01, &"release_velocity_ratio")
 
-	vbox.add_child(_make_label("Controller — Respawn", 14, true))
+	vbox.add_child(_make_label("Controller — Respawn", SECTION_FONT_SIZE, true))
 	_profile_sliders[&"reboot_duration"] = _make_profile_slider(vbox,
 		"Reboot dur (s)",     0.05,   1.5,  0.05, &"reboot_duration")
 	_profile_sliders[&"fall_kill_y"] = _make_profile_slider(vbox,
@@ -142,21 +169,18 @@ func _build_controller_section(vbox: VBoxContainer) -> void:
 
 func _build_camera_section(vbox: VBoxContainer) -> void:
 	vbox.add_child(_make_sep())
-	vbox.add_child(_make_label("Camera", 14, true))
+	vbox.add_child(_make_label("Camera", SECTION_FONT_SIZE, true))
 	_make_cam_slider(vbox, "Distance",        &"distance",           2.0,   15.0,  0.1,   6.0)
 	_make_cam_slider(vbox, "Pitch (deg)",     &"pitch_degrees",      0.0,   80.0,  0.5,  22.0)
-	_make_cam_slider(vbox, "Lookahead",       &"lookahead_distance", 0.0,    5.0,  0.05,  1.2)
 	_make_cam_slider(vbox, "Fall pull",       &"vertical_pull",      0.0,    1.0,  0.01,  0.18)
 	_make_cam_slider(vbox, "Yaw sens",        &"yaw_drag_sens",      0.001,  0.05, 0.001, 0.005)
 	_make_cam_slider(vbox, "Pitch sens",      &"pitch_drag_sens",    0.001,  0.05, 0.001, 0.003)
-	_make_cam_slider(vbox, "Rctr delay",      &"idle_recenter_delay",0.0,    5.0,  0.1,   1.2)
-	_make_cam_slider(vbox, "Rctr speed",      &"idle_recenter_speed",0.1,   10.0,  0.1,   1.5)
 	_make_cam_slider(vbox, "Occl. margin",    &"occlusion_margin",   0.1,    1.0,  0.05,  0.3)
 
 
 func _build_level_section(vbox: VBoxContainer) -> void:
 	vbox.add_child(_make_sep())
-	vbox.add_child(_make_label("Level", 14, true))
+	vbox.add_child(_make_label("Level", SECTION_FONT_SIZE, true))
 	_slider_time_scale = _make_slider(vbox, "Time scale ×",
 		0.25, 2.0, 0.05,
 		func(v: float) -> void:
@@ -167,13 +191,13 @@ func _build_level_section(vbox: VBoxContainer) -> void:
 
 func _build_touch_section(vbox: VBoxContainer) -> void:
 	vbox.add_child(_make_sep())
-	vbox.add_child(_make_label("Touch Controls", 14, true))
+	vbox.add_child(_make_label("Touch Controls", SECTION_FONT_SIZE, true))
 	_make_button(vbox, "Reposition controls…",
 		func() -> void: DevMenu.reposition_controls_requested.emit())
 	_make_slider(vbox, "Jump radius",
 		40.0, 200.0, 1.0,
 		func(v: float) -> void: DevMenu.touch_param_changed.emit(&"jump_radius", v)
-	).value = 95.0
+	).value = 115.0
 	_make_slider(vbox, "Stick zone %",
 		0.30, 0.70, 0.01,
 		func(v: float) -> void: DevMenu.touch_param_changed.emit(&"stick_zone_ratio", v)
@@ -182,24 +206,23 @@ func _build_touch_section(vbox: VBoxContainer) -> void:
 
 func _build_juice_section(vbox: VBoxContainer) -> void:
 	vbox.add_child(_make_sep())
-	vbox.add_child(_make_label("Juice", 14, true))
+	vbox.add_child(_make_label("Juice", SECTION_FONT_SIZE, true))
 	var juice_grid := GridContainer.new()
 	juice_grid.columns = 2
+	juice_grid.add_theme_constant_override("h_separation", 12)
+	juice_grid.add_theme_constant_override("v_separation", 12)
 	vbox.add_child(juice_grid)
-	for key in DevMenu.juice_state:
-		var cb := CheckBox.new()
-		cb.text = String(key).capitalize()
-		cb.button_pressed = bool(DevMenu.juice_state[key])
-		var captured_key := key as StringName
-		cb.toggled.connect(func(pressed: bool) -> void:
-			DevMenu.set_juice(captured_key, pressed))
-		juice_grid.add_child(cb)
-		_juice_boxes[key] = cb
+	for key: StringName in DevMenu.juice_state:
+		var captured_key := key
+		var btn := _make_toggle(juice_grid, String(key).capitalize(),
+			DevMenu.juice_state[key],
+			func(pressed: bool) -> void: DevMenu.set_juice(captured_key, pressed))
+		_juice_boxes[key] = btn
 
 
 func _build_debug_section(vbox: VBoxContainer) -> void:
 	vbox.add_child(_make_sep())
-	vbox.add_child(_make_label("Debug viz", 14, true))
+	vbox.add_child(_make_label("Debug viz", SECTION_FONT_SIZE, true))
 	_make_viz_checkbox(vbox, "Perf HUD (corner)",  &"perf_hud")
 	_make_viz_checkbox(vbox, "Velocity + state",   &"velocity_vec")
 	_make_viz_checkbox(vbox, "Collision capsule",  &"collision_capsule")
@@ -210,7 +233,7 @@ func _build_debug_section(vbox: VBoxContainer) -> void:
 
 func _build_perf_section(vbox: VBoxContainer) -> void:
 	vbox.add_child(_make_sep())
-	vbox.add_child(_make_label("Performance", 14, true))
+	vbox.add_child(_make_label("Performance", SECTION_FONT_SIZE, true))
 	_perf_label = Label.new()
 	_perf_label.text = "—"
 	vbox.add_child(_perf_label)
@@ -232,6 +255,19 @@ func _process(_delta: float) -> void:
 
 # ---- widget factories -------------------------------------------------------
 
+# Theme applied to the whole panel so every Label/Button/CheckBox/etc. picks
+# up the larger font size + content padding without per-widget overrides.
+func _build_theme() -> Theme:
+	var t := Theme.new()
+	for cls in ["Label", "Button", "OptionButton", "CheckBox", "LineEdit"]:
+		t.set_font_size("font_size", cls, BASE_FONT_SIZE)
+	# Vertical padding for buttons / option buttons / line edits so they have
+	# breathing room around the larger text.
+	for cls in ["Button", "OptionButton", "LineEdit"]:
+		t.set_constant("h_separation", cls, 16)
+	return t
+
+
 func _make_label(text: String, font_size: int, bold: bool = false) -> Label:
 	var l := Label.new()
 	l.text = text
@@ -242,12 +278,15 @@ func _make_label(text: String, font_size: int, bold: bool = false) -> Label:
 
 
 func _make_sep() -> HSeparator:
-	return HSeparator.new()
+	var sep := HSeparator.new()
+	sep.add_theme_constant_override("separation", 12)
+	return sep
 
 
 func _make_button(parent: Node, label_text: String, callback: Callable) -> Button:
 	var btn := Button.new()
 	btn.text = label_text
+	btn.custom_minimum_size = Vector2(0, 64)
 	btn.pressed.connect(callback)
 	parent.add_child(btn)
 	return btn
@@ -257,11 +296,13 @@ func _make_slider(parent: Node, label_text: String,
 		mn: float, mx: float, step: float,
 		on_changed: Callable) -> HSlider:
 	var row := HBoxContainer.new()
+	row.add_theme_constant_override("separation", 18)
 	parent.add_child(row)
 
 	var lbl := Label.new()
 	lbl.text = label_text
-	lbl.custom_minimum_size = Vector2(110, 0)
+	lbl.custom_minimum_size = Vector2(240, 64)
+	lbl.vertical_alignment = VERTICAL_ALIGNMENT_CENTER
 	row.add_child(lbl)
 
 	var slider := HSlider.new()
@@ -269,11 +310,15 @@ func _make_slider(parent: Node, label_text: String,
 	slider.max_value = mx
 	slider.step = step
 	slider.size_flags_horizontal = Control.SIZE_EXPAND_FILL
-	slider.custom_minimum_size = Vector2(160, 24)
+	slider.size_flags_vertical = Control.SIZE_SHRINK_CENTER
+	# Tall track makes the entire bar a usable touch target — the grabber
+	# itself stays default-sized but anywhere on the row registers.
+	slider.custom_minimum_size = Vector2(320, 64)
 	row.add_child(slider)
 
 	var val_label := Label.new()
-	val_label.custom_minimum_size = Vector2(54, 0)
+	val_label.custom_minimum_size = Vector2(110, 64)
+	val_label.vertical_alignment = VERTICAL_ALIGNMENT_CENTER
 	val_label.text = _fmt(slider.value, step)
 	row.add_child(val_label)
 
@@ -308,12 +353,42 @@ func _make_cam_slider(parent: Node, label_text: String, param: StringName,
 
 
 func _make_viz_checkbox(parent: Node, label_text: String, key: StringName) -> void:
-	var cb := CheckBox.new()
-	cb.text = label_text
-	cb.button_pressed = DevMenu.is_debug_viz_on(key)
-	cb.toggled.connect(func(pressed: bool) -> void:
-		DevMenu.set_debug_viz(key, pressed))
-	parent.add_child(cb)
+	_make_toggle(parent, label_text, DevMenu.is_debug_viz_on(key),
+		func(pressed: bool) -> void: DevMenu.set_debug_viz(key, pressed))
+
+
+# Custom toggle button — replaces CheckBox so the tap target scales with the
+# rest of the menu (CheckBox icons in Godot don't follow font_size). Uses the
+# Button's toggle_mode and shows ●/○ + a colour swap so the on/off state is
+# visible regardless of the underlying StyleBox.
+const _TOGGLE_ON_COLOR  := Color(0.55, 0.95, 0.55)
+const _TOGGLE_OFF_COLOR := Color(0.65, 0.65, 0.7)
+
+func _make_toggle(parent: Node, label_text: String, initial_pressed: bool,
+		on_toggled: Callable) -> Button:
+	var btn := Button.new()
+	btn.toggle_mode = true
+	btn.alignment = HORIZONTAL_ALIGNMENT_LEFT
+	btn.size_flags_horizontal = Control.SIZE_EXPAND_FILL
+	btn.custom_minimum_size = Vector2(0, 64)
+	btn.button_pressed = initial_pressed
+	_refresh_toggle(btn, label_text)
+	btn.toggled.connect(func(pressed: bool) -> void:
+		_refresh_toggle(btn, label_text)
+		on_toggled.call(pressed))
+	parent.add_child(btn)
+	return btn
+
+
+func _refresh_toggle(btn: Button, label_text: String) -> void:
+	var on := btn.button_pressed
+	btn.text = ("  ●  " if on else "  ○  ") + label_text
+	var col := _TOGGLE_ON_COLOR if on else _TOGGLE_OFF_COLOR
+	# Override every state's font color so the indicator stays visible whether
+	# the button is sitting in normal, hover, or pressed (toggle-on) styling.
+	for state in ["font_color", "font_pressed_color", "font_hover_color",
+			"font_hover_pressed_color", "font_focus_color"]:
+		btn.add_theme_color_override(state, col)
 
 
 ## Smart number format: enough digits to show the step resolution.
@@ -339,17 +414,17 @@ func _toggle_save_row() -> void:
 
 
 func _on_save_confirmed() -> void:
-	var name := _save_name_field.text.strip_edges()
-	if name.is_empty():
+	var profile_name := _save_name_field.text.strip_edges()
+	if profile_name.is_empty():
 		return
 	var new_p: Resource = _current_profile.duplicate(true)
-	_profiles[name] = new_p
-	_profile_dropdown.add_item(name)
+	_profiles[profile_name] = new_p
+	_profile_dropdown.add_item(profile_name)
 	_profile_dropdown.selected = _profile_dropdown.item_count - 1
 	_save_as_row.visible = false
 	# Persist to user://profiles/ so it survives the session.
 	DirAccess.make_dir_recursive_absolute("user://profiles")
-	ResourceSaver.save(new_p, "user://profiles/" + name + ".tres")
+	ResourceSaver.save(new_p, "user://profiles/" + profile_name + ".tres")
 
 
 # ---- profile logic ----------------------------------------------------------
@@ -361,7 +436,7 @@ func _select_profile(profile_name: String) -> void:
 	_current_profile = p
 	# Bulk-sync all sliders to the new profile's values.
 	for prop: StringName in _profile_sliders:
-		var val = p.get(prop)
+		var val: Variant = p.get(prop)
 		if val != null:
 			_profile_sliders[prop].value = float(val)
 	DevMenu.controller_profile_changed.emit(p)
