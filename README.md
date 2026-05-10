@@ -5,10 +5,10 @@ A mobile 3D platformer. Brutalist megastructure inspired by *BLAME!*. Controller
 ## Status
 
 Current gate: **Gate 0 — Feel Lab**
-Last iteration: 2026-05-10 — iter 20: test suite expansion (3 groups → all profiles) + dead zone calibration research
+Last iteration: 2026-05-10 — iter 21: camera math unit tests + camera pitch V-turn issue logged
 Test device build: not yet — hand-authored scenes pending first Godot 4.6 import; see Open questions
 Performance: not yet measured on Nothing Phone 4(a) Pro
-Throttle level: **HARD — 20 iterations since last human direction. No new features. See Open questions.**
+Throttle level: **HARD — 21 iterations since last human direction. No new features. See Open questions.**
 
 If you only read one section, read **Open questions waiting on you** below.
 
@@ -16,8 +16,8 @@ If you only read one section, read **Open questions waiting on you** below.
 
 Things Claude can't decide alone, or where it's stalled and needs direction. Each is blocking some piece of forward progress.
 
-> **⚠ HARD THROTTLE — 20 iterations since last human direction.** Claude has been
-> building infrastructure (tests, research, refactors, debug tooling) for 20 iterations
+> **⚠ HARD THROTTLE — 21 iterations since last human direction.** Claude has been
+> building infrastructure (tests, research, refactors, debug tooling) for 21 iterations
 > without a human feel verdict or direction signal. All P0 items are blocked on the
 > first on-device run. The next iteration will continue hardening work only.
 >
@@ -94,6 +94,41 @@ Goal: store-ready build.
 The full iteration log lives here, newest first. Every iteration appends an entry. Skim the dates to find where you last left off.
 
 <!-- ITERATION ENTRIES BELOW — DO NOT REMOVE OLDER ENTRIES -->
+
+### [2026-05-10] — `claude/gifted-shannon-0yX7M` — iter 21: camera math unit tests + pitch V-turn issue logged
+
+- **Throttle: HARD (21 iterations since last human direction).** Hardening only.
+- **Primary: Camera math unit test groups added to `tests/test_controller_kinematics.gd`.**
+  Three new test groups, all pure math (no scene-tree instantiation), following the
+  same assertion pattern as the kinematics groups. +17 assertions → ~123 total.
+  - `_test_camera_vertical_pull` (6 assertions) — tests `camera_rig.gd::_vertical_pull_offset`
+    formula (`vel_y >= 0 → 0`, `vel_y < 0 → vel_y * pull * 0.05`): rising/stopped gives 0,
+    falling gives negative proportional offset, zero-pull coefficient gives 0,
+    terminal-velocity pull (-40 m/s × 0.18 × 0.05 = -0.36 m) stays within -1 m.
+    Helper `_cam_vp(vel_y, pull)` mirrors the formula.
+  - `_test_camera_occlude_math` (6 assertions) — tests `camera_rig.gd::_occlude`
+    safe-distance formula (`maxf(min_dist, hit_dist - margin)`): typical hit (3 m →
+    2.7 m), close clamp (0.5 m → 0.8 m min), margin == hit (→ min), zero margin,
+    oversized margin, loop invariant (safe_dist ≥ min for 6 hit distances).
+    Helper `_cam_sd(hit_dist, margin, min_dist)` mirrors the formula.
+  - `_test_camera_lookahead_target` (5 assertions) — tests desired-lookahead
+    computation: below min_speed → zero vector; above min_speed → correct length
+    and direction; diagonal velocity → equal X/Z; large lerp value → weight
+    clamped to 1.0 (no overshoot).
+- **Side quest: Camera pitch V-turn issue documented in PLAN.md refactor backlog.**
+  `_desired_camera_position` uses `absf(_pitch)` for the camera elevation angle.
+  Since `_pitch` starts at −0.384 rad (22°) and the clamp allows up to +0.96 rad,
+  dragging upward pushes `_pitch` through 0 then positive — `absf` creates a
+  V-shape: camera first drops to horizontal, then rises again. At default
+  `pitch_drag_sens 0.003`, the 0-crossing requires ~128 px of upward drag on
+  a 1080p phone — reachable in normal play. Fix options logged in refactor backlog;
+  needs on-device feel confirmation before committing either fix.
+- Perf: no runtime change.
+- Bugs fixed: none.
+- New dev-menu controls: none.
+- Assets acquired: none.
+- Research added: none.
+- Needs human attention: **see "Open questions waiting on you" — hard throttle active (21 iterations).**
 
 ### [2026-05-10] — `claude/gifted-shannon-5UrSF` — iter 20: test suite expansion + dead zone calibration research
 
