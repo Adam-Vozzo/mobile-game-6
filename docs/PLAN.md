@@ -14,7 +14,16 @@ instrumented and tunable.
 
 ## Active iteration
 
-- Branch: `claude/gifted-shannon-aw6fZ`
+- Branch: `claude/gifted-shannon-CoSWy`
+- Focus: iter 28. **SMB 3D research + blob shadow projector.** Primary: `docs/research/smb3d.md`
+  — full design analysis of the live reference game (camera, level structure, ghost trail,
+  depth perception aids, 8 implications). Side quest: `scripts/player/blob_shadow.gd` — depth-
+  perception disc shadow projected below Stray via per-frame raycast; scales radius and alpha
+  with height; toggled via new `blob_shadow` juice key (default ON); added to `player.tscn`
+  as child of Player node; logged in JUICE.md. `dev_menu.gd` juice_state expanded with
+  `blob_shadow: true`. Critical finding: blob shadow is mandatory before the first on-device
+  feel test, as SMB 3D (with its full spatial-aid suite) still received depth-perception
+  criticism without it.
 - Focus: iter 27. **Assisted profile Phase 1**: `assisted.tres` authored; sticky
   landing mechanic added to `player.gd` (`_was_on_floor_last_frame`,
   `_sticky_frames_remaining`, `_tick_timers` landing detection, `_apply_horizontal`
@@ -148,6 +157,18 @@ These mirror "Open questions waiting on you" in the README.
   feel issues. Those notes drive iteration 2's tuning pass.
 
 ## Recently completed (last 5)
+
+- 2026-05-10 — Iteration 28. **SMB 3D research + blob shadow projector.**
+  `docs/research/smb3d.md` — live reference game analysis (released March 2026):
+  camera design (fixed per level; "dynamic can't keep up"), level length (20 s skilled),
+  ghost trail (core loop, not bonus), depth perception aids (blob shadow, background
+  landmarks, 45° geometry, ground circle, 8-directional input), air dash as depth-error
+  recovery, style-loss as biggest failure risk. 8 implications for Void, including:
+  blob shadow mandatory pre-device-test; airborne rigid translate already aligned with
+  SMB 3D's "consistent depth axis" approach; each Void beat should be ~20 s; air dash
+  is a Gate 1 candidate. Side quest: `scripts/player/blob_shadow.gd` (depth-perception
+  disc shadow; 1 raycast + 1 draw call per frame; radius and alpha scale with height;
+  added to `player.tscn`; new `blob_shadow` juice key in dev_menu.gd; JUICE.md updated).
 
 - 2026-05-10 — Iteration 27. **Assisted profile Phase 1.** `assisted.tres` authored;
   sticky landing mechanic added to `player.gd` (`_was_on_floor_last_frame` tracking,

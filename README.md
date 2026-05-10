@@ -5,7 +5,7 @@ A mobile 3D platformer. Brutalist megastructure inspired by *BLAME!*. Controller
 ## Status
 
 Current gate: **Gate 0 — Feel Lab**
-Last iteration: 2026-05-10 — iter 27: Assisted profile Phase 1 + try-jump tests
+Last iteration: 2026-05-10 — iter 28: SMB 3D research + blob shadow projector
 Test device build: not yet — hand-authored scenes pending first Godot 4.6 import; see Open questions
 Performance: not yet measured on Nothing Phone 4(a) Pro
 Throttle level: **CLEAR — human is actively directing.** Re-engage the HARD throttle if 5+ autonomous iterations pass without further input.
@@ -95,6 +95,47 @@ Goal: store-ready build.
 The full iteration log lives here, newest first. Every iteration appends an entry. Skim the dates to find where you last left off.
 
 <!-- ITERATION ENTRIES BELOW — DO NOT REMOVE OLDER ENTRIES -->
+
+### [2026-05-10] — `claude/gifted-shannon-CoSWy` — iter 28: SMB 3D research + blob shadow projector
+
+- **Throttle: CLEAR (4 autonomous iterations since 2026-05-11 human session).** Normal mode.
+- **Primary: SMB 3D research note** — `docs/research/smb3d.md`. Full design analysis
+  of the live reference game (Team Meat + Sluggerfly, released March 31 2026). Key findings:
+
+  - **Fixed-per-level camera** was a deliberate choice: "a dynamic camera couldn't keep
+    up with the pace." Void's tripod model + airborne rigid-translate is already aligned.
+  - **Level length: ~20 seconds skilled.** Each Void beat should be ~20 s; Gate 1's
+    60–90 s target is correct at the *level* level, but must be structured as a procession
+    of ~20-second beats with rest nodes between.
+  - **Ghost trail (attempt replay) is the core pedagogical loop**, not bonus content.
+    Gate 1 must ship this.
+  - **Depth perception is the hardest 3D precision-platformer problem.** SMB 3D shipped
+    with a blob shadow, a ground-circle indicator, 45° geometry angles, and an 8-directional
+    stick constraint — and *still* drew depth-perception criticism. Blob shadow is mandatory
+    before the first on-device feel test.
+  - **Air dash as one-shot depth-error correction** (recharges on landing, ignores gravity
+    briefly). Strong mobile candidate; single swipe maps naturally. Log as Gate 1 candidate
+    for Assisted Phase 2 or as a universal mechanic.
+  - **Style loss is the biggest long-term risk.** SMB 3D's clearest failure was losing
+    visual identity in the 3D transition. Void's brutalist/BLAME! direction is actually an
+    advantage (concrete + fog + darkness are inherently 3D materials). Protect it.
+  - 8 concrete implications logged in `smb3d.md`; INDEX.md updated.
+
+- **Side quest: blob shadow projector.** `scripts/player/blob_shadow.gd` — a translucent
+  disc shadow projected below the Stray via per-frame raycast:
+  - Disc radius grows from `radius_at_ground` (0.22 m) to `radius_at_height` (0.55 m) as
+    the player rises — natural shadow penumbra expansion.
+  - Alpha fades quadratically to zero at `fade_height` (6 m) — reads clearly near floor,
+    disappears smoothly before the cutoff.
+  - 1 raycast/frame (World layer only, player excluded), 1 draw call. Minimal perf cost.
+  - Added to `scenes/player/player.tscn` as `BlobShadow` child of Player node — applies
+    to all scenes using the player prefab (feel_lab + style_test).
+  - New `blob_shadow` juice toggle in `dev_menu.gd` (default **ON**) and in JUICE.md.
+  - Togglable from the dev menu Juice section, labelled "Blob Shadow."
+
+- **Bugs fixed:** none.
+- **New dev-menu controls:** `blob_shadow` toggle in Juice section.
+- **Perf:** not yet measured on device (on-device pending).
 
 ### [2026-05-10] — `claude/gifted-shannon-aw6fZ` — iter 27: Assisted profile Phase 1 + try-jump tests
 

@@ -1,7 +1,8 @@
-[gd_scene load_steps=10 format=3]
+[gd_scene load_steps=11 format=3]
 
 [ext_resource type="Script" path="res://scripts/player/player.gd" id="1_player"]
 [ext_resource type="Resource" path="res://resources/profiles/snappy.tres" id="2_snappy"]
+[ext_resource type="Script" path="res://scripts/player/blob_shadow.gd" id="3_blobshadow"]
 
 [sub_resource type="CapsuleShape3D" id="Shape_PlayerCapsule"]
 radius = 0.28
@@ -50,4 +51,7 @@ mesh = SubResource("Mesh_StrayBody")
 [node name="Accent" type="MeshInstance3D" parent="Visual"]
 transform = Transform3D(1, 0, 0, 0, 1, 0, 0, 0, 1, 0, 0.55, 0.27)
 mesh = SubResource("Mesh_StrayAccent")
+
+[node name="BlobShadow" type="Node3D" parent="."]
+script = ExtResource("3_blobshadow")
 

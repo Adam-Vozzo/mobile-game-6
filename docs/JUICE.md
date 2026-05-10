@@ -58,6 +58,12 @@ Status legend:
 | Land squish | idea | scaled by impact velocity, recovers on a curve |
 | Death squish | prototype | scale(1.25, 0.25, 1.25) crush on death; scale-up with TRANS_BACK overshoot on spawn; gated behind `squash_stretch` toggle |
 
+## Blob shadow — toggle key `blob_shadow`
+
+| element | status | notes |
+|---------|--------|-------|
+| Ground-projected disc | prototype | `scripts/player/blob_shadow.gd`; 1 raycast/frame + 1 draw call; disc scales radius_at_ground→radius_at_height and alpha_max→0 as height increases; quadratic alpha falloff; default ON (gameplay-critical depth aid, not decoration) |
+
 ## Sound layers — toggle key `sound_layers`
 
 | element | status | notes |

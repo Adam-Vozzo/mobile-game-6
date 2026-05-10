@@ -9,6 +9,10 @@ they're written.
 
 ---
 
+## Super Meat Boy 3D — live reference
+
+- [`smb3d.md`](smb3d.md) — Released March 2026 (Sluggerfly + Team Meat). Closest live reference to Project Void. Key findings: (1) blob shadow is mandatory for depth perception — even SMB 3D's full spatial-aid suite still drew depth-perception criticism; (2) fixed-per-level camera chosen explicitly because dynamic camera "couldn't keep up with the pace" — Void's tripod model is aligned; (3) level length ~20 s skilled — each Void beat should be ~20 s; (4) air dash as one-shot depth-error correction is a strong mobile candidate for Assisted/Gate 1; (5) ghost trail attempt-replay confirmed as the pedagogical core mechanic, not optional; (6) style loss (SMB 3D's biggest failure) reinforces: protect the brutalist/BLAME! identity through the 3D transition.
+
 ## Character controllers
 
 - [`character_controllers.md`](character_controllers.md) — SMB grammar, Mario Odyssey assists (ledge magnetism, coyote), A Hat in Time homing-attack model, Pseudoregalia momentum rethink, Demon Turf custom-physics rationale. Implications: Snappy profile values are in the right range; Assisted profile should prioritise ledge magnetism; Momentum ramp should reduce deceleration not increase max speed.
