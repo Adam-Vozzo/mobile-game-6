@@ -14,18 +14,17 @@ instrumented and tunable.
 
 ## Active iteration
 
-- Branch: `claude/gifted-shannon-iG0FA`
-- Focus: iter 18. Touch slider display fix (primary): `TouchOverlay` now adds
-  itself to the `"touch_overlay"` group in `_ready()`. `DevMenuOverlay._build_touch_section`
-  queries that group to read actual loaded values (`jump_button_radius`, `stick_zone_ratio`)
-  before building sliders. Since `DevMenuOverlay._ready()` is triggered by
-  `call_deferred`, the scene tree — including `TouchOverlay._load_layout()` —
-  has completed before the query runs. Closes refactor backlog item.
-  Side quest: `_test_respawn_params()` added to kinematics tests — `reboot_duration`
-  range assertions (0 < x ≤ 1.5), `fall_kill_y` sign/range assertions, and a
-  phase-fraction sum check (0.12+0.35+0.35+0.18 = 1.0) documenting
-  `_run_reboot_effect`'s beat percentages. +13 assertions (~76 total).
-  Hard throttle (18 iterations since human direction).
+- Branch: `claude/gifted-shannon-80jFq`
+- Focus: iter 19. `_build_controller_section` refactor (primary): extracted 4
+  focused sub-builders (`_build_controller_movement`, `_build_controller_jump`,
+  `_build_controller_respawn`, `_build_controller_slope`). Function was 42 lines,
+  now 7. No behaviour change. Every method in `dev_menu_overlay.gd` is now under
+  40 lines.
+  Side quest: `_test_movement_params()` added to kinematics tests — 10 new
+  assertions for `ground_deceleration > 0`, `air_acceleration > 0`, speed-profile
+  ordering (Momentum > Snappy > Floaty), Momentum zero-damping invariant, Momentum
+  loose-decel invariant. Total: ~76 → ~86 assertions.
+  Hard throttle (19 iterations since human direction).
   **Items 1–4 still blocked on human on-device action.**
 
 ## Queue (ranked, top is next)
@@ -144,6 +143,15 @@ These mirror "Open questions waiting on you" in the README.
   feel issues. Those notes drive iteration 2's tuning pass.
 
 ## Recently completed (last 5)
+
+- 2026-05-10 — Iteration 19. `dev_menu_overlay.gd::_build_controller_section` refactor:
+  extracted `_build_controller_movement` (13 lines), `_build_controller_jump` (19 lines),
+  `_build_controller_respawn` (7 lines), `_build_controller_slope` (5 lines). Dispatcher
+  is now 7 lines. Every method in the file is under 40 lines. No behaviour change.
+  Side quest: `_test_movement_params()` in `tests/test_controller_kinematics.gd` — 10
+  new assertions: `ground_deceleration > 0` and `air_acceleration > 0` per profile;
+  speed ordering (Momentum > Snappy, Floaty < Snappy); Momentum zero air-damping;
+  Momentum loose-decel (decel < accel). Total assertions: ~76 → ~86.
 
 - 2026-05-10 — Iteration 18. Touch slider display fix + respawn param tests:
   `TouchOverlay._ready()` adds itself to group `"touch_overlay"`.
@@ -344,6 +352,8 @@ These mirror "Open questions waiting on you" in the README.
 - ~~**Touch slider display doesn't reflect loaded layout.**~~ Done (iter 18).
   `TouchOverlay` now adds itself to the `"touch_overlay"` group; `_build_touch_section`
   queries that group for actual values. DECISIONS.md updated.
+- ~~**`_build_controller_section` over 40 lines.**~~ Done (iter 19). Extracted 4
+  sub-builders; dispatcher now 7 lines. No behaviour change.
 - `perf_budget.gd::active_particles` is never updated — always 0. The `over_budget()`
   check includes `active_particles > ACTIVE_PARTICLES_BUDGET` which is always false.
   Current spark system uses `ImmediateMesh` (not `GPUParticles3D`) so there's no

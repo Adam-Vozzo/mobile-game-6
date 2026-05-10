@@ -114,6 +114,13 @@ func _build_profile_section(vbox: VBoxContainer) -> void:
 
 func _build_controller_section(vbox: VBoxContainer) -> void:
 	vbox.add_child(_make_sep())
+	_build_controller_movement(vbox)
+	_build_controller_jump(vbox)
+	_build_controller_respawn(vbox)
+	_build_controller_slope(vbox)
+
+
+func _build_controller_movement(vbox: VBoxContainer) -> void:
 	vbox.add_child(_make_label("Controller — Movement", 14, true))
 	_profile_sliders[&"max_speed"] = _make_profile_slider(vbox,
 		"Max speed",          2.0,   20.0,  0.1,  &"max_speed")
@@ -126,6 +133,8 @@ func _build_controller_section(vbox: VBoxContainer) -> void:
 	_profile_sliders[&"air_horizontal_damping"] = _make_profile_slider(vbox,
 		"Air damping",        0.0,    5.0,  0.05, &"air_horizontal_damping")
 
+
+func _build_controller_jump(vbox: VBoxContainer) -> void:
 	vbox.add_child(_make_label("Controller — Jump", 14, true))
 	_profile_sliders[&"jump_velocity"] = _make_profile_slider(vbox,
 		"Jump velocity",      4.0,   20.0,  0.1,  &"jump_velocity")
@@ -144,12 +153,16 @@ func _build_controller_section(vbox: VBoxContainer) -> void:
 	_profile_sliders[&"release_velocity_ratio"] = _make_profile_slider(vbox,
 		"Release ratio",      0.1,    1.0,  0.01, &"release_velocity_ratio")
 
+
+func _build_controller_respawn(vbox: VBoxContainer) -> void:
 	vbox.add_child(_make_label("Controller — Respawn", 14, true))
 	_profile_sliders[&"reboot_duration"] = _make_profile_slider(vbox,
 		"Reboot dur (s)",     0.05,   1.5,  0.05, &"reboot_duration")
 	_profile_sliders[&"fall_kill_y"] = _make_profile_slider(vbox,
 		"Fall kill Y",      -200.0,   0.0,  0.5,  &"fall_kill_y")
 
+
+func _build_controller_slope(vbox: VBoxContainer) -> void:
 	vbox.add_child(_make_label("Controller — Slope", 14, true))
 	_profile_sliders[&"max_floor_angle_degrees"] = _make_profile_slider(vbox,
 		"Max floor°",         20.0,  70.0,  1.0,  &"max_floor_angle_degrees")
