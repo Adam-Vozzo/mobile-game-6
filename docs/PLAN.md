@@ -14,14 +14,15 @@ instrumented and tunable.
 
 ## Active iteration
 
-- Branch: `claude/gifted-shannon-BNuNf`
-- Focus: iter 23. `_test_camera_yaw_recenter` (primary): 9 assertions covering
-  `wrapf` shortest-path, lerp-step clamping, convergence simulation (~128 → ~137
-  total). Side quest: `docs/research/compatibility_renderer.md` — Compatibility
-  vs Mobile renderer feature matrix, per-GPU-tier perf expectations, recommended
-  approach (no switch; Compatibility APK viable at Gate 2+, zero code changes).
-  Hard throttle (23 iterations since human direction). **Items 1–4 still blocked
-  on human on-device action.**
+- Branch: `claude/gifted-shannon-f29MG`
+- Focus: iter 24. `_test_move_dir_rotation` (8 assertions: Basis(UP,yaw) formula
+  at 4 yaw values, length preservation, Y=0 invariant, over-length guard) +
+  `_test_gravity_band_selection` (12 assertions: 4 band-selection rules × 3 profiles)
+  → ~137 → ~157 total assertions. Side quest: `docs/research/assist_mechanics.md`
+  — Godot 4 implementation approaches for Assisted profile (ledge magnetism,
+  arc assist, sticky landing, edge-snap; 6 new ControllerProfile properties;
+  implementation order). Hard throttle (24 iterations since human direction).
+  **Items 1–4 still blocked on human on-device action.**
 
 ## Queue (ranked, top is next)
 
@@ -141,6 +142,18 @@ These mirror "Open questions waiting on you" in the README.
   feel issues. Those notes drive iteration 2's tuning pass.
 
 ## Recently completed (last 5)
+
+- 2026-05-10 — Iteration 24. `_test_move_dir_rotation` (8 assertions) +
+  `_test_gravity_band_selection` (12 assertions = 4 rules × 3 profiles) added to
+  `tests/test_controller_kinematics.gd`. Covers: Basis(UP,yaw) formula at yaw=0,
+  PI, PI/2; length preservation (orthogonal rotation invariant); Y=0 invariant;
+  over-length guard; gravity band selection (falling → after_apex, rising+held →
+  rising, rising+released → falling, apex frame → after_apex). ~137 → ~157 total.
+  Side quest: `docs/research/assist_mechanics.md` — concrete Godot 4 implementation
+  for ledge magnetism (ShapeCast at jump time, 2 rays), arc assist (20-step parabola
+  simulation), sticky landing (2-frame speed reduction), edge-snap (post-slide
+  position correction); 6 new ControllerProfile properties (all default 0 = off);
+  implementation order; `_landed_this_frame` shared tracker proposal. INDEX.md updated.
 
 - 2026-05-10 — Iteration 23. `_test_camera_yaw_recenter` (9 assertions) added
   to `tests/test_controller_kinematics.gd`. Covers: `wrapf` shortest-path

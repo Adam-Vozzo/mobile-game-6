@@ -13,6 +13,8 @@ they're written.
 
 - [`character_controllers.md`](character_controllers.md) — SMB grammar, Mario Odyssey assists (ledge magnetism, coyote), A Hat in Time homing-attack model, Pseudoregalia momentum rethink, Demon Turf custom-physics rationale. Implications: Snappy profile values are in the right range; Assisted profile should prioritise ledge magnetism; Momentum ramp should reduce deceleration not increase max speed.
 
+- [`assist_mechanics.md`](assist_mechanics.md) — Godot 4 implementation approaches for the Assisted controller profile (PLAN P0 item 4). Covers: ledge magnetism (ShapeCast at jump time, 2 rays, ≤ 1.0 m/s impulse, new ControllerProfile properties), arc assist (20-step parabola simulation, ≤ 15% jump_velocity correction, per-frame), sticky landing (2-frame speed reduction × 20%, `_was_on_floor_last_frame` tracker), edge-snap on landing (post-move_and_slide position correction, implement last). 6 new ControllerProfile properties (all default 0 = off, backwards-compatible). Implementation order: sticky landing → ledge magnetism → arc assist → edge-snap. Key implication: `_was_on_floor_last_frame` doubles as the landing-squash trigger for the juice system — extract to `_landed_this_frame` in `_physics_process`.
+
 ## Juice density
 
 - [`juice_density.md`](juice_density.md) — Astro's Playroom / Astro Bot "layered receipt" model (audio+visual+world per action), comparison with SMB sparse-juice approach, mobile considerations (UI feedback compensates for no haptics), draw-call cost of each juice type. Gate 1 priority ranking: landing squash > jump stretch > jump puff > pre-jump anticipation. Key implication: Void should sit closer to SMB density than Astro Bot given the brutalist tone.

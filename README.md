@@ -5,7 +5,7 @@ A mobile 3D platformer. Brutalist megastructure inspired by *BLAME!*. Controller
 ## Status
 
 Current gate: **Gate 0 — Feel Lab**
-Last iteration: 2026-05-10 — iter 23: yaw recenter tests + Compatibility renderer research
+Last iteration: 2026-05-10 — iter 24: move-dir rotation tests + gravity band selection tests + assist mechanics research
 Test device build: not yet — hand-authored scenes pending first Godot 4.6 import; see Open questions
 Performance: not yet measured on Nothing Phone 4(a) Pro
 Throttle level: **HARD — 23 iterations since last human direction. No new features. See Open questions.**
@@ -94,6 +94,62 @@ Goal: store-ready build.
 The full iteration log lives here, newest first. Every iteration appends an entry. Skim the dates to find where you last left off.
 
 <!-- ITERATION ENTRIES BELOW — DO NOT REMOVE OLDER ENTRIES -->
+
+### [2026-05-10] — `claude/gifted-shannon-f29MG` — iter 24: move-dir rotation tests + gravity band selection tests + assist mechanics research
+
+- **Throttle: HARD (24 iterations since last human direction).** Hardening only.
+- **Primary: two new test groups added to `tests/test_controller_kinematics.gd`.**
+  ~137 → ~157 total assertions (20 new). Both groups are pure math (no scene tree
+  instantiation), following the same pattern as all previous groups.
+
+  - **`_test_move_dir_rotation` (8 assertions)** — verifies `player.gd::_camera_relative_move_dir`:
+    `Basis(Vector3.UP, yaw) * Vector3(move_input.x, 0.0, move_input.y)`.
+    - `yaw=0, stick up` → world z ≈ −1 (forward); `yaw=0, stick right` → world x ≈ +1.
+    - `yaw=PI, stick up` → world z ≈ +1 (camera reversed).
+    - `yaw=PI/2, stick up` → world x ≈ −1 (camera pivoted 90° CCW).
+    - Y component always 0 (Basis(UP, yaw) rotation preserves the XZ plane).
+    - Rotation preserves vector length (orthogonal transformation invariant).
+    - Over-length guard: dir > 1 is normalised (belt-and-braces in player.gd).
+    - Helper `_move_dir(move_input, yaw)` mirrors the formula exactly.
+
+  - **`_test_gravity_band_selection` (12 assertions = 4 rules × 3 profiles)** — verifies
+    `player.gd::_apply_gravity` if/elif band selection:
+    - `vel_y < 0` (falling) → `gravity_after_apex` on all 3 profiles.
+    - `vel_y > 0 + jump_held` → `gravity_rising` on all 3.
+    - `vel_y > 0 + jump released` → `gravity_falling` on all 3.
+    - `vel_y == 0` (apex frame, `<= 0` is true) → `gravity_after_apex` on all 3.
+    - Helper `_select_gravity(p, vel_y, jump_held)` mirrors the if/elif exactly.
+
+- **Side quest: `docs/research/assist_mechanics.md`** — closes the research gap
+  for PLAN P0 item 4 (Assisted profile). Bridges the design targets already in
+  `mobile_touch_ux.md` and `character_controllers.md` to concrete Godot 4
+  implementation sketches for `CharacterBody3D`:
+  - **Ledge magnetism**: `PhysicsDirectSpaceState3D.intersect_shape` with small
+    sphere, fired once at `_try_jump()`, 2 rays (left/right of capsule edge),
+    ≤ `ledge_magnet_strength` m/s impulse, new properties `ledge_magnet_radius`
+    and `ledge_magnet_strength` (both default 0 on all existing profiles).
+  - **Arc assist**: 20-step parabola simulation using current velocity + gravity,
+    ShapeCast per step, lateral correction ≤ 15% `jump_velocity`. New property
+    `arc_assist_max` (default 0).
+  - **Sticky landing**: `_was_on_floor_last_frame` tracks landing frame, applies
+    `(1 - landing_sticky_factor)` multiplier to horizontal velocity for
+    `landing_sticky_frames` (2 frames, 20%). Properties default 0.
+  - **Edge-snap**: post-`move_and_slide()` position correction, most complex,
+    implement last. Property `edge_snap_dist` (default 0).
+  - **Implementation order**: sticky landing → ledge magnetism → arc assist →
+    edge-snap. All 6 new properties default to 0 — backwards-compatible with
+    all existing profiles.
+  - **Key implication**: `_was_on_floor_last_frame` doubles as the juice-system
+    landing-squash trigger — extract to a single `_landed_this_frame` bool
+    computed once per `_physics_process` to avoid duplicate `is_on_floor()` calls.
+  - INDEX.md updated; "Assist mechanics" entry added under Character controllers.
+
+- Perf: no runtime change (tests + docs only).
+- Bugs fixed: none.
+- New dev-menu controls: none.
+- Assets acquired: none.
+- Research added: `docs/research/assist_mechanics.md`; INDEX.md updated.
+- Needs human attention: **see "Open questions waiting on you" — hard throttle active (24 iterations).**
 
 ### [2026-05-10] — `claude/gifted-shannon-BNuNf` — iter 23: yaw recenter tests + Compatibility renderer research
 
