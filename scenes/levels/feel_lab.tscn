@@ -204,6 +204,7 @@ shape = SubResource("Shape_Slope")
 
 [node name="WallA" type="StaticBody3D" parent="Walls"]
 transform = Transform3D(1, 0, 0, 0, 1, 0, 0, 0, 1, 0, 2, -10)
+collision_layer = 65
 
 [node name="Mesh" type="MeshInstance3D" parent="Walls/WallA"]
 mesh = SubResource("Mesh_Wall")
@@ -213,6 +214,7 @@ shape = SubResource("Shape_Wall")
 
 [node name="WallB" type="StaticBody3D" parent="Walls"]
 transform = Transform3D(1, 0, 0, 0, 1, 0, 0, 0, 1, 3, 2, -10)
+collision_layer = 65
 
 [node name="Mesh" type="MeshInstance3D" parent="Walls/WallB"]
 mesh = SubResource("Mesh_Wall")
@@ -224,6 +226,7 @@ shape = SubResource("Shape_Wall")
 
 [node name="Pillar1" type="StaticBody3D" parent="Pillars"]
 transform = Transform3D(1, 0, 0, 0, 1, 0, 0, 0, 1, 25, 5, 25)
+collision_layer = 65
 
 [node name="Mesh" type="MeshInstance3D" parent="Pillars/Pillar1"]
 mesh = SubResource("Mesh_Pillar")
@@ -233,6 +236,7 @@ shape = SubResource("Shape_Pillar")
 
 [node name="Pillar2" type="StaticBody3D" parent="Pillars"]
 transform = Transform3D(1, 0, 0, 0, 1, 0, 0, 0, 1, -25, 5, 25)
+collision_layer = 65
 
 [node name="Mesh" type="MeshInstance3D" parent="Pillars/Pillar2"]
 mesh = SubResource("Mesh_Pillar")
@@ -242,6 +246,7 @@ shape = SubResource("Shape_Pillar")
 
 [node name="Pillar3" type="StaticBody3D" parent="Pillars"]
 transform = Transform3D(1, 0, 0, 0, 1, 0, 0, 0, 1, 25, 5, -25)
+collision_layer = 65
 
 [node name="Mesh" type="MeshInstance3D" parent="Pillars/Pillar3"]
 mesh = SubResource("Mesh_Pillar")
@@ -251,6 +256,7 @@ shape = SubResource("Shape_Pillar")
 
 [node name="Pillar4" type="StaticBody3D" parent="Pillars"]
 transform = Transform3D(1, 0, 0, 0, 1, 0, 0, 0, 1, -25, 5, -25)
+collision_layer = 65
 
 [node name="Mesh" type="MeshInstance3D" parent="Pillars/Pillar4"]
 mesh = SubResource("Mesh_Pillar")

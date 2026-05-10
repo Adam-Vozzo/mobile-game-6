@@ -97,6 +97,7 @@ pointing/emulate_touch_from_mouse=true
 3d_physics/layer_4="Pickup"
 3d_physics/layer_5="Trigger"
 3d_physics/layer_6="MovingPlatform"
+3d_physics/layer_7="CameraOccluder"
 
 [physics]
 

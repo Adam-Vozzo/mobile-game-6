@@ -199,3 +199,146 @@ Consequences: `pitch_max_degrees` @export and dev-menu slider are retained for
 potential future use (e.g., minimum-elevation-above-horizontal constraint) but
 have no runtime effect. The V-turn bug is eliminated. The unit test group
 `_test_camera_pitch_formula` (~5 assertions) documents the invariant.
+
+## 2026-05-09 — Camera model: tripod follow (rotates in place; doesn't translate with lateral motion)
+
+Status: accepted
+Context: The original "rig + offset" camera (camera_rig.gd before this date)
+followed the player rigidly — every metre the player walked sideways translated
+the camera one metre sideways. Combined with auto-recenter that orbited the
+camera around the player's heading, this caused continuous lateral background
+slide during normal play and was reported as motion-sick on phone. Auto-recenter
+itself had a sign bug (atan2 of velocity rather than negated velocity) that
+spun the rig unboundedly when the player moved straight forward.
+Decision: Replace the rig+offset model with a tripod camera. Each frame the
+camera holds its current world position; distance-maintenance only translates
+the camera *along* the camera→player horizontal axis, so the camera's distance
+to the player is preserved but lateral player motion is absorbed by the
+look_at re-orientation rather than by translation. Auto-recenter is deleted
+(was the source of the spinning bug, and the tripod doesn't need it). Lookahead
+is deleted (its purpose — biasing the rig toward velocity — is anti-correlated
+with what motion-sick users want). Manual right-drag still orbits the camera
+around the player's spherical-coords pose; pitch is clamped ≤ 0 so the camera
+stays at-or-above horizontal (see 2026-05-10 V-turn entry).
+Alternatives considered:
+- Reduce the lookahead/recenter rates to mask the slide. Rejected: the slide is
+  proportional to player walking speed, not to rate; turning rates down only
+  delays the same total motion.
+- Keep the rig+offset model but lerp the rig position toward the player. Same
+  problem at the limit: the camera ends up translating with the player.
+- Camera-on-rails / locked angles. Rejected: precision platformer needs
+  arbitrary headings.
+Consequences: `_yaw`, `_pitch`, `_lookahead`, `_last_drag_time`, the recenter
+state and the lookahead state are gone. New state is just `_pitch_rad` (drag
+overrides) and the camera's own world position. Player input frame
+(`_camera_yaw` published to player.gd) is now derived live from the
+camera→player horizontal vector each frame, so "stick up" always means "move
+away from the camera in the current view". On the ground, lateral player
+motion produces a slow look_at rotation as the player drifts off the camera's
+forward axis; that rotation is intentional (it's how the camera "tracks" the
+player without translating with them). Lookahead/recenter dev-menu sliders
+are dropped from the Camera section.
+
+## 2026-05-11 — Selective camera occlusion: dedicated layer + sphere cast + asymmetric smoothing + hysteresis latch
+
+Status: accepted
+Context: The first-pass camera occlusion (raycast from aim_point to the desired
+camera position, snap to hit minus margin) had three observable failures on
+mobile: (a) every wall, pillar, and small platform blocked the camera equally
+— passing behind a 2 m platform produced the same hard pull-in as ducking
+behind a real wall, which is visually busy; (b) ray casts through a wall edge
+hit/miss alternated frame-by-frame because a ray is infinitely thin, producing
+a one-frame flicker the user described as "spazzing"; and (c) walking around a
+corner toggled the occlusion state on the way past the edge, bouncing the
+camera in/out as the geometry came in and out of cover.
+Decision: Three layered fixes, all in `camera_rig.gd::_occlude` and
+`_process`.
+1. **Selective occluder layer**: new physics layer 7 = `CameraOccluder`. The
+   camera's `occlusion_mask` defaults to that layer only (`1 << 6 = 64`). Big
+   architectural pieces (walls, pillars, megastructure shells) get
+   `collision_layer = 65` (1 = World + 64 = CameraOccluder); small gameplay
+   obstacles (platforms, slopes, moving platforms) keep the default `1`. The
+   camera ignores the small ones; the player still collides with everything
+   normally because player collision is layer-1-based.
+2. **Sphere cast instead of raycast**: `direct_space_state.cast_motion` of an
+   `occlusion_probe_radius` (0.22 m default) sphere from aim_point toward the
+   desired camera position. A volume sweep doesn't toggle hit/miss at thin
+   wall edges the way a thread-thin ray does. `occlusion_probe_radius = 0`
+   falls back to the old ray, kept as an opt-out.
+3. **Asymmetric smoothing + hysteresis**: position-follow rate is
+   `pull_in_smoothing` (28 / sec, fast) when the camera should move *toward*
+   the player and `ease_out_smoothing` (6 / sec, slow) when moving away.
+   On top of that, a frame-counted hysteresis latch: any sphere-hit re-arms
+   `_is_occluded = true` for `occlusion_release_delay` (0.18 s default), and
+   the camera holds at `_last_occluded_pos` even if the probe momentarily
+   clears during the latch window. Latch only releases after a sustained run
+   of clear frames, so a one-frame peek-through at a corner edge can't bounce
+   the camera back to full distance.
+Alternatives considered:
+- One global "everything blocks" layer with stronger smoothing alone:
+  rejected — small platforms producing constant micro-pull-ins read as
+  jitter no matter how heavily damped.
+- ShapeCast3D node attached to the rig: viable but adds a permanent extra
+  query per frame and binds the occluder geometry to a node-based filter;
+  the `cast_motion` script call is equivalent and keeps everything in the
+  rig script.
+- State-machine approach (separate "free" / "approaching wall" / "behind
+  wall" states): more lines for the same observable behaviour. The
+  hit-counter latch is the simplest hysteresis that handles corner bounces.
+Consequences: New project setting `3d_physics/layer_7="CameraOccluder"`. Two
+scenes updated (`feel_lab.tscn`: pillars × 4, walls × 2; `style_test.tscn`:
+WallPanel, ScalePillar). New @export knobs in the rig: `occlusion_probe_radius`,
+`pull_in_smoothing`, `ease_out_smoothing`, `occlusion_release_delay`. Future
+levels should tag any geometry larger than ~3 m in any horizontal dimension
+on layer 7; gameplay obstacles stay on layer 1 only. The earlier
+`follow_smoothing` single-rate export is gone — split into the two asymmetric
+rates above.
+
+## 2026-05-11 — Airborne camera: rigid translation, no rotation
+
+Status: accepted
+Context: Once the tripod model was settled, the camera still rotated visibly
+during jumps because look_at tracked the player along their parabolic arc:
+`_camera_yaw` published to the player drifted while airborne, so a stick
+direction held at takeoff would steer slightly differently mid-flight as the
+camera angle shifted. This is a known footgun in 3D platformers (the player's
+"forward" should be locked to the takeoff frame for the duration of the jump).
+A first attempt — freeze cam.x and cam.z while airborne and let look_at
+pitch-only — was actually the *opposite* of what the user wanted: it stopped
+the camera following the player's translation entirely. The camera should
+follow the player's position so they stay framed, and only the rotation
+should freeze.
+Decision: Each frame, after running the full position-update pass, store
+`_air_offset = camera.global_position - target_pos` (camera offset relative to
+player). On airborne frames, the very first thing in `_process` is
+`camera.global_position = target_pos + _air_offset` — a rigid translation
+that copies the player's per-frame delta onto the camera and preserves the
+camera→player vector exactly. Distance maintenance, occlusion, and the
+asymmetric lerp are all skipped while airborne. look_at and `pub_yaw` still
+run because the rigid translate keeps the camera→player vector identical to
+the previous frame, so both produce the same basis / angle frame after frame
+— effectively no-ops *unless* drag has changed the offset, which is the only
+source of intentional rotation mid-jump. On landing, the ground branch
+resumes; the offset captured during the jump may be at an oblique angle
+(player jumped sideways), and the existing asymmetric lerp eases the camera
+back to the canonical 6 m radius without a hard snap.
+Alternatives considered:
+- Freeze only the published yaw, keep look_at running: stops the input-frame
+  drift but leaves the visible camera rotation, which the user reported as
+  the more disorienting half of the problem.
+- Freeze cam.x / cam.z, follow Y only: misreads the request — leaves the
+  player floating out of horizontal frame on long jumps.
+- Detect the airborne window via velocity rather than `is_on_floor()`:
+  `is_on_floor()` already accounts for slope-snap and frame-of-grace cases
+  the controller cares about; routing through velocity would create a
+  second source of truth.
+Consequences: `_air_offset: Vector3` added to camera state. The `_process`
+body splits cleanly into "ground branch (full tripod logic)" and "air
+branch (rigid translate only)" with shared look_at and yaw publish. Drag
+input still works mid-jump — it modifies the camera's orbital position
+after the rigid translate; that change propagates into `_air_offset` at
+end-of-frame and the camera persists the dragged orientation through
+subsequent air frames. Coyote-time grace is inherited from the controller's
+`is_on_floor()` semantics, which is the desired behaviour (camera doesn't
+snap-freeze the instant the player runs off a ledge — it freezes once the
+controller actually treats the player as airborne).

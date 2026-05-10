@@ -100,6 +100,7 @@ shape = SubResource("Shape_Platform")
 
 [node name="WallPanel" type="StaticBody3D" parent="DisplayRoom"]
 transform = Transform3D(1, 0, 0, 0, 1, 0, 0, 0, 1, -4, 2, -2)
+collision_layer = 65
 
 [node name="Mesh" type="MeshInstance3D" parent="DisplayRoom/WallPanel"]
 mesh = SubResource("Mesh_WallPanel")
@@ -109,6 +110,7 @@ shape = SubResource("Shape_WallPanel")
 
 [node name="ScalePillar" type="StaticBody3D" parent="DisplayRoom"]
 transform = Transform3D(1, 0, 0, 0, 1, 0, 0, 0, 1, 6, 4, -7)
+collision_layer = 65
 
 [node name="Mesh" type="MeshInstance3D" parent="DisplayRoom/ScalePillar"]
 mesh = SubResource("Mesh_ScalePillar")
