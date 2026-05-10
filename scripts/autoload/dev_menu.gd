@@ -37,6 +37,7 @@ var juice_state: Dictionary[StringName, bool] = {
 	&"motion_trails": true,
 	&"squash_stretch": true,
 	&"sound_layers": true,
+	&"blob_shadow": true,
 }
 var debug_viz_state: Dictionary[StringName, bool] = {
 	&"perf_hud": true,
