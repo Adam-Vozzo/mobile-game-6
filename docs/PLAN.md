@@ -14,27 +14,15 @@ instrumented and tunable.
 
 ## Active iteration
 
-- Branch: `claude/gifted-shannon-HuiCV`
-- Focus: iter 29. **Blob shadow dev menu tunables.** `blob_shadow.gd` had four `@export_range`
-  tunables (radius_at_ground, radius_at_height, fade_height, alpha_max) accessible only via the
-  Godot Inspector; CLAUDE.md requires same-iteration dev menu exposure (missed in iter 28).
-  Added `blob_shadow_param_changed` signal to `dev_menu.gd`; wired `_on_blob_shadow_param_changed`
-  handler in `blob_shadow.gd`; added `_make_blob_slider` + `_build_blob_shadow_tuning` to
-  `dev_menu_overlay.gd` (called from `_build_juice_section`) — 4 live sliders now in Juice panel.
-  Side quest: `_test_blob_shadow_math` (12 assertions) in `test_controller_kinematics.gd`,
-  covering the three t/r/a formulas. Net: 268 → 280 assertions. Throttle: CLEAR.
-- Focus: iter 27. **Assisted profile Phase 1**: `assisted.tres` authored; sticky
-  landing mechanic added to `player.gd` (`_was_on_floor_last_frame`,
-  `_sticky_frames_remaining`, `_tick_timers` landing detection, `_apply_horizontal`
-  damping); `landing_sticky_factor` + `landing_sticky_frames` added to
-  `ControllerProfile` (default 0 = disabled on all other profiles); Assisted wired
-  into dev menu dropdown as the 4th entry; "Controller — Assist" subsection with 2
-  new sliders. Dev menu now shows Snappy / Floaty / Momentum / Assisted.
-  Side quest: `_test_try_jump_logic` (12 assertions: buffer×coyote AND condition,
-  per-profile vy assignment, timer-zeroing after jump, boundary cases) +
-  `_test_assisted_params` (12 assertions: sticky params enabled on Assisted, disabled
-  on all others, generous coyote/buffer ordering). Net: 198 → 268 assertions.
-  Throttle: CLEAR. **Items 1–3 still blocked on human on-device action.**
+- Branch: `claude/gifted-shannon-swI5c`
+- Focus: iter 30. **Gate 1 level concepts + air dash research.** Three Gate 1 candidate
+  level concepts authored in `docs/levels/`: Spine (vertical column ascent, wall-jump primary),
+  Lung (horizontal ventilation array, timing primary), Threshold (3-zone contrast study, scale shift).
+  Each follows the LEVEL_DESIGN.md 12-step workflow through step 5 (parti, genius loci,
+  double-reading, procession beats, platforming verbs, par route, skill range, kit requirements,
+  greybox notes). Human selects one; Claude builds greybox. Side quest: `docs/research/air_dash.md`
+  — full design spec + implementation sketch for the air dash mechanic (SMB 3D's depth-error
+  correction recommendation from iter 28). Throttle: CLEAR (4 iters since human session).
 
 ## Queue (ranked, top is next)
 
@@ -140,6 +128,12 @@ The next iteration should pull from the top of this list. Items marked
   Pattern A (env vars, Godot 4.3+) and Pattern B (local.properties + Gradle patch).
 - Consider upgrading camera occlusion from point ray to ShapeCast3D
   (capsule) if poke-through is observed in Gate 1 tighter geometry.
+- ~~**Gate 1 level concepts.**~~ Done (iter 30). Three candidates in `docs/levels/`:
+  `spine.md` (wall-jump column ascent), `lung.md` (ventilation timing chamber),
+  `threshold.md` (3-zone contrast study). Human must select one. Greybox follows.
+- ~~**Air dash research.**~~ Done (iter 30). `docs/research/air_dash.md` — design
+  spec, input mapping, ControllerProfile params, player.gd sketch, TouchInput signal.
+  Implementation queued after ghost trails in Gate 1.
 
 ## Blocked / needs human
 
@@ -154,8 +148,23 @@ These mirror "Open questions waiting on you" in the README.
 - **First feel verdict.** Once the build runs, the human should try
   Snappy → Floaty → Momentum in the dev menu dropdown and note any
   feel issues. Those notes drive iteration 2's tuning pass.
+- **Gate 1 level concept selection.** Three concepts are in `docs/levels/`:
+  `spine.md`, `lung.md`, `threshold.md`. Read the parti and procession for each
+  and pick the one to build. Each has different primary verbs and spatial
+  challenges — pick based on what feel most like the game you want to ship.
+  (Per CLAUDE.md: level concept selection is a human call.)
 
 ## Recently completed (last 5)
+
+- 2026-05-10 — Iteration 30. **Gate 1 level concepts (Spine / Lung / Threshold) + air dash research.**
+  Three Gate 1 candidate levels authored in `docs/levels/`: Spine (5-beat vertical column ascent,
+  wall-jump primary, ~60–75 s skilled), Lung (4-beat horizontal timing chamber with moving baffles,
+  biolume cyan accent, ~70–80 s skilled), Threshold (5-beat 3-zone contrast study — habitation /
+  maintenance / industrial — ~70 s skilled). All follow LEVEL_DESIGN.md workflow through step 5
+  (parti, genius loci, double-reading, procession, verbs, par route, skill range, kit requirements,
+  greybox notes). **Human must select one before greybox begins.** Side quest: `docs/research/air_dash.md`
+  — full design spec (0.18 s burst, single charge, swipe input) + Godot 4 implementation sketch
+  (ControllerProfile params, player.gd state, TouchInput signal). INDEX.md updated.
 
 - 2026-05-10 — Iteration 29. **Blob shadow dev menu tunables + math unit tests.**
   `blob_shadow.gd` `@export_range` tunables now live in the dev menu (Juice → Blob Shadow —

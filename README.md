@@ -5,10 +5,10 @@ A mobile 3D platformer. Brutalist megastructure inspired by *BLAME!*. Controller
 ## Status
 
 Current gate: **Gate 0 — Feel Lab**
-Last iteration: 2026-05-10 — iter 29: Blob shadow dev menu tunables + math unit tests
+Last iteration: 2026-05-10 — iter 30: Gate 1 level concepts (Spine / Lung / Threshold) + air dash research
 Test device build: not yet — hand-authored scenes pending first Godot 4.6 import; see Open questions
 Performance: not yet measured on Nothing Phone 4(a) Pro
-Throttle level: **CLEAR — human is actively directing.** Re-engage the HARD throttle if 5+ autonomous iterations pass without further input.
+Throttle level: **SOFT (4 autonomous iterations since 2026-05-11 human session).** Prefer non-destructive work. Feature work only if high-confidence. Re-engage HARD at 5+.
 
 If you only read one section, read **Open questions waiting on you** below.
 
@@ -32,9 +32,15 @@ Things Claude can't decide alone, or where it's stalled and needs direction. Eac
 >    geometry.
 > 4. Give a gate-transition signal ("Gate 0 is done, proceed to Gate 1 vertical slice
 >    planning") if you feel the Feel Lab is instrumented enough.
+> 5. **NEW: Pick a Gate 1 level to build.** Three concepts are ready in `docs/levels/`:
+>    - **Spine** — vertical column ascent via wall jump. 5 beats. ~60–75 s skilled. Wall jump primary.
+>    - **Lung** — horizontal ventilation chamber, moving platform timing. 4 beats. ~70–80 s skilled. Timing primary.
+>    - **Threshold** — 3-zone contrast study (habitation → maintenance → industrial). 5 beats. ~70 s skilled. Scale-shift primary.
+>    Read the parti and procession for each in `docs/levels/<name>.md`. Tell Claude which to build and it will greybox immediately.
 
 - [ ] **Open the project in Godot 4.6 and run the on-device first-run checklist in `docs/ANDROID.md`.** This is the only thing that will catch syntax mistakes in any of the hand-authored `.tscn`/`.tres` files. If anything fails, paste the Output panel error and Claude will fix it next iteration.
 - [ ] **First feel verdict — Snappy vs Floaty vs Momentum.** Once the build runs, open the dev menu (F1 in editor, 3-finger tap on device), switch the Profile dropdown between Snappy / Floaty / Momentum and play each for 30–60 seconds. Note: jump arc, air momentum feel, landing, coyote forgiveness. Any notes you give go straight into the next tuning pass.
+- [ ] **Gate 1 level selection.** Three concepts ready in `docs/levels/`. Pick one: Spine (wall jump), Lung (timing), or Threshold (scale contrast). This is the only human gate before Claude can start greyboxing.
 - [x] **Auto-merge git workflow confirmed and instrumented.** Now enforced by `.github/workflows/auto-merge.yml` — PRs labeled `auto-merge` are squash-merged automatically. Iteration-startup rules in `docs/CLAUDE.md` require checking your own open PRs before opening a new branch, to prevent the duplicate-PR loop that ate iter 1.
 
 ## Roadmap
@@ -95,6 +101,22 @@ Goal: store-ready build.
 The full iteration log lives here, newest first. Every iteration appends an entry. Skim the dates to find where you last left off.
 
 <!-- ITERATION ENTRIES BELOW — DO NOT REMOVE OLDER ENTRIES -->
+
+### [2026-05-10] — `claude/gifted-shannon-swI5c` — iter 30: Gate 1 level concepts + air dash research
+
+- **Throttle: SOFT (4 autonomous iterations since 2026-05-11 human session).** Non-destructive work only — docs, research, design.
+- **Primary: Three Gate 1 level concept documents.** All P0 queue items remain blocked on device. The Gate 1 vertical slice needs a level to build once the gate opens. Three fully-specified candidates authored in `docs/levels/`, each following the LEVEL_DESIGN.md 12-step workflow through step 5:
+
+  - **`docs/levels/spine.md` — Spine.** A vertical mega-column split open by collapse. 5 beats (Ki: base entry, Shō: wall-jump rib corridor, checkpoint, Ten: collapse reroute + exterior reveal, Ketsu: open chimney + win vista). Primary verb: wall jump. Par route: continuous wall-jump chain in Beat 2. ~60–75 s skilled, ~3 min new player.
+  - **`docs/levels/lung.md` — Lung.** A still-functioning ventilation array. 4 beats + epilogue (Ki: first synchronised baffles, Shō: counter-phase + updraft, checkpoint, Ten: power cycle twist, Ketsu: wind push into the trachea duct). Primary verb: precise timing. Biolume cyan accent (first use in any level). ~70–80 s skilled.
+  - **`docs/levels/threshold.md` — Threshold.** Three zones separated by abrupt architectural thresholds: habitation (warm, human scale) → maintenance buffer (cold, machine scale) → industrial (hot, production scale). 5 beats. Primary verbs: standard precision jump, timing, long-gap committed jump. Industrial section deliberately stresses blob shadow depth reads. ~70 s skilled.
+
+  Each doc includes: parti, genius loci, double-reading, procession (5-beat beats ~20 s each), platforming verbs, par route, skill range table, level kit requirements, greybox notes. **Human must pick one before greybox begins** (CLAUDE.md: level concept selection is human-gated).
+
+- **Side quest: `docs/research/air_dash.md`.** Full design spec for the air dash mechanic — SMB 3D's recommended depth-error correction tool. Covers: design intent (0.18 s burst, single airborne charge, recharges on landing), input options (Option A: right-zone swipe with gesture disambiguation; Option B: double-tap jump — A recommended), `ControllerProfile` integration (3 new params, all default 0 = disabled for backwards-compat), `player.gd` state sketch, `TouchInput` signal approach, juice hooks, universal-vs-profile-exclusive analysis (recommend universal, start disabled, let human tune per profile on device). Also documents how Spine/Threshold level geometry assumes this mechanic exists. `INDEX.md` updated.
+
+- **Perf:** unchanged (no code changes this iteration).
+- **On-device pending.** All P0 items still blocked on first Godot 4.6 import run.
 
 ### [2026-05-10] — `claude/gifted-shannon-HuiCV` — iter 29: Blob shadow dev menu tunables + math unit tests
 
