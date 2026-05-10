@@ -198,9 +198,8 @@ func _build_camera_section(vbox: VBoxContainer) -> void:
 
 	vbox.add_child(_make_label("Camera — Tuning", SECTION_FONT_SIZE, true))
 	_make_cam_slider(vbox, "Aim height",      &"aim_height",          0.0,   3.0,  0.05,  0.6)
-	_make_cam_slider(vbox, "Pitch min deg",   &"pitch_min_degrees",  -89.0,  0.0,  1.0,  -55.0)
 	_make_cam_slider(vbox, "Pitch max deg",   &"pitch_max_degrees",   0.0,  89.0,  1.0,   55.0)
-	# Lookahead / recenter sliders removed — tripod camera doesn't use them.
+	# Pitch min, lookahead, recenter sliders removed — tripod camera doesn't use them.
 
 
 func _build_level_section(vbox: VBoxContainer) -> void:

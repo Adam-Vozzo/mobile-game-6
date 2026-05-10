@@ -5,7 +5,7 @@ A mobile 3D platformer. Brutalist megastructure inspired by *BLAME!*. Controller
 ## Status
 
 Current gate: **Gate 0 — Feel Lab**
-Last iteration: 2026-05-11 — direct human-direction session: camera tripod model + selective occlusion + airborne rigid translate + dev-menu UX scale-up
+Last iteration: 2026-05-10 — iter 25: stale camera test cleanup (tripod model tests) + pitch_min_degrees dead-code removal
 Test device build: not yet — hand-authored scenes pending first Godot 4.6 import; see Open questions
 Performance: not yet measured on Nothing Phone 4(a) Pro
 Throttle level: **CLEAR — human is actively directing.** Re-engage the HARD throttle if 5+ autonomous iterations pass without further input.
@@ -95,6 +95,46 @@ Goal: store-ready build.
 The full iteration log lives here, newest first. Every iteration appends an entry. Skim the dates to find where you last left off.
 
 <!-- ITERATION ENTRIES BELOW — DO NOT REMOVE OLDER ENTRIES -->
+
+### [2026-05-10] — `claude/gifted-shannon-TuINF` — iter 25: stale camera test cleanup + tripod model tests + pitch_min_degrees cleanup
+
+- **Throttle: CLEAR (first autonomous iteration since 2026-05-11 human-direction session).** Normal mode.
+- **Primary: Replace two stale camera test groups with two new tripod-model test groups.**
+  The human-direction session (2026-05-11) rewrote `camera_rig.gd` to a tripod model and
+  deleted `_update_yaw_recenter` and `_update_lookahead`. However, their test groups —
+  `_test_camera_yaw_recenter` (8 assertions) and `_test_camera_lookahead_target`
+  (5 assertions) — remained in `tests/test_controller_kinematics.gd`, testing dead code.
+  Both are now removed and replaced with:
+
+  - **`_test_tripod_placement` (6 assertions)** — verifies `_place_camera_initial`:
+    y-offset `= sin(elev)*dist + aim_height`, z-offset `= cos(elev)*dist`, x-offset `= 0`
+    at default yaw, Pythagorean identity `sin² + cos² = 1` so 3D-distance `= dist`
+    exactly, camera is above player when elevation > 0, and the elevation=0 edge case
+    (camera at player height + aim_height, directly behind).
+
+  - **`_test_tripod_drag_orbit` (7 assertions)** — verifies `_apply_drag_input`:
+    radius re-derived from initial position equals `distance`, phi re-derived equals the
+    elevation angle, pure yaw drag preserves both 3D radius and elevation (y component),
+    extreme downward drag clamps `phi ≥ 0` (camera never below horizontal), extreme upward
+    drag clamps `phi ≤ deg_to_rad(pitch_max_degrees)`, and `_pitch_rad = -phi` is always ≤ 0.
+
+  Net assertion count: 179 → 179 (13 removed + 13 added). All tests now cover live code.
+
+- **Side quest: removed dead `pitch_min_degrees`.**
+  `camera_rig.gd` retained a `@export_range(-89.0, 0.0) var pitch_min_degrees` and a
+  matching arm in `_on_camera_param_changed`. The dev menu had a "Pitch min deg" slider.
+  None of this had any runtime effect: `_apply_drag_input` clamps `phi` to
+  `[0.0, deg_to_rad(pitch_max_degrees)]` — the lower bound is hardcoded `0.0`, not
+  `pitch_min_degrees`. Removed: `@export` variable, `_on_camera_param_changed` match arm,
+  dev-menu slider. Comment updated: `pitch_max_degrees` now documents its current role
+  (max elevation above horizontal). No behaviour change.
+
+- Perf: no runtime change (tests + dead-code removal only).
+- Bugs fixed: stale tests for deleted camera functions; dead dev-menu slider.
+- New dev-menu controls: none (one removed: "Pitch min deg" — was a no-op).
+- Assets acquired: none.
+- Research added: none.
+- Needs human attention: **see "Open questions waiting on you" — on-device first run still the #1 unlocker.**
 
 ### [2026-05-11] — direct human-direction session — camera + UX overhaul (no autonomous iteration)
 
