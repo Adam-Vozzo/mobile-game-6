@@ -168,24 +168,32 @@ func _test_jump_cut_math() -> void:
 
 func _test_horizontal_interpolation() -> void:
 	## Simulates player.gd horizontal loop for up to 300 frames (5 s at 60 fps).
-	## move_toward(current, target, accel * delta) must converge to max_speed.
+	## move_toward(current, target, accel * delta) must converge to max_speed
+	## within 5 s on every shipped profile. 30-frame cap documents that
+	## even the slowest profile (Floaty ~12 frames, Momentum ~12 frames,
+	## Snappy ~6 frames) converges well within a perceptible delay.
 	print("\n-- Horizontal interpolation convergence --")
-	var p: CP = _load_profile("res://resources/profiles/snappy.tres")
-	if p == null:
-		return
+	var profiles := [
+		["snappy",   "res://resources/profiles/snappy.tres"],
+		["floaty",   "res://resources/profiles/floaty.tres"],
+		["momentum", "res://resources/profiles/momentum.tres"],
+	]
 	const DELTA := 1.0 / 60.0
-	var h := Vector3.ZERO
-	var target := Vector3(p.max_speed, 0.0, 0.0)
-	var converged_at := -1
-	for i in 300:
-		h = h.move_toward(target, p.ground_acceleration * DELTA)
-		if h.distance_to(target) < 0.01 and converged_at < 0:
-			converged_at = i + 1
-
-	_ok("converges to max_speed within 5 s at 60 fps", converged_at >= 0)
-	_ok("final speed within 0.01 m/s of max_speed", h.distance_to(target) < 0.01)
-	# Snappy accel (80 m/s²) should reach max_speed (8 m/s) in ~6 frames.
-	_ok("snappy convergence in <= 30 frames", converged_at > 0 and converged_at <= 30)
+	for entry in profiles:
+		var name: String = entry[0]
+		var p: CP = _load_profile(entry[1])
+		if p == null:
+			continue
+		var h := Vector3.ZERO
+		var target := Vector3(p.max_speed, 0.0, 0.0)
+		var converged_at := -1
+		for i in 300:
+			h = h.move_toward(target, p.ground_acceleration * DELTA)
+			if h.distance_to(target) < 0.01 and converged_at < 0:
+				converged_at = i + 1
+		_ok(name + ": converges to max_speed within 5 s at 60 fps", converged_at >= 0)
+		_ok(name + ": final speed within 0.01 m/s of max_speed", h.distance_to(target) < 0.01)
+		_ok(name + ": convergence within 30 frames", converged_at > 0 and converged_at <= 30)
 
 
 func _test_air_damping() -> void:
@@ -251,44 +259,57 @@ func _test_terminal_velocity() -> void:
 func _test_coyote_countdown() -> void:
 	## Simulates timer = maxf(0, timer - delta) to verify:
 	##   1. Never goes negative.
-	##   2. Expires in a frame count proportional to coyote_time.
+	##   2. Expires within 2× the expected frame count (float-rounding headroom).
+	## Tests all three shipped profiles (coyote_time varies: 0.1 / 0.18 / 0.08 s).
 	print("\n-- Coyote timer countdown --")
-	var p: CP = _load_profile("res://resources/profiles/snappy.tres")
-	if p == null:
-		return
+	var profiles := [
+		["snappy",   "res://resources/profiles/snappy.tres"],
+		["floaty",   "res://resources/profiles/floaty.tres"],
+		["momentum", "res://resources/profiles/momentum.tres"],
+	]
 	const DELTA := 1.0 / 60.0
-	var timer := p.coyote_time
-	var frames := 0
-	while timer > 0.0 and frames < 600:
-		timer = maxf(0.0, timer - DELTA)
-		frames += 1
-
-	_ok("coyote timer expires (doesn't run forever)", frames < 600)
-	_ok("coyote timer never goes negative", timer >= 0.0)
-	_ok("coyote timer ends at exactly 0.0", timer == 0.0)
-	# 100 ms at 60 fps → ~6 frames; allow 2× for float rounding.
-	var expected_max := ceili(p.coyote_time * 60.0) * 2
-	_ok("coyote expires within 2× expected frame count", frames <= expected_max)
+	for entry in profiles:
+		var name: String = entry[0]
+		var p: CP = _load_profile(entry[1])
+		if p == null:
+			continue
+		var timer := p.coyote_time
+		var frames := 0
+		while timer > 0.0 and frames < 600:
+			timer = maxf(0.0, timer - DELTA)
+			frames += 1
+		_ok(name + ": coyote timer expires (doesn't run forever)", frames < 600)
+		_ok(name + ": coyote timer never goes negative", timer >= 0.0)
+		_ok(name + ": coyote timer ends at exactly 0.0", timer == 0.0)
+		var expected_max := ceili(p.coyote_time * 60.0) * 2
+		_ok(name + ": expires within 2× expected frame count", frames <= expected_max)
 
 
 func _test_buffer_countdown() -> void:
-	## Same countdown logic as coyote. Verifies buffer-specific design goals.
+	## Same countdown logic as coyote. Verifies buffer-specific design goals
+	## on all three shipped profiles (jump_buffer: 0.12 / 0.20 / 0.10 s).
 	print("\n-- Jump buffer countdown --")
-	var p: CP = _load_profile("res://resources/profiles/snappy.tres")
-	if p == null:
-		return
+	var profiles := [
+		["snappy",   "res://resources/profiles/snappy.tres"],
+		["floaty",   "res://resources/profiles/floaty.tres"],
+		["momentum", "res://resources/profiles/momentum.tres"],
+	]
 	const DELTA := 1.0 / 60.0
-	var timer := p.jump_buffer
-	var frames := 0
-	while timer > 0.0 and frames < 600:
-		timer = maxf(0.0, timer - DELTA)
-		frames += 1
-
-	_ok("buffer timer expires", timer == 0.0)
-	_ok("buffer timer never goes negative", timer >= 0.0)
-	# Buffer >= coyote: player can pre-press jump before landing window.
-	_ok("jump_buffer >= coyote_time (pre-press window >= coyote window)",
-		p.jump_buffer >= p.coyote_time)
+	for entry in profiles:
+		var name: String = entry[0]
+		var p: CP = _load_profile(entry[1])
+		if p == null:
+			continue
+		var timer := p.jump_buffer
+		var frames := 0
+		while timer > 0.0 and frames < 600:
+			timer = maxf(0.0, timer - DELTA)
+			frames += 1
+		_ok(name + ": buffer timer expires", timer == 0.0)
+		_ok(name + ": buffer timer never goes negative", timer >= 0.0)
+		# Buffer >= coyote on every profile: pre-press window >= coyote window.
+		_ok(name + ": jump_buffer >= coyote_time (pre-press window >= coyote)",
+			p.jump_buffer >= p.coyote_time)
 
 
 func _test_profile_cross_invariants() -> void:

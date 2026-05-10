@@ -5,10 +5,10 @@ A mobile 3D platformer. Brutalist megastructure inspired by *BLAME!*. Controller
 ## Status
 
 Current gate: **Gate 0 — Feel Lab**
-Last iteration: 2026-05-10 — iter 19: dev_menu_overlay controller-section refactor + movement param tests
+Last iteration: 2026-05-10 — iter 20: test suite expansion (3 groups → all profiles) + dead zone calibration research
 Test device build: not yet — hand-authored scenes pending first Godot 4.6 import; see Open questions
 Performance: not yet measured on Nothing Phone 4(a) Pro
-Throttle level: **HARD — 19 iterations since last human direction. No new features. See Open questions.**
+Throttle level: **HARD — 20 iterations since last human direction. No new features. See Open questions.**
 
 If you only read one section, read **Open questions waiting on you** below.
 
@@ -16,8 +16,8 @@ If you only read one section, read **Open questions waiting on you** below.
 
 Things Claude can't decide alone, or where it's stalled and needs direction. Each is blocking some piece of forward progress.
 
-> **⚠ HARD THROTTLE — 19 iterations since last human direction.** Claude has been
-> building infrastructure (tests, research, refactors, debug tooling) for 18 iterations
+> **⚠ HARD THROTTLE — 20 iterations since last human direction.** Claude has been
+> building infrastructure (tests, research, refactors, debug tooling) for 20 iterations
 > without a human feel verdict or direction signal. All P0 items are blocked on the
 > first on-device run. The next iteration will continue hardening work only.
 >
@@ -94,6 +94,45 @@ Goal: store-ready build.
 The full iteration log lives here, newest first. Every iteration appends an entry. Skim the dates to find where you last left off.
 
 <!-- ITERATION ENTRIES BELOW — DO NOT REMOVE OLDER ENTRIES -->
+
+### [2026-05-10] — `claude/gifted-shannon-5UrSF` — iter 20: test suite expansion + dead zone calibration research
+
+- **Throttle: HARD (20 iterations since last human direction).** Hardening only.
+- **Primary: Test suite — 3 remaining Snappy-only groups expanded to all profiles.**
+  `_test_horizontal_interpolation`, `_test_coyote_countdown`, and
+  `_test_buffer_countdown` previously tested only Snappy (matching how iter 11
+  expanded `_test_jump_cut_math` and `_test_terminal_velocity`). All three now
+  loop over Snappy / Floaty / Momentum using the same assertion structure.
+  Net +20 assertions:
+  - `_test_horizontal_interpolation`: +6 (converges within 5 s, within 0.01 m/s,
+    within 30 frames — × 3 profiles). Note: Snappy ~6 frames, Floaty ~12,
+    Momentum ~12 — all within the 30-frame cap.
+  - `_test_coyote_countdown`: +8 (expires, never negative, ends at 0.0, within
+    2× expected frame count — × 3 profiles).
+  - `_test_buffer_countdown`: +6 (expires, never negative, buffer ≥ coyote
+    — × 3 profiles).
+  - Total: ~86 → ~106 assertions. Every shipped profile is now covered by every
+    test group. No behaviour change.
+- **Side quest: `docs/research/touch_dead_zone_calibration.md`.**
+  Closes the "Genshin Impact dead zone tuning specifics" open item in INDEX.md.
+  - **Truncating vs. remapping dead zone** — formulae and tradeoffs. Current
+    Project Void implementation (truncating at 15%) is correct for a precision
+    platformer; the discontinuity at threshold is imperceptible in active play.
+  - **Genshin Impact** — 8–10% inner dead zone, 90–95% outer dead zone (sprint
+    ergonomics), floating stick, narrow camera safety band between zones.
+  - **Sky** — fixed stick, ~5% dead zone, gesture-driven camera.
+  - **HCI guidance** — 10–20% recommended for touch virtual sticks; below 10%
+    causes drift; above 20% feels sticky.
+  - **5 implications for Project Void:** current DZ is correct for Gate 0; Floaty
+    may later benefit from remapping; outer DZ at 93% for sprint ergonomics; camera
+    safety band worth adding if interference observed; dead zone is input hardware
+    calibration, not a controller physics param.
+- Perf: no runtime change.
+- Bugs fixed: none.
+- New dev-menu controls: none.
+- Assets acquired: none.
+- Research added: `docs/research/touch_dead_zone_calibration.md`; INDEX.md updated.
+- Needs human attention: **see "Open questions waiting on you" — hard throttle active (20 iterations).**
 
 ### [2026-05-10] — `claude/gifted-shannon-80jFq` — iter 19: dev_menu_overlay controller-section refactor + movement param tests
 
