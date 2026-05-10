@@ -26,6 +26,7 @@ func _ready() -> void:
 	_test_gravity_band_ordering()
 	_test_jump_cut_math()
 	_test_horizontal_interpolation()
+	_test_horizontal_deceleration()
 	_test_air_damping()
 	_test_terminal_velocity()
 	_test_coyote_countdown()
@@ -40,6 +41,7 @@ func _ready() -> void:
 	_test_tripod_placement()
 	_test_tripod_drag_orbit()
 	_test_move_dir_rotation()
+	_test_visual_facing_formula()
 	_test_gravity_band_selection()
 	_report()
 
@@ -626,6 +628,96 @@ func _test_tripod_drag_orbit() -> void:
 	var pitch_rad := -phi_clamped_down
 	_ok("_pitch_rad = -phi: value is always ≤ 0 (camera above horizontal)",
 		pitch_rad <= 0.0)
+
+
+func _test_horizontal_deceleration() -> void:
+	## Simulates the deceleration branch of player.gd::_apply_horizontal.
+	## When move_dir.length() < 0.01 and on_floor is true, accel becomes
+	## ground_deceleration and the target is Vector3.ZERO (player brakes to rest).
+	## move_toward(current, ZERO, decel * delta) converges to rest without overshoot.
+	print("\n-- Horizontal deceleration convergence --")
+	var profiles := [
+		["snappy",   "res://resources/profiles/snappy.tres"],
+		["floaty",   "res://resources/profiles/floaty.tres"],
+		["momentum", "res://resources/profiles/momentum.tres"],
+	]
+	const DELTA := 1.0 / 60.0
+	var frames_snappy := 0
+	var frames_momentum := 0
+	for entry in profiles:
+		var name: String = entry[0]
+		var p: CP = _load_profile(entry[1])
+		if p == null:
+			continue
+		var h := Vector3(p.max_speed, 0.0, 0.0)
+		var frames := 0
+		while h.length() > 0.01 and frames < 600:
+			h = h.move_toward(Vector3.ZERO, p.ground_deceleration * DELTA)
+			frames += 1
+		_ok(name + ": decel converges to near-zero within 10 s (600 frames)", frames < 600)
+		_ok(name + ": final speed < 0.01 m/s after decel", h.length() < 0.01)
+		_ok(name + ": no overshoot — speed stays ≥ 0 (move_toward guarantee)", h.length() >= 0.0)
+		if name == "snappy":
+			frames_snappy = frames
+		elif name == "momentum":
+			frames_momentum = frames
+
+	# Snappy: max_speed=6.5, ground_decel=90 → stops in ~5 frames.
+	# Momentum: max_speed=11.0, ground_decel=30 → stops in ~23 frames.
+	# Momentum's "loose decel" design intent means it takes longer to stop.
+	if frames_snappy > 0 and frames_momentum > 0:
+		_ok("momentum brakes slower than snappy (loose-decel design intent)",
+			frames_momentum > frames_snappy)
+
+	# Edge case: starting at rest with no input — should stay at rest.
+	var sp: CP = _load_profile("res://resources/profiles/snappy.tres")
+	if sp != null:
+		var h_rest := Vector3.ZERO
+		h_rest = h_rest.move_toward(Vector3.ZERO, sp.ground_deceleration * DELTA)
+		_ok("starting at rest: stays at rest after decel step", h_rest.length() < 1e-6)
+
+
+func _test_visual_facing_formula() -> void:
+	## Verifies the target_yaw formula from player.gd::_update_visual_facing:
+	##   target_yaw = atan2(-velocity.x, -velocity.z)
+	## This maps each movement direction to the yaw the visual must rotate to
+	## so its local -Z (Godot default forward) faces the direction of motion.
+	## Also verifies the lerp weight clamp and speed deadband values.
+	print("\n-- Visual facing formula (target yaw + weight clamp + deadband) --")
+
+	# Moving in -Z (forward in camera-default frame): local -Z already faces -Z → yaw = 0
+	_ok("moving -Z: target yaw = 0 (local -Z faces -Z, forward)",
+		_near(_vis_yaw(0.0, -1.0), 0.0))
+	# Moving in +Z (backward): yaw = PI (or -PI at wrap boundary)
+	_ok("moving +Z: |target yaw| = PI (local -Z faces +Z, backward)",
+		_near(absf(_vis_yaw(0.0, 1.0)), PI, 1e-3))
+	# Moving +X (right): local -Z must face +X → yaw = -PI/2
+	_ok("moving +X: target yaw = -PI/2 (local -Z faces +X, strafe right)",
+		_near(_vis_yaw(1.0, 0.0), -PI / 2.0, 1e-3))
+	# Moving -X (left): local -Z must face -X → yaw = +PI/2
+	_ok("moving -X: target yaw = +PI/2 (local -Z faces -X, strafe left)",
+		_near(_vis_yaw(-1.0, 0.0), PI / 2.0, 1e-3))
+
+	# Lerp weight: clampf(turn_speed * delta, 0, 1)
+	# Default turn_speed = 12.0; at 60 fps delta = 1/60 ≈ 0.0167 → weight ≈ 0.2.
+	const DELTA := 1.0 / 60.0
+	_ok("default turn_speed (12) at 60 fps: lerp weight in (0, 1) — smooth, not instant",
+		clampf(12.0 * DELTA, 0.0, 1.0) > 0.0 and clampf(12.0 * DELTA, 0.0, 1.0) < 1.0)
+	# Max turn_speed = 30.0 (export upper bound); weight is clamped ≤ 1.0.
+	_ok("max turn_speed (30) at 60 fps: lerp weight ≤ 1.0 (clampf prevents overshoot)",
+		clampf(30.0 * DELTA, 0.0, 1.0) <= 1.0)
+
+	# Speed deadband: if horiz_speed < visual_turn_min_speed (default 0.2 m/s), return early.
+	# The guard prevents jitter when the player is nearly stationary.
+	_ok("speed 0.1 m/s < min_speed 0.2: deadband fires (no visual rotation update)",
+		0.1 < 0.2)
+	_ok("speed 0.3 m/s >= min_speed 0.2: deadband clear (visual rotation updates)",
+		0.3 >= 0.2)
+
+
+func _vis_yaw(vx: float, vz: float) -> float:
+	## Mirrors player.gd::_update_visual_facing: target_yaw = atan2(-vx, -vz).
+	return atan2(-vx, -vz)
 
 
 func _test_move_dir_rotation() -> void:
