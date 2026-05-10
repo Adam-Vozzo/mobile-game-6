@@ -5,10 +5,10 @@ A mobile 3D platformer. Brutalist megastructure inspired by *BLAME!*. Controller
 ## Status
 
 Current gate: **Gate 0 — Feel Lab**
-Last iteration: 2026-05-10 — iter 24: move-dir rotation tests + gravity band selection tests + assist mechanics research
+Last iteration: 2026-05-11 — direct human-direction session: camera tripod model + selective occlusion + airborne rigid translate + dev-menu UX scale-up
 Test device build: not yet — hand-authored scenes pending first Godot 4.6 import; see Open questions
 Performance: not yet measured on Nothing Phone 4(a) Pro
-Throttle level: **HARD — 23 iterations since last human direction. No new features. See Open questions.**
+Throttle level: **CLEAR — human is actively directing.** Re-engage the HARD throttle if 5+ autonomous iterations pass without further input.
 
 If you only read one section, read **Open questions waiting on you** below.
 
@@ -16,10 +16,11 @@ If you only read one section, read **Open questions waiting on you** below.
 
 Things Claude can't decide alone, or where it's stalled and needs direction. Each is blocking some piece of forward progress.
 
-> **⚠ HARD THROTTLE — 23 iterations since last human direction.** Claude has been
-> building infrastructure (tests, research, refactors, debug tooling, bug fixes) for 23
-> iterations without a human feel verdict or direction signal. All P0 items are blocked
-> on the first on-device run. The next iteration will continue hardening work only.
+> **Throttle cleared 2026-05-11.** Direct human-direction session reworked the
+> camera, dev-menu UX, lighting, and visual feedback. P0 items remain blocked on
+> the on-device first-run check below; until that lands, autonomous iterations
+> should resume the HARD throttle if more than ~5 pass without further human
+> direction.
 >
 > **Suggested next directions (pick one or more):**
 > 1. Open the project in Godot 4.6, run the first-run checklist in `docs/ANDROID.md`,
@@ -94,6 +95,93 @@ Goal: store-ready build.
 The full iteration log lives here, newest first. Every iteration appends an entry. Skim the dates to find where you last left off.
 
 <!-- ITERATION ENTRIES BELOW — DO NOT REMOVE OLDER ENTRIES -->
+
+### [2026-05-11] — direct human-direction session — camera + UX overhaul (no autonomous iteration)
+
+This entry covers a multi-turn session driven directly by the human. Not an
+autonomous iteration — no `claude/...` branch, no PLAN.md queue item.
+Documents three ADRs in `DECISIONS.md` (tripod model, selective occlusion,
+airborne rigid translate). All 179 controller-kinematics tests still pass.
+
+- **Camera: tripod model.** Replaced rig+offset+lookahead+auto-recenter with a
+  tripod follow that holds the camera's world position while the player walks
+  laterally and only translates along the camera→player axis to maintain
+  `distance`. Lateral player motion is absorbed by `look_at` rotation rather
+  than by translation — kills the lateral background slide that was reported
+  as motion-sickness on phone. Auto-recenter is gone (had a sign bug that
+  spun the rig); lookahead is gone (was anti-correlated with what fixed the
+  motion sickness).
+- **Camera: selective occlusion via `CameraOccluder` layer.** New physics
+  layer 7. The camera's `occlusion_mask` queries that layer only. In
+  `feel_lab.tscn`, the four pillars and both walls now have
+  `collision_layer = 65` (World + CameraOccluder); platforms / slopes /
+  moving platform stay on layer 1 only. Same for `style_test.tscn`'s
+  WallPanel + ScalePillar. Future levels: tag any geometry larger than ~3 m
+  in any horizontal dimension on layer 7, leave smaller obstacles on layer 1.
+- **Camera: sphere-cast probe.** `direct_space_state.cast_motion` of an
+  `occlusion_probe_radius` (0.22 m default) sphere instead of a thin ray.
+  Stops frame-by-frame flicker at wall edges that a thread-thin ray would
+  alternately hit and miss.
+- **Camera: asymmetric smoothing + hysteresis latch.** Position-follow rate
+  is `pull_in_smoothing` (28 / sec, fast) when the camera moves *toward*
+  the player and `ease_out_smoothing` (6 / sec, slow) when moving away.
+  Layered on top: any sphere-hit re-arms `_is_occluded = true` for
+  `occlusion_release_delay` (0.18 s default); the camera holds at
+  `_last_occluded_pos` even if the probe momentarily clears within that
+  window. Stops the camera bouncing in/out at corner edges.
+- **Camera: airborne rigid translate.** While `is_on_floor() == false`,
+  `camera.global_position = target_pos + _air_offset` runs first thing in
+  `_process` and distance-maintenance / occlusion / smoothing are skipped.
+  The camera→player vector is preserved exactly across the jump, so look_at
+  produces the same basis frame after frame and `pub_yaw` returns the same
+  value — input frame stays locked from takeoff to landing. Drag still
+  rotates the camera mid-jump (the only intentional source of rotation
+  during the air phase). Camera still translates with the player so they
+  stay framed.
+- **Player visual rotation.** Visual capsule rotates around Y to face the
+  horizontal velocity vector (`visual_turn_speed = 12`,
+  `visual_turn_min_speed = 0.2 m/s` deadband). Capsule itself is symmetric;
+  the accent box visually shows the direction of travel.
+- **Dev menu scaled for thumb use.** Panel anchored to the right 40% of the
+  viewport, full-height scroll. Slider rows 64 px tall, label 240 px,
+  track 320 px, value 110 px. Theme applies 24 pt font to every descendant
+  control (Label, Button, OptionButton, CheckBox, LineEdit). CheckBoxes in
+  the Juice and Debug-viz sections replaced with custom Button toggles
+  (`_make_toggle`) showing `●`/`○` + green/grey colour swap, since the
+  CheckBox icon doesn't follow `font_size`.
+- **Touch overlay: jump button anchored bottom-right.** `jump_button_anchor`
+  is now computed from `jump_button_margin` and the live viewport size in
+  `_apply_bottom_right_default()`, called on `_ready` and on
+  `viewport.size_changed`. Default radius bumped 95 → 115 for thumb size.
+  `CFG_VERSION = 2` so existing `user://input.cfg` saves are dropped on
+  first launch and re-anchored.
+- **Lighting: fill light + brighter ambient.** New `FillLight`
+  `DirectionalLight3D` in both `feel_lab.tscn` and `style_test.tscn`:
+  cool blue (0.55, 0.6, 0.78), energy 0.45, no shadows, opposite hemisphere
+  to the warm key. Ambient_light_energy 0.4 → 0.75; fog density 0.045 →
+  0.012; fog colour brightened. The player is no longer a silhouette
+  against warm-lit floor.
+- **Profiles.** Snappy `max_speed` 8.0 → 6.5 (user direction). Floaty
+  `max_speed` 6.5 → 5.5 to preserve the `floaty < snappy` test invariant
+  (`_test_profile_cross_invariants`).
+- **Strict-warning cleanup pass.** Project has `unsafe_*` warnings at
+  error-level. Typed Dictionary iterations
+  (`for key: StringName in DevMenu.juice_state`); typed
+  `Dictionary[StringName, bool]` for juice/debug-viz state, removing
+  redundant `bool(...)` wrappers; `@warning_ignore("unused_signal")` on
+  autoload signals declared in one class but emitted from another;
+  `_target.call(&"set_camera_yaw", pub_yaw)` to avoid Node3D method-access
+  warnings; `_target as PhysicsBody3D` in the occlusion exclude list to
+  reach `get_rid()`; `_player: Player` (was `CharacterBody3D`) in
+  `player_debug_draw.gd` so `_player.profile` resolves; renamed shadowing
+  `name` local in dev-menu's save-as.
+- **Repo housekeeping.** Added `.claude/` to `.gitignore`. Tracked Godot 4.x
+  `.uid` files (preserve script identity across renames; upstream's iter
+  branches were ignoring them, but they're now baseline).
+- **Throttle status reset.** Human is actively driving the project again.
+  All P0 items remain blocked on the on-device first run, but the throttle
+  warning in this README is downgraded from HARD until the next stretch
+  of unguided iterations.
 
 ### [2026-05-10] — `claude/gifted-shannon-f29MG` — iter 24: move-dir rotation tests + gravity band selection tests + assist mechanics research
 

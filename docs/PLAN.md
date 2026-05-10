@@ -143,6 +143,41 @@ These mirror "Open questions waiting on you" in the README.
 
 ## Recently completed (last 5)
 
+- 2026-05-11 — Human-direction session. Camera + UX overhaul on direct
+  human input (not an autonomous iteration; PR opened off `main`). (1) Camera
+  rewritten to a tripod-style follow (holds world position when player walks
+  laterally; only translates along the camera→player axis). (2) Selective
+  occlusion: new physics layer 7 = `CameraOccluder`; walls + pillars in
+  `feel_lab.tscn` and `style_test.tscn` tagged with `collision_layer = 65`
+  (World + CameraOccluder); the camera ignores everything else, so passing
+  behind small platforms no longer pulls the camera in. (3) Sphere-cast probe
+  (0.22 m default, configurable) replaces the thin raycast — kills frame-to-
+  frame hit/miss flicker at wall edges. (4) Asymmetric position smoothing
+  (`pull_in_smoothing = 28`, `ease_out_smoothing = 6`) + hysteresis latch
+  (`occlusion_release_delay = 0.18 s`) — stops the camera bouncing in/out
+  while walking around corners. (5) Airborne rigid translate: while
+  `is_on_floor() == false`, the camera position copies the player's per-frame
+  delta via a stored `_air_offset` and skips distance maintenance / occlusion
+  / smoothing — camera follows the jumping player but does not rotate around
+  them, locking the input frame from takeoff to landing. Drag still works
+  mid-jump. (6) Dev menu scaled up for thumb use: panel anchored to right
+  40% of viewport, full-height scroll; widget heights 64 px; font 24 pt
+  applied via Theme; CheckBox toggles replaced with custom Button toggles
+  (filled ●/open ○ + green/grey colour swap) since CheckBox icons don't
+  follow font_size. (7) Touch overlay: jump button auto-anchors to
+  bottom-right with `jump_button_margin`, recomputes on viewport resize;
+  CFG_VERSION bumped to 2 to drop stale saves. (8) Lighting: `FillLight`
+  (cool blue, energy 0.45, no shadows) added to both test scenes;
+  ambient_light_energy 0.4 → 0.75; fog density 0.045 → 0.012 — the player
+  is no longer a silhouette against the warm key. (9) Player visual rotates
+  to face movement direction (`visual_turn_speed`, `visual_turn_min_speed`).
+  (10) Strict-warning cleanup: typed Dictionaries, `@warning_ignore`
+  annotations on autoload signals, `call(&"set_camera_yaw")` for the duck-
+  typed Player call, `_player: Player` typing in the debug-draw script.
+  Snappy max_speed 8 → 6.5 and floaty 6.5 → 5.5 (preserves the
+  `floaty < snappy` test invariant). 3 new ADRs in `DECISIONS.md`. All 179
+  controller-kinematics tests still pass post-merge.
+
 - 2026-05-10 — Iteration 24. `_test_move_dir_rotation` (8 assertions) +
   `_test_gravity_band_selection` (12 assertions = 4 rules × 3 profiles) added to
   `tests/test_controller_kinematics.gd`. Covers: Basis(UP,yaw) formula at yaw=0,
