@@ -14,15 +14,13 @@ instrumented and tunable.
 
 ## Active iteration
 
-- Branch: `claude/gifted-shannon-5UrSF`
-- Focus: iter 20. Test suite expansion (primary): `_test_horizontal_interpolation`,
-  `_test_coyote_countdown`, and `_test_buffer_countdown` expanded from Snappy-only
-  to all three shipped profiles. Net +20 assertions (~86 → ~106 total). No
-  behaviour change.
-  Side quest: `docs/research/touch_dead_zone_calibration.md` — truncating vs.
-  remapping dead zones, Genshin Impact observations, HCI sizing guidance.
-  Closes "Genshin dead zone" open item in INDEX.md.
-  Hard throttle (20 iterations since human direction).
+- Branch: `claude/gifted-shannon-0yX7M`
+- Focus: iter 21. Camera math unit tests (primary): `_test_camera_vertical_pull`,
+  `_test_camera_occlude_math`, and `_test_camera_lookahead_target` added to
+  `tests/test_controller_kinematics.gd`. +17 assertions (~106 → ~123 total).
+  Pure math tests, no scene-tree dependency; same pattern as kinematics groups.
+  Side quest: camera pitch V-turn issue documented in refactor backlog.
+  Hard throttle (21 iterations since human direction).
   **Items 1–4 still blocked on human on-device action.**
 
 ## Queue (ranked, top is next)
@@ -141,6 +139,16 @@ These mirror "Open questions waiting on you" in the README.
   feel issues. Those notes drive iteration 2's tuning pass.
 
 ## Recently completed (last 5)
+
+- 2026-05-10 — Iteration 21. Camera math unit tests: `_test_camera_vertical_pull`
+  (6 assertions — rising/stopped→0, falling magnitude, zero-pull, terminal swing),
+  `_test_camera_occlude_math` (6 assertions — typical hit, close clamp, margin=hit,
+  zero margin, large margin, loop invariant), `_test_camera_lookahead_target`
+  (5 assertions — below/above min_speed, diagonal direction, lerp weight clamp).
+  +17 assertions total: ~106 → ~123. No behaviour change.
+  Side quest: camera pitch V-turn issue added to refactor backlog — `absf(_pitch)`
+  in `_desired_camera_position` creates a V-shape when `_pitch` crosses 0 via
+  upward drag; reaches 0-crossing in ~128 px of drag at default sensitivity.
 
 - 2026-05-10 — Iteration 20. Test suite expansion: `_test_horizontal_interpolation`,
   `_test_coyote_countdown`, and `_test_buffer_countdown` now loop over all three
@@ -381,3 +389,14 @@ These mirror "Open questions waiting on you" in the README.
 - `player.gd::_run_reboot_effect` is 44 lines (just over threshold). The
   sequential `await` beats make sub-method extraction awkward in GDScript
   without coroutine indirection. Leave as-is; revisit if it grows further.
+- **Camera pitch manual override V-turn.** `camera_rig.gd::_desired_camera_position`
+  uses `absf(_pitch)` for the elevation angle. Since `_pitch` starts at
+  `-deg_to_rad(22) ≈ -0.384` and the clamp allows up to `+deg_to_rad(55)`,
+  dragging upward pushes `_pitch` through 0 then positive — `absf` produces
+  a V-shape (camera first drops to horizontal, then rises back up). On a 1080p
+  phone the 0-crossing requires ~128 px of upward drag at default
+  `pitch_drag_sens 0.003`, so it IS reachable in normal play. Fix options:
+  (a) restrict pitch clamp upper bound to 0 so `_pitch` stays ≤ 0 (camera
+  always above player), or (b) use `maxf(0.0, -_pitch)` in
+  `_desired_camera_position`. Needs on-device feel confirmation before
+  committing to either fix.

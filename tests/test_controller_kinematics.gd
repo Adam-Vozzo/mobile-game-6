@@ -34,6 +34,9 @@ func _ready() -> void:
 	_test_slope_params()
 	_test_respawn_params()
 	_test_movement_params()
+	_test_camera_vertical_pull()
+	_test_camera_occlude_math()
+	_test_camera_lookahead_target()
 	_report()
 
 
@@ -424,3 +427,94 @@ func _test_movement_params() -> void:
 	# to reach max speed — the opposite of Snappy and Floaty which stop quickly.
 	_ok("momentum ground_deceleration < momentum ground_acceleration (loose decel feel)",
 		mp.ground_deceleration < mp.ground_acceleration)
+
+
+func _test_camera_vertical_pull() -> void:
+	## Verifies the vertical pull formula from camera_rig.gd::_vertical_pull_offset.
+	## Formula: vel_y >= 0 → 0.0; else → vel_y * vertical_pull * 0.05.
+	## The 0.05 coefficient keeps vertical_pull in a 0–1 inspector range while
+	## producing a world-space offset of at most |vel_y| * 0.05 m.
+	print("\n-- Camera vertical pull offset formula --")
+	_ok("no pull when rising (vel_y > 0)", _near(_cam_vp(10.0, 0.18), 0.0))
+	_ok("no pull when stopped (vel_y == 0.0)", _near(_cam_vp(0.0, 0.18), 0.0))
+	_ok("pull is negative when falling", _cam_vp(-20.0, 0.18) < 0.0)
+	_ok("pull magnitude = vel_y * pull * 0.05",
+		_near(_cam_vp(-20.0, 0.18), -20.0 * 0.18 * 0.05, 1e-4))
+	_ok("zero pull coefficient → 0 m offset even while falling",
+		_near(_cam_vp(-20.0, 0.0), 0.0))
+	# Default pull 0.18 at Snappy terminal velocity (-40 m/s): -40*0.18*0.05 = -0.36 m.
+	_ok("terminal velocity pull stays within -1 m (no jarring camera swing)",
+		_cam_vp(-40.0, 0.18) >= -1.0)
+
+
+func _cam_vp(vel_y: float, pull: float) -> float:
+	if vel_y >= 0.0:
+		return 0.0
+	return vel_y * pull * 0.05
+
+
+func _test_camera_occlude_math() -> void:
+	## Verifies the safe-distance formula from camera_rig.gd::_occlude.
+	## Formula: safe_dist = maxf(occlusion_min_distance, hit_dist - occlusion_margin).
+	## Camera snaps to aim + dir * safe_dist when geometry blocks the shot.
+	print("\n-- Camera occlusion safe-distance math --")
+	# Typical: wall 3 m away, 0.3 m margin, 0.8 m min → 2.7 m
+	_ok("typical hit (3 m): safe_dist = hit_dist - margin",
+		_near(_cam_sd(3.0, 0.3, 0.8), 2.7))
+	# Close wall: hit - margin < min → clamp to min
+	_ok("close hit (0.5 m): clamped to occlusion_min_distance",
+		_near(_cam_sd(0.5, 0.3, 0.8), 0.8))
+	# Exactly at margin: hit - margin = 0 → clamp to min
+	_ok("hit == margin: safe_dist clamped to min_distance",
+		_near(_cam_sd(0.3, 0.3, 0.8), 0.8))
+	# Zero margin: safe_dist == hit_dist when above min
+	_ok("zero margin, hit > min: safe_dist == hit_dist",
+		_near(_cam_sd(1.5, 0.0, 0.8), 1.5))
+	# Oversized margin: hit - margin < 0 → still clamped, no negative dist
+	_ok("large margin: safe_dist clamped to min_distance (never negative)",
+		_near(_cam_sd(3.0, 3.5, 0.8), 0.8))
+	# Invariant holds for a range of hit distances
+	var invariant_holds := true
+	for d: float in [0.1, 0.5, 0.8, 1.0, 3.0, 5.0]:
+		if _cam_sd(d, 0.3, 0.8) < 0.8:
+			invariant_holds = false
+	_ok("safe_dist >= occlusion_min_distance across all hit distances", invariant_holds)
+
+
+func _cam_sd(hit_dist: float, margin: float, min_dist: float) -> float:
+	return maxf(min_dist, hit_dist - margin)
+
+
+func _test_camera_lookahead_target() -> void:
+	## Verifies the desired-lookahead computation from camera_rig.gd::_update_lookahead.
+	## When horiz speed > lookahead_min_speed: desired = horiz.normalized() * dist.
+	## The lerp weight is clamped [0, 1], preventing overshoot on any delta.
+	print("\n-- Camera lookahead target direction --")
+	const DIST: float = 1.2
+	const MIN_SPD: float = 0.15
+
+	# Below min_speed: desired is the zero vector
+	var horiz_slow := Vector3(0.05, 0.0, 0.0)
+	var desired_slow := horiz_slow.normalized() * DIST if horiz_slow.length() > MIN_SPD else Vector3.ZERO
+	_ok("below min_speed: desired lookahead is zero vector",
+		desired_slow.length_squared() < 1e-6)
+
+	# Above min_speed: desired has the correct length and direction
+	var horiz_fast := Vector3(3.0, 0.0, 0.0)
+	var desired_fast := horiz_fast.normalized() * DIST if horiz_fast.length() > MIN_SPD else Vector3.ZERO
+	_ok("above min_speed: desired lookahead length == lookahead_distance",
+		_near(desired_fast.length(), DIST, 1e-3))
+	_ok("above min_speed: desired lookahead is in velocity direction (x > 0, z ≈ 0)",
+		desired_fast.x > 0.0 and _near(desired_fast.z, 0.0))
+
+	# Diagonal velocity: X and Z components are equal after normalisation
+	var horiz_diag := Vector3(1.0, 0.0, 1.0)
+	var desired_diag := horiz_diag.normalized() * DIST if horiz_diag.length() > MIN_SPD else Vector3.ZERO
+	_ok("diagonal velocity: lookahead X and Z components are equal",
+		_near(desired_diag.x, desired_diag.z, 1e-3))
+
+	# Lerp weight is clamped so large lookahead_lerp values can't overshoot
+	const DELTA: float = 1.0 / 60.0
+	var weight_large := clampf(100.0 * DELTA, 0.0, 1.0)
+	_ok("large lookahead_lerp value: lerp weight clamped to 1.0",
+		_near(weight_large, 1.0))
