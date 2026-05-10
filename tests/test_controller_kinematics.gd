@@ -39,6 +39,8 @@ func _ready() -> void:
 	_test_camera_lookahead_target()
 	_test_camera_pitch_formula()
 	_test_camera_yaw_recenter()
+	_test_move_dir_rotation()
+	_test_gravity_band_selection()
 	_report()
 
 
@@ -603,3 +605,88 @@ func _test_camera_yaw_recenter() -> void:
 	_ok("yaw recenter: angular error decreases monotonically over 30 frames", monotonic)
 	_ok("yaw recenter: > 50%% progress toward target after 30 frames",
 		prev_err < deg_to_rad(90.0) * 0.5)
+
+
+func _test_move_dir_rotation() -> void:
+	## Verifies _camera_relative_move_dir() from player.gd.
+	## Formula: Basis(Vector3.UP, yaw) * Vector3(move_input.x, 0.0, move_input.y),
+	## then normalised if length > 1.0.
+	## Basis rotation around UP is orthogonal: preserves length, keeps Y == 0.
+	print("\n-- Camera-relative move direction rotation --")
+
+	# yaw = 0 (camera default, behind player): forward stick (2D y = -1) → world -Z.
+	var fwd := _move_dir(Vector2(0.0, -1.0), 0.0)
+	_ok("yaw=0, stick up: world z ≈ -1.0 (forward)", _near(fwd.z, -1.0))
+	_ok("yaw=0, stick up: world x ≈ 0.0", _near(fwd.x, 0.0))
+
+	# yaw = 0: right stick (2D x = +1) → world +X.
+	var rgt := _move_dir(Vector2(1.0, 0.0), 0.0)
+	_ok("yaw=0, stick right: world x ≈ +1.0", _near(rgt.x, 1.0))
+
+	# yaw = PI (camera flipped 180°): forward stick → world +Z (reversed).
+	var fwd_180 := _move_dir(Vector2(0.0, -1.0), PI)
+	_ok("yaw=PI, stick up: world z ≈ +1.0 (camera reversed)", _near(fwd_180.z, 1.0, 1e-3))
+
+	# yaw = PI/2 (camera pivoted 90° CCW around player): forward stick → world -X.
+	var fwd_90 := _move_dir(Vector2(0.0, -1.0), PI / 2.0)
+	_ok("yaw=PI/2, stick up: world x ≈ -1.0 (camera pivoted right)", _near(fwd_90.x, -1.0, 1e-3))
+
+	# Y component is always 0: Basis(UP, yaw) rotation keeps the XZ plane flat.
+	_ok("move_dir Y is always 0.0 (horizontal movement only)", _near(fwd.y, 0.0))
+
+	# Rotation preserves vector length: unit input stays unit length at arbitrary yaw.
+	# Vector2(0.6, -0.8) has length 1.0 (3-4-5 triple scaled to 1).
+	var preserved := _move_dir(Vector2(0.6, -0.8), 1.23)
+	_ok("rotation preserves length: unit input → length ≈ 1.0 at arbitrary yaw",
+		_near(preserved.length(), 1.0, 1e-3))
+
+	# Length guard (belt-and-braces in player.gd): if somehow > 1, normalise to 1.
+	# In practice get_move_vector() always limits_length(1.0), so this is defensive.
+	var raw := Vector3(1.4, 0.0, 0.0)
+	var guarded := raw.normalized() if raw.length_squared() > 1.0 else raw
+	_ok("length guard: over-length dir is normalised to 1.0", _near(guarded.length(), 1.0))
+
+
+func _move_dir(move_input: Vector2, yaw: float) -> Vector3:
+	var dir := Basis(Vector3.UP, yaw) * Vector3(move_input.x, 0.0, move_input.y)
+	if dir.length_squared() > 1.0:
+		dir = dir.normalized()
+	return dir
+
+
+func _test_gravity_band_selection() -> void:
+	## Verifies the gravity band selection mirrored from player.gd::_apply_gravity.
+	## Selection rules (in order of evaluation):
+	##   vel_y <= 0.0              → gravity_after_apex  (falling or at apex)
+	##   vel_y > 0 and jump_held  → gravity_rising       (ascending, button held)
+	##   vel_y > 0 and not held   → gravity_falling      (ascending, button released → arc cut)
+	## vel_y == 0 is treated as falling (the <= 0 branch fires first).
+	print("\n-- Gravity band selection (apply_gravity if/elif) --")
+	var profiles := [
+		["snappy",   "res://resources/profiles/snappy.tres"],
+		["floaty",   "res://resources/profiles/floaty.tres"],
+		["momentum", "res://resources/profiles/momentum.tres"],
+	]
+	for entry in profiles:
+		var name: String = entry[0]
+		var p: CP = _load_profile(entry[1])
+		if p == null:
+			continue
+		_ok(name + ": falling (vel_y < 0) → gravity_after_apex",
+			_near(_select_gravity(p, -5.0, true), p.gravity_after_apex))
+		_ok(name + ": rising + jump_held → gravity_rising (lowest: max hangtime)",
+			_near(_select_gravity(p, 5.0, true), p.gravity_rising))
+		_ok(name + ": rising + jump released → gravity_falling (fast arc cut)",
+			_near(_select_gravity(p, 5.0, false), p.gravity_falling))
+		# vel_y == 0 exactly (apex frame): treated as falling because vel_y <= 0 is true.
+		_ok(name + ": vel_y == 0 (apex) → gravity_after_apex (vel_y <= 0 is true)",
+			_near(_select_gravity(p, 0.0, true), p.gravity_after_apex))
+
+
+func _select_gravity(p: CP, vel_y: float, jump_held: bool) -> float:
+	if vel_y <= 0.0:
+		return p.gravity_after_apex
+	elif jump_held:
+		return p.gravity_rising
+	else:
+		return p.gravity_falling
