@@ -14,17 +14,21 @@ instrumented and tunable.
 
 ## Active iteration
 
-- Branch: `claude/gifted-shannon-rwVuV`
-- Focus: iter 37. **Impact factor + land squash scale math tests.**
-  `_test_impact_factor_math` (7 assertions) — documents `clampf(-_last_fall_speed /
-  terminal_velocity, 0, 1)` boundary behavior: zero fall speed → 0.0, half terminal → 0.5,
-  full terminal → 1.0, overclamp guard, rising velocity → 0.0, monotonicity, scale-invariance.
-  `_test_land_squash_scale_math` (9 assertions) — documents squash_y / squash_xz formulas:
-  zero-deformation at impact=0 or scale=0, exact values at impact=1 scale=1 (sq_y=0.55,
-  sq_xz=1.20), direction invariants (Y compresses, XZ expands), linear proportionality.
-  Side quest: puff jitter non-overlap assertion added to `_puff_geometry_checks` — verifies
-  angle_step − 2×jitter_max > 0 so worst-case jitter never overlaps adjacent lines.
-  Total: 349 → 366 assertions. Throttle: HARD (13 autonomous iterations).
+- Branch: `iter/jump-stretch-scale-spark-tests`
+- Focus: iter 38. **Jump stretch scale math tests + spark geometry tests.**
+  `_test_jump_stretch_scale_math` (9 assertions) — companion to iter 37's
+  `_test_land_squash_scale_math`; documents `stretch_y = 1.0 + 0.30 × scale` and
+  `stretch_xz = 1.0 − 0.15 × scale`: scale=0 identity (2), exact values at scale=1
+  (stretch_y=1.30, stretch_xz=0.85) (2), direction invariants at scale=0.5 (2),
+  linearity (delta doubles), stretch_xz > 0 guard, combined direction invariant.
+  Side quest: `_test_spark_geometry_math` (12 assertions via `_spark_geometry_checks`
+  + `_spark_material_fade_checks`) — death-burst sparks from `_build_spark_mesh` /
+  `_build_spark_material` / `_fade_and_free_spark` shipped without unit tests; now
+  documented parallel to `_puff_geometry_checks`: 12-line count, length bounds
+  (0.18–0.65 m), upward-hemisphere Y bias (0.15–1.6, all positive), hub offset
+  (0.1 m < len_min), warm-yellow palette (R=1.0 > G=0.78 > B=0.12), fade timing
+  (0.07 s hold + 0.38 s fade < 1.0 s total).
+  Total: 366 → 387 assertions. Throttle: HARD (14 autonomous iterations).
 
 ## Queue (ranked, top is next)
 
@@ -157,6 +161,14 @@ These mirror "Open questions waiting on you" in the README.
   (Per CLAUDE.md: level concept selection is a human call.)
 
 ## Recently completed (last 5)
+
+- 2026-05-11 — Iteration 38. **Jump stretch scale math tests + spark geometry tests.**
+  `_test_jump_stretch_scale_math` (9 assertions) + `_test_spark_geometry_math` (12 assertions)
+  added to `tests/test_controller_kinematics.gd`. Jump stretch: scale=0 identity, exact values
+  at scale=1 (stretch_y=1.30, stretch_xz=0.85), direction invariants, linearity, inversion guard.
+  Spark: 12-line count, length bounds (0.18–0.65 m), upward-hemisphere Y bias (0.15–1.6),
+  hub offset, warm-yellow palette (R>G>B), fade timing (0.07 s hold + 0.38 s fade).
+  Total: 366 → 387 assertions. Throttle: HARD (14 iterations since human session).
 
 - 2026-05-11 — Iteration 37. **Impact factor + land squash scale math tests.**
   `_test_impact_factor_math` (7 assertions) + `_test_land_squash_scale_math` (9 assertions)
