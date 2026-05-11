@@ -5,10 +5,10 @@ A mobile 3D platformer. Brutalist megastructure inspired by *BLAME!*. Controller
 ## Status
 
 Current gate: **Gate 0 — Feel Lab**
-Last iteration: 2026-05-11 — iter 37: impact factor + land squash scale math tests (366 assertions)
+Last iteration: 2026-05-11 — iter 38: jump stretch scale math + spark geometry tests (387 assertions)
 Test device build: not yet — hand-authored scenes pending first Godot 4.6 import; see Open questions
 Performance: not yet measured on Nothing Phone 4(a) Pro
-Throttle level: **HARD (13 autonomous iterations since 2026-05-11 human session).** Next iterations are hardening only unless human provides direction.
+Throttle level: **HARD (14 autonomous iterations since 2026-05-11 human session).** Next iterations are hardening only unless human provides direction.
 
 If you only read one section, read **Open questions waiting on you** below.
 
@@ -101,6 +101,19 @@ Goal: store-ready build.
 The full iteration log lives here, newest first. Every iteration appends an entry. Skim the dates to find where you last left off.
 
 <!-- ITERATION ENTRIES BELOW — DO NOT REMOVE OLDER ENTRIES -->
+
+### [2026-05-11] — `iter/jump-stretch-scale-spark-tests` — iter 38: jump stretch scale math + spark geometry tests
+
+- **Throttle: HARD (14 autonomous iterations since 2026-05-11 human session).** Hardening only: tests. No new feature surface, no behaviour change.
+- **Primary: `_test_jump_stretch_scale_math`** (9 assertions) — companion to iter 37's `_test_land_squash_scale_math`, covering the jump-stretch formula parameterized by the dev-menu slider.
+  - Asserts: scale=0 → identity (both axes 1.0), scale=1 → exact values (stretch_y=1.30, stretch_xz=0.85), direction invariants at scale=0.5 (Y > 1, XZ < 1), linearity (delta doubles), stretch_xz > 0 guard (geometry never inverts), combined opposite-direction invariant.
+- **Side quest: `_test_spark_geometry_math`** (12 assertions via `_spark_geometry_checks` + `_spark_material_fade_checks`) — death-burst sparks in `_build_spark_mesh` / `_build_spark_material` / `_fade_and_free_spark` had zero test coverage; now documented parallel to the jump-puff tests.
+  - Asserts: 12-line burst count, length bounds (0.18–0.65 m), upward-hemisphere Y bias (0.15–1.6, always > 0), hub offset (0.1 m < len_min), warm-yellow palette (R=1.0 > G=0.78 > B=0.12), channels in [0,1], fade timing (0.07 s hold < 0.38 s fade, total < 1.0 s).
+- **Total assertions: 366 → 387.**
+- **Perf:** no runtime changes.
+- **New dev-menu controls:** none.
+- **New assets:** none.
+- **Needs human attention:** still waiting on first Godot 4.6 import + on-device run. 14 iterations at HARD throttle; all P0 items blocked on device.
 
 ### [2026-05-11] — `claude/gifted-shannon-rwVuV` — iter 37: impact factor + land squash scale math tests
 

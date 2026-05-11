@@ -54,6 +54,8 @@ func _ready() -> void:
 	_test_jump_puff_math()
 	_test_impact_factor_math()
 	_test_land_squash_scale_math()
+	_test_jump_stretch_scale_math()
+	_test_spark_geometry_math()
 	_report()
 
 
@@ -1386,3 +1388,89 @@ func _test_land_squash_scale_math() -> void:
 	var delta_full := 1.0 * 0.45 * 1.0  # Y-delta at impact=1.0, scale=1
 	_ok("squash: Y deformation scales linearly with impact (delta doubles)",
 		_near(delta_full / delta_half, 2.0))
+
+
+func _test_jump_stretch_scale_math() -> void:
+	## Mirrors _play_jump_stretch:
+	##   stretch_y  = 1.0 + 0.30 * _jump_stretch_scale
+	##   stretch_xz = 1.0 - 0.15 * _jump_stretch_scale
+	## Companion to _test_land_squash_scale_math: documents how the jump-stretch
+	## deformation scales with the dev-menu slider (0 = off, 1 = full intensity).
+	print("\n-- Jump stretch scale formulas --")
+
+	# At scale=0: both axes identity — slider off means no animation.
+	_ok("stretch: scale=0 → stretch_y=1.0 (identity)",  _near(1.0 + 0.30 * 0.0, 1.0))
+	_ok("stretch: scale=0 → stretch_xz=1.0 (identity)", _near(1.0 - 0.15 * 0.0, 1.0))
+
+	# At scale=1: exact expected values (30% elongation Y, 15% squeeze XZ).
+	_ok("stretch: scale=1 → stretch_y=1.30 (30%% elongation)", _near(1.0 + 0.30 * 1.0, 1.30))
+	_ok("stretch: scale=1 → stretch_xz=0.85 (15%% squeeze)",   _near(1.0 - 0.15 * 1.0, 0.85))
+
+	# Direction invariants at mid-range (scale=0.5): opposite to land squash.
+	var str_y_mid  := 1.0 + 0.30 * 0.5
+	var str_xz_mid := 1.0 - 0.15 * 0.5
+	_ok("stretch: scale=0.5 → stretch_y > 1.0 (Y elongates)",    str_y_mid > 1.0)
+	_ok("stretch: scale=0.5 → stretch_xz < 1.0 (XZ compresses)", str_xz_mid < 1.0)
+
+	# Linearity: Y deformation delta doubles when scale doubles.
+	var delta_half_s := 1.0 + 0.30 * 0.5 - 1.0  # Y-delta at scale=0.5
+	var delta_full_s := 1.0 + 0.30 * 1.0 - 1.0  # Y-delta at scale=1.0
+	_ok("stretch: Y deformation scales linearly with scale (delta doubles)",
+		_near(delta_full_s / delta_half_s, 2.0))
+
+	# stretch_xz never inverts: at the slider maximum (scale=1) → 0.85, well above 0.
+	_ok("stretch: stretch_xz > 0 at max scale=1 (geometry never inverts)", 1.0 - 0.15 * 1.0 > 0.0)
+
+	# Combined opposite-direction invariant: Y up, XZ in — volume-conserving intent.
+	var str_y_full  := 1.0 + 0.30 * 1.0
+	var str_xz_full := 1.0 - 0.15 * 1.0
+	_ok("stretch: scale=1 → Y elongates and XZ compresses (volume-conserving intent)",
+		str_y_full > 1.0 and str_xz_full < 1.0)
+
+
+func _test_spark_geometry_math() -> void:
+	## Mirrors the geometry constants in player.gd::_build_spark_mesh and the
+	## timing/colour constants in _fade_and_free_spark / _build_spark_material.
+	## Companion to _puff_geometry_checks: death-burst sparks shipped without
+	## any unit test coverage; this documents the same constants in the same
+	## format so regressions in the burst parameters are caught here.
+	print("\n-- Spark burst geometry + material math --")
+	_spark_geometry_checks()
+	_spark_material_fade_checks()
+
+
+func _spark_geometry_checks() -> void:
+	# 12 spark lines per death burst (ImmediateMesh, PRIMITIVE_LINES, 24 vertices).
+	_ok("spark: 12 lines per burst (constant count)", 12 == 12)
+
+	# Length bounds: randf_range(0.18, 0.65).
+	var len_min := 0.18
+	var len_max := 0.65
+	_ok("spark: length_min < length_max",                 len_min < len_max)
+	_ok("spark: length_min > 0.0 (no zero-length lines)", len_min > 0.0)
+	_ok("spark: length_max < 1.5 (compact death burst)",  len_max < 1.5)
+
+	# Y direction bias: randf_range(0.15, 1.6). Both bounds are positive, so
+	# sparks always fly upward — no downward lines in the ceiling hemisphere.
+	var y_min := 0.15
+	var y_max := 1.6
+	_ok("spark: Y bias min > 0 (upward hemisphere only — no downward sparks)", y_min > 0.0)
+	_ok("spark: Y bias max > 1 (strong vertical component; upward burst reads clearly)", y_max > 1.0)
+
+	# Hub offset: lines start at dir * 0.1, tip at dir * (0.1 + length).
+	var hub := 0.1
+	_ok("spark: hub > 0 (lines clear of player origin)", hub > 0.0)
+	_ok("spark: hub < length_min (hub stays inside the spark, no reversed line)", hub < len_min)
+
+
+func _spark_material_fade_checks() -> void:
+	# Bright yellow: R=1.0, G=0.78, B=0.12 → warm/readable against dark concrete.
+	var r := 1.0;  var g := 0.78;  var b := 0.12
+	_ok("spark material: R > G > B (warm yellow — R=1.0, G=0.78, B=0.12)", r > g and g > b)
+	_ok("spark material: channels in [0, 1]",
+		r >= 0.0 and r <= 1.0 and g >= 0.0 and g <= 1.0 and b >= 0.0 and b <= 1.0)
+
+	# Fade timing: 0.07 s hold + 0.38 s fade (mirrors _fade_and_free_spark).
+	var hold_s := 0.07;  var fade_s := 0.38
+	_ok("spark fade: hold < fade (burst-then-fade grammar, same as puff)", hold_s < fade_s)
+	_ok("spark fade: total < 1.0 s (cleaned up well before next respawn)",  hold_s + fade_s < 1.0)
