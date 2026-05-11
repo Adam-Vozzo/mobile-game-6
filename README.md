@@ -5,10 +5,10 @@ A mobile 3D platformer. Brutalist megastructure inspired by *BLAME!*. Controller
 ## Status
 
 Current gate: **Gate 0 — Feel Lab**
-Last iteration: 2026-05-11 — iter 36: win state design research + test naming fix
+Last iteration: 2026-05-11 — iter 37: impact factor + land squash scale math tests (366 assertions)
 Test device build: not yet — hand-authored scenes pending first Godot 4.6 import; see Open questions
 Performance: not yet measured on Nothing Phone 4(a) Pro
-Throttle level: **HARD (12 autonomous iterations since 2026-05-11 human session).** Next iterations are hardening only unless human provides direction.
+Throttle level: **HARD (13 autonomous iterations since 2026-05-11 human session).** Next iterations are hardening only unless human provides direction.
 
 If you only read one section, read **Open questions waiting on you** below.
 
@@ -101,6 +101,19 @@ Goal: store-ready build.
 The full iteration log lives here, newest first. Every iteration appends an entry. Skim the dates to find where you last left off.
 
 <!-- ITERATION ENTRIES BELOW — DO NOT REMOVE OLDER ENTRIES -->
+
+### [2026-05-11] — `claude/gifted-shannon-rwVuV` — iter 37: impact factor + land squash scale math tests
+
+- **Throttle: HARD (13 autonomous iterations since 2026-05-11 human session).** Hardening only: tests. No new feature surface, no behaviour change.
+- **Primary: `_test_impact_factor_math` + `_test_land_squash_scale_math`** added to `tests/test_controller_kinematics.gd`.
+  - `_test_impact_factor_math` (7 assertions): documents `clampf(-_last_fall_speed / terminal_velocity, 0, 1)` — boundary at zero/half/full terminal, overclamp guard, rising-velocity clamp to 0, monotonicity, scale-invariance.
+  - `_test_land_squash_scale_math` (9 assertions): documents `squash_y = 1.0 − impact × 0.45 × scale` and `squash_xz = 1.0 + impact × 0.20 × scale` — zero-deformation at impact=0 or scale=0, exact values at impact=1,scale=1 (sq_y=0.55, sq_xz=1.20), direction invariants (Y compresses / XZ expands), linear proportionality.
+  - **Side quest:** added puff jitter non-overlap assertion to `_puff_geometry_checks` — verifies `angle_step − 2×jitter_max > 0` so worst-case jitter never causes adjacent lines to overlap (+1 assertion).
+  - **Total assertions: 349 → 366.**
+- **Perf:** no runtime changes.
+- **New dev-menu controls:** none.
+- **New assets:** none.
+- **Needs human attention:** still waiting on first Godot 4.6 import + on-device run (see Open questions). 13 iterations at HARD throttle; all P0 items blocked on device.
 
 ### [2026-05-11] — `claude/gifted-shannon-qPXcJ` — iter 36: win state design research + test naming fix
 

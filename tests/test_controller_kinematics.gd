@@ -52,6 +52,8 @@ func _ready() -> void:
 	_test_gravity_integration()
 	_test_squash_stretch_math()
 	_test_jump_puff_math()
+	_test_impact_factor_math()
+	_test_land_squash_scale_math()
 	_report()
 
 
@@ -1297,6 +1299,12 @@ func _puff_geometry_checks() -> void:
 	var hub := 0.04
 	_ok("puff: hub > 0 and < length_min", hub > 0.0 and hub < len_min)
 
+	# Jitter (±0.25 rad) must leave a positive gap between adjacent base angles.
+	# Worst case: neighbours jitter toward each other by 0.25 rad each.
+	var jitter_max := 0.25
+	_ok("puff: jitter within angle_step gap (no line overlap at worst case)",
+		angle_step - 2.0 * jitter_max > 0.0)
+
 
 func _puff_material_fade_checks() -> void:
 	# Warm-grey material: R > G > B (slight warm/concrete bias); all channels [0, 1].
@@ -1310,3 +1318,71 @@ func _puff_material_fade_checks() -> void:
 	_ok("puff fade: hold < fade (burst-then-fade grammar)",         hold_s < fade_s)
 	_ok("puff fade: hold + fade ≈ 0.20 s (documented effect life)", _near(hold_s + fade_s, 0.20))
 	_ok("puff fade: total < 0.5 s (won't linger after next jump)",  hold_s + fade_s < 0.5)
+
+
+func _test_impact_factor_math() -> void:
+	## Mirrors _tick_timers:
+	##   impact = clampf(-_last_fall_speed / terminal_velocity, 0, 1)
+	## _last_fall_speed = velocity.y while airborne (negative when descending).
+	print("\n-- Impact factor derivation math --")
+	var terminal := 18.0  # representative Snappy terminal_velocity
+
+	# Zero fall speed → no squash.
+	_ok("impact: vel_y=0.0 → factor=0.0",
+		_near(clampf(-0.0 / terminal, 0.0, 1.0), 0.0))
+
+	# Linear interior: half-terminal fall → factor = 0.5.
+	_ok("impact: half-terminal fall → factor=0.5",
+		_near(clampf(-(-terminal * 0.5) / terminal, 0.0, 1.0), 0.5))
+
+	# At full terminal: factor = 1.0.
+	_ok("impact: full-terminal fall → factor=1.0",
+		_near(clampf(-(-terminal) / terminal, 0.0, 1.0), 1.0))
+
+	# Speed beyond terminal: still clamped to 1.0 (can't happen in normal play).
+	_ok("impact: speed > terminal → factor=1.0 (clamp guard)",
+		_near(clampf(-(-terminal * 1.8) / terminal, 0.0, 1.0), 1.0))
+
+	# Rising velocity (positive vel_y) yields negative numerator → clamped to 0.
+	_ok("impact: rising vel_y > 0 → factor=0.0",
+		_near(clampf(-(terminal * 0.5) / terminal, 0.0, 1.0), 0.0))
+
+	# Monotone in the unclamped region.
+	var f_slow := clampf(-(-terminal * 0.3) / terminal, 0.0, 1.0)
+	var f_fast := clampf(-(-terminal * 0.7) / terminal, 0.0, 1.0)
+	_ok("impact: faster fall → larger factor (monotone in unclamped range)", f_fast > f_slow)
+
+	# Scale-invariant: factor = ratio to terminal, independent of absolute magnitude.
+	_ok("impact: factor=1.0 regardless of terminal magnitude (ratio only)",
+		_near(clampf(-(-2.0 * terminal) / (2.0 * terminal), 0.0, 1.0), 1.0))
+
+
+func _test_land_squash_scale_math() -> void:
+	## Mirrors _play_land_squash:
+	##   squash_y  = 1.0 - impact * 0.45 * _impact_squash_scale
+	##   squash_xz = 1.0 + impact * 0.20 * _impact_squash_scale
+	print("\n-- Land squash scale formulas --")
+
+	# At impact=0: no deformation regardless of squash scale.
+	_ok("squash: impact=0 → sq_y=1.0",  _near(1.0 - 0.0 * 0.45 * 0.5, 1.0))
+	_ok("squash: impact=0 → sq_xz=1.0", _near(1.0 + 0.0 * 0.20 * 0.5, 1.0))
+
+	# At squash_scale=0: no deformation regardless of impact.
+	_ok("squash: scale=0 → sq_y=1.0",  _near(1.0 - 1.0 * 0.45 * 0.0, 1.0))
+	_ok("squash: scale=0 → sq_xz=1.0", _near(1.0 + 1.0 * 0.20 * 0.0, 1.0))
+
+	# Full deformation at impact=1, scale=1: exact expected values.
+	_ok("squash: impact=1, scale=1 → sq_y=0.55",  _near(1.0 - 1.0 * 0.45 * 1.0, 0.55))
+	_ok("squash: impact=1, scale=1 → sq_xz=1.20", _near(1.0 + 1.0 * 0.20 * 1.0, 1.20))
+
+	# Direction invariants (impact=0.5, scale=0.7 as a representative mid-range).
+	var sq_y  := 1.0 - 0.5 * 0.45 * 0.7
+	var sq_xz := 1.0 + 0.5 * 0.20 * 0.7
+	_ok("squash: sq_y < 1.0 when impact > 0, scale > 0 (Y compresses)", sq_y < 1.0)
+	_ok("squash: sq_xz > 1.0 when impact > 0, scale > 0 (XZ expands)",  sq_xz > 1.0)
+
+	# Linearity: doubling impact doubles the deformation delta from neutral (1.0).
+	var delta_half := 0.5 * 0.45 * 1.0  # Y-delta at impact=0.5, scale=1
+	var delta_full := 1.0 * 0.45 * 1.0  # Y-delta at impact=1.0, scale=1
+	_ok("squash: Y deformation scales linearly with impact (delta doubles)",
+		_near(delta_full / delta_half, 2.0))

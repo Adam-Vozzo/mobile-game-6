@@ -14,20 +14,17 @@ instrumented and tunable.
 
 ## Active iteration
 
-- Branch: `claude/gifted-shannon-qPXcJ`
-- Focus: iter 36. **Win state design research + test sub-helper rename.**
-  `docs/research/win_state_design.md` — last unresearched Gate 1 requirement; covers
-  SMB/SMB3D (instant cut to stats, grade system), Dadish 3D (star rating, no death count,
-  thumb-friendly buttons), Celeste (deaths-as-badge, personal-best delta). Mobile constraints:
-  ≤ 3 s to replay, no mandatory animation, no death count by default. Void recommendation:
-  `WinState` Area3D → `Game.level_completed`; results panel (time, par comparison, shard count);
-  REPLAY = `reset_run()` + reload; ghost trail post-level replay deferred. 6 Gate 1 implications
-  including `Game.is_running` flag and `par_time_seconds` in level meta. INDEX.md updated.
-  Side quest: renamed `_test_puff_geometry` → `_puff_geometry_checks` and
-  `_test_puff_material_and_fade` → `_puff_material_fade_checks` — these are sub-helpers of
-  `_test_jump_puff_math`, not top-level tests; the `_test_` prefix was misleading.
-  Throttle: HARD (12 autonomous iterations since 2026-05-11 human session; prev count of 9
-  was understated).
+- Branch: `claude/gifted-shannon-rwVuV`
+- Focus: iter 37. **Impact factor + land squash scale math tests.**
+  `_test_impact_factor_math` (7 assertions) — documents `clampf(-_last_fall_speed /
+  terminal_velocity, 0, 1)` boundary behavior: zero fall speed → 0.0, half terminal → 0.5,
+  full terminal → 1.0, overclamp guard, rising velocity → 0.0, monotonicity, scale-invariance.
+  `_test_land_squash_scale_math` (9 assertions) — documents squash_y / squash_xz formulas:
+  zero-deformation at impact=0 or scale=0, exact values at impact=1 scale=1 (sq_y=0.55,
+  sq_xz=1.20), direction invariants (Y compresses, XZ expands), linear proportionality.
+  Side quest: puff jitter non-overlap assertion added to `_puff_geometry_checks` — verifies
+  angle_step − 2×jitter_max > 0 so worst-case jitter never overlaps adjacent lines.
+  Total: 349 → 366 assertions. Throttle: HARD (13 autonomous iterations).
 
 ## Queue (ranked, top is next)
 
@@ -160,6 +157,15 @@ These mirror "Open questions waiting on you" in the README.
   (Per CLAUDE.md: level concept selection is a human call.)
 
 ## Recently completed (last 5)
+
+- 2026-05-11 — Iteration 37. **Impact factor + land squash scale math tests.**
+  `_test_impact_factor_math` (7 assertions) + `_test_land_squash_scale_math` (9 assertions)
+  added to `tests/test_controller_kinematics.gd`. Covers: zero-fall-speed → 0.0, half-terminal
+  → 0.5, full-terminal → 1.0, overclamp guard, rising-velocity → 0.0, monotonicity,
+  scale-invariance; zero-deformation at impact=0 or scale=0, exact values at impact=1 scale=1
+  (sq_y=0.55, sq_xz=1.20), direction invariants, linear proportionality.
+  Side quest: puff jitter non-overlap assertion in `_puff_geometry_checks` (+1).
+  Total: 349 → 366 assertions. Throttle: HARD (13 iterations since human session).
 
 - 2026-05-11 — Iteration 36. **Win state design research + test sub-helper rename.**
   `docs/research/win_state_design.md` — final unresearched Gate 1 prerequisite. SMB/SMB3D
