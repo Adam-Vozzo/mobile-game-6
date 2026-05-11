@@ -60,6 +60,8 @@ func _ready() -> void:
 	_test_jump_release_touch_path()
 	_test_occlusion_release_latch()
 	_test_camera_smoothing_formula()
+	_test_stick_deadzone_and_clamp()
+	_test_tripod_horiz_distance_correction()
 	_report()
 
 
@@ -1698,3 +1700,130 @@ func _test_camera_smoothing_formula() -> void:
 		pull10 *= (1.0 - pull_t)
 	_ok("camera smoothing: 10 pull_in frames leave < 5%% remaining (near-instant reveal)",
 		pull10 < 0.05)
+
+
+func _test_stick_deadzone_and_clamp() -> void:
+	## Documents the virtual-stick move-vector derivation in touch_overlay.gd::_handle_drag.
+	##
+	## (1) Radial clamp: if offset.length() > max_r → offset = offset.normalized() * max_r
+	## (2) Normalise: v = offset / max_r           → v in [0, 1]
+	## (3) Truncating dead zone: if v.length() < deadzone → v = Vector2.ZERO
+	print("\n-- Stick dead zone + radial clamp math --")
+	const MAX_R    := 100.0
+	const DEADZONE := 0.15
+
+	var _mv := func(offset: Vector2) -> Vector2:
+		if offset.length() > MAX_R:
+			offset = offset.normalized() * MAX_R
+		var v := offset / MAX_R
+		if v.length() < DEADZONE:
+			v = Vector2.ZERO
+		return v
+
+	# Below dead zone → zero move vector (0.10 < 0.15).
+	_ok("stick: small offset (10/100 = 0.10 < 0.15 dead zone) → zero vector",
+		_mv.call(Vector2(10.0, 0.0)) == Vector2.ZERO)
+
+	# Exactly at boundary: v.length() == deadzone is NOT zeroed (strictly < condition).
+	_ok("stick: offset at exact dead zone boundary (15/100 = 0.15) → non-zero (not strict-less)",
+		_mv.call(Vector2(DEADZONE * MAX_R, 0.0)).length() > 0.0)
+
+	# Partial deflection above dead zone: v.length() == offset / max_r.
+	_ok("stick: 50%% deflection maps to v.length() == 0.5",
+		_near(_mv.call(Vector2(MAX_R * 0.5, 0.0)).length(), 0.5))
+
+	# Full deflection: v.length() == 1.0.
+	_ok("stick: full deflection (offset == max_r) → v.length() == 1.0",
+		_near(_mv.call(Vector2(MAX_R, 0.0)).length(), 1.0))
+
+	# Oversized offset clamped to 1.0.
+	_ok("stick: oversized offset (2× max_r) clamped → v.length() == 1.0",
+		_near(_mv.call(Vector2(MAX_R * 2.0, 0.0)).length(), 1.0))
+
+	# Direction preserved through radial clamp (diagonal stays diagonal).
+	var diag := Vector2(1.0, 1.0).normalized()
+	_ok("stick: clamp preserves direction (45° input stays 45°)",
+		_near(_mv.call(diag * MAX_R * 3.0).normalized().dot(diag), 1.0, 1e-3))
+
+	# Dead zone is rotationally symmetric: threshold is the same in all 8 cardinal/diagonal dirs.
+	var r_just_inside := DEADZONE * MAX_R * 0.99
+	var all_zero := true
+	for deg: float in [0.0, 45.0, 90.0, 135.0, 180.0, 225.0, 270.0, 315.0]:
+		if _mv.call(Vector2(cos(deg_to_rad(deg)), sin(deg_to_rad(deg))) * r_just_inside) != Vector2.ZERO:
+			all_zero = false
+	_ok("stick: dead zone is rotationally symmetric (zero at 99%% of threshold in 8 directions)",
+		all_zero)
+
+	# Output always in [0, 1] regardless of raw offset.
+	var all_in_range := true
+	for r: float in [0.0, 1.0, 50.0, 100.0, 150.0, 500.0]:
+		if _mv.call(Vector2(r, 0.0)).length() > 1.0 + 1e-5:
+			all_in_range = false
+	_ok("stick: normalised output always ≤ 1.0 regardless of raw offset magnitude",
+		all_in_range)
+
+
+func _test_tripod_horiz_distance_correction() -> void:
+	## Documents the tripod XZ distance maintenance formula in camera_rig.gd::_process
+	## (ground branch, executed every frame the player is on the floor).
+	##
+	##   horiz     = Vector3(target.x - cam.x, 0, target.z - cam.z)
+	##   dir       = horiz / horiz.length()   (toward target, horizontal only)
+	##   dist_err  = horiz.length() - desired_dist
+	##   new_cam   = cam + Vector3(dir.x * dist_err, 0, dir.z * dist_err)
+	##
+	## Key property: after one application, horizontal distance == desired_dist exactly.
+	print("\n-- Tripod XZ distance correction formula --")
+	const TARGET := Vector3.ZERO
+
+	var _correct := func(cam: Vector3, desired: float) -> Vector3:
+		var horiz := Vector3(TARGET.x - cam.x, 0.0, TARGET.z - cam.z)
+		var current := horiz.length()
+		if current <= 0.001:
+			return cam
+		var dir := horiz / current
+		var err := current - desired
+		return Vector3(cam.x + dir.x * err, cam.y, cam.z + dir.z * err)
+
+	var _hd := func(a: Vector3) -> float:
+		return Vector2(a.x - TARGET.x, a.z - TARGET.z).length()
+
+	# Camera too far: single correction brings horiz dist to exactly desired.
+	_ok("tripod: camera too far (8 m) corrected to desired dist (5 m) in one step",
+		_near(_hd.call(_correct.call(Vector3(0, 2, 8), 5.0)), 5.0))
+
+	# Camera too close: correction pushes out to exactly desired.
+	_ok("tripod: camera too close (3 m) corrected to desired dist (5 m) in one step",
+		_near(_hd.call(_correct.call(Vector3(3, 2, 0), 5.0)), 5.0))
+
+	# Already at desired: zero movement.
+	var at_dist := Vector3(0.0, 2.0, 5.0)
+	var at_result := _correct.call(at_dist, 5.0)
+	_ok("tripod: camera at correct dist → no XZ movement (dist_err == 0)",
+		_near(at_result.x, at_dist.x) and _near(at_result.z, at_dist.z))
+
+	# Y component untouched (height set separately by elevation formula).
+	_ok("tripod: Y component unchanged by XZ correction",
+		_near(_correct.call(Vector3(0, 3.5, 8), 5.0).y, 3.5))
+
+	# Horizontal direction preserved: camera stays on same ray from target after correction.
+	var cam_diag := Vector3(4.0, 2.0, 6.0)
+	var res_diag := _correct.call(cam_diag, 5.0)
+	var dir_before := Vector2(cam_diag.x, cam_diag.z).normalized()
+	var dir_after  := Vector2(res_diag.x,  res_diag.z).normalized()
+	_ok("tripod: horizontal direction preserved (camera stays on same radial line from target)",
+		_near(dir_before.dot(dir_after), 1.0, 1e-4))
+
+	# Single-step convergence: applying the correction twice gives same result.
+	var once  := _correct.call(Vector3(0, 2, 10), 5.0)
+	var twice := _correct.call(once, 5.0)
+	_ok("tripod: correction converges in exactly one step (second pass is a no-op)",
+		_near(_hd.call(twice), 5.0) and _near(once.x, twice.x) and _near(once.z, twice.z))
+
+	# Correction direction: moves toward target when too far, away when too close.
+	var res_far   := _correct.call(Vector3(0.0, 0.0, 8.0), 5.0)
+	var res_close := _correct.call(Vector3(0.0, 0.0, 2.0), 5.0)
+	_ok("tripod: correction moves camera toward target when too far (+Z cam → smaller Z after)",
+		res_far.z < 8.0)
+	_ok("tripod: correction moves camera away from target when too close (+Z cam → larger Z after)",
+		res_close.z > 2.0)
