@@ -1251,11 +1251,11 @@ func _test_jump_puff_math() -> void:
 	## Mirrors the geometry constants in player.gd::_build_puff_mesh.
 	## Pure math — no node needed.
 	print("\n-- Jump puff geometry + material math --")
-	_test_puff_geometry()
-	_test_puff_material_and_fade()
+	_puff_geometry_checks()
+	_puff_material_fade_checks()
 
 
-func _test_puff_geometry() -> void:
+func _puff_geometry_checks() -> void:
 	# 8 evenly-spaced base angles must span exactly one full revolution.
 	var angle_step := TAU / 8.0
 	_ok("puff: 8 steps × angle_step == TAU (full revolution)",
@@ -1298,7 +1298,7 @@ func _test_puff_geometry() -> void:
 	_ok("puff: hub > 0 and < length_min", hub > 0.0 and hub < len_min)
 
 
-func _test_puff_material_and_fade() -> void:
+func _puff_material_fade_checks() -> void:
 	# Warm-grey material: R > G > B (slight warm/concrete bias); all channels [0, 1].
 	var r := 0.80;  var g := 0.77;  var b := 0.72
 	_ok("puff material: R > G > B (warm-concrete bias)", r > g and g > b)

@@ -14,16 +14,20 @@ instrumented and tunable.
 
 ## Active iteration
 
-- Branch: `claude/gifted-shannon-gd7gr`
-- Focus: iter 35. **Jump puff math unit tests + collectible design research.**
-  `_test_jump_puff_math` (18 assertions) added to `tests/test_controller_kinematics.gd` —
-  radial angle formula (8 steps = TAU), length bounds (0.10–0.28 m), upward Y-kick bounds
-  (0.0–0.12), direction normalisation invariant, hub offset (0.04 m < length_min), material
-  warm-grey R > G > B, fade timing (hold=0.04 + fade=0.16 = 0.20 s). Total: 331 → 349 assertions.
-  Side quest: `docs/research/collectible_design.md` — the last Gate 1 item with no prior
-  research; recommendation: data shard (cyan emissive prism, Area3D 0.9 m radius, off par-route,
-  one per level); 6 concrete implications; `Game` autoload fields noted.
-  Throttle: HARD (9 autonomous iterations since 2026-05-11 human session).
+- Branch: `claude/gifted-shannon-qPXcJ`
+- Focus: iter 36. **Win state design research + test sub-helper rename.**
+  `docs/research/win_state_design.md` — last unresearched Gate 1 requirement; covers
+  SMB/SMB3D (instant cut to stats, grade system), Dadish 3D (star rating, no death count,
+  thumb-friendly buttons), Celeste (deaths-as-badge, personal-best delta). Mobile constraints:
+  ≤ 3 s to replay, no mandatory animation, no death count by default. Void recommendation:
+  `WinState` Area3D → `Game.level_completed`; results panel (time, par comparison, shard count);
+  REPLAY = `reset_run()` + reload; ghost trail post-level replay deferred. 6 Gate 1 implications
+  including `Game.is_running` flag and `par_time_seconds` in level meta. INDEX.md updated.
+  Side quest: renamed `_test_puff_geometry` → `_puff_geometry_checks` and
+  `_test_puff_material_and_fade` → `_puff_material_fade_checks` — these are sub-helpers of
+  `_test_jump_puff_math`, not top-level tests; the `_test_` prefix was misleading.
+  Throttle: HARD (12 autonomous iterations since 2026-05-11 human session; prev count of 9
+  was understated).
 
 ## Queue (ranked, top is next)
 
@@ -156,6 +160,19 @@ These mirror "Open questions waiting on you" in the README.
   (Per CLAUDE.md: level concept selection is a human call.)
 
 ## Recently completed (last 5)
+
+- 2026-05-11 — Iteration 36. **Win state design research + test sub-helper rename.**
+  `docs/research/win_state_design.md` — final unresearched Gate 1 prerequisite. SMB/SMB3D
+  instant-cut stats with grade system; Dadish 3D star rating + no death count; Celeste
+  personal-best delta. Mobile: ≤ 3 s to replay, no mandatory animation, no death count by
+  default. Void recommendation: `WinState` Area3D → `Game.level_completed`, results panel
+  (time / par comparison / shards), REPLAY = `reset_run()` + reload, post-level ghost trail
+  replay deferred. 6 Gate 1 implications: `Game.is_running` flag, `par_time_seconds` in
+  level meta, WinState authored last, no death count shown, par drives intrinsic motivation,
+  `reset_run()` already exists. INDEX.md updated.
+  Side quest: `_test_puff_geometry` → `_puff_geometry_checks`,
+  `_test_puff_material_and_fade` → `_puff_material_fade_checks` — naming fix so these
+  sub-helpers don't appear to be missed top-level tests. No assertion change (349 total).
 
 - 2026-05-11 — Iteration 35. **Jump puff math unit tests + collectible design research.**
   `_test_jump_puff_math` (18 assertions) added to `tests/test_controller_kinematics.gd`.
