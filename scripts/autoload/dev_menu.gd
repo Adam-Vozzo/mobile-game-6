@@ -30,6 +30,8 @@ signal touch_param_changed(param: StringName, value: Variant)
 signal reposition_controls_requested
 @warning_ignore("unused_signal")
 signal blob_shadow_param_changed(param: StringName, value: float)
+@warning_ignore("unused_signal")
+signal squash_stretch_param_changed(param: StringName, value: float)
 
 var is_open: bool = false
 var juice_state: Dictionary[StringName, bool] = {

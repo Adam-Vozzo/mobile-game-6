@@ -266,6 +266,7 @@ func _build_juice_section(vbox: VBoxContainer) -> void:
 			func(pressed: bool) -> void: DevMenu.set_juice(captured_key, pressed))
 		_juice_boxes[key] = btn
 	_build_blob_shadow_tuning(vbox)
+	_build_squash_stretch_tuning(vbox)
 
 
 func _build_blob_shadow_tuning(vbox: VBoxContainer) -> void:
@@ -417,6 +418,19 @@ func _make_blob_slider(parent: Node, label_text: String, param: StringName,
 		mn: float, mx: float, step: float, default_val: float) -> void:
 	_make_slider(parent, label_text, mn, mx, step,
 		func(v: float) -> void: DevMenu.blob_shadow_param_changed.emit(param, v),
+		default_val)
+
+
+func _build_squash_stretch_tuning(vbox: VBoxContainer) -> void:
+	vbox.add_child(_make_label("Squash-Stretch — Tuning", SECTION_FONT_SIZE, false))
+	_make_squash_slider(vbox, "Impact scale",  &"impact_squash_scale", 0.0, 1.0, 0.01, 0.5)
+	_make_squash_slider(vbox, "Stretch scale", &"jump_stretch_scale",  0.0, 1.0, 0.01, 0.5)
+
+
+func _make_squash_slider(parent: Node, label_text: String, param: StringName,
+		mn: float, mx: float, step: float, default_val: float) -> void:
+	_make_slider(parent, label_text, mn, mx, step,
+		func(v: float) -> void: DevMenu.squash_stretch_param_changed.emit(param, v),
 		default_val)
 
 
