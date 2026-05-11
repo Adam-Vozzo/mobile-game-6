@@ -21,6 +21,17 @@ they're written.
 
 - [`assist_mechanics.md`](assist_mechanics.md) — Godot 4 implementation approaches for the Assisted controller profile (PLAN P0 item 4). Covers: ledge magnetism (ShapeCast at jump time, 2 rays, ≤ 1.0 m/s impulse, new ControllerProfile properties), arc assist (20-step parabola simulation, ≤ 15% jump_velocity correction, per-frame), sticky landing (2-frame speed reduction × 20%, `_was_on_floor_last_frame` tracker), edge-snap on landing (post-move_and_slide position correction, implement last). 6 new ControllerProfile properties (all default 0 = off, backwards-compatible). Implementation order: sticky landing → ledge magnetism → arc assist → edge-snap. Key implication: `_was_on_floor_last_frame` doubles as the landing-squash trigger for the juice system — extract to `_landed_this_frame` in `_physics_process`.
 
+## Gate 1 — win state and results screen
+
+- [`win_state_design.md`](win_state_design.md) — Gate 1 prereq: win state trigger and results
+  panel design. Survey of SMB/SMB3D (instant stats, grade without letter), Dadish 3D (star rating,
+  no death count, thumb-friendly buttons), Celeste (deaths-as-badge, personal best delta). Mobile
+  constraints: ≤ 3 s to replay, no mandatory animation, no death count by default. **Void
+  recommendation:** `WinState` Area3D trigger → `Game.level_completed`; results panel shows time,
+  par comparison, shard count; REPLAY button calls `Game.reset_run()` + reload; ghost trail
+  replay post-level deferred. 6 concrete Gate 1 implications including `Game.is_running` flag,
+  par_time_seconds in level meta, and WinState as the last Gate 1 scene to author.
+
 ## Gate 1 — collectibles
 
 - [`collectible_design.md`](collectible_design.md) — Gate 1 prereq: one collectible type. Survey of SMB (bandages — cosmetic, off critical path), Celeste (strawberries — lose on death, create tension without blocking), Mario Odyssey (moon model — sparse, individually authored pockets). Mobile constraints: must glow (Area3D radius 0.9 m, generous pick-up zone), cyan biolume fits brutalist palette. **Void recommendation: the data shard** — small cyan emissive prism, slow Y rotation, `Area3D` collect zone, off par-route, one per Gate 1 level. `Game` autoload tracks `shards_collected` / `shards_total`. 6 concrete Gate 1 implications.

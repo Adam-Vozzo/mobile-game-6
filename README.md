@@ -5,10 +5,10 @@ A mobile 3D platformer. Brutalist megastructure inspired by *BLAME!*. Controller
 ## Status
 
 Current gate: **Gate 0 — Feel Lab**
-Last iteration: 2026-05-11 — iter 35: jump puff math tests + collectible design research
+Last iteration: 2026-05-11 — iter 36: win state design research + test naming fix
 Test device build: not yet — hand-authored scenes pending first Godot 4.6 import; see Open questions
 Performance: not yet measured on Nothing Phone 4(a) Pro
-Throttle level: **HARD (9 autonomous iterations since 2026-05-11 human session).** Next iterations are hardening only unless human provides direction.
+Throttle level: **HARD (12 autonomous iterations since 2026-05-11 human session).** Next iterations are hardening only unless human provides direction.
 
 If you only read one section, read **Open questions waiting on you** below.
 
@@ -101,6 +101,22 @@ Goal: store-ready build.
 The full iteration log lives here, newest first. Every iteration appends an entry. Skim the dates to find where you last left off.
 
 <!-- ITERATION ENTRIES BELOW — DO NOT REMOVE OLDER ENTRIES -->
+
+### [2026-05-11] — `claude/gifted-shannon-qPXcJ` — iter 36: win state design research + test naming fix
+
+- **Throttle: HARD (12 autonomous iterations since 2026-05-11 human session; prev count of 9 was understated by 2).** Hardening only: research + refactor. No new feature surface, no behaviour change.
+- **Primary: `docs/research/win_state_design.md`** — last unresearched Gate 1 prerequisite ("Win state and results screen").
+  - Survey: SMB (instant cut to stats, grade A+–D, dark world unlock), SMB 3D (ghost trail replay IS the results screen per `smb3d.md`), Dadish 3D (star rating, no death count, thumb-sized buttons), Celeste (deaths-as-badge, personal-best delta).
+  - Mobile constraints: ≤ 3 s to replay, no mandatory animation, no death count by default, semi-transparent panel over frozen level (preserve sense of place).
+  - **Void recommendation:** `WinState` Area3D trigger → `Game.level_completed`. Results panel: time / par comparison / shard count. REPLAY = `reset_run()` + reload. No death count shown (configurable later). Ghost trail post-level replay deferred (the in-play trail already serves the pedagogy).
+  - 6 Gate 1 implications: `Game.is_running` flag needed (run timer must pause during reboot and results screen), `par_time_seconds` in level meta resource (35 s for Gate 1 level), `WinState.tscn` authored last, no death count in UI, par comparison drives intrinsic motivation without a letter grade, `reset_run()` already exists.
+  - `INDEX.md` updated.
+- **Side quest: test sub-helper naming fix** — `_test_puff_geometry` → `_puff_geometry_checks`, `_test_puff_material_and_fade` → `_puff_material_fade_checks`. These are called from within `_test_jump_puff_math`, not from `_ready()`; the `_test_` prefix implied they were missed top-level tests. Naming is now unambiguous. No assertion count change (349 total).
+- **Perf:** no runtime changes.
+- **New dev-menu controls:** none.
+- **New assets:** none.
+- **Research added:** `win_state_design.md`.
+- **On-device pending.** All P0 items still blocked on first Godot 4.6 import.
 
 ### [2026-05-11] — `claude/gifted-shannon-gd7gr` — iter 35: jump puff math tests + collectible design research
 
