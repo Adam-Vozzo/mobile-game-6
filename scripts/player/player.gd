@@ -192,6 +192,7 @@ func _try_jump() -> void:
 		_coyote_timer = 0.0
 		if DevMenu.is_juice_on(&"squash_stretch"):
 			_play_jump_stretch()
+		_spawn_jump_puff()
 
 
 func _cut_jump(jump_released: bool) -> void:
@@ -377,6 +378,53 @@ func _fade_and_free_spark(mi: MeshInstance3D, mat: StandardMaterial3D) -> void:
 	var tween := mi.create_tween()
 	tween.tween_interval(0.07)
 	tween.tween_property(mat, "albedo_color:a", 0.0, 0.38)
+	tween.tween_callback(mi.queue_free)
+
+
+# Gated behind the "particles" juice toggle; frees itself after ~0.2 s.
+func _spawn_jump_puff() -> void:
+	if not DevMenu.is_juice_on(&"particles"):
+		return
+	var mat := _build_puff_material()
+	var mi := MeshInstance3D.new()
+	mi.mesh = _build_puff_mesh()
+	mi.material_override = mat
+	mi.cast_shadow = GeometryInstance3D.SHADOW_CASTING_SETTING_OFF
+	get_tree().root.add_child(mi)
+	mi.global_position = global_position + Vector3(0.0, 0.06, 0.0)
+	_fade_and_free_puff(mi, mat)
+
+
+func _build_puff_material() -> StandardMaterial3D:
+	var mat := StandardMaterial3D.new()
+	mat.shading_mode = BaseMaterial3D.SHADING_MODE_UNSHADED
+	mat.albedo_color = Color(0.80, 0.77, 0.72, 1.0)
+	mat.transparency = BaseMaterial3D.TRANSPARENCY_ALPHA
+	mat.no_depth_test = true
+	mat.cull_mode = BaseMaterial3D.CULL_DISABLED
+	return mat
+
+
+func _build_puff_mesh() -> ImmediateMesh:
+	var mesh := ImmediateMesh.new()
+	mesh.surface_begin(Mesh.PRIMITIVE_LINES)
+	var rng := RandomNumberGenerator.new()
+	rng.randomize()
+	for i in 8:
+		var angle := float(i) * TAU / 8.0 + rng.randf_range(-0.25, 0.25)
+		var length := rng.randf_range(0.10, 0.28)
+		# Slight upward kick on each line so the burst reads as dust lifting off.
+		var dir := Vector3(cos(angle), rng.randf_range(0.0, 0.12), sin(angle)).normalized()
+		mesh.surface_add_vertex(dir * 0.04)
+		mesh.surface_add_vertex(dir * (0.04 + length))
+	mesh.surface_end()
+	return mesh
+
+
+func _fade_and_free_puff(mi: MeshInstance3D, mat: StandardMaterial3D) -> void:
+	var tween := mi.create_tween()
+	tween.tween_interval(0.04)
+	tween.tween_property(mat, "albedo_color:a", 0.0, 0.16)
 	tween.tween_callback(mi.queue_free)
 
 

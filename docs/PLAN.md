@@ -14,19 +14,17 @@ instrumented and tunable.
 
 ## Active iteration
 
-- Branch: `claude/gifted-shannon-2IAxC`
-- Focus: iter 33. **Squash-stretch animation implementation + math unit tests.**
-  `_play_land_squash` + `_play_jump_stretch` in `player.gd`; `_last_fall_speed` tracker
-  (captures pre-landing velocity.y while airborne so impact factor is correct on the
-  just_landed frame). Both methods gated behind `squash_stretch` juice toggle and
-  `_is_rebooting` guard. `respawn()` kills the squash tween + resets scale before the
-  reboot effect takes over. Two dev-menu sliders: "Impact scale" + "Stretch scale" (0–1,
-  default 0.5) via new `squash_stretch_param_changed` signal in `dev_menu.gd`.
-  Side quest: `_test_squash_stretch_math` (17 assertions) — impact factor derivation,
-  squash Y/XZ formulas over [0, 0.5, 1.0] impact range, scale=0 identity, stretch
-  direction invariant. Net assertions: 314 → 331.
-  JUICE.md: Land squish + Jump stretch → prototype.
-  Throttle: SOFT (7 iters since human session).
+- Branch: `claude/gifted-shannon-H30E8`
+- Focus: iter 34. **Jump puff particle effect + enemy archetype research.**
+  `_spawn_jump_puff()` + `_build_puff_material()` + `_build_puff_mesh()` + `_fade_and_free_puff()`
+  in `player.gd`; called from `_try_jump()` on every successful jump; 8 ImmediateMesh lines
+  radiating horizontally with slight upward Y kick, warm grey palette, 0.04 s hold + 0.16 s fade;
+  gated behind existing `particles` juice toggle; zero new dev-menu controls needed.
+  JUICE.md: "Jump puff" → prototype.
+  Side quest: `docs/research/enemy_archetypes.md` — Gate 1 prerequisite; static hazard
+  recommended for Gate 1 (no AI, `HazardBody.tscn`, Area3D kill zone); patroller deferred to
+  Gate 2; 6 concrete implications. INDEX.md updated.
+  Throttle: SOFT (8 iters since human session).
 
 ## Queue (ranked, top is next)
 
@@ -159,6 +157,17 @@ These mirror "Open questions waiting on you" in the README.
   (Per CLAUDE.md: level concept selection is a human call.)
 
 ## Recently completed (last 5)
+
+- 2026-05-11 — Iteration 34. **Jump puff particle effect + enemy archetype research.**
+  `_spawn_jump_puff()` called from `_try_jump()` on every successful jump. 8 ImmediateMesh lines
+  in `_build_puff_mesh()` — evenly-spaced radial angles, random length 0.10–0.28 m, slight
+  upward Y component (0–0.12) so the burst reads as dust lifting off the floor. Warm grey palette
+  (0.80/0.77/0.72). `_fade_and_free_puff()`: 0.04 s hold + 0.16 s fade. Gated behind `particles`
+  toggle; no dev-menu changes needed. JUICE.md: "Jump puff" → prototype. ~40 lines added.
+  Side quest: `docs/research/enemy_archetypes.md` — Gate 1 prerequisite; static kill zone
+  (`HazardBody.tscn` with Area3D) recommended for Gate 1 (no AI), patroller deferred to Gate 2;
+  palette separation (cold hazards vs Stray red); hitbox generosity guidance for mobile; 6 implications.
+  INDEX.md updated.
 
 - 2026-05-11 — Iteration 33. **Squash-stretch animation implementation.**
   `_play_land_squash(impact)` + `_play_jump_stretch()` in `player.gd` (Tween on `$Visual.scale`,
