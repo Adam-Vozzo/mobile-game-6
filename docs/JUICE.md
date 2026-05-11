@@ -37,7 +37,7 @@ Status legend:
 | element | status | notes |
 |---------|--------|-------|
 | Footstep dust | idea | mobile-budget particle (4 quads) on grounded run |
-| Jump puff | idea | radial burst at takeoff, larger if jump held to apex |
+| Jump puff | prototype | `_spawn_jump_puff()` on jump fire (inside `_try_jump`); 8 ImmediateMesh lines radiating horizontally from takeoff point, warm grey (0.80/0.77/0.72), slight upward kick per line; 0.04 s hold then 0.16 s fade; ~14 verts; gated behind `particles` toggle |
 | Land impact | idea | scaled by fall velocity |
 | Reboot sparks | prototype | 12 ImmediateMesh lines at death position, warm orange-yellow, fade 0.45 s; ~14 verts; gated behind `particles` toggle |
 | Wall slide trail | idea | only if wall mechanic survives Snappy tuning |

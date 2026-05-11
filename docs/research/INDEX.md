@@ -21,6 +21,10 @@ they're written.
 
 - [`assist_mechanics.md`](assist_mechanics.md) — Godot 4 implementation approaches for the Assisted controller profile (PLAN P0 item 4). Covers: ledge magnetism (ShapeCast at jump time, 2 rays, ≤ 1.0 m/s impulse, new ControllerProfile properties), arc assist (20-step parabola simulation, ≤ 15% jump_velocity correction, per-frame), sticky landing (2-frame speed reduction × 20%, `_was_on_floor_last_frame` tracker), edge-snap on landing (post-move_and_slide position correction, implement last). 6 new ControllerProfile properties (all default 0 = off, backwards-compatible). Implementation order: sticky landing → ledge magnetism → arc assist → edge-snap. Key implication: `_was_on_floor_last_frame` doubles as the landing-squash trigger for the juice system — extract to `_landed_this_frame` in `_physics_process`.
 
+## Gate 1 — enemies and hazards
+
+- [`enemy_archetypes.md`](enemy_archetypes.md) — Gate 1 prerequisite: one enemy archetype. How SMB / SMB 3D (hazards before creatures), Dadish 3D (slow linear patrollers), and Celeste (enemy-as-timing-window) approach first-enemy design. Mobile constraints: touch correction latency favours static/timed hazards over patrollers at Gate 1; hitbox generosity required; palette separation (cold hazards vs Stray red). Godot 4 options: Option A (static kill zone — recommended for Gate 1), Option B (timed hazard), Option C (linear patroller — Gate 2). **Void recommendation:** `HazardBody.tscn` (Area3D + configurable radius) covers Gate 1; zero AI, one skin, no state machine. Gate 2 adds a slow linear patroller.
+
 ## Juice density
 
 - [`juice_density.md`](juice_density.md) — Astro's Playroom / Astro Bot "layered receipt" model (audio+visual+world per action), comparison with SMB sparse-juice approach, mobile considerations (UI feedback compensates for no haptics), draw-call cost of each juice type. Gate 1 priority ranking: landing squash > jump stretch > jump puff > pre-jump anticipation. Key implication: Void should sit closer to SMB density than Astro Bot given the brutalist tone.

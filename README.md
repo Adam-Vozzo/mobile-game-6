@@ -5,10 +5,10 @@ A mobile 3D platformer. Brutalist megastructure inspired by *BLAME!*. Controller
 ## Status
 
 Current gate: **Gate 0 — Feel Lab**
-Last iteration: 2026-05-11 — iter 33: squash-stretch animation + math unit tests
+Last iteration: 2026-05-11 — iter 34: jump puff particle effect + enemy archetype research
 Test device build: not yet — hand-authored scenes pending first Godot 4.6 import; see Open questions
 Performance: not yet measured on Nothing Phone 4(a) Pro
-Throttle level: **SOFT (7 autonomous iterations since 2026-05-11 human session).** Non-destructive / bounded work only. Re-engage HARD at 8+.
+Throttle level: **SOFT→HARD (8 autonomous iterations since 2026-05-11 human session).** At the hard-throttle boundary. Next iteration should be hardening only unless human provides new direction.
 
 If you only read one section, read **Open questions waiting on you** below.
 
@@ -101,6 +101,24 @@ Goal: store-ready build.
 The full iteration log lives here, newest first. Every iteration appends an entry. Skim the dates to find where you last left off.
 
 <!-- ITERATION ENTRIES BELOW — DO NOT REMOVE OLDER ENTRIES -->
+
+### [2026-05-11] — `claude/gifted-shannon-H30E8` — iter 34: jump puff particle effect + enemy archetype research
+
+- **Throttle: SOFT→HARD (8 autonomous iterations since 2026-05-11 human session).** Bounded juice + research at the soft/hard boundary; no new architectural surface.
+- **Primary: Jump puff particle effect.**
+  - `_spawn_jump_puff()` called from `_try_jump()` on every successful jump fire.
+  - `_build_puff_mesh()`: 8 ImmediateMesh lines at evenly-spaced radial angles (± 0.25 rad jitter), random length 0.10–0.28 m, slight upward Y component per line (0–0.12) so the burst reads as dust lifting off the floor rather than a flat ring.
+  - `_build_puff_material()`: warm grey (0.80/0.77/0.72), unshaded, alpha-blended, no depth test — matches brutalist concrete dust.
+  - `_fade_and_free_puff()`: 0.04 s hold → 0.16 s alpha fade → `queue_free`. Total effect life ~0.2 s, ~14 vertices.
+  - Gated behind existing `DevMenu.is_juice_on(&"particles")` toggle. No new dev-menu controls.
+  - JUICE.md: "Jump puff" → `prototype`.
+- **Side quest: `docs/research/enemy_archetypes.md`.**
+  - Gate 1 requires one enemy archetype — this is the only Gate 1 item without any prior research.
+  - Recommendation: Gate 1 = static kill zone (`HazardBody.tscn`, `Area3D` + configurable radius), zero AI, no state machine. Matches SMB/SMB 3D's "hazard before creature" grammar and brutalist aesthetics (industrial traps, not living enemies). Linear patroller deferred to Gate 2.
+  - Mobile constraints documented: touch correction latency → slow/static hazards only at Gate 1; hitbox generosity (+0.15–0.20 m on kill zone vs mesh); palette separation (cold-grey hazards vs Stray red).
+  - 6 implications for Gate 1 level authoring. `INDEX.md` updated.
+- **Perf:** no runtime overhead added vs iter 33 (ImmediateMesh with 14 verts, created and freed per jump — same pattern as reboot sparks). Draw-call budget: +1 transient per jump, self-clears in 0.2 s.
+- **On-device pending.** All P0 items still blocked on first Godot 4.6 import.
 
 ### [2026-05-11] — `claude/gifted-shannon-2IAxC` — iter 33: squash-stretch animation + math unit tests
 
