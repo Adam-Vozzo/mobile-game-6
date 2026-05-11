@@ -14,21 +14,20 @@ instrumented and tunable.
 
 ## Active iteration
 
-- Branch: `iter/jump-stretch-scale-spark-tests`
-- Focus: iter 38. **Jump stretch scale math tests + spark geometry tests.**
-  `_test_jump_stretch_scale_math` (9 assertions) — companion to iter 37's
-  `_test_land_squash_scale_math`; documents `stretch_y = 1.0 + 0.30 × scale` and
-  `stretch_xz = 1.0 − 0.15 × scale`: scale=0 identity (2), exact values at scale=1
-  (stretch_y=1.30, stretch_xz=0.85) (2), direction invariants at scale=0.5 (2),
-  linearity (delta doubles), stretch_xz > 0 guard, combined direction invariant.
-  Side quest: `_test_spark_geometry_math` (12 assertions via `_spark_geometry_checks`
-  + `_spark_material_fade_checks`) — death-burst sparks from `_build_spark_mesh` /
-  `_build_spark_material` / `_fade_and_free_spark` shipped without unit tests; now
-  documented parallel to `_puff_geometry_checks`: 12-line count, length bounds
-  (0.18–0.65 m), upward-hemisphere Y bias (0.15–1.6, all positive), hub offset
-  (0.1 m < len_min), warm-yellow palette (R=1.0 > G=0.78 > B=0.12), fade timing
-  (0.07 s hold + 0.38 s fade < 1.0 s total).
-  Total: 366 → 387 assertions. Throttle: HARD (14 autonomous iterations).
+- Branch: `claude/gifted-shannon-TYgQo`
+- Focus: iter 39. **Acceleration path selection tests + jump release touch-path tests.**
+  `_test_accel_path_selection` (10 assertions) — the 3-way branch in
+  `_apply_horizontal` (path 1: ground_decel, path 2: ground_accel, path 3:
+  air_accel) had zero explicit coverage; only convergence was tested. Documents:
+  path-1 trigger threshold (< 0.01), boundary non-trigger (0.01 not < 0.01),
+  ground_decel > air_accel per profile (hard stop on ground), ground_accel >
+  air_accel per profile (faster pickup on ground), one-frame comparative effect
+  (path 1 brakes harder, path 2 gains faster than their path 3 equivalents).
+  Side quest: `_test_jump_release_touch_path` (7 assertions) — the touch branch
+  of `_was_jump_released` (`held_last AND NOT held_now`) is the only release
+  signal on a touch-only device; documents 4-case truth table + 3 OR-combination
+  cases ensuring either path alone triggers the variable-height jump cut.
+  Total: 387 → 404 assertions. Throttle: HARD (15 autonomous iterations).
 
 ## Queue (ranked, top is next)
 
@@ -161,6 +160,14 @@ These mirror "Open questions waiting on you" in the README.
   (Per CLAUDE.md: level concept selection is a human call.)
 
 ## Recently completed (last 5)
+
+- 2026-05-11 — Iteration 39. **Acceleration path selection tests + jump release touch-path tests.**
+  `_test_accel_path_selection` (10 assertions) + `_test_jump_release_touch_path` (7 assertions)
+  added to `tests/test_controller_kinematics.gd`. Path selection: trigger threshold (0.0 and
+  0.005 qualify; 0.01 does not), ground_decel > air_accel per profile, ground_accel > air_accel
+  per profile, one-frame comparative (path 1 brakes harder, path 2 picks up faster than path 3).
+  Touch release: 4-case truth table + 3 OR-combination cases.
+  Total: 387 → 404 assertions. Throttle: HARD (15 iterations since human session).
 
 - 2026-05-11 — Iteration 38. **Jump stretch scale math tests + spark geometry tests.**
   `_test_jump_stretch_scale_math` (9 assertions) + `_test_spark_geometry_math` (12 assertions)

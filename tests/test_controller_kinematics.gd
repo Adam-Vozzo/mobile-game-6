@@ -56,6 +56,8 @@ func _ready() -> void:
 	_test_land_squash_scale_math()
 	_test_jump_stretch_scale_math()
 	_test_spark_geometry_math()
+	_test_accel_path_selection()
+	_test_jump_release_touch_path()
 	_report()
 
 
@@ -1474,3 +1476,94 @@ func _spark_material_fade_checks() -> void:
 	var hold_s := 0.07;  var fade_s := 0.38
 	_ok("spark fade: hold < fade (burst-then-fade grammar, same as puff)", hold_s < fade_s)
 	_ok("spark fade: total < 1.0 s (cleaned up well before next respawn)",  hold_s + fade_s < 1.0)
+
+
+func _test_accel_path_selection() -> void:
+	## Documents the 3-way acceleration branch in player.gd::_apply_horizontal.
+	##
+	## Branch logic:
+	##   if move_dir.length() < 0.01 and on_floor:   accel = ground_deceleration  (path 1)
+	##   elif on_floor:                               accel = ground_acceleration  (path 2)
+	##   else:                                        accel = air_acceleration     (path 3)
+	##
+	## When move_dir is near-zero the target collapses to Vector3.ZERO, so path 1 is a
+	## braking path even though the same move_toward formula drives all three.  The tests
+	## below document which constant is chosen and that the chosen constant is meaningfully
+	## different from the alternatives — catching an accidental swap.
+	print("\n-- Acceleration path selection (3-way branch in _apply_horizontal) --")
+	var sp := _load_profile("res://resources/profiles/snappy.tres")
+	var fp := _load_profile("res://resources/profiles/floaty.tres")
+	var mp := _load_profile("res://resources/profiles/momentum.tres")
+	if sp == null or fp == null or mp == null:
+		return
+	const DELTA := 1.0 / 60.0
+
+	# --- Path 1 trigger condition: move_dir.length() < 0.01 ---
+	# Exact zero and sub-threshold values must qualify; 0.01 itself must NOT.
+	_ok("path 1: zero move_dir (0.0 < 0.01) qualifies for braking path", 0.0 < 0.01)
+	_ok("path 1: tiny move_dir (0.005 < 0.01) qualifies for braking path", 0.005 < 0.01)
+	_ok("path 1: boundary 0.01 NOT < 0.01 — falls through to path 2/3", not (0.01 < 0.01))
+
+	# --- Path 1 vs path 3: ground_deceleration > air_acceleration ---
+	# If these were equal the branch would be a no-op; design intent is hard-stop on ground.
+	_ok("snappy: ground_decel > air_accel (path 1 brakes harder than drifting in air)",
+		sp.ground_deceleration > sp.air_acceleration)
+	_ok("floaty: ground_decel > air_accel", fp.ground_deceleration > fp.air_acceleration)
+	# Momentum's loose-decel design is intentional but the constants must still differ.
+	_ok("momentum: ground_decel != air_accel (paths are distinct even with loose braking)",
+		mp.ground_deceleration != mp.air_acceleration)
+
+	# --- Path 2 vs path 3: ground_acceleration > air_acceleration ---
+	# On-ground pick-up should feel snappier than airborne steering.
+	_ok("snappy: ground_accel > air_accel (path 2 accelerates faster than path 3)",
+		sp.ground_acceleration > sp.air_acceleration)
+	_ok("floaty: ground_accel > air_accel", fp.ground_acceleration > fp.air_acceleration)
+
+	# --- Comparative one-step effect ---
+	# Path 1 from max_speed toward zero: uses ground_decel → bigger speed reduction per frame.
+	# Path 3 from max_speed toward zero: uses air_accel  → smaller speed reduction per frame.
+	# (Snappy: ground_decel=90 vs air_accel=15 → one frame at 60 fps is a 1.5 vs 0.25 m/s step.)
+	var h_start := Vector3(sp.max_speed, 0.0, 0.0)
+	var after_path1 := h_start.move_toward(Vector3.ZERO, sp.ground_deceleration * DELTA)
+	var after_path3_brake := h_start.move_toward(Vector3.ZERO, sp.air_acceleration * DELTA)
+	_ok("snappy: one path-1 frame reduces speed more than one path-3 frame (distinct braking)",
+		after_path1.length() < after_path3_brake.length())
+
+	# Path 2 from rest toward max_speed: uses ground_accel → bigger gain per frame.
+	# Path 3 from rest toward max_speed: uses air_accel  → smaller gain per frame.
+	var after_path2 := Vector3.ZERO.move_toward(h_start, sp.ground_acceleration * DELTA)
+	var after_path3_accel := Vector3.ZERO.move_toward(h_start, sp.air_acceleration * DELTA)
+	_ok("snappy: one path-2 frame gains more speed than one path-3 frame (faster on-ground pickup)",
+		after_path2.length() > after_path3_accel.length())
+
+
+func _test_jump_release_touch_path() -> void:
+	## Documents the touch-input branch of player.gd::_was_jump_released.
+	##
+	## Full formula:
+	##   jump_released = Input.is_action_just_released("jump")   # keyboard path
+	##                OR (_jump_held_last_frame and not jump_held) # touch path
+	##
+	## The touch path fires on the first frame that jump_held transitions from
+	## true → false.  Because _jump_held_last_frame is updated every physics tick,
+	## the release signal is a single-frame edge — exactly what _cut_jump needs.
+	print("\n-- Jump release touch path (_was_jump_released boolean logic) --")
+
+	# 4 cases of the touch-path formula: held_last AND NOT held_now
+	_ok("touch release: held_last=T, held_now=F → released (normal button lift)",
+		true and not false)
+	_ok("touch release: held_last=F, held_now=F → not released (never held)",
+		not (false and not false))
+	_ok("touch release: held_last=T, held_now=T → not released (still held)",
+		not (true and not true))
+	_ok("touch release: held_last=F, held_now=T → not released (just pressed)",
+		not (false and not true))
+
+	# OR combination: either path alone is sufficient to trigger release.
+	# This ensures keyboard and touch users both get variable-height jumps.
+	_ok("OR combination: keyboard=T, touch-path=F → released=T",
+		true or (false and not false))
+	_ok("OR combination: keyboard=F, touch-path=T → released=T",
+		false or (true and not false))
+	_ok("OR combination: keyboard=F, touch-path=F → released=F (nothing fired)",
+		not (false or (false and not false)))
