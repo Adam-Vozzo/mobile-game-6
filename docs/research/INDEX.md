@@ -25,6 +25,8 @@ they're written.
 
 - [`juice_density.md`](juice_density.md) — Astro's Playroom / Astro Bot "layered receipt" model (audio+visual+world per action), comparison with SMB sparse-juice approach, mobile considerations (UI feedback compensates for no haptics), draw-call cost of each juice type. Gate 1 priority ranking: landing squash > jump stretch > jump puff > pre-jump anticipation. Key implication: Void should sit closer to SMB density than Astro Bot given the brutalist tone.
 
+- [`squash_stretch_animation.md`](squash_stretch_animation.md) — Godot 4 implementation approaches for squash-stretch. Recommendation: `Tween` on `$Visual.scale` (zero draw-call cost, procedural impact magnitude). `just_landed` flag already present (`_was_on_floor_last_frame`); impact factor = `clamp(-velocity.y / terminal_velocity, 0, 1)`. Guard against reboot-sequence conflict (`_is_rebooting`). TRANS_SPRING for recovery overshoot. Full integration checklist: `_play_land_squash` + `_play_jump_stretch` in `player.gd`, both gated behind `squash_stretch` juice toggle, `impact_scale` slider in dev menu. Apex-hold deferred (needs apex-state signal). Pre-jump anticipation best as `AnimationPlayer` fixed clip.
+
 Suggested early reads (from CLAUDE.md) — now covered:
 - ~~Astro's Playroom — juice density~~ Done (iter 13, `juice_density.md`).
 

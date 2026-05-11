@@ -48,6 +48,8 @@ func _ready() -> void:
 	_test_blob_shadow_math()
 	_test_sticky_landing_countdown()
 	_test_sticky_landing_damping()
+	_test_cut_jump_behavior()
+	_test_gravity_integration()
 	_report()
 
 
@@ -1035,6 +1037,120 @@ func _test_sticky_landing_damping() -> void:
 	_ok("factor>0 but counter=0: damping branch not taken", _near(h_no_counter, start_speed))
 
 
+func _test_cut_jump_behavior() -> void:
+	## Simulates player.gd::_cut_jump to verify the exact cut condition
+	## and its vy-in → vy-out effect.  Complements _test_jump_cut_math
+	## (parameter relationships only) with explicit behavioral assertions.
+	##   if jump_released and velocity.y > jump_velocity * release_velocity_ratio:
+	##       velocity.y = jump_velocity * release_velocity_ratio
+	print("\n-- Cut-jump behavior (vy clamp on release) --")
+	var sp: CP = _load_profile("res://resources/profiles/snappy.tres")
+	if sp == null:
+		return
+	var threshold := sp.jump_velocity * sp.release_velocity_ratio
+
+	# Button held: cut never fires regardless of vy.
+	_ok("jump_held: no cut when vy > threshold",
+		_near(_sim_cut(false, sp.jump_velocity, sp.jump_velocity, sp.release_velocity_ratio),
+			  sp.jump_velocity))
+
+	# Released at peak: cut fires and vy lands exactly at threshold.
+	_ok("released at peak jump_velocity: vy cut to release threshold",
+		_near(_sim_cut(true, sp.jump_velocity, sp.jump_velocity, sp.release_velocity_ratio),
+			  threshold))
+
+	# Boundary: vy == threshold, condition is '>' not '>=' → no cut.
+	_ok("released, vy == threshold (boundary): no cut (strict >)",
+		_near(_sim_cut(true, threshold, sp.jump_velocity, sp.release_velocity_ratio), threshold))
+
+	# Below threshold: no cut.
+	var vy_low := threshold * 0.5
+	_ok("released, vy at 50%% of threshold: no cut",
+		_near(_sim_cut(true, vy_low, sp.jump_velocity, sp.release_velocity_ratio), vy_low))
+
+	# vy == 0 (apex or on ground): 0 < threshold for any valid profile → no cut.
+	_ok("released, vy == 0: no cut (0 is not > threshold)",
+		_near(_sim_cut(true, 0.0, sp.jump_velocity, sp.release_velocity_ratio), 0.0))
+
+	# Per-profile: cut at peak jump_velocity lands exactly at that profile's threshold.
+	var profiles := [
+		["snappy",   "res://resources/profiles/snappy.tres"],
+		["floaty",   "res://resources/profiles/floaty.tres"],
+		["momentum", "res://resources/profiles/momentum.tres"],
+		["assisted", "res://resources/profiles/assisted.tres"],
+	]
+	for entry in profiles:
+		var name: String = entry[0]
+		var p: CP = _load_profile(entry[1])
+		if p == null:
+			continue
+		var t := p.jump_velocity * p.release_velocity_ratio
+		_ok(name + ": cut at peak jump_velocity → vy == release threshold",
+			_near(_sim_cut(true, p.jump_velocity, p.jump_velocity, p.release_velocity_ratio), t))
+
+
+func _test_gravity_integration() -> void:
+	## Simulates player.gd::_apply_gravity per-frame to verify:
+	##   1. Integration formula: vy' = max(-terminal, vy - g * delta)
+	##   2. Rising arc decelerates monotonically under gravity_rising.
+	##   3. Apex transitions: gravity_after_apex pulls harder than gravity_rising.
+	##   4. Terminal velocity clamp holds once reached.
+	##   5. Floaty arcs higher than Snappy (design intent).
+	print("\n-- Gravity per-frame integration (apply_gravity formula) --")
+	const DELTA := 1.0 / 60.0
+	var sp: CP = _load_profile("res://resources/profiles/snappy.tres")
+	if sp == null:
+		return
+
+	# Single-step formula: vy' = vy - g * delta (when not at terminal clamp).
+	var vy_after := _gravity_step(10.0, sp.gravity_rising, sp.terminal_velocity, DELTA)
+	_ok("one rising step: vy' == vy - g_rising * delta",
+		_near(vy_after, 10.0 - sp.gravity_rising * DELTA))
+	_ok("one rising step: vy decreases (decelerating upward)", vy_after < 10.0)
+
+	# Rising arc under gravity_rising is monotonically decelerating.
+	var vy := sp.jump_velocity
+	var monotone := true
+	var frames_to_apex := 0
+	for _i in 300:
+		var new_vy := _gravity_step(vy, sp.gravity_rising, sp.terminal_velocity, DELTA)
+		if new_vy >= vy and vy > 0.0:
+			monotone = false
+		vy = new_vy
+		if vy <= 0.0:
+			frames_to_apex = _i + 1
+			break
+	_ok("snappy rising arc: monotonically decelerating under gravity_rising", monotone)
+	_ok("snappy rising arc: apex reached within 5 s (300 frames)", frames_to_apex > 0)
+	_ok("snappy rising arc: > 1 frame to apex (arc is not instant)", frames_to_apex > 1)
+
+	# gravity_after_apex > gravity_rising → harder pull from apex than rising band.
+	var fall_aa := _gravity_step(0.0, sp.gravity_after_apex, sp.terminal_velocity, DELTA)
+	var fall_ri := _gravity_step(0.0, sp.gravity_rising, sp.terminal_velocity, DELTA)
+	_ok("from apex (vy=0): gravity_after_apex pulls vy lower than gravity_rising would",
+		fall_aa < fall_ri)
+
+	# At terminal velocity the clamp holds: one more step stays clamped.
+	var at_term := -sp.terminal_velocity
+	var after_clamp := _gravity_step(at_term, sp.gravity_after_apex, sp.terminal_velocity, DELTA)
+	_ok("at terminal velocity: further steps stay clamped to -terminal_velocity",
+		_near(after_clamp, at_term))
+
+	# Floaty has >= Snappy frames to apex (higher arc design intent — also tested
+	# in _test_jump_height_plausible; here we verify the arc *length* in frames).
+	var fp: CP = _load_profile("res://resources/profiles/floaty.tres")
+	if fp != null:
+		var vy_f := fp.jump_velocity
+		var frames_f := 0
+		for _i in 300:
+			vy_f = _gravity_step(vy_f, fp.gravity_rising, fp.terminal_velocity, DELTA)
+			if vy_f <= 0.0:
+				frames_f = _i + 1
+				break
+		_ok("floaty apex frames >= snappy apex frames (higher arc design intent)",
+			frames_f >= frames_to_apex)
+
+
 # ── helpers ──────────────────────────────────────────────────────────────────
 
 func _sticky_tick(on_floor: bool, was_on_floor: bool, sticky_remaining: int,
@@ -1063,3 +1179,15 @@ func _try_jump_helper(buffer: float, coyote: float, jump_v: float) -> Dictionary
 		buf_out = 0.0
 		coy_out = 0.0
 	return {"vy": vy_out, "buffer": buf_out, "coyote": coy_out}
+
+
+func _sim_cut(jump_released: bool, vy: float, jump_v: float, ratio: float) -> float:
+	## Mirrors player.gd::_cut_jump.
+	if jump_released and vy > jump_v * ratio:
+		return jump_v * ratio
+	return vy
+
+
+func _gravity_step(vy: float, g: float, terminal: float, delta: float) -> float:
+	## Mirrors player.gd::_apply_gravity: vy' = max(-terminal, vy - g * delta).
+	return maxf(-terminal, vy - g * delta)

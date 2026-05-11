@@ -14,18 +14,19 @@ instrumented and tunable.
 
 ## Active iteration
 
-- Branch: `claude/gifted-shannon-ou2ix`
-- Focus: iter 31. **Sticky landing countdown + damping tests + checkpoint design research.**
-  Added `_test_sticky_landing_countdown` (9 assertions) and `_test_sticky_landing_damping`
-  (8 assertions) to `tests/test_controller_kinematics.gd`. These document the Assisted
-  profile's sticky landing logic from iter 27 — previously only param values were tested,
-  not the tick-by-tick countdown and per-frame damping formula. New helper `_sticky_tick`
-  mirrors `_tick_timers`' sticky block. Net assertions: 280 → 297.
-  Side quest: `docs/research/checkpoint_design.md` — Gate 1 prereq. Covers SMB/Dadish 3D/
-  Celeste checkpoint models, the ghost-trail anchor constraint, and Void recommendation:
-  Option A (no mid-level checkpoint for Gate 1, CheckPoint node present but respawn stays
-  at level entry, mid-level checkpoints deferred to Gate 2). INDEX.md updated.
-  Throttle: SOFT (5 iters since human session).
+- Branch: `claude/gifted-shannon-Z7ysO`
+- Focus: iter 32. **Cut-jump + gravity integration tests + squash-stretch research.**
+  Added `_test_cut_jump_behavior` (9 assertions — held/released conditions, boundary at
+  exact threshold, per-profile cut landing at release threshold) and `_test_gravity_integration`
+  (8 assertions — single-step formula, monotone arc, apex-gravity comparison, terminal clamp,
+  floaty-vs-snappy arc-length invariant) to `tests/test_controller_kinematics.gd`. New helpers
+  `_sim_cut` + `_gravity_step` mirror `_cut_jump` and `_apply_gravity` respectively.
+  Net assertions: 297 → 314.
+  Side quest: `docs/research/squash_stretch_animation.md` — Gate 1 juice prereq (#1 in
+  juice_density.md ranking). Covers Tween vs AnimationPlayer for procedural squash-stretch,
+  impact factor derivation from velocity.y, TRANS_SPRING curve, reboot-conflict guard,
+  full integration checklist. INDEX.md updated.
+  Throttle: SOFT (6 iters since human session).
 
 ## Queue (ranked, top is next)
 
@@ -158,6 +159,16 @@ These mirror "Open questions waiting on you" in the README.
   (Per CLAUDE.md: level concept selection is a human call.)
 
 ## Recently completed (last 5)
+
+- 2026-05-11 — Iteration 32. **Cut-jump + gravity integration tests + squash-stretch research.**
+  `_test_cut_jump_behavior` (9 assertions: held-no-cut, released-at-peak→threshold, boundary strict->,
+  below-threshold-no-cut, vy=0-no-cut, 4 per-profile peak-to-threshold) +
+  `_test_gravity_integration` (8 assertions: single-step formula, monotone arc, apex frames > 1,
+  gravity_after_apex > gravity_rising from apex, terminal clamp, floaty apex-frames >= snappy).
+  New helpers `_sim_cut` + `_gravity_step`. Net assertions: 297 → 314.
+  Side quest: `docs/research/squash_stretch_animation.md` — Tween on $Visual.scale (zero draw-call),
+  impact-factor derivation, TRANS_SPRING recovery, reboot-conflict guard (_is_rebooting check),
+  integration checklist for implementing iteration. INDEX.md updated.
 
 - 2026-05-10 — Iteration 31. **Sticky landing countdown + damping tests + checkpoint design research.**
   `_test_sticky_landing_countdown` (9 assertions) + `_test_sticky_landing_damping` (8 assertions)
