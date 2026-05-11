@@ -14,19 +14,15 @@ instrumented and tunable.
 
 ## Active iteration
 
-- Branch: `claude/gifted-shannon-FBxyK`
-- Focus: iter 41. **Stick dead-zone math + tripod distance correction tests.**
-  `_test_stick_deadzone_and_clamp` (8 assertions) — radial clamp + normalise +
-  truncating dead zone pipeline in `touch_overlay.gd::_handle_drag`; below-dead-zone
-  → zero, boundary-is-not-zero (strict <), 50% deflection proportion, full/oversized
-  clamp to 1.0, direction preserved through clamp, rotational symmetry across 8 dirs,
-  output always ≤ 1.0.
-  `_test_tripod_horiz_distance_correction` (8 assertions) — the ground-branch
-  XZ distance maintenance formula in `camera_rig.gd::_process`; too-far snaps
-  to desired, too-close pushes out, at-correct-dist zero movement, Y untouched,
-  direction preserved, single-step convergence (second pass is no-op), toward/away
-  signs correct.
-  Total: 420 → 436 assertions. Throttle: HARD (17 autonomous iterations).
+- Branch: `claude/gifted-shannon-BOpz7`
+- Focus: iter 42. **Moving platform triangle-wave tests + camera pub-yaw formula tests.**
+  `_test_moving_platform_math` (8 assertions) — fmod phase normalization, triangle-wave
+  shape (peak at 0.5, zero at 0 and 1), symmetry (triangle(0.25)==triangle(0.75)), smoothstep
+  S-curve slower than linear at start, smoothstep midpoint == 0.5.
+  `_test_camera_pub_yaw_formula` (8 assertions) — atan2(cam.x−player.x, cam.z−player.z)
+  cardinal directions (four: 0, π/2, ±π, −π/2), diagonal in first quadrant, Y-independence,
+  distance-independence, four cardinals each π/2 apart.
+  Total: 436 → 452 assertions. Throttle: HARD (18 autonomous iterations).
 
 ## Queue (ranked, top is next)
 
@@ -159,6 +155,14 @@ These mirror "Open questions waiting on you" in the README.
   (Per CLAUDE.md: level concept selection is a human call.)
 
 ## Recently completed (last 5)
+
+- 2026-05-11 — Iteration 42. **Moving platform triangle-wave tests + camera pub-yaw formula tests.**
+  `_test_moving_platform_math` (8 assertions): fmod phase normalization (t=0/half/full-period),
+  triangle wave at phase=0→0.0 and phase=0.5→1.0, symmetry triangle(0.25)==triangle(0.75)==0.5,
+  smoothstep S-curve slower than linear at 25% of ramp, smoothstep midpoint==0.5.
+  `_test_camera_pub_yaw_formula` (8 assertions): four cardinals (+Z→0, +X→π/2, −Z→±π, −X→−π/2),
+  diagonal in (0,π/2), Y-independence, distance-independence, four cardinals each π/2 apart.
+  Total: 436 → 452 assertions. Throttle: HARD (18 iterations since human session).
 
 - 2026-05-11 — Iteration 41. **Stick dead-zone + tripod distance correction tests.**
   `_test_stick_deadzone_and_clamp` (8 assertions): radial clamp pipeline and truncating dead-zone
