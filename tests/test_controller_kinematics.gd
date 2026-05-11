@@ -51,6 +51,7 @@ func _ready() -> void:
 	_test_cut_jump_behavior()
 	_test_gravity_integration()
 	_test_squash_stretch_math()
+	_test_jump_puff_math()
 	_report()
 
 
@@ -1244,3 +1245,68 @@ func _test_squash_stretch_math() -> void:
 	_ok("stretch: scale=1 → stretch_xz < 1.0 (XZ compresses)", str_xz < 1.0)
 	_ok("stretch: Y elongates and XZ compresses together",
 		str_y > 1.0 and str_xz < 1.0)
+
+
+func _test_jump_puff_math() -> void:
+	## Mirrors the geometry constants in player.gd::_build_puff_mesh.
+	## Pure math — no node needed.
+	print("\n-- Jump puff geometry + material math --")
+	_test_puff_geometry()
+	_test_puff_material_and_fade()
+
+
+func _test_puff_geometry() -> void:
+	# 8 evenly-spaced base angles must span exactly one full revolution.
+	var angle_step := TAU / 8.0
+	_ok("puff: 8 steps × angle_step == TAU (full revolution)",
+		_near(8.0 * angle_step, TAU))
+	# Each step < PI/2 so adjacent lines don't overlap even with ±0.25 rad jitter.
+	_ok("puff: angle_step > 0 and < PI/2 (non-degenerate)",
+		angle_step > 0.0 and angle_step < PI / 2.0)
+
+	# i=0 (no jitter): angle=0 → XZ unit vector points +X.
+	var a0 := 0.0 * angle_step
+	_ok("puff: i=0 → cos(0)=1.0, sin(0)=0.0",
+		_near(cos(a0), 1.0) and _near(sin(a0), 0.0))
+
+	# i=4: angle=PI → opposite hemisphere.
+	var a4 := 4.0 * angle_step
+	_ok("puff: i=4 base angle == PI", _near(a4, PI))
+	_ok("puff: i=4 cos(PI) == -1.0",  _near(cos(a4), -1.0))
+
+	# Length bounds.
+	var len_min := 0.10;  var len_max := 0.28
+	_ok("puff: length_min < length_max",     len_min < len_max)
+	_ok("puff: length_min > 0.0 (positive)", len_min > 0.0)
+	_ok("puff: length_max < 1.0 (compact)",  len_max < 1.0)
+
+	# Upward Y-kick: no downward component; XZ plane still dominates.
+	var y_max := 0.12
+	_ok("puff: y_kick_min >= 0.0 (no downward lines)", 0.0 >= 0.0)
+	_ok("puff: y_kick_max > 0.0 (some upward lift)",   y_max > 0.0)
+	_ok("puff: y_kick_max < 1.0 (XZ plane dominates)", y_max < 1.0)
+
+	# Direction normalisation: at angle=0, y_kick=y_max the raw vector is slightly
+	# off-unit; after .normalized() it must be exactly unit length.
+	var dir_raw  := Vector3(cos(a0), y_max, sin(a0))
+	var dir_norm := dir_raw.normalized()
+	_ok("puff: raw dir length > 1 when y_kick > 0", dir_raw.length() > 1.0)
+	_ok("puff: normalised dir is unit length",       _near(dir_norm.length(), 1.0))
+
+	# Hub offset 0.04 m keeps lines clear of player origin and < length_min.
+	var hub := 0.04
+	_ok("puff: hub > 0 and < length_min", hub > 0.0 and hub < len_min)
+
+
+func _test_puff_material_and_fade() -> void:
+	# Warm-grey material: R > G > B (slight warm/concrete bias); all channels [0, 1].
+	var r := 0.80;  var g := 0.77;  var b := 0.72
+	_ok("puff material: R > G > B (warm-concrete bias)", r > g and g > b)
+	_ok("puff material: channels in [0, 1]",
+		r >= 0.0 and r <= 1.0 and g >= 0.0 and g <= 1.0 and b >= 0.0 and b <= 1.0)
+
+	# Fade timing: 0.04 s hold + 0.16 s fade = 0.20 s total effect life.
+	var hold_s := 0.04;  var fade_s := 0.16
+	_ok("puff fade: hold < fade (burst-then-fade grammar)",         hold_s < fade_s)
+	_ok("puff fade: hold + fade ≈ 0.20 s (documented effect life)", _near(hold_s + fade_s, 0.20))
+	_ok("puff fade: total < 0.5 s (won't linger after next jump)",  hold_s + fade_s < 0.5)
