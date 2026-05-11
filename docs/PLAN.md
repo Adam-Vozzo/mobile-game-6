@@ -14,17 +14,16 @@ instrumented and tunable.
 
 ## Active iteration
 
-- Branch: `claude/gifted-shannon-H30E8`
-- Focus: iter 34. **Jump puff particle effect + enemy archetype research.**
-  `_spawn_jump_puff()` + `_build_puff_material()` + `_build_puff_mesh()` + `_fade_and_free_puff()`
-  in `player.gd`; called from `_try_jump()` on every successful jump; 8 ImmediateMesh lines
-  radiating horizontally with slight upward Y kick, warm grey palette, 0.04 s hold + 0.16 s fade;
-  gated behind existing `particles` juice toggle; zero new dev-menu controls needed.
-  JUICE.md: "Jump puff" → prototype.
-  Side quest: `docs/research/enemy_archetypes.md` — Gate 1 prerequisite; static hazard
-  recommended for Gate 1 (no AI, `HazardBody.tscn`, Area3D kill zone); patroller deferred to
-  Gate 2; 6 concrete implications. INDEX.md updated.
-  Throttle: SOFT (8 iters since human session).
+- Branch: `claude/gifted-shannon-gd7gr`
+- Focus: iter 35. **Jump puff math unit tests + collectible design research.**
+  `_test_jump_puff_math` (18 assertions) added to `tests/test_controller_kinematics.gd` —
+  radial angle formula (8 steps = TAU), length bounds (0.10–0.28 m), upward Y-kick bounds
+  (0.0–0.12), direction normalisation invariant, hub offset (0.04 m < length_min), material
+  warm-grey R > G > B, fade timing (hold=0.04 + fade=0.16 = 0.20 s). Total: 331 → 349 assertions.
+  Side quest: `docs/research/collectible_design.md` — the last Gate 1 item with no prior
+  research; recommendation: data shard (cyan emissive prism, Area3D 0.9 m radius, off par-route,
+  one per level); 6 concrete implications; `Game` autoload fields noted.
+  Throttle: HARD (9 autonomous iterations since 2026-05-11 human session).
 
 ## Queue (ranked, top is next)
 
@@ -157,6 +156,17 @@ These mirror "Open questions waiting on you" in the README.
   (Per CLAUDE.md: level concept selection is a human call.)
 
 ## Recently completed (last 5)
+
+- 2026-05-11 — Iteration 35. **Jump puff math unit tests + collectible design research.**
+  `_test_jump_puff_math` (18 assertions) added to `tests/test_controller_kinematics.gd`.
+  Covers: 8 steps × (TAU/8) = TAU (full revolution), angle_step < PI/2 (non-degenerate),
+  i=0 → +X axis, i=4 → opposite hemisphere, length bounds (0.10 < 0.28, both positive, < 1 m),
+  Y-kick bounds (≥ 0, > 0, < 1), direction normalisation to unit length, hub offset < length_min,
+  material R > G > B (warm-concrete bias), all channels [0,1], hold < fade, hold+fade ≈ 0.20 s,
+  total < 0.5 s. Total assertions: 331 → 349.
+  Side quest: `docs/research/collectible_design.md` — data shard design (cyan emissive prism,
+  Area3D 0.9 m radius, one per level off par-route, `Game` fields `shards_collected`/`shards_total`);
+  SMB/Celeste/Odyssey survey; 6 Gate 1 implications. INDEX.md updated.
 
 - 2026-05-11 — Iteration 34. **Jump puff particle effect + enemy archetype research.**
   `_spawn_jump_puff()` called from `_try_jump()` on every successful jump. 8 ImmediateMesh lines

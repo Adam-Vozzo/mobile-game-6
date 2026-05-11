@@ -5,10 +5,10 @@ A mobile 3D platformer. Brutalist megastructure inspired by *BLAME!*. Controller
 ## Status
 
 Current gate: **Gate 0 — Feel Lab**
-Last iteration: 2026-05-11 — iter 34: jump puff particle effect + enemy archetype research
+Last iteration: 2026-05-11 — iter 35: jump puff math tests + collectible design research
 Test device build: not yet — hand-authored scenes pending first Godot 4.6 import; see Open questions
 Performance: not yet measured on Nothing Phone 4(a) Pro
-Throttle level: **SOFT→HARD (8 autonomous iterations since 2026-05-11 human session).** At the hard-throttle boundary. Next iteration should be hardening only unless human provides new direction.
+Throttle level: **HARD (9 autonomous iterations since 2026-05-11 human session).** Next iterations are hardening only unless human provides direction.
 
 If you only read one section, read **Open questions waiting on you** below.
 
@@ -101,6 +101,21 @@ Goal: store-ready build.
 The full iteration log lives here, newest first. Every iteration appends an entry. Skim the dates to find where you last left off.
 
 <!-- ITERATION ENTRIES BELOW — DO NOT REMOVE OLDER ENTRIES -->
+
+### [2026-05-11] — `claude/gifted-shannon-gd7gr` — iter 35: jump puff math tests + collectible design research
+
+- **Throttle: HARD (9 autonomous iterations since 2026-05-11 human session).** Hardening only: tests + research. No new feature surface, no behaviour change.
+- **Primary: `_test_jump_puff_math` — 18 new assertions** in `tests/test_controller_kinematics.gd`.
+  - Covers the pure math in `_build_puff_mesh` and `_build_puff_material` (added iter 34) which shipped without unit tests.
+  - Assertions: 8-step full-revolution formula (`8 × TAU/8 = TAU`), angle step < PI/2 (non-degenerate), i=0 → +X axis, i=4 → opposite hemisphere (angle=PI), length bounds (0.10 < 0.28, both > 0, < 1 m), Y-kick bounds (≥ 0, > 0, < 1), raw direction > 1 before normalise, normalised direction = unit length, hub offset (0.04 m) < length_min, material R > G > B (warm-concrete bias), all channels [0, 1], hold < fade, hold + fade ≈ 0.20 s, total < 0.5 s.
+  - Total assertions: **331 → 349**.
+- **Side quest: `docs/research/collectible_design.md`** — the last Gate 1 checklist item with no prior research.
+  - Survey: SMB (bandages — off critical path, never block progress), Celeste (strawberries — lose on death, tension without blocking), Mario Odyssey (moon model — sparse, individually authored pockets).
+  - Mobile constraints: must glow to be visible in dark world; Area3D pick-up radius 0.9 m (generous, touch latency); collection effect readable in 1–2 frames.
+  - **Recommendation: the data shard** — small cyan emissive prism, slow Y rotation, one per Gate 1 level, placed off the par route. Fits palette (biolume cyan = brutalist deep-layer accent per CLAUDE.md). `Game` autoload needs `shards_collected` / `shards_total` fields. 6 concrete Gate 1 implications.
+  - `INDEX.md` updated.
+- **Perf:** no runtime changes.
+- **On-device pending.** All P0 items still blocked on first Godot 4.6 import.
 
 ### [2026-05-11] — `claude/gifted-shannon-H30E8` — iter 34: jump puff particle effect + enemy archetype research
 
