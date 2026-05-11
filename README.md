@@ -5,10 +5,10 @@ A mobile 3D platformer. Brutalist megastructure inspired by *BLAME!*. Controller
 ## Status
 
 Current gate: **Gate 0 — Feel Lab**
-Last iteration: 2026-05-11 — iter 39: accel path selection tests + jump release touch-path tests (404 assertions)
+Last iteration: 2026-05-11 — iter 40: camera occlusion latch tests + exponential smoothing tests (420 assertions)
 Test device build: not yet — hand-authored scenes pending first Godot 4.6 import; see Open questions
 Performance: not yet measured on Nothing Phone 4(a) Pro
-Throttle level: **HARD (15 autonomous iterations since 2026-05-11 human session).** Next iterations are hardening only unless human provides direction.
+Throttle level: **HARD (16 autonomous iterations since 2026-05-11 human session).** Next iterations are hardening only unless human provides direction.
 
 If you only read one section, read **Open questions waiting on you** below.
 
@@ -101,6 +101,19 @@ Goal: store-ready build.
 The full iteration log lives here, newest first. Every iteration appends an entry. Skim the dates to find where you last left off.
 
 <!-- ITERATION ENTRIES BELOW — DO NOT REMOVE OLDER ENTRIES -->
+
+### [2026-05-11] — `claude/gifted-shannon-DIq40` — iter 40: camera occlusion latch tests + exponential smoothing tests
+
+- **Throttle: HARD (16 autonomous iterations since 2026-05-11 human session).** Hardening only: tests. No new feature surface, no behaviour change.
+- **Primary: `_test_occlusion_release_latch`** (8 assertions) — the `_is_occluded` / `_clear_streak_seconds` hysteresis state machine in `camera_rig.gd` had zero unit-test coverage; introduced in the human-direction session that rewrote the camera. Mirrors the latch block with `_occ_latch_tick` helper.
+  - Asserts: 4 state transitions (clear+no-hit → no-op; clear+hit → arms latch+resets streak; occluded+hit → resets streak; occluded+no-hit → increments streak), threshold boundary (3 × 0.05 s = 0.15 s stays latched; 4th tick = 0.20 s ≥ 0.18 s delay → clears), mid-streak hit resets countdown.
+- **Side quest: `_test_camera_smoothing_formula`** (8 assertions) — the `1 - exp(-rate × delta)` frame-rate-independent ease formula with asymmetric pull_in/ease_out rates also had zero coverage.
+  - Asserts: `pull_in_smoothing (28) > ease_out_smoothing (6)` design invariant, both smooth_t values in (0,1), rate=0 → smooth_t=0 identity, higher rate → faster per-frame convergence, 5-frame simulation (pull_in closes > 85% of gap; ease_out leaves > 50% remaining), 10 pull_in frames leave < 5% (near-instant reveal ~167 ms).
+- **Total assertions: 404 → 420.**
+- **Perf:** no runtime changes.
+- **New dev-menu controls:** none.
+- **New assets:** none.
+- **Needs human attention:** still waiting on first Godot 4.6 import + on-device run. 16 iterations at HARD throttle; all P0 items blocked on device. See Open questions below.
 
 ### [2026-05-11] — `claude/gifted-shannon-TYgQo` — iter 39: accel path selection tests + jump release touch-path tests
 

@@ -14,20 +14,20 @@ instrumented and tunable.
 
 ## Active iteration
 
-- Branch: `claude/gifted-shannon-TYgQo`
-- Focus: iter 39. **Acceleration path selection tests + jump release touch-path tests.**
-  `_test_accel_path_selection` (10 assertions) — the 3-way branch in
-  `_apply_horizontal` (path 1: ground_decel, path 2: ground_accel, path 3:
-  air_accel) had zero explicit coverage; only convergence was tested. Documents:
-  path-1 trigger threshold (< 0.01), boundary non-trigger (0.01 not < 0.01),
-  ground_decel > air_accel per profile (hard stop on ground), ground_accel >
-  air_accel per profile (faster pickup on ground), one-frame comparative effect
-  (path 1 brakes harder, path 2 gains faster than their path 3 equivalents).
-  Side quest: `_test_jump_release_touch_path` (7 assertions) — the touch branch
-  of `_was_jump_released` (`held_last AND NOT held_now`) is the only release
-  signal on a touch-only device; documents 4-case truth table + 3 OR-combination
-  cases ensuring either path alone triggers the variable-height jump cut.
-  Total: 387 → 404 assertions. Throttle: HARD (15 autonomous iterations).
+- Branch: `claude/gifted-shannon-DIq40`
+- Focus: iter 40. **Camera hysteresis latch + exponential smoothing tests.**
+  `_test_occlusion_release_latch` (8 assertions) — the `_is_occluded` /
+  `_clear_streak_seconds` state machine in `camera_rig.gd` had zero coverage;
+  documents all 4 state transitions: clear+no-hit (no-op), clear+hit (arms latch),
+  occluded+hit (resets streak), occluded+no-hit (increments streak); threshold
+  crossing (3 × 0.05 s = 0.15 s stays latched; 4th tick = 0.20 s clears);
+  mid-streak hit resets countdown.
+  `_test_camera_smoothing_formula` (8 assertions) — the `1 - exp(-rate * delta)`
+  frame-rate-independent ease formula; pull_in > ease_out design invariant;
+  both smooth_t values in (0,1); rate=0 → smooth_t=0; 5-frame simulations:
+  pull_in closes > 85% of gap, ease_out leaves > 50% remaining; 10 pull_in
+  frames leave < 5% (near-instant reveal).
+  Total: 404 → 420 assertions. Throttle: HARD (16 autonomous iterations).
 
 ## Queue (ranked, top is next)
 
@@ -160,6 +160,14 @@ These mirror "Open questions waiting on you" in the README.
   (Per CLAUDE.md: level concept selection is a human call.)
 
 ## Recently completed (last 5)
+
+- 2026-05-11 — Iteration 40. **Camera hysteresis latch + exponential smoothing tests.**
+  `_test_occlusion_release_latch` (8 assertions) + `_test_camera_smoothing_formula` (8 assertions)
+  added to `tests/test_controller_kinematics.gd`. Latch: all 4 state transitions, threshold
+  boundary (3 × 0.05 s stays; 4th clears), mid-streak hit resets countdown. Smoothing:
+  pull_in > ease_out invariant, both smooth_t in (0,1), rate=0 identity, 5-frame comparative
+  (pull_in > 85% closed, ease_out > 50% remaining), 10-frame pull_in < 5% remaining.
+  Total: 404 → 420 assertions. Throttle: HARD (16 iterations since human session).
 
 - 2026-05-11 — Iteration 39. **Acceleration path selection tests + jump release touch-path tests.**
   `_test_accel_path_selection` (10 assertions) + `_test_jump_release_touch_path` (7 assertions)

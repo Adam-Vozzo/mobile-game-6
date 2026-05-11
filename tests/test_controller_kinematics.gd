@@ -58,6 +58,8 @@ func _ready() -> void:
 	_test_spark_geometry_math()
 	_test_accel_path_selection()
 	_test_jump_release_touch_path()
+	_test_occlusion_release_latch()
+	_test_camera_smoothing_formula()
 	_report()
 
 
@@ -1567,3 +1569,132 @@ func _test_jump_release_touch_path() -> void:
 		false or (true and not false))
 	_ok("OR combination: keyboard=F, touch-path=F → released=F (nothing fired)",
 		not (false or (false and not false)))
+
+
+func _occ_latch_tick(probe_hit: bool, is_occluded: bool, streak: float,
+		release_delay: float, delta: float) -> Dictionary:
+	## Mirrors camera_rig.gd::_process occlusion hysteresis latch block.
+	## Returns {"occluded": bool, "streak": float} after one frame.
+	var occluded := is_occluded
+	var s := streak
+	if probe_hit:
+		occluded = true
+		s = 0.0
+	elif occluded:
+		s += delta
+		if s >= release_delay:
+			occluded = false
+			s = 0.0
+	return {"occluded": occluded, "streak": s}
+
+
+func _test_occlusion_release_latch() -> void:
+	## Documents the hysteresis latch in camera_rig.gd::_process (ground branch):
+	##
+	##   if probe_hit:
+	##       _is_occluded = true; _clear_streak_seconds = 0.0
+	##   elif _is_occluded:
+	##       _clear_streak_seconds += delta
+	##       if _clear_streak_seconds >= occlusion_release_delay:
+	##           _is_occluded = false; _clear_streak_seconds = 0.0
+	##
+	## The latch prevents camera bounce when walking around a wall corner whose
+	## edge alternately trips and clears the sphere-cast probe each frame.
+	## Any single hit re-arms the latch; only a clean streak >= delay clears it.
+	print("\n-- Camera occlusion release latch (hysteresis state machine) --")
+	const DELAY := 0.18   # camera_rig.gd default occlusion_release_delay
+	const DELTA := 1.0 / 60.0
+
+	# Clear camera + no hit → stays clear.
+	var r_idle := _occ_latch_tick(false, false, 0.0, DELAY, DELTA)
+	_ok("latch: no hit + already clear → stays clear",    not r_idle["occluded"])
+	_ok("latch: no hit + already clear → streak stays 0", _near(r_idle["streak"], 0.0))
+
+	# Hit arms the latch immediately, regardless of prior state, and resets streak.
+	var r_arm := _occ_latch_tick(true, false, 0.0, DELAY, DELTA)
+	_ok("latch: hit while clear → occluded=true + streak reset to 0",
+		r_arm["occluded"] and _near(r_arm["streak"], 0.0))
+
+	# Hit while already occluded: stays occluded and streak is held at 0
+	# (no countdown while the occluder is still in view).
+	var r_stay := _occ_latch_tick(true, true, 0.05, DELAY, DELTA)
+	_ok("latch: hit while occluded → still occluded, streak reset to 0",
+		r_stay["occluded"] and _near(r_stay["streak"], 0.0))
+
+	# Miss while occluded: streak increments by exactly delta.
+	var r_count := _occ_latch_tick(false, true, 0.0, DELAY, DELTA)
+	_ok("latch: miss while occluded → streak += delta (counting toward delay)",
+		_near(r_count["streak"], DELTA) and r_count["occluded"])
+
+	# Three consecutive 0.05 s misses → streak 0.15 s < delay 0.18 s → still latched.
+	var streak := 0.0
+	var occ := true
+	for _i in 3:
+		var t := _occ_latch_tick(false, occ, streak, DELAY, 0.05)
+		occ = t["occluded"]
+		streak = t["streak"]
+	_ok("latch: 3 × 0.05 s misses (streak=0.15 < delay=0.18) → still occluded", occ)
+
+	# Fourth 0.05 s miss → streak 0.20 s >= delay 0.18 s → latch clears.
+	var t4 := _occ_latch_tick(false, occ, streak, DELAY, 0.05)
+	_ok("latch: 4th 0.05 s miss (streak=0.20 >= delay=0.18) → latch clears",
+		not t4["occluded"])
+
+	# Mid-streak hit resets streak to 0 and re-arms the latch.
+	var r_mid := _occ_latch_tick(true, true, 0.10, DELAY, DELTA)
+	_ok("latch: mid-streak hit resets streak to 0 (countdown restarts on wall contact)",
+		r_mid["occluded"] and _near(r_mid["streak"], 0.0))
+
+
+func _test_camera_smoothing_formula() -> void:
+	## Documents the exponential asymmetric ease in camera_rig.gd::_process:
+	##
+	##   rate := pull_in_smoothing if desired is closer than current else ease_out_smoothing
+	##   smooth_t := 1.0 - exp(-rate * delta)
+	##   _camera.global_position = _camera.global_position.lerp(desired, smooth_t)
+	##
+	## Asymmetric design intent: pull-in is fast (camera snaps toward player when
+	## an occluder enters line of sight), ease-out is slow (no bounce when walking
+	## around a corner that toggles the probe on/off each frame).
+	print("\n-- Camera asymmetric exponential smoothing formula --")
+	const DELTA    := 1.0 / 60.0
+	const PULL_IN  := 28.0   # camera_rig.gd default pull_in_smoothing
+	const EASE_OUT :=  6.0   # camera_rig.gd default ease_out_smoothing
+
+	# Design invariant: pull-in rate must be higher than ease-out rate.
+	_ok("camera smoothing: pull_in_smoothing > ease_out_smoothing (fast reveal, slow fallback)",
+		PULL_IN > EASE_OUT)
+
+	# Formula must stay in (0, 1) — ensures lerp never overshoots or freezes.
+	var pull_t := 1.0 - exp(-PULL_IN * DELTA)
+	var ease_t := 1.0 - exp(-EASE_OUT * DELTA)
+	_ok("camera smoothing: pull_in smooth_t in (0, 1) (valid lerp weight)", pull_t > 0.0 and pull_t < 1.0)
+	_ok("camera smoothing: ease_out smooth_t in (0, 1) (valid lerp weight)", ease_t > 0.0 and ease_t < 1.0)
+
+	# Higher rate → higher smooth_t (faster convergence per frame).
+	_ok("camera smoothing: pull_in smooth_t > ease_out smooth_t (higher rate = faster per frame)",
+		pull_t > ease_t)
+
+	# rate = 0 → smooth_t = 0 (formula is well-behaved at the slider minimum).
+	_ok("camera smoothing: rate=0 → smooth_t=0 (exp(0)=1, no movement)",
+		_near(1.0 - exp(0.0), 0.0))
+
+	# 5-frame simulation: pull_in closes > 85% of gap; ease_out leaves > 50% remaining.
+	# pull_in:  (1 - 0.373)^5 ≈ 0.097 → ~90% closed.
+	# ease_out: (1 - 0.095)^5 ≈ 0.607 → ~39% closed.
+	var pull_gap := 1.0
+	var ease_gap := 1.0
+	for _i in 5:
+		pull_gap *= (1.0 - pull_t)
+		ease_gap *= (1.0 - ease_t)
+	_ok("camera smoothing: 5 pull_in frames close > 85%% of gap (fast camera reveal)",
+		pull_gap < 0.15)
+	_ok("camera smoothing: 5 ease_out frames leave > 50%% of gap remaining (slow fallback)",
+		ease_gap > 0.50)
+
+	# 10 pull_in frames: < 5% remaining — near-total reveal within ~167 ms at 60 fps.
+	var pull10 := 1.0
+	for _i in 10:
+		pull10 *= (1.0 - pull_t)
+	_ok("camera smoothing: 10 pull_in frames leave < 5%% remaining (near-instant reveal)",
+		pull10 < 0.05)
