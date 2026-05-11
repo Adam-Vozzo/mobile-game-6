@@ -5,10 +5,10 @@ A mobile 3D platformer. Brutalist megastructure inspired by *BLAME!*. Controller
 ## Status
 
 Current gate: **Gate 0 — Feel Lab**
-Last iteration: 2026-05-11 — iter 38: jump stretch scale math + spark geometry tests (387 assertions)
+Last iteration: 2026-05-11 — iter 39: accel path selection tests + jump release touch-path tests (404 assertions)
 Test device build: not yet — hand-authored scenes pending first Godot 4.6 import; see Open questions
 Performance: not yet measured on Nothing Phone 4(a) Pro
-Throttle level: **HARD (14 autonomous iterations since 2026-05-11 human session).** Next iterations are hardening only unless human provides direction.
+Throttle level: **HARD (15 autonomous iterations since 2026-05-11 human session).** Next iterations are hardening only unless human provides direction.
 
 If you only read one section, read **Open questions waiting on you** below.
 
@@ -101,6 +101,19 @@ Goal: store-ready build.
 The full iteration log lives here, newest first. Every iteration appends an entry. Skim the dates to find where you last left off.
 
 <!-- ITERATION ENTRIES BELOW — DO NOT REMOVE OLDER ENTRIES -->
+
+### [2026-05-11] — `claude/gifted-shannon-TYgQo` — iter 39: accel path selection tests + jump release touch-path tests
+
+- **Throttle: HARD (15 autonomous iterations since 2026-05-11 human session).** Hardening only: tests. No new feature surface, no behaviour change.
+- **Primary: `_test_accel_path_selection`** (10 assertions) — the 3-way branch in `_apply_horizontal` (path 1: `ground_deceleration`; path 2: `ground_acceleration`; path 3: `air_acceleration`) had zero explicit coverage; only convergence was tested, not which constant was chosen.
+  - Asserts: trigger threshold (0.0 and 0.005 qualify; exactly 0.01 does not), `ground_decel > air_accel` for snappy and floaty, `ground_decel != air_accel` for momentum, `ground_accel > air_accel` for snappy and floaty, one-frame comparison (path 1 brakes harder than path 3; path 2 picks up faster than path 3).
+- **Side quest: `_test_jump_release_touch_path`** (7 assertions) — the touch branch of `_was_jump_released` (`held_last AND NOT held_now`) is the only release signal on a touch-only device; its 4-case truth table and 3 OR-combination cases were untested.
+  - Asserts: normal lift (T/F → true), never-held (F/F → false), still-held (T/T → false), just-pressed (F/T → false), keyboard-only OR (keyboard=T, touch=F → true), touch-only OR (keyboard=F, touch=T → true), neither (→ false).
+- **Total assertions: 387 → 404.**
+- **Perf:** no runtime changes.
+- **New dev-menu controls:** none.
+- **New assets:** none.
+- **Needs human attention:** still waiting on first Godot 4.6 import + on-device run. 15 iterations at HARD throttle; all P0 items blocked on device.
 
 ### [2026-05-11] — `iter/jump-stretch-scale-spark-tests` — iter 38: jump stretch scale math + spark geometry tests
 
