@@ -5,10 +5,10 @@ A mobile 3D platformer. Brutalist megastructure inspired by *BLAME!*. Controller
 ## Status
 
 Current gate: **Gate 0 — Feel Lab**
-Last iteration: 2026-05-10 — iter 31: sticky landing countdown + damping tests + checkpoint design research
+Last iteration: 2026-05-11 — iter 32: cut-jump + gravity integration tests + squash-stretch research
 Test device build: not yet — hand-authored scenes pending first Godot 4.6 import; see Open questions
 Performance: not yet measured on Nothing Phone 4(a) Pro
-Throttle level: **SOFT (5 autonomous iterations since 2026-05-11 human session).** Non-destructive work only. Re-engage HARD at 6+.
+Throttle level: **SOFT (6 autonomous iterations since 2026-05-11 human session).** Non-destructive work only. Re-engage HARD at 7+.
 
 If you only read one section, read **Open questions waiting on you** below.
 
@@ -101,6 +101,18 @@ Goal: store-ready build.
 The full iteration log lives here, newest first. Every iteration appends an entry. Skim the dates to find where you last left off.
 
 <!-- ITERATION ENTRIES BELOW — DO NOT REMOVE OLDER ENTRIES -->
+
+### [2026-05-11] — `claude/gifted-shannon-Z7ysO` — iter 32: cut-jump + gravity integration tests + squash-stretch research
+
+- **Throttle: SOFT (6 autonomous iterations since 2026-05-11 human session).** Non-destructive work only: test suite expansion + research. No new feature surface.
+- **Primary: Test suite expansion — `_cut_jump` behavior + `_apply_gravity` per-frame integration.**
+  Two clear gaps in the test suite: `_cut_jump` had only parameter-relationship assertions (threshold is in range), but no vy-in → vy-out simulation; `_apply_gravity` had band selection and ordering tests but not the integration formula or arc simulation. Added:
+  - `_test_cut_jump_behavior` (9 assertions): mirrors `_cut_jump` with explicit vy inputs. Covers jump-held→no-cut, released-at-peak→threshold, strict->boundary (vy==threshold→no cut), below-threshold→no-cut, vy==0→no-cut, and per-profile peak-to-threshold. New `_sim_cut` helper.
+  - `_test_gravity_integration` (8 assertions): mirrors `_apply_gravity` per-frame. Covers single-step formula (`vy' = vy − g*delta`), monotone rising arc, apex reached in finite frames, arc > 1 frame, `gravity_after_apex` pulls harder than `gravity_rising` from apex, terminal clamp holds after reaching terminal, floaty apex-frames ≥ snappy (higher-arc design intent). New `_gravity_step` helper.
+  - **Net assertions: 297 → 314.**
+- **Side quest: `docs/research/squash_stretch_animation.md`.** Gate 1 juice prerequisite — landing squash is #1 priority in `juice_density.md` and is needed before Gate 1 polish. Covers: Tween-on-scale (recommended) vs AnimationPlayer vs ShaderMaterial; impact factor derivation (`clamp(-velocity.y / terminal_velocity, 0, 1)` on `just_landed`); curve recommendations (TRANS_SPRING recovery); reboot-sequence conflict guard (`_is_rebooting` check required); full integration checklist; dev-menu `impact_scale` slider requirement. `INDEX.md` updated.
+- **Perf:** unchanged (no runtime code changes).
+- **On-device pending.** All P0 items still blocked on first Godot 4.6 import.
 
 ### [2026-05-10] — `claude/gifted-shannon-ou2ix` — iter 31: sticky landing tests + checkpoint design research
 
