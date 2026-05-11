@@ -5,10 +5,10 @@ A mobile 3D platformer. Brutalist megastructure inspired by *BLAME!*. Controller
 ## Status
 
 Current gate: **Gate 0 — Feel Lab**
-Last iteration: 2026-05-11 — iter 32: cut-jump + gravity integration tests + squash-stretch research
+Last iteration: 2026-05-11 — iter 33: squash-stretch animation + math unit tests
 Test device build: not yet — hand-authored scenes pending first Godot 4.6 import; see Open questions
 Performance: not yet measured on Nothing Phone 4(a) Pro
-Throttle level: **SOFT (6 autonomous iterations since 2026-05-11 human session).** Non-destructive work only. Re-engage HARD at 7+.
+Throttle level: **SOFT (7 autonomous iterations since 2026-05-11 human session).** Non-destructive / bounded work only. Re-engage HARD at 8+.
 
 If you only read one section, read **Open questions waiting on you** below.
 
@@ -101,6 +101,20 @@ Goal: store-ready build.
 The full iteration log lives here, newest first. Every iteration appends an entry. Skim the dates to find where you last left off.
 
 <!-- ITERATION ENTRIES BELOW — DO NOT REMOVE OLDER ENTRIES -->
+
+### [2026-05-11] — `claude/gifted-shannon-2IAxC` — iter 33: squash-stretch animation + math unit tests
+
+- **Throttle: SOFT (7 autonomous iterations since 2026-05-11 human session).** Task chosen as bounded juice implementation with no new architectural surface (per throttle override criteria). Non-destructive items only from here.
+- **Primary: Squash-stretch animation — landing squash + jump stretch.**
+  - `_play_land_squash(impact)` triggered on `just_landed` frame in `_tick_timers`. Impact factor = `clamp(-_last_fall_speed / terminal_velocity, 0, 1)` where `_last_fall_speed` is captured each airborne frame and preserved through the landing frame (velocity.y is already zeroed by `move_and_slide` by the time `just_landed` fires, so the tracker is necessary). Squash shape: `squash_y = 1 − impact×0.45×scale`, `squash_xz = 1 + impact×0.20×scale`; fast compress (0.06 s EASE_OUT TRANS_SPRING), spring recovery (0.25 s). Zero extra draw calls.
+  - `_play_jump_stretch()` triggered inside `_try_jump()` on takeoff. Stretch shape: `stretch_y = 1 + 0.30×scale`, `stretch_xz = 1 − 0.15×scale`; 0.05 s TRANS_QUAD stretch + 0.18 s TRANS_SINE settle. Zero extra draw calls.
+  - Both gated behind `DevMenu.is_juice_on(&"squash_stretch")` and `not _is_rebooting`.
+  - `respawn()` kills any in-flight `_squash_tween` and resets `_visual.scale = Vector3.ONE` before `_run_reboot_effect` takes over (prevents tween fight on death).
+  - Two new dev-menu sliders under "Squash-Stretch — Tuning": **Impact scale** (0–1, default 0.5) and **Stretch scale** (0–1, default 0.5), both live via new `squash_stretch_param_changed` signal in `dev_menu.gd`.
+  - JUICE.md: "Land squish" and "Jump stretch" → `prototype`.
+- **Side quest: `_test_squash_stretch_math` (17 assertions).** Covers: impact factor clamping at 0 / 0.5 / 1.0 / over-terminal / positive-vy, squash Y≤1 and XZ≥1 invariants at [0, 0.5, 1.0] impact, scale=0 identity (no squash), stretch direction invariant (Y elongates, XZ compresses). **Net assertions: 314 → 331.**
+- **Perf:** no runtime overhead added (property tweens mutate an existing uniform; no new nodes or draw calls).
+- **On-device pending.** All P0 items still blocked on first Godot 4.6 import.
 
 ### [2026-05-11] — `claude/gifted-shannon-Z7ysO` — iter 32: cut-jump + gravity integration tests + squash-stretch research
 

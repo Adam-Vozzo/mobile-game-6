@@ -54,8 +54,9 @@ Status legend:
 | element | status | notes |
 |---------|--------|-------|
 | Pre-jump anticipation | idea | slight Y squish in the buffer window |
-| Apex hold | idea | brief stretch at jump apex |
-| Land squish | idea | scaled by impact velocity, recovers on a curve |
+| Apex hold | idea | brief stretch at jump apex — needs apex-state signal, deferred |
+| Land squish | prototype | `_play_land_squash(impact)` on `just_landed` frame; impact = `clamp(-last_fall_speed / terminal, 0, 1)`; squash_y = 1 − impact×0.45×scale, squash_xz = 1 + impact×0.20×scale; TRANS_SPRING recovery in 0.25 s; tunable via "Impact scale" dev-menu slider (0–1, default 0.5); zero draw-call cost |
+| Jump stretch | prototype | `_play_jump_stretch()` on takeoff (inside `_try_jump`); stretch_y = 1 + 0.30×scale, stretch_xz = 1 − 0.15×scale; TRANS_QUAD out + TRANS_SINE in settle over 0.23 s; tunable via "Stretch scale" dev-menu slider (0–1, default 0.5); zero draw-call cost |
 | Death squish | prototype | scale(1.25, 0.25, 1.25) crush on death; scale-up with TRANS_BACK overshoot on spawn; gated behind `squash_stretch` toggle |
 
 ## Blob shadow — toggle key `blob_shadow`

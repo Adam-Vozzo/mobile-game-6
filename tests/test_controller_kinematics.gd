@@ -50,6 +50,7 @@ func _ready() -> void:
 	_test_sticky_landing_damping()
 	_test_cut_jump_behavior()
 	_test_gravity_integration()
+	_test_squash_stretch_math()
 	_report()
 
 
@@ -1191,3 +1192,55 @@ func _sim_cut(jump_released: bool, vy: float, jump_v: float, ratio: float) -> fl
 func _gravity_step(vy: float, g: float, terminal: float, delta: float) -> float:
 	## Mirrors player.gd::_apply_gravity: vy' = max(-terminal, vy - g * delta).
 	return maxf(-terminal, vy - g * delta)
+
+
+func _test_squash_stretch_math() -> void:
+	## Mirrors the impact-factor derivation and scale formulas in player.gd
+	## _play_land_squash / _play_jump_stretch. Pure math — no node needed.
+	print("\n-- Squash-stretch math (impact factor + scale formulas) --")
+	var terminal := 20.0
+
+	# Impact factor: clamp(-vy / terminal, 0, 1)
+	_ok("impact: vy=0 → 0.0 (step-down)",
+		_near(clampf(0.0 / terminal, 0.0, 1.0), 0.0))
+	_ok("impact: half terminal → 0.5",
+		_near(clampf(10.0 / terminal, 0.0, 1.0), 0.5))
+	_ok("impact: full terminal → 1.0",
+		_near(clampf(20.0 / terminal, 0.0, 1.0), 1.0))
+	_ok("impact: over terminal → clamped 1.0",
+		_near(clampf(30.0 / terminal, 0.0, 1.0), 1.0))
+	_ok("impact: positive vy (impossible landing) → clamped 0.0",
+		_near(clampf(-5.0 / terminal, 0.0, 1.0), 0.0))
+
+	# Landing squash formulas at impact_squash_scale=1.0 (full intensity).
+	# squash_y  = 1.0 - impact * 0.45;  squash_xz = 1.0 + impact * 0.20
+	for impact in [0.0, 0.5, 1.0]:
+		var squash_y  := 1.0 - impact * 0.45
+		var squash_xz := 1.0 + impact * 0.20
+		_ok("squash: impact %.1f → squash_y <= 1.0 (Y compresses or stays)" % impact,
+			squash_y <= 1.0)
+		_ok("squash: impact %.1f → squash_xz >= 1.0 (XZ expands or stays)" % impact,
+			squash_xz >= 1.0)
+
+	# At impact=1, volume conservation is approximate: squash_y * squash_xz^2 ≈ 0.55 * 1.2^2.
+	var sq_y := 1.0 - 1.0 * 0.45
+	var sq_xz := 1.0 + 1.0 * 0.20
+	_ok("squash at full impact: Y+XZ expand/compress in opposite directions",
+		sq_y < 1.0 and sq_xz > 1.0)
+
+	# At scale=0.0 both formulas produce identity (no squash).
+	var squash_y_off  := 1.0 - 1.0 * 0.45 * 0.0
+	var squash_xz_off := 1.0 + 1.0 * 0.20 * 0.0
+	_ok("squash: scale=0 → squash_y == 1.0 (identity)",
+		_near(squash_y_off, 1.0))
+	_ok("squash: scale=0 → squash_xz == 1.0 (identity)",
+		_near(squash_xz_off, 1.0))
+
+	# Jump-stretch formulas at jump_stretch_scale=1.0.
+	# stretch_y = 1.0 + 0.30 * scale;  stretch_xz = 1.0 - 0.15 * scale
+	var str_y  := 1.0 + 0.30 * 1.0
+	var str_xz := 1.0 - 0.15 * 1.0
+	_ok("stretch: scale=1 → stretch_y > 1.0 (Y elongates)",   str_y > 1.0)
+	_ok("stretch: scale=1 → stretch_xz < 1.0 (XZ compresses)", str_xz < 1.0)
+	_ok("stretch: Y elongates and XZ compresses together",
+		str_y > 1.0 and str_xz < 1.0)

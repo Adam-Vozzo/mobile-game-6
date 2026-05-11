@@ -14,19 +14,19 @@ instrumented and tunable.
 
 ## Active iteration
 
-- Branch: `claude/gifted-shannon-Z7ysO`
-- Focus: iter 32. **Cut-jump + gravity integration tests + squash-stretch research.**
-  Added `_test_cut_jump_behavior` (9 assertions — held/released conditions, boundary at
-  exact threshold, per-profile cut landing at release threshold) and `_test_gravity_integration`
-  (8 assertions — single-step formula, monotone arc, apex-gravity comparison, terminal clamp,
-  floaty-vs-snappy arc-length invariant) to `tests/test_controller_kinematics.gd`. New helpers
-  `_sim_cut` + `_gravity_step` mirror `_cut_jump` and `_apply_gravity` respectively.
-  Net assertions: 297 → 314.
-  Side quest: `docs/research/squash_stretch_animation.md` — Gate 1 juice prereq (#1 in
-  juice_density.md ranking). Covers Tween vs AnimationPlayer for procedural squash-stretch,
-  impact factor derivation from velocity.y, TRANS_SPRING curve, reboot-conflict guard,
-  full integration checklist. INDEX.md updated.
-  Throttle: SOFT (6 iters since human session).
+- Branch: `claude/gifted-shannon-2IAxC`
+- Focus: iter 33. **Squash-stretch animation implementation + math unit tests.**
+  `_play_land_squash` + `_play_jump_stretch` in `player.gd`; `_last_fall_speed` tracker
+  (captures pre-landing velocity.y while airborne so impact factor is correct on the
+  just_landed frame). Both methods gated behind `squash_stretch` juice toggle and
+  `_is_rebooting` guard. `respawn()` kills the squash tween + resets scale before the
+  reboot effect takes over. Two dev-menu sliders: "Impact scale" + "Stretch scale" (0–1,
+  default 0.5) via new `squash_stretch_param_changed` signal in `dev_menu.gd`.
+  Side quest: `_test_squash_stretch_math` (17 assertions) — impact factor derivation,
+  squash Y/XZ formulas over [0, 0.5, 1.0] impact range, scale=0 identity, stretch
+  direction invariant. Net assertions: 314 → 331.
+  JUICE.md: Land squish + Jump stretch → prototype.
+  Throttle: SOFT (7 iters since human session).
 
 ## Queue (ranked, top is next)
 
@@ -159,6 +159,14 @@ These mirror "Open questions waiting on you" in the README.
   (Per CLAUDE.md: level concept selection is a human call.)
 
 ## Recently completed (last 5)
+
+- 2026-05-11 — Iteration 33. **Squash-stretch animation implementation.**
+  `_play_land_squash(impact)` + `_play_jump_stretch()` in `player.gd` (Tween on `$Visual.scale`,
+  zero draw-call cost). `_last_fall_speed` tracker added to `_tick_timers` (airborne branch)
+  so impact factor is captured the frame before landing (velocity.y is already zeroed by
+  move_and_slide on the just_landed frame). `respawn()` kills any in-flight tween + resets
+  scale. Two dev-menu sliders via `squash_stretch_param_changed` signal. JUICE.md: Land squish
+  + Jump stretch → prototype. Side quest: `_test_squash_stretch_math` (17 assertions, 314 → 331).
 
 - 2026-05-11 — Iteration 32. **Cut-jump + gravity integration tests + squash-stretch research.**
   `_test_cut_jump_behavior` (9 assertions: held-no-cut, released-at-peak→threshold, boundary strict->,

@@ -36,6 +36,12 @@ var _override_material: StandardMaterial3D
 # doubles as the landing-squash trigger for the juice system (see JUICE.md).
 var _was_on_floor_last_frame: bool = false
 var _sticky_frames_remaining: int = 0
+# Squash-stretch: track falling speed before landing so impact factor is correct
+# on the just_landed frame (velocity.y is zeroed by move_and_slide a frame earlier).
+var _last_fall_speed: float = 0.0
+var _impact_squash_scale: float = 0.5   # dev-menu tunable: 0–1
+var _jump_stretch_scale: float = 0.5    # dev-menu tunable: 0–1
+var _squash_tween: Tween = null
 
 @onready var _visual: Node3D = $Visual
 @onready var _body_mesh: MeshInstance3D = $Visual/Body
@@ -48,6 +54,7 @@ func _ready() -> void:
 
 	if Engine.has_singleton("DevMenu") or has_node("/root/DevMenu"):
 		DevMenu.controller_profile_changed.connect(_on_dev_profile_changed)
+		DevMenu.squash_stretch_param_changed.connect(_on_squash_stretch_param)
 	if has_node("/root/TouchInput"):
 		TouchInput.jump_pressed.connect(_on_jump_pressed)
 
@@ -104,6 +111,9 @@ func _tick_timers(delta: float, on_floor: bool) -> void:
 		_last_grounded_pos_y = global_position.y
 	else:
 		_coyote_timer = maxf(0.0, _coyote_timer - delta)
+		# Capture falling speed while airborne. On the just_landed frame, on_floor
+		# is true so this branch is skipped, preserving the pre-landing value.
+		_last_fall_speed = velocity.y
 	if _buffer_timer > 0.0:
 		_buffer_timer = maxf(0.0, _buffer_timer - delta)
 	# Landing detection for Assisted profile sticky-landing mechanic (and juice).
@@ -116,6 +126,9 @@ func _tick_timers(delta: float, on_floor: bool) -> void:
 			_sticky_frames_remaining -= 1
 		else:
 			_sticky_frames_remaining = 0  # took off before window expired
+	if just_landed and not _is_rebooting and DevMenu.is_juice_on(&"squash_stretch"):
+		var impact := clampf(-_last_fall_speed / profile.terminal_velocity, 0.0, 1.0)
+		_play_land_squash(impact)
 	_was_on_floor_last_frame = on_floor
 
 
@@ -177,6 +190,8 @@ func _try_jump() -> void:
 		velocity.y = profile.jump_velocity
 		_buffer_timer = 0.0
 		_coyote_timer = 0.0
+		if DevMenu.is_juice_on(&"squash_stretch"):
+			_play_jump_stretch()
 
 
 func _cut_jump(jump_released: bool) -> void:
@@ -197,6 +212,35 @@ func _update_visual_facing(delta: float) -> void:
 		clampf(visual_turn_speed * delta, 0.0, 1.0))
 
 
+func _play_land_squash(impact: float) -> void:
+	if _visual == null:
+		return
+	var squash_y  := 1.0 - impact * 0.45 * _impact_squash_scale
+	var squash_xz := 1.0 + impact * 0.20 * _impact_squash_scale
+	if _squash_tween:
+		_squash_tween.kill()
+	_squash_tween = create_tween()
+	_squash_tween.set_ease(Tween.EASE_OUT).set_trans(Tween.TRANS_SPRING)
+	_squash_tween.tween_property(_visual, "scale",
+		Vector3(squash_xz, squash_y, squash_xz), 0.06)
+	_squash_tween.tween_property(_visual, "scale", Vector3.ONE, 0.25)
+
+
+func _play_jump_stretch() -> void:
+	if _visual == null:
+		return
+	var stretch_y  := 1.0 + 0.30 * _jump_stretch_scale
+	var stretch_xz := 1.0 - 0.15 * _jump_stretch_scale
+	if _squash_tween:
+		_squash_tween.kill()
+	_squash_tween = create_tween()
+	_squash_tween.set_ease(Tween.EASE_OUT).set_trans(Tween.TRANS_QUAD)
+	_squash_tween.tween_property(_visual, "scale",
+		Vector3(stretch_xz, stretch_y, stretch_xz), 0.05)
+	_squash_tween.set_ease(Tween.EASE_IN_OUT).set_trans(Tween.TRANS_SINE)
+	_squash_tween.tween_property(_visual, "scale", Vector3.ONE, 0.18)
+
+
 func respawn() -> void:
 	if _is_rebooting:
 		return
@@ -207,6 +251,12 @@ func respawn() -> void:
 	# so without this they would still be "live" after a 0.5 s reboot sequence.
 	_buffer_timer = 0.0
 	_coyote_timer = 0.0
+	# Kill any running squash-stretch tween so it doesn't fight _run_reboot_effect.
+	if _squash_tween != null:
+		_squash_tween.kill()
+		_squash_tween = null
+	if _visual != null:
+		_visual.scale = Vector3.ONE
 	if has_node("/root/Game"):
 		Game.register_attempt()
 		Game.player_respawned.emit()
@@ -229,6 +279,12 @@ func _on_jump_pressed() -> void:
 func _on_dev_profile_changed(new_profile: Resource) -> void:
 	if new_profile is ControllerProfile:
 		set_profile(new_profile)
+
+
+func _on_squash_stretch_param(param: StringName, value: float) -> void:
+	match param:
+		&"impact_squash_scale": _impact_squash_scale = value
+		&"jump_stretch_scale":  _jump_stretch_scale = value
 
 
 func _run_reboot_effect() -> void:
