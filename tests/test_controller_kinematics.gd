@@ -62,6 +62,8 @@ func _ready() -> void:
 	_test_camera_smoothing_formula()
 	_test_stick_deadzone_and_clamp()
 	_test_tripod_horiz_distance_correction()
+	_test_moving_platform_math()
+	_test_camera_pub_yaw_formula()
 	_report()
 
 
@@ -1827,3 +1829,115 @@ func _test_tripod_horiz_distance_correction() -> void:
 		res_far.z < 8.0)
 	_ok("tripod: correction moves camera away from target when too close (+Z cam → larger Z after)",
 		res_close.z > 2.0)
+
+
+func _test_moving_platform_math() -> void:
+	## Documents the ping-pong triangle wave + smoothstep formula in
+	## moving_platform.gd::_physics_process.
+	##
+	##   phase    = fmod(elapsed / period_seconds, 1.0)
+	##   triangle = 1.0 - absf(phase * 2.0 - 1.0)   ← tent: 0→1→0 over one period
+	##   t        = smoothstep(0, 1, triangle) if ease_in_out else triangle
+	##   position = _origin + travel * t
+	print("\n-- Moving platform triangle wave + smoothstep math --")
+
+	var _phase := func(elapsed: float, period: float) -> float:
+		return fmod(elapsed / period, 1.0)
+
+	var _triangle := func(phase: float) -> float:
+		return 1.0 - absf(phase * 2.0 - 1.0)
+
+	# Phase normalization: wraps elapsed into [0, 1).
+	_ok("platform: phase at t=0 → 0.0 (start of cycle)",
+		_near(_phase.call(0.0, 4.0), 0.0))
+	_ok("platform: phase at half period → 0.5 (midway through cycle)",
+		_near(_phase.call(2.0, 4.0), 0.5))
+	_ok("platform: phase at full period wraps to 0.0 (ping-pong is cyclic)",
+		_near(_phase.call(4.0, 4.0), 0.0))
+
+	# Triangle wave shape: peaks at phase=0.5, zero at both ends.
+	_ok("platform: triangle at phase=0 → 0.0 (platform at origin)",
+		_near(_triangle.call(0.0), 0.0))
+	_ok("platform: triangle at phase=0.5 → 1.0 (platform at full travel)",
+		_near(_triangle.call(0.5), 1.0))
+	# Symmetry: going-out and coming-back are mirror images.
+	_ok("platform: triangle is symmetric — triangle(0.25) == triangle(0.75) == 0.5",
+		_near(_triangle.call(0.25), _triangle.call(0.75)) and
+		_near(_triangle.call(0.25), 0.5))
+
+	# Ease-in-out: smoothstep produces a slower-start than the raw triangle wave.
+	# At triangle=0.25 the linear t=0.25 but smoothstep(0,1,0.25)=0.15625 — ease is behind.
+	_ok("platform: ease_in_out smoothstep at 25%% of ramp is slower than linear (S-curve start)",
+		smoothstep(0.0, 1.0, 0.25) < 0.25)
+
+	# Ease-in-out: at the midpoint both linear and smoothstep agree (by symmetry).
+	_ok("platform: smoothstep(0,1,0.5) == 0.5 (symmetric midpoint of S-curve)",
+		_near(smoothstep(0.0, 1.0, 0.5), 0.5))
+
+
+func _test_camera_pub_yaw_formula() -> void:
+	## Documents the camera-to-player yaw published in camera_rig.gd::_process.
+	##
+	##   pub_yaw = atan2(cam.x - player.x, cam.z - player.z)
+	##
+	## This is the azimuthal angle from the player to the camera in the XZ plane
+	## (measured from the +Z axis, i.e. the direction the camera points when
+	## the yaw is 0). player.gd::_camera_relative_move_dir uses this to rotate
+	## "stick up" into the correct world direction so the Stray moves away from
+	## the camera on every yaw.
+	print("\n-- Camera published-yaw formula --")
+
+	const DIST := 5.0
+	const PLAYER := Vector3.ZERO
+
+	var _yaw := func(cam: Vector3) -> float:
+		return atan2(cam.x - PLAYER.x, cam.z - PLAYER.z)
+
+	# Cardinal positions: camera directly behind (+Z) → yaw 0.
+	_ok("pub_yaw: camera directly behind player (+Z) → 0.0 rad",
+		_near(_yaw.call(Vector3(0.0, 0.0, DIST)), 0.0))
+
+	# Camera to the right (+X from player) → yaw PI/2.
+	_ok("pub_yaw: camera to the right (+X) → PI/2 rad",
+		_near(_yaw.call(Vector3(DIST, 0.0, 0.0)), PI / 2.0))
+
+	# Camera directly in front (−Z) → yaw PI (or ±PI at the wrap boundary).
+	_ok("pub_yaw: camera in front of player (−Z) → |yaw| == PI",
+		_near(absf(_yaw.call(Vector3(0.0, 0.0, -DIST))), PI))
+
+	# Camera to the left (−X) → yaw −PI/2.
+	_ok("pub_yaw: camera to the left (−X) → −PI/2 rad",
+		_near(_yaw.call(Vector3(-DIST, 0.0, 0.0)), -PI / 2.0))
+
+	# Diagonal camera (+X+Z at 45°) → yaw in (0, PI/2).
+	var diag_yaw := _yaw.call(Vector3(DIST, 0.0, DIST))
+	_ok("pub_yaw: diagonal camera (+X+Z at 45°) → yaw in (0, PI/2)",
+		diag_yaw > 0.0 and diag_yaw < PI / 2.0)
+
+	# Y component does not affect published yaw (it's a horizontal angle only).
+	var yaw_low  := _yaw.call(Vector3(0.0, 1.0, DIST))
+	var yaw_high := _yaw.call(Vector3(0.0, 8.0, DIST))
+	_ok("pub_yaw: camera Y does not affect published yaw (angle is purely horizontal)",
+		_near(yaw_low, yaw_high))
+
+	# Distance does not affect yaw direction — only angle matters.
+	var yaw_near := _yaw.call(Vector3(0.0, 0.0, 2.0))
+	var yaw_far  := _yaw.call(Vector3(0.0, 0.0, 10.0))
+	_ok("pub_yaw: camera distance does not change yaw (scaling the offset preserves angle)",
+		_near(yaw_near, yaw_far))
+
+	# Four cardinal pub_yaw values are each exactly PI/2 apart (full circle of 4).
+	var yaws := [
+		_yaw.call(Vector3(0.0,  0.0,  DIST)),  # behind  → 0
+		_yaw.call(Vector3(DIST, 0.0,  0.0)),   # right   → PI/2
+		_yaw.call(Vector3(0.0,  0.0, -DIST)),  # front   → PI
+		_yaw.call(Vector3(-DIST, 0.0, 0.0)),   # left    → -PI/2
+	]
+	# Consecutive differences (mod 2PI) should each be PI/2.
+	var all_quarter := true
+	for i: int in range(3):
+		var diff := absf(yaws[i + 1] - yaws[i])
+		if not _near(diff, PI / 2.0):
+			all_quarter = false
+	_ok("pub_yaw: four cardinal camera positions are each PI/2 apart (uniform angular spacing)",
+		all_quarter)

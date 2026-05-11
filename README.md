@@ -5,10 +5,10 @@ A mobile 3D platformer. Brutalist megastructure inspired by *BLAME!*. Controller
 ## Status
 
 Current gate: **Gate 0 — Feel Lab**
-Last iteration: 2026-05-11 — iter 41: stick dead-zone + tripod distance correction tests (436 assertions)
+Last iteration: 2026-05-11 — iter 42: moving platform triangle-wave tests + camera pub-yaw formula tests (452 assertions)
 Test device build: not yet — hand-authored scenes pending first Godot 4.6 import; see Open questions
 Performance: not yet measured on Nothing Phone 4(a) Pro
-Throttle level: **HARD (17 autonomous iterations since 2026-05-11 human session).** Next iterations are hardening only unless human provides direction.
+Throttle level: **HARD (18 autonomous iterations since 2026-05-11 human session).** Next iterations are hardening only unless human provides direction.
 
 If you only read one section, read **Open questions waiting on you** below.
 
@@ -101,6 +101,17 @@ Goal: store-ready build.
 The full iteration log lives here, newest first. Every iteration appends an entry. Skim the dates to find where you last left off.
 
 <!-- ITERATION ENTRIES BELOW — DO NOT REMOVE OLDER ENTRIES -->
+
+### [2026-05-11] — `claude/gifted-shannon-BOpz7` — iter 42: moving platform triangle-wave tests + camera pub-yaw formula tests
+
+- **Throttle: HARD (18 autonomous iterations since 2026-05-11 human session).** Hardening only: tests. No behaviour change.
+- **Primary: `_test_moving_platform_math`** (8 assertions) — `moving_platform.gd` had zero unit coverage. Pure math; no scene tree.
+  - Asserts: `fmod` phase normalization at t=0/half/full-period; triangle wave shape (phase=0→0.0; phase=0.5→1.0); symmetry (triangle(0.25)==triangle(0.75)==0.5); `smoothstep` S-curve slower than linear at 25% of ramp; smoothstep(0,1,0.5)==0.5 (symmetric midpoint).
+- **Side quest: `_test_camera_pub_yaw_formula`** (8 assertions) — the `atan2(cam.x−player.x, cam.z−player.z)` formula that tells player.gd which direction "stick-up" maps to had no coverage.
+  - Asserts: four cardinals (+Z→0, +X→π/2, −Z→±π, −X→−π/2); diagonal in (0,π/2); Y component doesn't affect yaw; distance doesn't affect yaw; four cardinals are each π/2 apart.
+- **Total assertions: 436 → 452.**
+- **Perf:** no runtime changes. No new dev-menu controls. No new assets.
+- **Needs human attention:** still waiting on first Godot 4.6 import + on-device run. 18 iterations at HARD throttle; all P0 items blocked on device. See Open questions below.
 
 ### [2026-05-11] — `claude/gifted-shannon-FBxyK` — iter 41: stick dead-zone + tripod distance correction tests
 
