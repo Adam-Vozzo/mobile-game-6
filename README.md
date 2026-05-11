@@ -5,10 +5,10 @@ A mobile 3D platformer. Brutalist megastructure inspired by *BLAME!*. Controller
 ## Status
 
 Current gate: **Gate 0 — Feel Lab**
-Last iteration: 2026-05-11 — iter 40: camera occlusion latch tests + exponential smoothing tests (420 assertions)
+Last iteration: 2026-05-11 — iter 41: stick dead-zone + tripod distance correction tests (436 assertions)
 Test device build: not yet — hand-authored scenes pending first Godot 4.6 import; see Open questions
 Performance: not yet measured on Nothing Phone 4(a) Pro
-Throttle level: **HARD (16 autonomous iterations since 2026-05-11 human session).** Next iterations are hardening only unless human provides direction.
+Throttle level: **HARD (17 autonomous iterations since 2026-05-11 human session).** Next iterations are hardening only unless human provides direction.
 
 If you only read one section, read **Open questions waiting on you** below.
 
@@ -101,6 +101,16 @@ Goal: store-ready build.
 The full iteration log lives here, newest first. Every iteration appends an entry. Skim the dates to find where you last left off.
 
 <!-- ITERATION ENTRIES BELOW — DO NOT REMOVE OLDER ENTRIES -->
+
+### [2026-05-11] — `claude/gifted-shannon-FBxyK` — iter 41: stick dead-zone + tripod distance correction tests
+
+- **Throttle: HARD (17 autonomous iterations since 2026-05-11 human session).** Hardening only: tests. No behaviour change.
+- **Primary: `_test_stick_deadzone_and_clamp`** (8 assertions) — the radial-clamp + normalise + truncating dead-zone pipeline in `touch_overlay.gd::_handle_drag` had no unit coverage. Pure math; no scene tree.
+  - Asserts: small offset (10/100 < 0.15 threshold) → zero; exact-boundary (15/100) passes through (strict `<` condition); 50% deflection = 0.5 output; full/oversized deflection clamped to 1.0; direction preserved through clamp; rotational symmetry (8 cardinal/diagonal angles all zero at 99% of threshold); output always ≤ 1.0.
+- **Side quest: `_test_tripod_horiz_distance_correction`** (8 assertions) — the ground-branch XZ distance-maintenance formula in `camera_rig.gd::_process` had no coverage.
+  - Asserts: too-far (8 m) snaps to desired (5 m); too-close (3 m) pushes out to 5 m; at-correct-dist → zero movement; Y untouched; horizontal direction preserved (radial-only correction); single-step convergence (second pass is no-op); correction sign correct (toward target when far, away when close).
+- **Total assertions: 420 → 436.**
+- **Perf:** no runtime changes.
 
 ### [2026-05-11] — `claude/gifted-shannon-DIq40` — iter 40: camera occlusion latch tests + exponential smoothing tests
 

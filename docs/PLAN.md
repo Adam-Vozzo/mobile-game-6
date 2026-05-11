@@ -14,20 +14,19 @@ instrumented and tunable.
 
 ## Active iteration
 
-- Branch: `claude/gifted-shannon-DIq40`
-- Focus: iter 40. **Camera hysteresis latch + exponential smoothing tests.**
-  `_test_occlusion_release_latch` (8 assertions) — the `_is_occluded` /
-  `_clear_streak_seconds` state machine in `camera_rig.gd` had zero coverage;
-  documents all 4 state transitions: clear+no-hit (no-op), clear+hit (arms latch),
-  occluded+hit (resets streak), occluded+no-hit (increments streak); threshold
-  crossing (3 × 0.05 s = 0.15 s stays latched; 4th tick = 0.20 s clears);
-  mid-streak hit resets countdown.
-  `_test_camera_smoothing_formula` (8 assertions) — the `1 - exp(-rate * delta)`
-  frame-rate-independent ease formula; pull_in > ease_out design invariant;
-  both smooth_t values in (0,1); rate=0 → smooth_t=0; 5-frame simulations:
-  pull_in closes > 85% of gap, ease_out leaves > 50% remaining; 10 pull_in
-  frames leave < 5% (near-instant reveal).
-  Total: 404 → 420 assertions. Throttle: HARD (16 autonomous iterations).
+- Branch: `claude/gifted-shannon-FBxyK`
+- Focus: iter 41. **Stick dead-zone math + tripod distance correction tests.**
+  `_test_stick_deadzone_and_clamp` (8 assertions) — radial clamp + normalise +
+  truncating dead zone pipeline in `touch_overlay.gd::_handle_drag`; below-dead-zone
+  → zero, boundary-is-not-zero (strict <), 50% deflection proportion, full/oversized
+  clamp to 1.0, direction preserved through clamp, rotational symmetry across 8 dirs,
+  output always ≤ 1.0.
+  `_test_tripod_horiz_distance_correction` (8 assertions) — the ground-branch
+  XZ distance maintenance formula in `camera_rig.gd::_process`; too-far snaps
+  to desired, too-close pushes out, at-correct-dist zero movement, Y untouched,
+  direction preserved, single-step convergence (second pass is no-op), toward/away
+  signs correct.
+  Total: 420 → 436 assertions. Throttle: HARD (17 autonomous iterations).
 
 ## Queue (ranked, top is next)
 
@@ -160,6 +159,15 @@ These mirror "Open questions waiting on you" in the README.
   (Per CLAUDE.md: level concept selection is a human call.)
 
 ## Recently completed (last 5)
+
+- 2026-05-11 — Iteration 41. **Stick dead-zone + tripod distance correction tests.**
+  `_test_stick_deadzone_and_clamp` (8 assertions): radial clamp pipeline and truncating dead-zone
+  from `touch_overlay.gd` — below-threshold zero, boundary pass-through (strict <), partial/full/
+  oversized deflection, direction-through-clamp, rotational symmetry in 8 dirs, output-range invariant.
+  `_test_tripod_horiz_distance_correction` (8 assertions): XZ distance maintenance in
+  `camera_rig.gd` ground branch — too-far/too-close snap to desired, zero-movement at correct dist,
+  Y untouched, direction preserved, single-step convergence, sign of correction.
+  Total: 420 → 436 assertions. Throttle: HARD (17 iterations since human session).
 
 - 2026-05-11 — Iteration 40. **Camera hysteresis latch + exponential smoothing tests.**
   `_test_occlusion_release_latch` (8 assertions) + `_test_camera_smoothing_formula` (8 assertions)
