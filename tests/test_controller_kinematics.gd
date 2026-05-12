@@ -82,6 +82,7 @@ func _ready() -> void:
 	_test_audio_bus_constants()
 	_test_vertical_follow_ratchet()
 	_test_default_apex_height_formula()
+	_test_reference_floor_smoothing()
 	_report()
 
 
@@ -2595,3 +2596,122 @@ func _apex_formula(jump_velocity: float, gravity_rising: float) -> float:
 	if gravity_rising <= 0.0 or jump_velocity <= 0.0:
 		return 0.0
 	return (jump_velocity * jump_velocity) / (2.0 * gravity_rising)
+
+
+func _test_reference_floor_smoothing() -> void:
+	## Mirrors camera_rig.gd::_update_reference_floor. When the player lands on
+	## a new tier, the reference floor eases up/down rather than snapping —
+	## the camera transitions over ~400 ms at the default 6/sec rate instead
+	## of cutting hard. Snap threshold preserves the instant-jump behaviour
+	## for respawns and very long falls.
+	print("\n-- Camera reference-floor smoothing --")
+	const DELTA := 1.0 / 60.0
+	const RATE := 6.0
+	const SNAP := 8.0
+
+	# --- Airborne: reference stays put (no leak from jumping above old floor) ---
+	var ref := 0.0
+	# Player Y rising above old reference while airborne shouldn't update ref.
+	for _f in 30:
+		ref = _ref_update(ref, 3.0, false, DELTA, RATE, SNAP)
+	_ok("airborne for 30 frames: reference holds at 0 (no grounded-frame update)",
+		_near(ref, 0.0))
+
+	# --- Smoothed catch-up on grounded frames ---
+	# After one frame at rate=6/sec, delta=1/60: t = 1 - exp(-0.1) ≈ 0.0952.
+	# Lerp from 0 toward 4: 0 + 0.0952 * 4 ≈ 0.381.
+	ref = 0.0
+	ref = _ref_update(ref, 4.0, true, DELTA, RATE, SNAP)
+	_ok("first grounded frame on +4 m tier: ref lifts ~0.38 m (not all the way)",
+		ref > 0.30 and ref < 0.45)
+	# After 10 frames (~167 ms): closer but still not at target.
+	ref = 0.0
+	for _f in 10:
+		ref = _ref_update(ref, 4.0, true, DELTA, RATE, SNAP)
+	# Closed-form: ref = 4 * (1 - exp(-6 * 10/60)) = 4 * (1 - exp(-1)) ≈ 2.53.
+	_ok("10 frames in (~167 ms): ref ≈ 2.53 m (≈63% of the way to 4 m)",
+		ref > 2.4 and ref < 2.6)
+	# After 30 frames (~500 ms): essentially settled (within ~5%; the residual
+	# at 3 time constants is exp(-3) ≈ 4.98% so the target is at 3.80 m).
+	ref = 0.0
+	for _f in 30:
+		ref = _ref_update(ref, 4.0, true, DELTA, RATE, SNAP)
+	_ok("30 frames in (~500 ms): ref settled within 6% of target (≥ 3.76 m)",
+		ref > 3.76 and ref <= 4.0)
+	# Monotonic + asymptotic: never overshoots.
+	var prev := 0.0
+	var monotonic := true
+	var capped := true
+	ref = 0.0
+	for _f in 120:
+		ref = _ref_update(ref, 4.0, true, DELTA, RATE, SNAP)
+		if ref < prev - 1e-6:
+			monotonic = false
+		if ref > 4.0 + 1e-6:
+			capped = false
+		prev = ref
+	_ok("monotonic: smoothed ref never reverses across 120 frames", monotonic)
+	_ok("asymptotic: smoothed ref never overshoots target across 120 frames", capped)
+
+	# --- Symmetry: dropping down to a lower tier eases the same way ---
+	ref = 4.0
+	for _f in 30:
+		ref = _ref_update(ref, 0.0, true, DELTA, RATE, SNAP)
+	_ok("dropping from +4 m to 0 over 30 frames: residual < 0.25 m (symmetric to climb)",
+		ref >= 0.0 and ref < 0.25)
+
+	# --- Snap threshold: huge delta bypasses the smoothing ---
+	ref = 0.0
+	# A 10 m jump exceeds the 8 m default snap threshold.
+	ref = _ref_update(ref, 10.0, true, DELTA, RATE, SNAP)
+	_ok("delta > snap threshold (10 m > 8 m): single frame snaps to player_y",
+		_near(ref, 10.0))
+	# Exactly at the threshold: still smooth (strict `>`).
+	ref = 0.0
+	ref = _ref_update(ref, 8.0, true, DELTA, RATE, SNAP)
+	_ok("delta == snap threshold (8 m == 8 m): smooth, not snap (boundary strict)",
+		ref < 8.0 and ref > 0.0)
+	# Snap is symmetric for descents too.
+	ref = 10.0
+	ref = _ref_update(ref, 0.0, true, DELTA, RATE, SNAP)
+	_ok("descending delta > snap threshold (10 m drop): single frame snaps to 0",
+		_near(ref, 0.0))
+
+	# --- Smoothing rate 0: legacy instant-snap behaviour ---
+	ref = 0.0
+	ref = _ref_update(ref, 4.0, true, DELTA, 0.0, SNAP)
+	_ok("smoothing rate 0: single frame snaps to player_y (legacy behaviour)",
+		_near(ref, 4.0))
+
+	# --- Higher rate converges faster ---
+	var ref_slow := 0.0
+	var ref_fast := 0.0
+	for _f in 10:
+		ref_slow = _ref_update(ref_slow, 4.0, true, DELTA, 3.0, SNAP)
+		ref_fast = _ref_update(ref_fast, 4.0, true, DELTA, 12.0, SNAP)
+	_ok("rate=12 closes faster than rate=3 over the same 10 frames",
+		ref_fast > ref_slow)
+
+	# --- Initial-frame snap (uninitialised camera) ---
+	ref = _ref_update_initial(7.5)
+	_ok("initial frame (not initialised): ref snaps to player_y regardless of rate",
+		_near(ref, 7.5))
+
+
+# Mirrors camera_rig.gd::_update_reference_floor for the post-init smoothing path.
+# Returns the next _reference_floor_y given current reference + player Y + state.
+func _ref_update(current_ref: float, player_y: float, on_floor: bool,
+		delta: float, rate: float, snap_threshold: float) -> float:
+	if not on_floor:
+		return current_ref
+	var d := absf(player_y - current_ref)
+	if d > snap_threshold or rate <= 0.0:
+		return player_y
+	var t := 1.0 - exp(-rate * delta)
+	return lerpf(current_ref, player_y, t)
+
+
+# Mirrors the not-yet-initialised first-frame branch — reference always snaps
+# regardless of smoothing rate, since the camera has no prior pose to ease from.
+func _ref_update_initial(player_y: float) -> float:
+	return player_y

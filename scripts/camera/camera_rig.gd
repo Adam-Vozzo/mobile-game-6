@@ -46,6 +46,21 @@ class_name CameraRig
 ## < 1 (toward 0) makes the camera follow earlier — at the limit (0) the
 ## camera reverts to always-track-Y behaviour.
 @export_range(0.0, 5.0, 0.05) var apex_height_multiplier: float = 1.0
+## Rate (per second) at which the reference floor catches up to the player
+## when grounded. Big tier changes (landing on a higher/lower platform) ease
+## in rather than snap. Higher = snappier transition (toward instant); lower
+## = camera lags up to the new tier (cinematic). 0 disables smoothing
+## entirely (instant snap — the pre-fix behaviour). Defaults to 6/sec for an
+## ~400 ms settle on a single-platform-height tier change: fast enough that
+## the camera arrives in time for the next jump, slow enough that the human
+## reads it as motion rather than a cut.
+@export_range(0.0, 30.0, 0.5) var reference_floor_smoothing: float = 6.0
+## Y delta (m) above which the reference floor snaps directly to the player
+## instead of lerping. Catches respawns and very long falls — anything where
+## the smoothed transition would visibly lag and read as broken. 8 m is
+## roughly four Snappy jump heights; below that, the smoothing path handles
+## normal level-design tier shifts.
+@export_range(0.5, 30.0, 0.5) var reference_floor_snap_threshold: float = 8.0
 
 @export_category("Manual override")
 @export_range(0.0001, 0.05, 0.0001) var yaw_drag_sens: float = 0.005
@@ -131,7 +146,7 @@ func _process(delta: float) -> void:
 		return
 	var target_pos := _target.global_position
 	var on_floor := _is_target_on_floor()
-	_update_reference_floor(target_pos.y, on_floor)
+	_update_reference_floor(target_pos.y, on_floor, delta)
 	# Effective target: the position the camera *tracks*. X/Z follow the player
 	# exactly; Y is the vertical-follow ratchet's output (held at reference
 	# floor below apex; tracks the player above apex). All camera-position
@@ -253,15 +268,26 @@ func _place_camera_initial(anchor: Vector3) -> void:
 
 
 # Vertical-follow ratchet: reference floor tracks the Y of the floor the
-# player is currently standing on. Updates every grounded frame; airborne
+# player is currently standing on. Updates only on grounded frames; airborne
 # frames leave the reference alone so jumps don't lift the camera unless
 # the apex band is exceeded (see _compute_effective_y).
-func _update_reference_floor(player_y: float, on_floor: bool) -> void:
+#
+# On a grounded frame, the reference eases toward `player_y` at
+# `reference_floor_smoothing` per second rather than snapping. Big deltas
+# (respawn, very long falls) bypass the smoothing via the snap threshold
+# so the camera doesn't visibly lag for half a second after a teleport.
+func _update_reference_floor(player_y: float, on_floor: bool, delta: float) -> void:
 	if not _initialized:
 		_reference_floor_y = player_y
 		return
-	if on_floor:
+	if not on_floor:
+		return
+	var d := absf(player_y - _reference_floor_y)
+	if d > reference_floor_snap_threshold or reference_floor_smoothing <= 0.0:
 		_reference_floor_y = player_y
+		return
+	var t := 1.0 - exp(-reference_floor_smoothing * delta)
+	_reference_floor_y = lerpf(_reference_floor_y, player_y, t)
 
 
 # Vertical-follow ratchet: returns the Y the camera should track. Below the
@@ -435,6 +461,10 @@ func _on_camera_param_changed(param_name: StringName, value: float) -> void:
 			pitch_max_degrees = value
 		&"apex_height_multiplier":
 			apex_height_multiplier = value
+		&"reference_floor_smoothing":
+			reference_floor_smoothing = value
+		&"reference_floor_snap_threshold":
+			reference_floor_snap_threshold = value
 		# Lookahead and auto-recenter sliders are no-ops in the tripod model.
 		_:
 			pass
