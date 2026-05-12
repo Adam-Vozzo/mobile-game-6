@@ -41,6 +41,24 @@ func over_budget() -> bool:
 	)
 
 
+## Increment the live particle count by `n`. Call when a GPUParticles3D node
+## becomes visible / starts emitting. Gate 1 wires this at scene load.
+func register_particles(n: int) -> void:
+	active_particles += n
+
+
+## Decrement the live particle count by `n`, clamped to 0. Call when a
+## GPUParticles3D node stops emitting or is freed.
+func unregister_particles(n: int) -> void:
+	active_particles = maxi(0, active_particles - n)
+
+
+## Zero the particle counter. Call from Game.reset_run() at Gate 1 so a
+## level reload doesn't carry a stale count from the previous run.
+func reset_particles() -> void:
+	active_particles = 0
+
+
 func snapshot() -> Dictionary:
 	return {
 		"fps": Engine.get_frames_per_second(),

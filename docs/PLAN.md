@@ -14,15 +14,14 @@ instrumented and tunable.
 
 ## Active iteration
 
-- Branch: `claude/gifted-shannon-bsRRS`
-- Focus: iter 47. **Apply Android latency mitigations + dev menu state tests.**
-  `Input.use_accumulated_input = false` in `touch_overlay.gd::_ready()` (saves 4–8 ms/drag frame).
-  `common/physics_interpolation=true` in `project.godot` (smooth 120 Hz playback on Nothing Phone).
-  Bug fix: `g.free()` moved from `_test_visual_turn_convergence` (wrong scope) to
-  `_test_game_autoload_contract` (correct). Side quest: `_test_dev_menu_state_machine`
-  (16 assertions) — first coverage of DevMenu autoload: juice defaults, debug_viz defaults,
-  asymmetric default policy (juice=true, debug=false), state transitions, open/close machine.
-  Total: 512 → 528 assertions. Throttle: HARD (23 autonomous iterations).
+- Branch: `claude/gifted-shannon-sHSh4`
+- Focus: iter 48. **PerfBudget particle tracking API fix.**
+  `register_particles(n)` / `unregister_particles(n)` / `reset_particles()` added to
+  `perf_budget.gd` — fixes the always-false `active_particles > ACTIVE_PARTICLES_BUDGET`
+  branch in `over_budget()`. `_test_perf_budget_particle_api` (12 assertions): initial-zero,
+  additive register, unregister-clamp-to-zero, live `over_budget()` at/above limit, reset,
+  `snapshot()` key presence and value match. Total: 528 → 540 assertions.
+  Throttle: HARD (24 autonomous iterations).
 
 ## Queue (ranked, top is next)
 
@@ -155,6 +154,17 @@ These mirror "Open questions waiting on you" in the README.
   (Per CLAUDE.md: level concept selection is a human call.)
 
 ## Recently completed (last 5)
+
+- 2026-05-12 — Iteration 48. **PerfBudget particle tracking API fix.**
+  `register_particles(n)`, `unregister_particles(n)`, `reset_particles()` added to
+  `perf_budget.gd` (refactor-backlog item). Fixes the permanently-false
+  `active_particles > ACTIVE_PARTICLES_BUDGET` branch in `over_budget()` — Gate 1 can
+  now wire GPUParticles3D nodes via this API and the budget check will actually fire.
+  `_test_perf_budget_particle_api` (12 assertions): initial-zero state, additive
+  `register_particles`, `unregister_particles` clamp-to-zero invariant, live
+  `over_budget()` at the limit (not over) and one above (over), `reset_particles` zeroes
+  and clears over-budget, `snapshot()` key presence + value match.
+  Total: 528 → 540 assertions. Throttle: HARD (24 iterations since human session).
 
 - 2026-05-12 — Iteration 47. **Apply Android latency mitigations + dev menu state tests.**
   `Input.use_accumulated_input = false` in `touch_overlay.gd::_ready()` — saves 4–8 ms per
@@ -681,14 +691,10 @@ These mirror "Open questions waiting on you" in the README.
   queries that group for actual values. DECISIONS.md updated.
 - ~~**`_build_controller_section` over 40 lines.**~~ Done (iter 19). Extracted 4
   sub-builders; dispatcher now 7 lines. No behaviour change.
-- `perf_budget.gd::active_particles` is never updated — always 0. The `over_budget()`
-  check includes `active_particles > ACTIVE_PARTICLES_BUDGET` which is always false.
-  Current spark system uses `ImmediateMesh` (not `GPUParticles3D`) so there's no
-  built-in counter. Fix options: (a) expose a `register_particles(n)` /
-  `unregister_particles(n)` public API and call from any particle-emitting code, or
-  (b) enumerate `GPUParticles3D` nodes in-scene and sum `amount`. Either requires a
-  concrete particle system to test against — defer to Gate 1 when `GPUParticles3D`
-  nodes are added.
+- ~~**`perf_budget.gd::active_particles` always 0.**~~ Done (iter 48). `register_particles`,
+  `unregister_particles`, `reset_particles` API added. Gate 1 wires GPUParticles3D nodes
+  at scene load; `Game.reset_run()` should call `PerfBudget.reset_particles()` at Gate 1.
+  Remaining: wire callers when actual GPUParticles3D nodes exist (Gate 1+).
 - Momentum profile speed ramp: add `speed_ramp_rate` + `ramp_max_speed`
   to `ControllerProfile`, add `_ramp_speed: float` to `player.gd`. Hold
   until after first on-device feel of current Momentum approximation.
