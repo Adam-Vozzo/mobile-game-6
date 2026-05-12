@@ -9,6 +9,10 @@ extends Node
 
 signal jump_pressed
 signal jump_released
+## Emitted by the touch overlay when a quick right-zone swipe is recognised.
+## `dir` is a normalised 2D screen-space direction (X = right, Y = down);
+## player.gd rotates it into world space by the camera yaw.
+signal air_dash_triggered(dir: Vector2)
 
 var move_vector: Vector2 = Vector2.ZERO
 var jump_held: bool = false

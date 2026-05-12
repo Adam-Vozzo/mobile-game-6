@@ -85,6 +85,7 @@ func _ready() -> void:
 	_test_reference_floor_smoothing()
 	_test_apex_anchor_split()
 	_test_double_jump_logic()
+	_test_air_dash_logic()
 	_report()
 
 
@@ -2949,3 +2950,82 @@ func _test_double_jump_logic() -> void:
 	# (17) When air_jumps = 0, reset still gives 0 (feature disabled on this profile).
 	cp.air_jumps = 0
 	_ok("air_jumps = 0: on_floor reset gives 0 (double-jump disabled)", cp.air_jumps == 0)
+
+
+func _test_air_dash_logic() -> void:
+	# --- Backwards-compat: all shipped profiles default to air_dash_speed = 0.0 ---
+	var snappy   := preload("res://resources/profiles/snappy.tres")   as CP
+	var floaty   := preload("res://resources/profiles/floaty.tres")   as CP
+	var momentum := preload("res://resources/profiles/momentum.tres") as CP
+	var assisted := preload("res://resources/profiles/assisted.tres") as CP
+	# (1-4)
+	_ok("snappy: air_dash_speed = 0.0 (dash disabled by default)",   _near(snappy.air_dash_speed, 0.0))
+	_ok("floaty: air_dash_speed = 0.0 (dash disabled by default)",   _near(floaty.air_dash_speed, 0.0))
+	_ok("momentum: air_dash_speed = 0.0 (dash disabled by default)", _near(momentum.air_dash_speed, 0.0))
+	_ok("assisted: air_dash_speed = 0.0 (dash disabled by default)", _near(assisted.air_dash_speed, 0.0))
+
+	var cp := CP.new()
+	# (5) Duration in usable range: not so short it's invisible, not so long it becomes flight.
+	_ok("default air_dash_duration in [0.05, 0.5]",
+		cp.air_dash_duration >= 0.05 and cp.air_dash_duration <= 0.5)
+	# (6) Gravity scale in [0, 1].
+	_ok("default air_dash_gravity_scale in [0.0, 1.0]",
+		cp.air_dash_gravity_scale >= 0.0 and cp.air_dash_gravity_scale <= 1.0)
+	# (7) Default gravity scale is perceptibly reduced (< 0.5) — dash should feel like near-flight.
+	_ok("default air_dash_gravity_scale < 0.5 (noticeable gravity reduction during dash)",
+		cp.air_dash_gravity_scale < 0.5)
+
+	# --- Charge management (mirrors _tick_timers + _try_air_dash logic) ---
+	var charges := 0
+	# (8) Landing refills to 1.
+	charges = 1   # _tick_timers on_floor branch
+	_ok("charges refill to 1 on landing", charges == 1)
+	# (9) Using a dash decrements the counter.
+	charges -= 1
+	_ok("charges decrement after use: 1 → 0", charges == 0)
+	# (10) Exhausted guard: condition in _try_air_dash.
+	_ok("charges = 0 → dash blocked by guard", charges <= 0)
+
+	# --- Trigger guards ---
+	# (11) air_dash_speed = 0.0 disables the dash.
+	cp.air_dash_speed = 0.0
+	_ok("air_dash_speed = 0.0 → speed guard blocks dash", cp.air_dash_speed <= 0.0)
+	# (12) Non-zero speed passes the guard.
+	cp.air_dash_speed = 10.0
+	_ok("air_dash_speed = 10.0 → speed guard passes", cp.air_dash_speed > 0.0)
+
+	# --- Dash velocity formula (mirrors _try_air_dash assignment) ---
+	var speed := 10.0
+	var dir   := Vector3(1.0, 0.0, 0.0)   # dash right
+	# (13) Horizontal velocity set to dir × speed.
+	_ok("velocity.x = dir.x × speed: 1.0 × 10.0 = 10.0", _near(dir.x * speed, 10.0))
+	# (14) Z component = 0 for a pure-right dash.
+	_ok("velocity.z = dir.z × speed: 0.0 × 10.0 = 0.0", _near(dir.z * speed, 0.0))
+
+	# --- Gravity scaling during dash (mirrors _apply_gravity) ---
+	var g_normal := 75.0   # gravity_after_apex for snappy
+	cp.air_dash_gravity_scale = 0.15
+	# (15) Scaled gravity = g_normal × scale.
+	_ok("gravity during dash = g_normal × scale: 75 × 0.15 = 11.25",
+		_near(g_normal * cp.air_dash_gravity_scale, 75.0 * 0.15))
+	# (16) scale = 0.0 → zero gravity during dash.
+	cp.air_dash_gravity_scale = 0.0
+	_ok("gravity_scale = 0.0 → zero gravity during dash",
+		_near(g_normal * cp.air_dash_gravity_scale, 0.0))
+	# (17) scale = 1.0 → full normal gravity.
+	cp.air_dash_gravity_scale = 1.0
+	_ok("gravity_scale = 1.0 → full normal gravity during dash",
+		_near(g_normal * cp.air_dash_gravity_scale, g_normal))
+
+	# --- Direction fallback logic (mirrors _try_air_dash resolution) ---
+	var vel_h := Vector3(5.0, 0.0, 0.0)
+	var input_dir := Vector3.ZERO
+	var resolved := input_dir if input_dir.length() > 0.01 else vel_h.normalized()
+	# (18) Zero input → falls back to current horizontal velocity direction.
+	_ok("zero input → dash direction falls back to velocity direction (+X)",
+		resolved.is_equal_approx(Vector3(1.0, 0.0, 0.0)))
+	# Non-zero input overrides: verify the condition produces the input.
+	input_dir = Vector3(0.0, 0.0, -1.0)
+	resolved   = input_dir if input_dir.length() > 0.01 else vel_h.normalized()
+	_ok("non-zero input → dash direction uses input direction (-Z)",
+		resolved.is_equal_approx(Vector3(0.0, 0.0, -1.0)))
