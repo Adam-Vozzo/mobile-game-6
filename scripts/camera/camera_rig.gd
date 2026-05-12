@@ -138,6 +138,15 @@ var _air_offset: Vector3 = Vector3.ZERO
 # hops all flow into the camera; airborne frames leave the reference alone
 # so jumps don't lift the camera unless the apex is exceeded.
 var _reference_floor_y: float = 0.0
+# Tracks the player's grounded state from the previous frame so we can
+# detect takeoff (true → false) and landing (false → true) transitions.
+# Used by the takeoff reference snap: if the reference was still smoothing
+# toward the player's current floor when they jumped, the apex check would
+# fire spuriously during the jump (apex_y = mid_smooth + band sits below
+# the jump's actual peak even though the player is only doing a normal
+# jump from the new tier). Snapping on takeoff makes the check use the
+# correct anchor.
+var _was_on_floor: bool = true
 
 @onready var _camera: Camera3D = $Camera
 
@@ -154,7 +163,18 @@ func _process(delta: float) -> void:
 		return
 	var target_pos := _target.global_position
 	var on_floor := _is_target_on_floor()
+	# Takeoff detection: if the reference floor was still smoothing toward
+	# the player's current floor when they jumped, the apex check would fire
+	# spuriously during the jump (mid-smooth reference + band < jump peak).
+	# Snap reference to player.y on the takeoff frame so the check uses the
+	# correct anchor for the whole airborne phase. The _air_offset is
+	# recomputed below against the fresh effective_target so the camera's
+	# world position stays continuous across the snap (no vertical pop).
+	var just_took_off := _was_on_floor and not on_floor
+	if just_took_off:
+		_reference_floor_y = target_pos.y
 	_update_reference_floor(target_pos.y, on_floor, delta)
+	_was_on_floor = on_floor
 	# Effective target: the position the camera *tracks*. X/Z follow the player
 	# exactly; Y is the vertical-follow ratchet's output (held at reference
 	# floor below apex; tracks the player above apex). All camera-position
@@ -171,6 +191,15 @@ func _process(delta: float) -> void:
 		_place_camera_initial(effective_target)
 		_air_offset = _camera.global_position - effective_target
 		_initialized = true
+
+	# Takeoff: recompute _air_offset against the freshly-snapped
+	# effective_target. The airborne rigid translate below uses
+	# `effective_target + _air_offset`, so updating both together keeps
+	# `_camera.global_position` continuous — the camera stays exactly where
+	# it was on the last grounded frame, but the conceptual anchor is now
+	# the snapped reference.
+	if just_took_off:
+		_air_offset = _camera.global_position - effective_target
 
 	# Airborne: rigid follow. Reconstruct the camera position as
 	# `effective_target + _air_offset` *before* drag/look_at runs, so any
