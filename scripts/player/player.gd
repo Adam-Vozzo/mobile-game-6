@@ -70,6 +70,16 @@ func set_camera_yaw(yaw_radians: float) -> void:
 	_camera_yaw = yaw_radians
 
 
+## Default max jump apex height in metres above the takeoff floor, derived
+## from the active profile via v² / (2g). Used by the camera rig to decide
+## when the player has cleared the "normal jump" band and the camera should
+## start tracking vertically. Returns 0.0 if profile is missing/degenerate.
+func get_default_apex_height() -> float:
+	if profile == null or profile.gravity_rising <= 0.0:
+		return 0.0
+	return (profile.jump_velocity * profile.jump_velocity) / (2.0 * profile.gravity_rising)
+
+
 func _apply_profile_to_body() -> void:
 	if profile == null:
 		profile = ControllerProfile.new()

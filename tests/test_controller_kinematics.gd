@@ -80,6 +80,8 @@ func _ready() -> void:
 	_test_airborne_offset_math()
 	_test_game_level_path_contract()
 	_test_audio_bus_constants()
+	_test_vertical_follow_ratchet()
+	_test_default_apex_height_formula()
 	_report()
 
 
@@ -2450,3 +2452,146 @@ func _test_audio_bus_constants() -> void:
 		seen[n] = true
 	_ok("all four bus constants are distinct (no accidental duplicates)",
 		seen.size() == 4)
+
+
+func _test_vertical_follow_ratchet() -> void:
+	## Mirrors camera_rig.gd::_compute_effective_y. The camera holds Y at the
+	## reference floor while the player stays below `floor + apex * multiplier`;
+	## above that band, the camera tracks `player.y - apex * multiplier` so it
+	## lifts at the same rate as the player. Multiplier 0 reverts to always-
+	## track-Y. Pure math — no scene tree needed.
+	print("\n-- Camera vertical-follow ratchet --")
+	# Snappy at default values: apex_h = 11.5^2 / (2*38) ≈ 1.7401 m
+	var snappy_apex := (11.5 * 11.5) / (2.0 * 38.0)
+
+	# --- Below apex: camera holds Y at reference floor ---
+	_ok("at rest on reference floor → effective_y == reference_floor",
+		_near(_eff_y(0.0, 0.0, snappy_apex, 1.0), 0.0))
+	_ok("mid-air at half-apex → effective_y still == reference_floor",
+		_near(_eff_y(snappy_apex * 0.5, 0.0, snappy_apex, 1.0), 0.0))
+	_ok("airborne at 0.9 of apex → effective_y still == reference_floor (normal jump)",
+		_near(_eff_y(snappy_apex * 0.9, 0.0, snappy_apex, 1.0), 0.0))
+	# Exact boundary at apex_y is the held-Y branch (`>`, not `>=`).
+	_ok("at exactly apex_y → effective_y == reference_floor (boundary is `>`, strict)",
+		_near(_eff_y(snappy_apex, 0.0, snappy_apex, 1.0), 0.0))
+
+	# --- Above apex: camera tracks player.y - apex_h ---
+	_ok("just above apex (apex + 0.01) → effective_y == 0.01 (tracking starts)",
+		_near(_eff_y(snappy_apex + 0.01, 0.0, snappy_apex, 1.0), 0.01))
+	_ok("0.5 m above apex → effective_y == 0.5 (linear above threshold)",
+		_near(_eff_y(snappy_apex + 0.5, 0.0, snappy_apex, 1.0), 0.5))
+	_ok("1.0 m above apex → effective_y == 1.0",
+		_near(_eff_y(snappy_apex + 1.0, 0.0, snappy_apex, 1.0), 1.0))
+
+	# --- Reference floor change (player landed on higher tier) ---
+	# Reference floor lifts to 4.0 → apex band shifts up with it.
+	_ok("on higher floor (y=4): at rest → effective_y == new reference (4.0)",
+		_near(_eff_y(4.0, 4.0, snappy_apex, 1.0), 4.0))
+	_ok("on higher floor (y=4): at half-apex → effective_y == 4.0 (band shifts with floor)",
+		_near(_eff_y(4.0 + snappy_apex * 0.5, 4.0, snappy_apex, 1.0), 4.0))
+	_ok("on higher floor (y=4): 1 m above apex → effective_y == 4 + 1 = 5.0",
+		_near(_eff_y(4.0 + snappy_apex + 1.0, 4.0, snappy_apex, 1.0), 5.0))
+
+	# --- Apex multiplier scaling ---
+	# Multiplier 0.5 halves the band — camera follows earlier.
+	_ok("multiplier 0.5: player at 0.5 * apex is exactly at half-band boundary (still holds)",
+		_near(_eff_y(snappy_apex * 0.5, 0.0, snappy_apex, 0.5), 0.0))
+	_ok("multiplier 0.5: just above half-band → effective_y == 0.01",
+		_near(_eff_y(snappy_apex * 0.5 + 0.01, 0.0, snappy_apex, 0.5), 0.01))
+	# Multiplier 2.0 doubles the band — camera lazier.
+	_ok("multiplier 2.0: player at apex_h is still below the band → holds",
+		_near(_eff_y(snappy_apex, 0.0, snappy_apex, 2.0), 0.0))
+	_ok("multiplier 2.0: 1 m above 2*apex → effective_y == 1.0",
+		_near(_eff_y(snappy_apex * 2.0 + 1.0, 0.0, snappy_apex, 2.0), 1.0))
+
+	# --- Multiplier 0 (or missing profile): legacy always-track-Y ---
+	_ok("multiplier 0: at rest on reference → effective_y == player_y (= reference)",
+		_near(_eff_y(0.0, 0.0, snappy_apex, 0.0), 0.0))
+	_ok("multiplier 0: airborne at 1.0 → effective_y == player_y (always tracks)",
+		_near(_eff_y(1.0, 0.0, snappy_apex, 0.0), 1.0))
+	_ok("multiplier 0: airborne at 5.0 → effective_y == player_y (always tracks)",
+		_near(_eff_y(5.0, 0.0, snappy_apex, 0.0), 5.0))
+	_ok("apex_h 0 (no profile): falls back to always-track-Y",
+		_near(_eff_y(3.0, 0.0, 0.0, 1.0), 3.0))
+
+	# --- Continuity: effective_y is C0 in player_y across the boundary ---
+	# At apex_y, effective_y = reference. Just above, effective_y = epsilon.
+	var below := _eff_y(snappy_apex - 0.0001, 0.0, snappy_apex, 1.0)
+	var above := _eff_y(snappy_apex + 0.0001, 0.0, snappy_apex, 1.0)
+	_ok("continuity at apex boundary: |delta| < 0.001 across the threshold",
+		absf(above - below) < 0.001)
+
+	# --- Monotonicity above apex: as player rises, effective_y rises 1:1 ---
+	var step1 := _eff_y(snappy_apex + 1.0, 0.0, snappy_apex, 1.0)
+	var step2 := _eff_y(snappy_apex + 2.0, 0.0, snappy_apex, 1.0)
+	_ok("monotonicity above apex: effective_y(player+1) < effective_y(player+2)",
+		step1 < step2)
+	_ok("rate above apex: rises 1:1 with player.y (a 1 m rise → 1 m effective_y rise)",
+		_near(step2 - step1, 1.0))
+
+
+func _test_default_apex_height_formula() -> void:
+	## Documents player.gd::get_default_apex_height, which derives the camera
+	## ratchet's apex band from v² / (2g) of the active profile. Tests the pure
+	## formula against the four shipped profiles' jump_velocity / gravity_rising
+	## pairs so a profile-edit doesn't silently re-tune the camera.
+	print("\n-- Default apex height (v² / 2g) per profile --")
+	# Apex = jump_velocity² / (2 * gravity_rising)
+	# Snappy:   11.5² / (2 * 38.0)  = 132.25 / 76    ≈ 1.7401 m
+	# Floaty:   10.0² / (2 * 20.0)  = 100.0 / 40     = 2.5000 m
+	# Momentum: 12.0² / (2 * 30.0)  = 144.0 / 60     = 2.4000 m
+	# Assisted: 10.0² / (2 * 15.0)  = 100.0 / 30     ≈ 3.3333 m
+	# (Values read from .tres files at iter 51 baseline. Test reads them live.)
+	# Bounds [0.8, 4.0] m: lower bound = jumping over a 1 m platform comfortably;
+	# upper bound accommodates Assisted's accessibility-tuned high apex without
+	# allowing a pathologically tall jump that would never trip the ratchet.
+
+	for path: String in [
+		"res://resources/profiles/snappy.tres",
+		"res://resources/profiles/floaty.tres",
+		"res://resources/profiles/momentum.tres",
+		"res://resources/profiles/assisted.tres",
+	]:
+		var p := _load_profile(path)
+		if p == null:
+			continue
+		var apex := (p.jump_velocity * p.jump_velocity) / (2.0 * p.gravity_rising)
+		var name := path.get_file().get_basename()
+		_ok("%s: apex height in [0.8, 4.0] m (got %.3f)" % [name, apex],
+			apex >= 0.8 and apex <= 4.0)
+		_ok("%s: gravity_rising > 0 (formula safe)" % name, p.gravity_rising > 0.0)
+		_ok("%s: jump_velocity > 0 (formula safe)" % name, p.jump_velocity > 0.0)
+
+	# Edge cases of the formula itself
+	_ok("zero jump_velocity → 0 m apex (no jump → no band)",
+		_near(_apex_formula(0.0, 38.0), 0.0))
+	_ok("zero gravity → fallback returns 0 (would divide-by-zero otherwise)",
+		_near(_apex_formula(11.5, 0.0), 0.0))
+	_ok("negative gravity → fallback returns 0 (guard against malformed profile)",
+		_near(_apex_formula(11.5, -1.0), 0.0))
+	# Double jump_velocity → 4× apex (quadratic in v)
+	var single_v := _apex_formula(10.0, 30.0)
+	var double_v := _apex_formula(20.0, 30.0)
+	_ok("quadratic in velocity: double v → 4× apex",
+		_near(double_v, single_v * 4.0))
+
+
+# Helpers for the vertical-follow tests.
+
+func _eff_y(player_y: float, reference_floor_y: float, apex_h: float, multiplier: float) -> float:
+	## Mirror of camera_rig.gd::_compute_effective_y. Below apex_y the camera
+	## holds at reference; above, it tracks player.y - apex band.
+	var band := apex_h * multiplier
+	if band <= 0.0:
+		return player_y
+	var apex_y := reference_floor_y + band
+	if player_y > apex_y:
+		return player_y - band
+	return reference_floor_y
+
+
+func _apex_formula(jump_velocity: float, gravity_rising: float) -> float:
+	## Mirror of player.gd::get_default_apex_height. v² / (2g), with guards.
+	if gravity_rising <= 0.0 or jump_velocity <= 0.0:
+		return 0.0
+	return (jump_velocity * jump_velocity) / (2.0 * gravity_rising)
