@@ -39,6 +39,19 @@ class_name ControllerProfile
 ## Variable jump cap: when jump is released early, vertical velocity is
 ## clamped to (jump_velocity * release_velocity_ratio).
 @export_range(0.1, 1.0, 0.01) var release_velocity_ratio: float = 0.45
+## Number of extra jumps available while airborne. 0 = disabled (default for
+## all profiles). 1 = classic double-jump. Resets on landing and whenever a
+## ground/coyote jump fires. Tunable per-profile from the dev menu.
+@export_range(0, 3, 1) var air_jumps: int = 0
+## Velocity multiplier for each air jump as a fraction of jump_velocity.
+## 1.0 = same initial speed as the ground jump; 0.8 = slightly weaker, which
+## creates a feel distinction between ground and air jumps.
+@export_range(0.3, 1.2, 0.05) var air_jump_velocity_multiplier: float = 0.8
+## Fraction of current horizontal velocity preserved at the moment an air
+## jump fires. 1.0 = full preservation (default — upholds the CLAUDE.md
+## preserved-horizontal-velocity invariant). Lower values let the air jump
+## act as a partial horizontal brake; 0.0 = full horizontal reset.
+@export_range(0.0, 1.0, 0.05) var air_jump_horizontal_preserve: float = 1.0
 
 @export_category("Slope")
 ## Max angle (degrees) the Stray treats as walkable ground.

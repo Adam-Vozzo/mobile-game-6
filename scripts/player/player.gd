@@ -42,6 +42,10 @@ var _last_fall_speed: float = 0.0
 var _impact_squash_scale: float = 0.5   # dev-menu tunable: 0–1
 var _jump_stretch_scale: float = 0.5    # dev-menu tunable: 0–1
 var _squash_tween: Tween = null
+# Air-jump counter. Seeded from profile.air_jumps on every grounded frame
+# (via _tick_timers) and on each ground/coyote jump (via _try_jump) so the
+# pool refills for the next aerial phase. Decremented per air jump.
+var _air_jumps_remaining: int = 0
 
 @onready var _visual: Node3D = $Visual
 @onready var _body_mesh: MeshInstance3D = $Visual/Body
@@ -119,6 +123,7 @@ func _tick_timers(delta: float, on_floor: bool) -> void:
 	if on_floor:
 		_coyote_timer = profile.coyote_time
 		_last_grounded_pos_y = global_position.y
+		_air_jumps_remaining = profile.air_jumps
 	else:
 		_coyote_timer = maxf(0.0, _coyote_timer - delta)
 		# Capture falling speed while airborne. On the just_landed frame, on_floor
@@ -200,6 +205,19 @@ func _try_jump() -> void:
 		velocity.y = profile.jump_velocity
 		_buffer_timer = 0.0
 		_coyote_timer = 0.0
+		# Refill the air-jump pool for the new aerial phase.
+		_air_jumps_remaining = profile.air_jumps
+		if DevMenu.is_juice_on(&"squash_stretch"):
+			_play_jump_stretch()
+		_spawn_jump_puff()
+	elif _buffer_timer > 0.0 and _air_jumps_remaining > 0:
+		velocity.y = profile.jump_velocity * profile.air_jump_velocity_multiplier
+		# Scale horizontal velocity at the moment of jump (1.0 = full preserve,
+		# 0.0 = full reset). Default 1.0 upholds the CLAUDE.md invariant.
+		velocity.x *= profile.air_jump_horizontal_preserve
+		velocity.z *= profile.air_jump_horizontal_preserve
+		_buffer_timer = 0.0
+		_air_jumps_remaining -= 1
 		if DevMenu.is_juice_on(&"squash_stretch"):
 			_play_jump_stretch()
 		_spawn_jump_puff()
@@ -262,6 +280,7 @@ func respawn() -> void:
 	# so without this they would still be "live" after a 0.5 s reboot sequence.
 	_buffer_timer = 0.0
 	_coyote_timer = 0.0
+	_air_jumps_remaining = 0
 	# Kill any running squash-stretch tween so it doesn't fight _run_reboot_effect.
 	if _squash_tween != null:
 		_squash_tween.kill()

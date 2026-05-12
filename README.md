@@ -5,10 +5,10 @@ A mobile 3D platformer. Brutalist megastructure inspired by *BLAME!*. Controller
 ## Status
 
 Current gate: **Gate 0 — Feel Lab** (closing out; Gate 1 prep in flight)
-Last activity: 2026-05-13 — iter 51 follow-ups (camera vertical-follow feel polish: smoothing, follow-falls, peak-jitter headroom)
+Last activity: 2026-05-12 — iter 52: double jump implementation
 Test device build: ✅ verified 2026-05-12 — runs in Godot 4.6 on PC and on Nothing Phone 4(a) Pro
 Performance: 144 fps / 6.9 ms in editor at 1920×1080 (Feel Lab); on-device frametimes TBD
-Throttle level: **RESET.** Next iteration: double jump implementation (top of `docs/PLAN.md` P0 queue).
+Throttle level: **1** (1 iteration since last human direction 2026-05-12). Next: Feel Lab expansion.
 
 If you only read one section, read **Open questions waiting on you** below.
 
@@ -83,6 +83,34 @@ Goal: store-ready build.
 The full iteration log lives here, newest first. Every iteration appends an entry. Skim the dates to find where you last left off.
 
 <!-- ITERATION ENTRIES BELOW — DO NOT REMOVE OLDER ENTRIES -->
+
+### [2026-05-12] — iter 52 — double jump implementation
+
+Branch: `claude/gifted-shannon-ynUKp`
+Throttle: 1 (normal)
+Gate: Gate 0 closing / Gate 1 prep
+
+**Primary: double jump mechanic — all three ControllerProfile params, player state machine, dev menu sliders, unit tests.**
+
+- **`ControllerProfile`**: three new `@export` props in the Jump category, all default off/neutral (backwards-compatible with existing `.tres` files):
+  - `air_jumps: int = 0` — number of extra airborne jumps (0 = off).
+  - `air_jump_velocity_multiplier: float = 0.8` — air jump initial velocity as a fraction of `jump_velocity`.
+  - `air_jump_horizontal_preserve: float = 1.0` — fraction of horizontal velocity retained at the air jump moment (1.0 = full preservation, upholds CLAUDE.md H-vel invariant).
+- **`player.gd`**: `_air_jumps_remaining: int` counter. Reset to `profile.air_jumps` on every grounded frame (in `_tick_timers`) and at each ground/coyote jump (in `_try_jump`) so the pool refills for the next aerial phase. Zeroed in `respawn()`. New `elif` branch in `_try_jump`: fires when `buffer > 0`, `coyote = 0`, `remaining > 0`; sets `velocity.y = jump_velocity × multiplier`, scales H-vel by preserve factor, decrements counter. Ground jump has priority (checked first).
+- **Dev menu**: three new sliders in "Controller — Jump" subsection: Air jumps (0–3), Air jump vel × (0.3–1.2), Air jump H pres. (0.0–1.0). Auto-synced by `_select_profile`.
+- **Unit tests**: `_test_double_jump_logic` — 17 assertions: 4 profile backwards-compat guards, multiplier/preserve defaults, velocity formula, branch priority, counter decrement, exhaustion guard, on-floor reset (2 cases). **Total: ~625 → ~642 assertions.**
+
+**Side quest:** none.
+
+**Perf:** no change — no new nodes, no new draw calls. Frametime delta: 0 (pure logic, no rendering).
+**Bugs fixed:** none.
+**New dev-menu controls:** Air jumps slider, Air jump vel × slider, Air jump H pres. slider (all in Controller — Jump).
+**Assets acquired:** none.
+**Research added:** none.
+
+**Needs human attention:**
+- **Double jump feel verdict needed on device.** All four profiles ship with `air_jumps = 0` (off). Enable via dev menu slider during play testing and report how many jumps feel right per profile. Also: does `air_jump_velocity_multiplier = 0.8` feel right, or should the air jump be stronger/weaker?
+- **`air_jump_horizontal_preserve`** is exposed but defaults to 1.0 (full preserve). Worth experimenting: Assisted at ~0.6 may give a "reset and reorient" feeling that aids air-error correction. No action needed yet — surfaced for awareness.
 
 ### [2026-05-13] — iter 51 follow-ups — camera vertical-follow feel polish
 
