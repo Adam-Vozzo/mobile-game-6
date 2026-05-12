@@ -725,7 +725,7 @@ func _test_horizontal_deceleration() -> void:
 		elif name == "momentum":
 			frames_momentum = frames
 
-	# Snappy: max_speed=6.5, ground_decel=90 → stops in ~5 frames.
+	# Snappy: max_speed=6.0, ground_decel=90 → stops in ~5 frames.
 	# Momentum: max_speed=11.0, ground_decel=30 → stops in ~23 frames.
 	# Momentum's "loose decel" design intent means it takes longer to stop.
 	if frames_snappy > 0 and frames_momentum > 0:
