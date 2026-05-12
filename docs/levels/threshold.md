@@ -1,7 +1,7 @@
 # Level Concept: "Threshold"
 
-> **Status: concept — awaiting human selection before greybox.**
-> This is one of three Gate 1 candidates. The human picks; Claude builds.
+> **Status: greybox built — `scenes/levels/threshold.tscn` (iter 55, 2026-05-12). On-device pending.**
+> Human-selected 2026-05-12 (iter 51 direction session).
 
 ---
 
@@ -125,6 +125,55 @@ In the industrial tier (Beat 3), two of the four gantry transitions have a direc
 - Service hatch prop (Threshold 1 — circular hatch, transition marker)
 
 ---
+
+## Greybox build notes (iter 55, 2026-05-12)
+
+### Final coordinate layout
+
+Level runs along the +Z axis. Y is vertical (positive = up). Player spawns at (0, 1, 0).
+
+| Zone | Y range | Z range | Notes |
+|------|---------|---------|-------|
+| Zone 1 — Habitation | y=0 (floor at −0.5) | z=0–36 | Ceiling y=3.15 (3.65 m gap) |
+| Drop through service hatch | y=0 → −5 | z=36 (at floor edge) | ~5 m descent, player falls forward ~2.5 m |
+| Zone 2 — Maintenance | y=−5.5 (floor) | z=37–68 | Ceiling y=−3.15 (2.35 m gap, intentionally oppressive) |
+| Alcove — Checkpoint | y=−5.5 (floor) | z=68–73 | Wide 4 m; amber OmniLight |
+| Zone 3 — Industrial | y=−5 → −20 (descending) | z=75–141 | Hall 28 m wide, ceiling 50 m above floor |
+| Terminal platform | y=−20.25 (surface) | z=131–139 | 12×0.5×8 m; WinStateTrigger BoxShape |
+
+### Gantry sequence (Zone 3)
+
+| Platform | Center Y (surface) | Center Z | Notes |
+|----------|--------------------|----------|-------|
+| Zone 2 exit / entry gantry | y=−5 | z=75 | Continuity from alcove |
+| G1 | y=−5.25 | z=81 | 8×0.5×4 m |
+| G2 | y=−9.25 | z=89 | 4 m descent, 8 m forward gap (edge-to-edge ~4 m) |
+| G3 | y=−13.25 | z=97 | same |
+| G4 | y=−17.25 | z=105 | same |
+| K1 | y=−17.75 | z=112 | Ketsu section begins |
+| K2 | y=−18.75 | z=119 | |
+| K3 | y=−19.75 | z=126 | |
+| Terminal | y=−20.25 | z=135 | |
+
+Jump physics (Snappy): apex ≈1.74 m, air time ≈0.52 s (flat). G→G jumps have 4 m descent
+which increases air time to ≈0.7 s (horizontal range ≈4.2 m), making the 4 m edge-to-edge
+gaps achievable. Double jump is available as a safety net.
+
+### Deviations from spec
+
+1. **Industrial press atmospheric-only.** Press at `(8, −12, 99)` — offset to x=8, not in
+   player path. Spec calls for press in critical path (Beat 3). Deferred to Gate 1 pass.
+   See DECISIONS.md 2026-05-12 ADR.
+2. **Zone 2 ceiling 2.35 m (not 1.8 m).** Spec says "1.8 m ceiling clips jump arc." Snappy
+   apex of 1.74 m fits within 2.35 m without physics clipping — achieves oppressive *feel*
+   without ceiling-collision punish. See DECISIONS.md 2026-05-12 ADR.
+3. **CameraHint stubs only.** Three hints placed (pull_back 2/3/5); camera_rig.gd does not
+   yet respond to them. Integration deferred to Gate 1.
+4. **No industrial conveyor belt.** Spec lists conveyor (slow continuous motion, surface
+   velocity). Omitted in greybox — Gate 1 pass item.
+5. **No service hatch prop.** Spec mentions a circular hatch geometry at Threshold 1. The
+   geometry transition is present (Zone 1 floor ends at z=36, Zone 2 starts at z=37 with a
+   5 m Y-drop) but no hatch prop is placed — Gate 1 art pass item.
 
 ## Notes for greybox
 

@@ -252,8 +252,8 @@ func _build_level_section(vbox: VBoxContainer) -> void:
 			Engine.time_scale = v
 			DevMenu.time_scale_changed.emit(v),
 		1.0)
-	vbox.add_child(_make_label("Teleport", SECTION_FONT_SIZE, false))
-	var _teleport_zones: Array[Dictionary] = [
+	vbox.add_child(_make_label("Teleport — Feel Lab", SECTION_FONT_SIZE, false))
+	var _feel_lab_zones: Array[Dictionary] = [
 		{"label": "Spawn",          "pos": Vector3(0, 1, 0)},
 		{"label": "Platforms (P1)", "pos": Vector3(4, 2, 0)},
 		{"label": "HA1 (tier 1.5m)","pos": Vector3(28, 2.0, -8)},
@@ -265,7 +265,27 @@ func _build_level_section(vbox: VBoxContainer) -> void:
 		{"label": "Drop ledge",     "pos": Vector3(0, 4.0, 19)},
 		{"label": "Moving plat.",   "pos": Vector3(-2, 2, 12)},
 	]
-	for zone: Dictionary in _teleport_zones:
+	for zone: Dictionary in _feel_lab_zones:
+		var lbl: String = zone["label"]
+		var pos: Vector3 = zone["pos"]
+		_make_button(vbox, "→ " + lbl, func() -> void: _teleport_player(pos))
+
+	vbox.add_child(_make_label("Teleport — Threshold", SECTION_FONT_SIZE, false))
+	var _threshold_zones: Array[Dictionary] = [
+		{"label": "Spawn",           "pos": Vector3(0, 1, 0)},
+		{"label": "Hab corridor",    "pos": Vector3(0, 0.5, 6)},
+		{"label": "Hab shelves",     "pos": Vector3(0, 2.0, 23)},
+		{"label": "Hab exit",        "pos": Vector3(0, 0.5, 33)},
+		{"label": "Maint. entry",    "pos": Vector3(0, -4.5, 43)},
+		{"label": "Service cart",    "pos": Vector3(0, -4.5, 49)},
+		{"label": "Maint. arm",      "pos": Vector3(0, -4.5, 57)},
+		{"label": "Checkpoint",      "pos": Vector3(0, -4.5, 70)},
+		{"label": "Gantries G1",     "pos": Vector3(0, -5.25, 80)},
+		{"label": "Gantries G4",     "pos": Vector3(0, -17.25, 104)},
+		{"label": "Ketsu K1",        "pos": Vector3(0, -17.75, 112)},
+		{"label": "Terminal",        "pos": Vector3(0, -20.25, 133)},
+	]
+	for zone: Dictionary in _threshold_zones:
 		var lbl: String = zone["label"]
 		var pos: Vector3 = zone["pos"]
 		_make_button(vbox, "→ " + lbl, func() -> void: _teleport_player(pos))

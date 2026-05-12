@@ -940,6 +940,116 @@ equivalent to `_eff_y_split` when both anchor arguments match. PR #67's
 reference smoothing, PR #68's track-down on falls, PR #69's apex-band
 headroom all compose unchanged on top of this split.
 
+## 2026-05-12 — Threshold: industrial press atmospheric-only for greybox
+
+Status: accepted (Gate 1 pass item — will be revisited)
+Context: The `threshold.md` spec calls for one industrial press hazard on the critical path
+in Zone 3 (Beat 3). During greybox construction, placing a moving press hazard directly in
+the player's Z-axis path introduced too many design variables simultaneously: press period,
+player corridor width, timing window legibility, and interaction with the gantry jump
+sequence all need calibration against device feel. Adding a mandatory timed hazard to an
+uncalibrated jump sequence could make the level frustrating before any part of it is fun.
+Decision: `IndustrialPress` (`AnimatableBody3D`, 14×4×5 m, travel=(0,−5,0), period=5s) is
+placed at `(8, −12, 99)` — offset 8 m to the side of the player's primary traversal axis
+(z-corridor centred at x=0). At this position the press is visible and atmospheric (period
+motion reads in peripheral vision), but the player cannot collide with it on the default
+path. No `HazardBody` child is needed in this configuration. The critical path through Zone
+3 is gantry G1–G4 + Ketsu K1–K3 + Terminal, all along x=0.
+Alternatives considered:
+- Place press in-path with a generous timing window. Rejected: the timing window can't
+  be calibrated without device feel — a "generous" window designed blind is often either
+  trivial (players run through without thinking) or invisible (players don't see the
+  telegraph). Greybox should isolate the jump-sequence variable first.
+- Omit the press entirely. Rejected: the press is specified in `threshold.md` as the
+  Zone 3 atmosphere mechanic; removing it entirely loses the "active machinery" reading
+  of the industrial tier.
+Consequences: Gate 1 pass will reposition the press into the critical path after the
+gantry sequence is confirmed playable on device. At that point add a `HazardBody` child
+and tune the period for a 2 s minimum telegraph window per `threshold.md`'s spec.
+
+## 2026-05-12 — fall_kill_y: all profiles −25 → −35
+
+Status: accepted
+Context: The Threshold level's terminal platform is at y=−20. With `fall_kill_y = −25.0`
+on all profiles, a player falling off the terminal platform respawns after 5 m of descent
+— too shallow for an industrial-scale void to read as meaningful depth. The habitation
+zone (y=0) and maintenance buffer (y=−5) are fine at −25, but Zone 3 descends to y=−20
+and the void must extend beyond the screen's visible depth to feel bottomless.
+Decision: Update all four controller profiles (`snappy.tres`, `floaty.tres`,
+`momentum.tres`, `assisted.tres`) from `fall_kill_y = −25.0` to `fall_kill_y = −35.0`.
+This gives 15 m of void below the terminal platform before respawn — enough to see the
+`IndustrialFloorVisual` MeshInstance3D (at y=−30.5) during a fall before respawning.
+That visual is pure decorative geometry (no physics — `IndustrialFloorVisual` is a plain
+`MeshInstance3D`, not a `StaticBody3D` child). The player never lands on it; it reads as
+a floor far below, reinforcing the industrial-scale reading of Zone 3.
+Alternatives considered:
+- Leave at −25 and make the terminal platform higher. Rejected: would require raising
+  the entire Zone 3 Y-stack, conflicting with the 4 m × 4-step gantry descent physics.
+- Set −35 only on the level root (not in the profiles). Rejected: no per-level override
+  mechanism exists yet (profiles are the only source of truth for this param).
+- Set −50 for extra depth. Rejected: at 30 m of fall before respawn, the reboot
+  animation plays for an uncomfortable duration (0.5 s reboot + fall time = >1 s
+  before resuming play on a bottom-of-level fall). 15 m below terminal = ~0.55 s fall
+  at terminal velocity, keeping the respawn within the 1 s felt-responsiveness window.
+Consequences: All existing feel-lab tests are unaffected (Feel Lab platforms are at
+y=0 and y=0 to +8.25 m; a fall off the highest platform still respawns at ≈−8 m
+which is above −35). `_test_respawn_params` assertions for `fall_kill_y` sign/range
+remain valid (the test only checks sign and rough range, not exact value).
+
+## 2026-05-12 — CameraHint: Area3D stub; camera_rig.gd integration deferred to Gate 1
+
+Status: accepted
+Context: `docs/LEVEL_DESIGN.md` and `threshold.md` call for `CameraHint` nodes at three
+beat markers to pull the camera back and frame the scene. `camera_rig.gd` currently has
+no logic to query or respond to these nodes.
+Decision: Implement `CameraHint` as an `Area3D` stub (`scripts/levels/camera_hint.gd`).
+The script adds itself to the `"camera_hints"` group in `_ready()`, exports
+`pull_back_amount` and `blend_time`, and exposes `is_player_inside()` (iterates
+`get_overlapping_bodies()` for a `Player` match). Three `CameraHint` nodes are placed in
+the Threshold scene at the three spec beats (habitation intro pull_back=2, checkpoint
+alcove pull_back=3, terminal pull_back=5). The camera rig does NOT query them yet —
+they are authoring scaffolding only.
+Gate 1 implementation: `camera_rig.gd::_process` will query the `"camera_hints"` group
+each frame, find any hint where `is_player_inside()` is true, and lerp `distance` toward
+`desired_distance + pull_back_amount` over `blend_time` seconds. This is deferred because
+(a) the camera feel must be stable before adding blend-distance state, and (b) the hint
+positions need to be tuned against the actual greybox geometry on device.
+Alternatives considered:
+- Implement the camera-rig query now. Rejected: premature — cannot calibrate hint
+  pull_back values before seeing the level on device. Stub is sufficient for authoring.
+- Use a different signal / callback approach. Rejected: group query is idiomatic for
+  "how many of these exist in the scene" queries; no node reference management needed.
+Consequences: `CameraHint.gd` is live but passive. Authoring the three hints in the
+Threshold scene now means the Gate 1 pass only needs to add logic to `camera_rig.gd`,
+not touch the level scene again.
+
+## 2026-05-12 — Threshold Zone 2 ceiling height: 2.35 m (deliberately oppressive)
+
+Status: accepted
+Context: `threshold.md` specifies "1.8 m ceiling means the Stray's jump arc clips the
+ceiling if they jump at full height — crouch the ceiling on purpose. This is oppressive
+by design." The Stray's player capsule is ~1.46 m tall. With `jump_velocity = 11.5 m/s`
+and `gravity_rising = 38 m/s²`, Snappy's analytic apex is ≈1.74 m above takeoff.
+Decision: Set Zone 2 floor at y=−5.5 and ceiling at y=−3.15, giving a physical gap of
+2.35 m. The Stray's apex (1.74 m) fits within the 2.35 m gap — the player can full-jump
+without physics clipping — but the visual ceiling is only 0.89 m above the capsule top
+at rest, making it feel claustrophobically low. This matches the design intent ("oppressive
+by design") without requiring a ceiling-clip mechanic. The Wall/Ceiling nodes are
+`StaticBody3D` with BoxShape, so they are genuine physics surfaces: a player who
+manages to push the capsule against the ceiling (e.g. with a double jump near a wall)
+will experience a slide, not a clip-through.
+Alternatives considered:
+- Strict 1.8 m ceiling (1.3 m above capsule). Would cause the capsule to collide
+  with the ceiling on full jump — not implemented because clipping punishes exploration
+  on a first level and Jolt's capsule-ceiling resolution can cause unexpected horizontal
+  deflection that feels unfair. The spec's intent is "feeling" oppressive, not
+  mechanically punishing overhead.
+- 2 m ceiling (flat number). Rejected in favour of the physics-derived 2.35 m which
+  gives exactly spec_intent_height = apex + small_clearance without arbitrary magic numbers.
+Consequences: Zone 2 ceiling at y=−3.15 is documented here; level authors should not
+raise it above −2.5 (which would lose the oppressive reading) or lower it below
+`floor_y + player_capsule_height + 0.1` (which would block standing).
+
 ## 2026-05-12 — Snappy reboot_duration stays at 0.5 s
 
 Status: accepted (closes out the `level_design_references.md` recommendation)

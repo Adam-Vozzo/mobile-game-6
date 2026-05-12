@@ -18,5 +18,5 @@ coyote_time = 0.18
 jump_buffer = 0.20
 release_velocity_ratio = 0.30
 max_floor_angle_degrees = 55.0
-fall_kill_y = -25.0
+fall_kill_y = -35.0
 reboot_duration = 0.5
