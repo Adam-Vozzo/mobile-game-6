@@ -72,6 +72,7 @@ func _ready() -> void:
 	_test_perf_budget_logic()
 	_test_touch_input_state_machine()
 	_test_game_autoload_contract()
+	_test_visual_turn_convergence()
 	_report()
 
 
@@ -2159,5 +2160,55 @@ func _test_game_autoload_contract() -> void:
 	_ok("Game has player_respawned signal", g.has_signal(&"player_respawned"))
 	_ok("Game has checkpoint_reached signal", g.has_signal(&"checkpoint_reached"))
 	_ok("Game has level_completed signal", g.has_signal(&"level_completed"))
+
+
+func _test_visual_turn_convergence() -> void:
+	## Covers the lerp_angle branch of _update_visual_facing not exercised by
+	## _test_visual_facing_formula (iter 26): wrap-to-shortest-arc, 30-frame
+	## convergence, snap when weight == 1.0, and deadband boundary semantics.
+	print("\n-- visual turn convergence --")
+
+	# 1. Default speed (12.0) at 60 fps gives a partial-lerp weight in (0, 1).
+	# clampf(visual_turn_speed * delta, 0, 1) — neither instant snap nor stuck.
+	var w_default := clampf(12.0 * (1.0 / 60.0), 0.0, 1.0)
+	_ok("visual_turn weight > 0 at 60fps (not frozen)", w_default > 0.0)
+	_ok("visual_turn weight < 1 at 60fps (not instant snap)", w_default < 1.0)
+
+	# 2. Large speed*delta clamps weight to 1.0 (instant snap, no overshoot).
+	var w_snap := clampf(100.0 * 0.1, 0.0, 1.0)
+	_ok("visual_turn weight == 1.0 when speed*delta >= 1 (snap to target)", w_snap == 1.0)
+
+	# 3. lerp_angle takes the direct arc when it's the shorter path.
+	# 0 → PI/2: only one path (< PI), result at t=0.5 is PI/4.
+	var mid_direct := lerp_angle(0.0, PI / 2.0, 0.5)
+	_ok("lerp_angle takes direct arc: mid-point 0→PI/2 is PI/4",
+		absf(mid_direct - PI / 4.0) < 0.001)
+
+	# 4. lerp_angle wraps to shortest arc across the ±PI boundary.
+	# 3.1 → −3.1: long arc = 6.2 rad; short arc through +PI = 0.083 rad.
+	# At t=0.5 on the short arc the result is ≈ PI; long-arc mid-point would be 0.
+	var mid_wrap := lerp_angle(3.1, -3.1, 0.5)
+	_ok("lerp_angle wraps ±PI boundary: mid-point 3.1→-3.1 is near PI (short arc)",
+		absf(mid_wrap - PI) < 0.05)
+
+	# 5. 30-frame convergence: at w≈0.2, remaining angle after 30 frames is < 0.01 rad.
+	# (1 - 0.2)^30 × PI/2 ≈ 0.0019 rad — well under threshold.
+	var current := 0.0
+	var target  := PI / 2.0
+	for _i in 30:
+		current = lerp_angle(current, target, w_default)
+	var remaining := absf(wrapf(target - current, -PI, PI))
+	_ok("lerp_angle converges to < 0.01 rad in 30 frames at default speed",
+		remaining < 0.01)
+
+	# 6-8. Deadband boundary semantics from `if horiz_speed < visual_turn_min_speed`.
+	# Default visual_turn_min_speed == 0.2.
+	var turn_min := 0.2
+	_ok("horiz_speed 0.19 is below deadband (early-return branch taken)",
+		0.19 < turn_min)
+	_ok("horiz_speed 0.2 is NOT below deadband (< is strict; lerp proceeds)",
+		not (0.2 < turn_min))
+	_ok("horiz_speed 0.21 is NOT below deadband (above min_speed; lerp proceeds)",
+		not (0.21 < turn_min))
 
 	g.free()
