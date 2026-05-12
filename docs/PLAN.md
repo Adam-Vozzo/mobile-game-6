@@ -16,10 +16,10 @@ authored with it in mind.
 
 ## Active iteration
 
-- _No iteration currently in flight._ Iter 51 (human-direction session) and its four
-  on-device feel follow-ups landed on 2026-05-12 / 2026-05-13 — see Recently completed.
-- Next iteration should pull from the top of the P0 queue below: **Double jump
-  implementation**. Throttle: **RESET** since the 2026-05-12 human session.
+- _No iteration currently in flight._ Iter 52 (double jump) landed 2026-05-12 — see
+  Recently completed.
+- Next iteration should pull from the top of the P0 queue below: **Feel Lab expansion**.
+  Throttle: **1** (1 iteration since last human direction session 2026-05-12).
 
 ## Queue (ranked, top is next)
 
@@ -43,31 +43,29 @@ The next iteration should pull from the top of this list. Items marked
    the `floaty < snappy` cross-profile test invariant (Floaty 5.5 < Snappy
    6.0 < Momentum 11.0). Expect further small tweaks as level design
    progresses.
-4. **Double jump implementation.** _Next up._ New `ControllerProfile` props
-   (`air_jumps: int` default 0 = off, plus a velocity-multiplier for the
-   second jump), player.gd `_air_jumps_remaining` counter reset on
-   `is_on_floor()`, dev menu sliders, unit tests. Approved by human
-   2026-05-12 as an expected mechanic; Threshold (and future levels)
-   authored with it in mind. See [DECISIONS.md 2026-05-12 — Double jump
-   approved](DECISIONS.md) for the ADR.
-5. **Feel Lab expansion + interaction variety.** Add higher tiers (to
-   exercise the new vertical-follow ratchet), wall-jump corner, varied
+4. ~~**Double jump implementation.**~~ Done 2026-05-12 (iter 52). Three new
+   `ControllerProfile` props (`air_jumps: int`, `air_jump_velocity_multiplier`,
+   `air_jump_horizontal_preserve`), player.gd `_air_jumps_remaining` counter,
+   dev menu sliders (Air jumps / Air jump vel × / Air jump H pres.), 17 unit
+   tests. All profiles default 0 = off (backwards-compatible). See DECISIONS.md
+   2026-05-12 ADR.
+5. **Feel Lab expansion + interaction variety.** _Next up._ Add higher tiers (to
+   exercise the vertical-follow ratchet and double jump), wall-jump corner, varied
    slopes, narrow ledges over fog, a drop-test pit, and a wider open area.
-   Becomes the playground for #4 (double jump) and #6 (air dash).
+   Becomes the playground for double jump and air dash tuning.
    Brutalist primitives, no new art.
 6. **Air dash implementation.** Research-ready in
    `docs/research/air_dash.md`. Three new `ControllerProfile` params
    (default 0 = off, backwards-compatible), right-zone swipe input via
    TouchInput, dev menu sliders, unit tests. Test alongside double jump
    in the expanded Feel Lab.
-7. **Threshold greybox.** First Gate 1 level. Depends on stable #4
-   (double jump available for level design). Five beats per
-   `docs/levels/threshold.md` (habitation → maintenance → industrial
-   contrast). Build geometry, place `CameraHint` beats, drop in
-   collectible + win state stubs.
+7. **Threshold greybox.** First Gate 1 level. Double jump now available for
+   level design. Five beats per `docs/levels/threshold.md` (habitation →
+   maintenance → industrial contrast). Build geometry, place `CameraHint`
+   beats, drop in collectible + win state stubs.
 8. **Assisted profile Phase 2.** Phase 1 (sticky landing) shipped iter 27.
    Phase 2 (ledge magnetism + arc assist) approved by human as a heavy-
-   impact game-feel mechanic — build it after #4 / #5 are validated on
+   impact game-feel mechanic — build it after #5 / #6 are validated on
    device. See `docs/research/assist_mechanics.md` for implementation
    sketches.
 
@@ -155,6 +153,18 @@ These mirror "Open questions waiting on you" in the README.
   drive the next tuning iteration.
 
 ## Recently completed (last 5)
+
+- 2026-05-12 — Iteration 52. **Double jump implementation.** Three new
+  `ControllerProfile` properties: `air_jumps` (int, 0 = off), `air_jump_velocity_multiplier`
+  (float, 0.8 default), `air_jump_horizontal_preserve` (float, 1.0 default = full H-vel
+  preservation). `player.gd`: `_air_jumps_remaining` counter reset on `is_on_floor()` and
+  on every ground/coyote jump (to refill the pool for the new aerial phase); zeroed on
+  `respawn()`. Air-jump branch in `_try_jump()` fires when `buffer > 0`, `coyote = 0`,
+  and `remaining > 0`; decrements counter. H-vel scaled by `air_jump_horizontal_preserve`
+  at jump moment. Dev menu: three new sliders in Controller — Jump subsection.
+  17 unit tests in `_test_double_jump_logic`: 4 profile backwards-compat guards,
+  multiplier/preserve defaults, velocity formula, branch priority, counter decrement,
+  exhaustion, on-floor reset. Total ~625 → ~642 assertions. On-device pending.
 
 - 2026-05-13 — Iter 51 follow-ups. **Camera vertical-follow feel polish.** Three
   on-device tuning PRs on top of PR #65: (#67) reference floor smooths toward

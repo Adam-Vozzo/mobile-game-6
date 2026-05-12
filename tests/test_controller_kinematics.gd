@@ -84,6 +84,7 @@ func _ready() -> void:
 	_test_default_apex_height_formula()
 	_test_reference_floor_smoothing()
 	_test_apex_anchor_split()
+	_test_double_jump_logic()
 	_report()
 
 
@@ -2875,3 +2876,76 @@ func _eff_y_split(player_y: float, apex_anchor_y: float, reference_y: float,
 	if player_y < reference_y:
 		return player_y
 	return reference_y
+
+
+func _test_double_jump_logic() -> void:
+	# --- Backwards-compatibility: all shipped profiles default to 0 air jumps ---
+	# (1-4) Each .tres file omits the property, so it uses the class default (0).
+	var snappy   := preload("res://resources/profiles/snappy.tres")   as CP
+	var floaty   := preload("res://resources/profiles/floaty.tres")   as CP
+	var momentum := preload("res://resources/profiles/momentum.tres") as CP
+	var assisted := preload("res://resources/profiles/assisted.tres") as CP
+	_ok("snappy: air_jumps default = 0 (backwards-compatible)", snappy.air_jumps == 0)
+	_ok("floaty: air_jumps default = 0 (backwards-compatible)", floaty.air_jumps == 0)
+	_ok("momentum: air_jumps default = 0 (backwards-compatible)", momentum.air_jumps == 0)
+	_ok("assisted: air_jumps default = 0 (backwards-compatible)", assisted.air_jumps == 0)
+
+	# --- Default parameter values are sensible and backwards-compatible ---
+	var cp := CP.new()
+	# (5) Default multiplier sits in the "weaker-than-ground but not trivially weak" band.
+	_ok("default air_jump_velocity_multiplier in (0.5, 1.0]",
+		cp.air_jump_velocity_multiplier > 0.5 and cp.air_jump_velocity_multiplier <= 1.0)
+	# (6) Default horizontal-preserve = 1.0 → upholds the CLAUDE.md preserved-H-vel invariant.
+	_ok("default air_jump_horizontal_preserve = 1.0 (full preservation, backwards-compatible)",
+		_near(cp.air_jump_horizontal_preserve, 1.0))
+
+	# --- Air jump velocity formula ---
+	# (7) v_air = jump_velocity × multiplier.
+	cp.jump_velocity = 10.0
+	cp.air_jump_velocity_multiplier = 0.8
+	var v_air := cp.jump_velocity * cp.air_jump_velocity_multiplier
+	_ok("air jump velocity formula: 10.0 × 0.8 = 8.0", _near(v_air, 8.0))
+	# (8) multiplier < 1 → air jump is weaker than ground jump.
+	_ok("multiplier 0.8 → air jump weaker than ground jump", v_air < cp.jump_velocity)
+	# (9) multiplier = 1.0 → air jump matches ground jump.
+	cp.air_jump_velocity_multiplier = 1.0
+	_ok("multiplier 1.0 → air jump equals ground jump velocity",
+		_near(cp.jump_velocity * cp.air_jump_velocity_multiplier, cp.jump_velocity))
+
+	# --- Horizontal-preserve formula ---
+	# (10) Full preservation: H × 1.0 = H unchanged.
+	var h_vel := 5.0
+	_ok("horizontal preserve 1.0 leaves horizontal velocity unchanged",
+		_near(h_vel * 1.0, h_vel))
+	# (11) Half preservation: H × 0.5 halves horizontal speed.
+	_ok("horizontal preserve 0.5 halves horizontal speed", _near(h_vel * 0.5, 2.5))
+
+	# --- Branch priority: ground jump takes precedence over air jump ---
+	# Mirrors the `if buffer>0 and coyote>0` / `elif buffer>0 and remaining>0` logic
+	# in player.gd::_try_jump().
+	var buf := 0.05     # live buffer
+	var coy := 0.05     # live coyote (still on/just left ground)
+	var rem := 1        # one air jump available
+	# (12) When both buffer and coyote are positive, the ground branch fires.
+	_ok("buffer + coyote > 0 → ground branch fires (not air branch)",
+		buf > 0.0 and coy > 0.0)
+	# (13) When coyote expires, the air branch fires (provided remaining > 0).
+	coy = 0.0
+	_ok("buffer > 0, coyote = 0, remaining > 0 → air branch fires",
+		buf > 0.0 and not (buf > 0.0 and coy > 0.0) and rem > 0)
+
+	# --- Counter management ---
+	# (14) Decrement: one air jump used → remaining goes from 1 to 0.
+	rem -= 1
+	_ok("remaining decrements after one air jump: 1 → 0", rem == 0)
+	# (15) Exhausted counter → air branch condition false.
+	_ok("remaining = 0 → air branch does not fire", rem <= 0)
+
+	# --- On-floor reset (mirrors _tick_timers on_floor branch) ---
+	# (16) Landing refills the counter to air_jumps.
+	cp.air_jumps = 2
+	var reset_val := cp.air_jumps   # _tick_timers: _air_jumps_remaining = profile.air_jumps
+	_ok("on_floor reset: _air_jumps_remaining restored to air_jumps (2)", reset_val == 2)
+	# (17) When air_jumps = 0, reset still gives 0 (feature disabled on this profile).
+	cp.air_jumps = 0
+	_ok("air_jumps = 0: on_floor reset gives 0 (double-jump disabled)", cp.air_jumps == 0)

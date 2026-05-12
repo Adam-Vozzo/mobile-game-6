@@ -172,6 +172,12 @@ func _build_controller_jump(vbox: VBoxContainer) -> void:
 		"Buffer (s)",         0.0,    0.3,  0.005, &"jump_buffer")
 	_profile_sliders[&"release_velocity_ratio"] = _make_profile_slider(vbox,
 		"Release ratio",      0.1,    1.0,  0.01, &"release_velocity_ratio")
+	_profile_sliders[&"air_jumps"] = _make_profile_slider(vbox,
+		"Air jumps",          0.0,    3.0,  1.0,  &"air_jumps")
+	_profile_sliders[&"air_jump_velocity_multiplier"] = _make_profile_slider(vbox,
+		"Air jump vel ×",     0.3,    1.2,  0.05, &"air_jump_velocity_multiplier")
+	_profile_sliders[&"air_jump_horizontal_preserve"] = _make_profile_slider(vbox,
+		"Air jump H pres.",   0.0,    1.0,  0.05, &"air_jump_horizontal_preserve")
 
 
 
