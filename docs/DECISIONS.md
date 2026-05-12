@@ -623,6 +623,63 @@ jump implementation does not need to know about this — air jumps that
 exceed the apex band still lift the camera via the ratchet's player.y-
 tracking branch (no reference update mid-jump, by design).
 
+## 2026-05-13 — Camera follows the fall (track Y below reference floor)
+
+Status: accepted (refines the 2026-05-12 vertical-follow ratchet)
+Context: After the reference-floor smoothing fix landed (PR #67), on-device
+feedback surfaced another asymmetry: when the player starts falling onto
+lower ground, the camera waits for them to touch the new floor before
+moving. While airborne, `_reference_floor_y` is held (correct — we don't
+want jumps to lift the camera under apex) and `_compute_effective_y`
+returned `reference_floor_y` whenever `player.y` was below the apex band.
+That covers normal jumps (player.y between reference and apex) but treats
+falls below the reference identically, so the camera stayed pinned to the
+old tier while the player dropped through the frame. On a deep drop the
+player exits the bottom of the frame before the camera catches up.
+Decision: Extend `_compute_effective_y` with a third regime — when
+`player.y < reference_floor_y`, return `player.y`. The camera now tracks
+the descent 1:1 the instant the player drops below the held floor (walking
+off a ledge, falling into a pit, descending past the ledge after a jump).
+The existing position lerp on top still smooths the actual camera motion;
+this change makes the *target* descend, so the camera follows.
+The above-apex track-up branch is untouched. The held band (reference ≤
+player.y ≤ apex_y) is also untouched — normal jumps still don't move the
+camera. The check at the lower boundary is strict `<` so a player landed
+exactly at reference stays in the held branch (no one-frame hold/track
+oscillation when resting on the floor).
+`_conditional_fall_offset` is extended in parallel: vertical-pull now
+fires whenever the camera is in *any* Y-tracking regime (above apex OR
+below reference). Inside the held band fall-pull stays disabled — pulling
+the camera below the pinned floor there would re-introduce the vertical
+motion the ratchet removes.
+Alternatives considered:
+- Only track down when velocity.y < 0 (i.e. the player is actively falling
+  rather than just standing below their reference). Rejected: requires
+  threading velocity through one more code path for negligible benefit —
+  the rare case where the player is below reference and moving upward
+  (e.g. jumping back toward the ledge they fell from) lasts a fraction
+  of a second and the smoothed asymptotic catch-up looks the same either
+  way; "below reference → track" is the simpler invariant.
+- Add a "drop look-ahead" — track at `player.y - some_offset` so the
+  camera leads the fall. Rejected: `vertical_pull` already handles the
+  "see what's below" intent via the now-enabled fall_offset; introducing
+  a second mechanism would duplicate that and conflict with manual drag.
+- Wait until player.y drops below `reference - threshold` (e.g. 0.5 m)
+  before triggering. Rejected: introduces a dead-band that would either
+  feel sticky (camera lags small drops) or be silently invisible
+  (thresholds below the typical "fall" speed are never reached before
+  the player is already deep into the descent).
+Consequences: One added branch in `_compute_effective_y`, parallel branch
+in `_conditional_fall_offset`. 9 new test assertions in
+`_test_vertical_follow_ratchet` covering the below-reference regime
+(small drop tracking, deep drop, descent from non-zero reference, descent
+into negative Y, boundary strictness, continuity at the reference
+boundary, monotonicity + 1:1 rate below reference). Composition with the
+2026-05-12 ratchet, 2026-05-13 reference-floor smoothing, and the
+asymmetric position lerp is unchanged — only the *target* the camera
+chases has a new branch; the smoothing layers downstream apply
+identically.
+
 ## 2026-05-12 — Snappy reboot_duration stays at 0.5 s
 
 Status: accepted (closes out the `level_design_references.md` recommendation)
