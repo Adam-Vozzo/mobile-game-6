@@ -5,10 +5,10 @@ A mobile 3D platformer. Brutalist megastructure inspired by *BLAME!*. Controller
 ## Status
 
 Current gate: **Gate 0 — Feel Lab**
-Last iteration: 2026-05-11 — iter 42: moving platform triangle-wave tests + camera pub-yaw formula tests (452 assertions)
+Last iteration: 2026-05-12 — iter 43: jump arc geometry tests + profile timing window tests (475 assertions)
 Test device build: not yet — hand-authored scenes pending first Godot 4.6 import; see Open questions
 Performance: not yet measured on Nothing Phone 4(a) Pro
-Throttle level: **HARD (18 autonomous iterations since 2026-05-11 human session).** Next iterations are hardening only unless human provides direction.
+Throttle level: **HARD (19 autonomous iterations since 2026-05-11 human session).** Next iterations are hardening only unless human provides direction.
 
 If you only read one section, read **Open questions waiting on you** below.
 
@@ -101,6 +101,20 @@ Goal: store-ready build.
 The full iteration log lives here, newest first. Every iteration appends an entry. Skim the dates to find where you last left off.
 
 <!-- ITERATION ENTRIES BELOW — DO NOT REMOVE OLDER ENTRIES -->
+
+### [2026-05-12] — `claude/gifted-shannon-5IJTD` — iter 43: jump arc geometry tests + profile timing window tests
+
+- **Throttle: HARD (19 autonomous iterations since 2026-05-11 human session).** Hardening only: tests. No behaviour change.
+- **Primary: `_test_jump_arc_geometry`** (11 assertions) — two design-contract invariants untested despite 452 total assertions:
+  - `t_apex = jump_velocity / gravity_rising` in [0.15, 0.90] s per profile — catches gravity/velocity mismatch that would produce a jittery or Flappy-Bird-style arc.
+  - `terminal_velocity > max_speed` per profile — documents that falling is always faster than running (depth-perception hierarchy).
+  - Cross-profile ordering: Floaty t_apex > Snappy, Floaty t_apex > Momentum, Momentum t_apex > Snappy — captures the full arc-forgivingness chain.
+- **Side quest: `_test_profile_timing_windows`** (12 assertions) — coyote/buffer design-envelope and ordering chain:
+  - All 4 profiles: `coyote_time` and `jump_buffer` in [0.05, 0.30] s.
+  - Full ordering chain: Floaty ≥ Snappy ≥ Momentum for both coyote and buffer (Assisted ≥ Floaty was already in `_test_assisted_params`).
+- **Total assertions: 452 → 475.**
+- **Perf:** no runtime changes. No new dev-menu controls. No new assets.
+- **Needs human attention:** still waiting on first Godot 4.6 import + on-device run. 19 iterations at HARD throttle. All P0 items blocked on device. See Open questions below.
 
 ### [2026-05-11] — `claude/gifted-shannon-BOpz7` — iter 42: moving platform triangle-wave tests + camera pub-yaw formula tests
 

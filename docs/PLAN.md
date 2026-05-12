@@ -14,15 +14,15 @@ instrumented and tunable.
 
 ## Active iteration
 
-- Branch: `claude/gifted-shannon-BOpz7`
-- Focus: iter 42. **Moving platform triangle-wave tests + camera pub-yaw formula tests.**
-  `_test_moving_platform_math` (8 assertions) — fmod phase normalization, triangle-wave
-  shape (peak at 0.5, zero at 0 and 1), symmetry (triangle(0.25)==triangle(0.75)), smoothstep
-  S-curve slower than linear at start, smoothstep midpoint == 0.5.
-  `_test_camera_pub_yaw_formula` (8 assertions) — atan2(cam.x−player.x, cam.z−player.z)
-  cardinal directions (four: 0, π/2, ±π, −π/2), diagonal in first quadrant, Y-independence,
-  distance-independence, four cardinals each π/2 apart.
-  Total: 436 → 452 assertions. Throttle: HARD (18 autonomous iterations).
+- Branch: `claude/gifted-shannon-5IJTD`
+- Focus: iter 43. **Jump arc geometry tests + profile timing window tests.**
+  `_test_jump_arc_geometry` (11 assertions) — t_apex = jump_velocity/gravity_rising in
+  [0.15, 0.90] s per profile; terminal_velocity > max_speed per profile; cross-profile
+  arc ordering (Floaty > Snappy, Floaty > Momentum, Momentum > Snappy for t_apex).
+  `_test_profile_timing_windows` (12 assertions) — coyote_time and jump_buffer in
+  [0.05, 0.30] s per profile; full ordering chain Floaty ≥ Snappy ≥ Momentum for both
+  coyote and buffer.
+  Total: 452 → 475 assertions. Throttle: HARD (19 autonomous iterations).
 
 ## Queue (ranked, top is next)
 
@@ -155,6 +155,14 @@ These mirror "Open questions waiting on you" in the README.
   (Per CLAUDE.md: level concept selection is a human call.)
 
 ## Recently completed (last 5)
+
+- 2026-05-12 — Iteration 43. **Jump arc geometry tests + profile timing window tests.**
+  `_test_jump_arc_geometry` (11 assertions): t_apex = jump_velocity/gravity_rising in [0.15,0.90] s
+  per profile (4); terminal_velocity > max_speed per profile (4); cross-profile arc ordering:
+  Floaty t_apex > Snappy, Floaty > Momentum, Momentum > Snappy (3).
+  `_test_profile_timing_windows` (12 assertions): coyote_time and jump_buffer in [0.05,0.30] s
+  per profile (8); Floaty coyote ≥ Snappy coyote, Snappy ≥ Momentum (2); same for jump_buffer (2).
+  Total: 452 → 475 assertions. Throttle: HARD (19 iterations since human session).
 
 - 2026-05-11 — Iteration 42. **Moving platform triangle-wave tests + camera pub-yaw formula tests.**
   `_test_moving_platform_math` (8 assertions): fmod phase normalization (t=0/half/full-period),
