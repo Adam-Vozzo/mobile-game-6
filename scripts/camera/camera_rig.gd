@@ -290,11 +290,19 @@ func _update_reference_floor(player_y: float, on_floor: bool, delta: float) -> v
 	_reference_floor_y = lerpf(_reference_floor_y, player_y, t)
 
 
-# Vertical-follow ratchet: returns the Y the camera should track. Below the
-# apex band the camera holds at reference_floor_y; above it, the camera
-# tracks (player.y - apex_height) so the player sits roughly one apex-height
-# below the camera's natural baseline once they've cleared the threshold —
-# i.e. the camera lifts at the same rate as the player above apex.
+# Vertical-follow ratchet: returns the Y the camera should track. Three
+# regimes around the reference floor:
+#   1. player_y > reference + apex_band  → track up (player.y - band).
+#      Above-apex traversal (double-jump, wall-jump, vertical megastructure
+#      beats) still keeps the player in frame, lifting 1:1.
+#   2. player_y < reference              → track down (player.y).
+#      Walking off a ledge or falling into a pit: the camera follows the
+#      descent immediately rather than waiting for the player to touch a
+#      new floor before catching up. The asymmetric position lerp on top
+#      still smooths the actual motion.
+#   3. otherwise (in the held band)      → hold at reference_floor_y.
+#      Normal jumps that stay between the floor and the apex don't move
+#      the camera at all.
 func _compute_effective_y(player_y: float) -> float:
 	var apex_h := _get_target_apex_height() * apex_height_multiplier
 	if apex_h <= 0.0:
@@ -303,6 +311,8 @@ func _compute_effective_y(player_y: float) -> float:
 	var apex_y := _reference_floor_y + apex_h
 	if player_y > apex_y:
 		return player_y - apex_h
+	if player_y < _reference_floor_y:
+		return player_y
 	return _reference_floor_y
 
 
@@ -317,16 +327,20 @@ func _get_target_apex_height() -> float:
 
 
 # Vertical-pull is the fall-aware camera drop that helps the player see
-# what's below. Only fires when the player is above the apex threshold —
-# otherwise the camera is held still by the ratchet and a fall pull would
-# yank it back down, re-introducing the vertical motion we removed.
+# what's below. Fires whenever the camera is in a Y-tracking regime —
+# either above the apex band (track-up) or below the reference floor
+# (track-down / falling). Inside the held band the camera is pinned and a
+# fall pull would yank it down off-baseline, re-introducing the vertical
+# motion the ratchet is removing.
 func _conditional_fall_offset(player_y: float, vel_y: float) -> float:
 	var apex_h := _get_target_apex_height() * apex_height_multiplier
 	if apex_h <= 0.0:
 		return _vertical_pull_offset(vel_y)
-	if player_y <= _reference_floor_y + apex_h:
-		return 0.0
-	return _vertical_pull_offset(vel_y)
+	if player_y > _reference_floor_y + apex_h:
+		return _vertical_pull_offset(vel_y)
+	if player_y < _reference_floor_y:
+		return _vertical_pull_offset(vel_y)
+	return 0.0
 
 
 # Drag rotates the camera around the effective target. Yaw orbits in the

@@ -2530,6 +2530,40 @@ func _test_vertical_follow_ratchet() -> void:
 	_ok("rate above apex: rises 1:1 with player.y (a 1 m rise → 1 m effective_y rise)",
 		_near(step2 - step1, 1.0))
 
+	# --- Below reference: camera tracks the fall 1:1 ---
+	# Walking off a ledge from reference Y=4 — as player falls, effective_y
+	# should follow down rather than stay pinned at the old reference.
+	_ok("fall: 0.1 m below reference (small drop, just leaving the ledge) → tracks",
+		_near(_eff_y(3.9, 4.0, snappy_apex, 1.0), 3.9))
+	_ok("fall: 1 m below reference → effective_y == 3.0",
+		_near(_eff_y(3.0, 4.0, snappy_apex, 1.0), 3.0))
+	_ok("fall: 4 m drop into a pit → effective_y == 0.0",
+		_near(_eff_y(0.0, 4.0, snappy_apex, 1.0), 0.0))
+	_ok("fall: below-reference branch also fires from reference 0 (descent into negative Y)",
+		_near(_eff_y(-2.0, 0.0, snappy_apex, 1.0), -2.0))
+
+	# --- Boundary at player.y == reference_floor: hold (not track) ---
+	# The check is strict `<`, so a player landed exactly at reference stays
+	# in the held branch. Prevents one-frame oscillation between hold/track
+	# when the player is at-rest on the reference floor.
+	_ok("at exactly reference_floor_y → hold (strict `<` boundary)",
+		_near(_eff_y(4.0, 4.0, snappy_apex, 1.0), 4.0))
+
+	# --- Continuity at the lower (reference-floor) boundary ---
+	# At reference, effective = reference. Just below, effective = epsilon-below.
+	var ref_above := _eff_y(4.0, 4.0, snappy_apex, 1.0)
+	var ref_below := _eff_y(3.9999, 4.0, snappy_apex, 1.0)
+	_ok("continuity at reference-floor boundary: |delta| < 0.001 across the threshold",
+		absf(ref_above - ref_below) < 0.001)
+
+	# --- Monotonicity below reference: as player falls, effective_y falls 1:1 ---
+	var fall1 := _eff_y(3.5, 4.0, snappy_apex, 1.0)
+	var fall2 := _eff_y(2.5, 4.0, snappy_apex, 1.0)
+	_ok("monotonicity below reference: effective_y at lower player.y is lower",
+		fall2 < fall1)
+	_ok("rate below reference: falls 1:1 with player.y (1 m drop → 1 m effective_y drop)",
+		_near(fall1 - fall2, 1.0))
+
 
 func _test_default_apex_height_formula() -> void:
 	## Documents player.gd::get_default_apex_height, which derives the camera
@@ -2580,14 +2614,17 @@ func _test_default_apex_height_formula() -> void:
 # Helpers for the vertical-follow tests.
 
 func _eff_y(player_y: float, reference_floor_y: float, apex_h: float, multiplier: float) -> float:
-	## Mirror of camera_rig.gd::_compute_effective_y. Below apex_y the camera
-	## holds at reference; above, it tracks player.y - apex band.
+	## Mirror of camera_rig.gd::_compute_effective_y. Three regimes around
+	## the reference floor: track up (above apex band), track down (below
+	## reference, e.g. falling off a ledge), hold (inside the band).
 	var band := apex_h * multiplier
 	if band <= 0.0:
 		return player_y
 	var apex_y := reference_floor_y + band
 	if player_y > apex_y:
 		return player_y - band
+	if player_y < reference_floor_y:
+		return player_y
 	return reference_floor_y
 
 
