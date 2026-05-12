@@ -1,4 +1,4 @@
-[gd_scene load_steps=28 format=3]
+[gd_scene load_steps=34 format=3]
 
 [ext_resource type="Script" path="res://scripts/levels/feel_lab.gd" id="1_feel"]
 [ext_resource type="Script" path="res://tools/debug/player_debug_draw.gd" id="6_dbgdraw"]
@@ -85,6 +85,27 @@ size = Vector3(2, 20, 2)
 
 [sub_resource type="BoxShape3D" id="Shape_Pillar"]
 size = Vector3(2, 20, 2)
+
+[sub_resource type="BoxMesh" id="Mesh_LedgeNarrow"]
+material = ExtResource("7_matConc")
+size = Vector3(3.5, 0.3, 0.9)
+
+[sub_resource type="BoxShape3D" id="Shape_LedgeNarrow"]
+size = Vector3(3.5, 0.3, 0.9)
+
+[sub_resource type="BoxMesh" id="Mesh_FloorExt"]
+material = ExtResource("8_matConcDark")
+size = Vector3(30, 1, 30)
+
+[sub_resource type="BoxShape3D" id="Shape_FloorExt"]
+size = Vector3(30, 1, 30)
+
+[sub_resource type="BoxMesh" id="Mesh_DropLedge"]
+material = ExtResource("7_matConc")
+size = Vector3(6, 0.5, 3)
+
+[sub_resource type="BoxShape3D" id="Shape_DropLedge"]
+size = Vector3(6, 0.5, 3)
 
 [node name="FeelLab" type="Node3D"]
 script = ExtResource("1_feel")
@@ -275,6 +296,144 @@ ease_in_out = true
 mesh = SubResource("Mesh_Plat_3x05x3")
 
 [node name="Collider" type="CollisionShape3D" parent="MovingPlatform"]
+shape = SubResource("Shape_Plat_3x05x3")
+
+[node name="FloorEast" type="StaticBody3D" parent="."]
+transform = Transform3D(1, 0, 0, 0, 1, 0, 0, 0, 1, 35, -0.5, -10)
+
+[node name="Mesh" type="MeshInstance3D" parent="FloorEast"]
+mesh = SubResource("Mesh_FloorExt")
+
+[node name="Collider" type="CollisionShape3D" parent="FloorEast"]
+shape = SubResource("Shape_FloorExt")
+
+[node name="HighAscent" type="Node3D" parent="."]
+
+[node name="HA1" type="StaticBody3D" parent="HighAscent"]
+transform = Transform3D(1, 0, 0, 0, 1, 0, 0, 0, 1, 28, 1.25, -8)
+
+[node name="Mesh" type="MeshInstance3D" parent="HighAscent/HA1"]
+mesh = SubResource("Mesh_Plat_3x05x3")
+
+[node name="Collider" type="CollisionShape3D" parent="HighAscent/HA1"]
+shape = SubResource("Shape_Plat_3x05x3")
+
+[node name="HA2" type="StaticBody3D" parent="HighAscent"]
+transform = Transform3D(1, 0, 0, 0, 1, 0, 0, 0, 1, 30, 3.25, -13)
+
+[node name="Mesh" type="MeshInstance3D" parent="HighAscent/HA2"]
+mesh = SubResource("Mesh_Plat_3x05x3")
+
+[node name="Collider" type="CollisionShape3D" parent="HighAscent/HA2"]
+shape = SubResource("Shape_Plat_3x05x3")
+
+[node name="HA3" type="StaticBody3D" parent="HighAscent"]
+transform = Transform3D(1, 0, 0, 0, 1, 0, 0, 0, 1, 32, 5.75, -18)
+
+[node name="Mesh" type="MeshInstance3D" parent="HighAscent/HA3"]
+mesh = SubResource("Mesh_Plat_3x05x3")
+
+[node name="Collider" type="CollisionShape3D" parent="HighAscent/HA3"]
+shape = SubResource("Shape_Plat_3x05x3")
+
+[node name="HA4" type="StaticBody3D" parent="HighAscent"]
+transform = Transform3D(1, 0, 0, 0, 1, 0, 0, 0, 1, 32, 8.0, -22)
+
+[node name="Mesh" type="MeshInstance3D" parent="HighAscent/HA4"]
+mesh = SubResource("Mesh_Plat_4x05x4")
+
+[node name="Collider" type="CollisionShape3D" parent="HighAscent/HA4"]
+shape = SubResource("Shape_Plat_4x05x4")
+
+[node name="NarrowLedges" type="Node3D" parent="."]
+
+[node name="NL1" type="StaticBody3D" parent="NarrowLedges"]
+transform = Transform3D(1, 0, 0, 0, 1, 0, 0, 0, 1, 28, 1.35, 7)
+
+[node name="Mesh" type="MeshInstance3D" parent="NarrowLedges/NL1"]
+mesh = SubResource("Mesh_LedgeNarrow")
+
+[node name="Collider" type="CollisionShape3D" parent="NarrowLedges/NL1"]
+shape = SubResource("Shape_LedgeNarrow")
+
+[node name="NL2" type="StaticBody3D" parent="NarrowLedges"]
+transform = Transform3D(1, 0, 0, 0, 1, 0, 0, 0, 1, 31, 1.35, 10)
+
+[node name="Mesh" type="MeshInstance3D" parent="NarrowLedges/NL2"]
+mesh = SubResource("Mesh_LedgeNarrow")
+
+[node name="Collider" type="CollisionShape3D" parent="NarrowLedges/NL2"]
+shape = SubResource("Shape_LedgeNarrow")
+
+[node name="NL3" type="StaticBody3D" parent="NarrowLedges"]
+transform = Transform3D(1, 0, 0, 0, 1, 0, 0, 0, 1, 27, 1.85, 13)
+
+[node name="Mesh" type="MeshInstance3D" parent="NarrowLedges/NL3"]
+mesh = SubResource("Mesh_LedgeNarrow")
+
+[node name="Collider" type="CollisionShape3D" parent="NarrowLedges/NL3"]
+shape = SubResource("Shape_LedgeNarrow")
+
+[node name="NL4" type="StaticBody3D" parent="NarrowLedges"]
+transform = Transform3D(1, 0, 0, 0, 1, 0, 0, 0, 1, 31, 2.35, 16)
+
+[node name="Mesh" type="MeshInstance3D" parent="NarrowLedges/NL4"]
+mesh = SubResource("Mesh_LedgeNarrow")
+
+[node name="Collider" type="CollisionShape3D" parent="NarrowLedges/NL4"]
+shape = SubResource("Shape_LedgeNarrow")
+
+[node name="NL5" type="StaticBody3D" parent="NarrowLedges"]
+transform = Transform3D(1, 0, 0, 0, 1, 0, 0, 0, 1, 27, 2.85, 19)
+
+[node name="Mesh" type="MeshInstance3D" parent="NarrowLedges/NL5"]
+mesh = SubResource("Mesh_LedgeNarrow")
+
+[node name="Collider" type="CollisionShape3D" parent="NarrowLedges/NL5"]
+shape = SubResource("Shape_LedgeNarrow")
+
+[node name="WallJumpCorner" type="Node3D" parent="."]
+
+[node name="WJL" type="StaticBody3D" parent="WallJumpCorner"]
+transform = Transform3D(1, 0, 0, 0, 1, 0, 0, 0, 1, -8, 2, -16)
+collision_layer = 65
+
+[node name="Mesh" type="MeshInstance3D" parent="WallJumpCorner/WJL"]
+mesh = SubResource("Mesh_Wall")
+
+[node name="Collider" type="CollisionShape3D" parent="WallJumpCorner/WJL"]
+shape = SubResource("Shape_Wall")
+
+[node name="WJR" type="StaticBody3D" parent="WallJumpCorner"]
+transform = Transform3D(1, 0, 0, 0, 1, 0, 0, 0, 1, -12, 2, -16)
+collision_layer = 65
+
+[node name="Mesh" type="MeshInstance3D" parent="WallJumpCorner/WJR"]
+mesh = SubResource("Mesh_Wall")
+
+[node name="Collider" type="CollisionShape3D" parent="WallJumpCorner/WJR"]
+shape = SubResource("Shape_Wall")
+
+[node name="DropTestLedge" type="StaticBody3D" parent="."]
+transform = Transform3D(1, 0, 0, 0, 1, 0, 0, 0, 1, 0, 2.75, 19)
+
+[node name="Mesh" type="MeshInstance3D" parent="DropTestLedge"]
+mesh = SubResource("Mesh_DropLedge")
+
+[node name="Collider" type="CollisionShape3D" parent="DropTestLedge"]
+shape = SubResource("Shape_DropLedge")
+
+[node name="MovingPlatformVert" type="AnimatableBody3D" parent="."]
+transform = Transform3D(1, 0, 0, 0, 1, 0, 0, 0, 1, 18, 0.25, -4)
+script = ExtResource("2_movp")
+travel = Vector3(0, 5, 0)
+period_seconds = 5.0
+ease_in_out = true
+
+[node name="Mesh" type="MeshInstance3D" parent="MovingPlatformVert"]
+mesh = SubResource("Mesh_Plat_3x05x3")
+
+[node name="Collider" type="CollisionShape3D" parent="MovingPlatformVert"]
 shape = SubResource("Shape_Plat_3x05x3")
 
 [node name="PlayerDebugDraw" type="Node3D" parent="."]
