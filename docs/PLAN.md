@@ -16,10 +16,10 @@ authored with it in mind.
 
 ## Active iteration
 
-- _No iteration currently in flight._ Iter 52 (double jump) landed 2026-05-12 — see
+- _No iteration currently in flight._ Iter 53 (Feel Lab expansion) landed 2026-05-12 — see
   Recently completed.
-- Next iteration should pull from the top of the P0 queue below: **Feel Lab expansion**.
-  Throttle: **1** (1 iteration since last human direction session 2026-05-12).
+- Next iteration should pull from the top of the P0 queue below: **Air dash implementation**.
+  Throttle: **2** (2 iterations since last human direction session 2026-05-12).
 
 ## Queue (ranked, top is next)
 
@@ -49,12 +49,14 @@ The next iteration should pull from the top of this list. Items marked
    dev menu sliders (Air jumps / Air jump vel × / Air jump H pres.), 17 unit
    tests. All profiles default 0 = off (backwards-compatible). See DECISIONS.md
    2026-05-12 ADR.
-5. **Feel Lab expansion + interaction variety.** _Next up._ Add higher tiers (to
-   exercise the vertical-follow ratchet and double jump), wall-jump corner, varied
-   slopes, narrow ledges over fog, a drop-test pit, and a wider open area.
-   Becomes the playground for double jump and air dash tuning.
-   Brutalist primitives, no new art.
-6. **Air dash implementation.** Research-ready in
+5. ~~**Feel Lab expansion + interaction variety.**~~ Done 2026-05-12 (iter 53).
+   East extension slab (30×30, connects to high ascent zone), four high-tier
+   platforms (HA1–HA4 at 1.5/3.5/6.0/8.5m), five narrow ledges over void
+   (NL1–NL5 at y=1.5–3.0m), wall-jump corner geometry (two parallel walls at
+   x=−8/−12), drop-test cliff ledge (3m above main floor north edge), vertical
+   moving platform elevator at x=18. Dev menu "Teleport" sub-section: 10 named
+   zone buttons. On-device pending.
+6. **Air dash implementation.** _Next up._ Research-ready in
    `docs/research/air_dash.md`. Three new `ControllerProfile` params
    (default 0 = off, backwards-compatible), right-zone swipe input via
    TouchInput, dev menu sliders, unit tests. Test alongside double jump
@@ -153,6 +155,23 @@ These mirror "Open questions waiting on you" in the README.
   drive the next tuning iteration.
 
 ## Recently completed (last 5)
+
+- 2026-05-12 — Iteration 53. **Feel Lab expansion + interaction variety.**
+  `scenes/levels/feel_lab.tscn`: 6 new sub_resources, 30+ new nodes. East
+  extension slab (30×1×30 at x=35,z=−10) extends the floor into the high-ascent
+  zone. Four high-tier platforms (HA1–HA4 at y-center 1.25/3.25/5.75/8.0 using
+  Plat_3x05x3/Plat_4x05x4, surfaces at ~1.5/3.5/6.0/8.25m) form a staircase
+  that requires double jump for every step beyond HA1. Five narrow ledges
+  (Mesh_LedgeNarrow 3.5×0.3×0.9 m) over void at y=1.5–3.0m, progressing north
+  over the gap between floor and void — tests depth perception and precision landing.
+  Two parallel walls (WJL/WJR, 4m apart at x=−8/−12) form the wall-jump corner
+  geometry for future mechanic testing. Drop-test cliff ledge (6×0.5×3 at x=0,
+  y=2.75, z=19) juts beyond main floor's north edge — walk to the edge and drop
+  into fog to test fall tracking + camera follow. Vertical moving platform
+  (Plat_3x05x3, travel=(0,5,0), 5 s period) at x=18,z=−4 acts as elevator to
+  the high ascent zone. `dev_menu_overlay.gd`: new "Teleport" sub-section in
+  Level panel — 10 named zone buttons via `_teleport_player(pos)` helper (calls
+  `set_spawn_transform` + `respawn`). On-device pending.
 
 - 2026-05-12 — Iteration 52. **Double jump implementation.** Three new
   `ControllerProfile` properties: `air_jumps` (int, 0 = off), `air_jump_velocity_multiplier`

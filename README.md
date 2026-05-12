@@ -5,10 +5,10 @@ A mobile 3D platformer. Brutalist megastructure inspired by *BLAME!*. Controller
 ## Status
 
 Current gate: **Gate 0 — Feel Lab** (closing out; Gate 1 prep in flight)
-Last activity: 2026-05-12 — iter 52: double jump implementation
+Last activity: 2026-05-12 — iter 53: Feel Lab expansion (high ascent, narrow ledges, wall corner, drop ledge, vertical moving platform, teleport buttons)
 Test device build: ✅ verified 2026-05-12 — runs in Godot 4.6 on PC and on Nothing Phone 4(a) Pro
 Performance: 144 fps / 6.9 ms in editor at 1920×1080 (Feel Lab); on-device frametimes TBD
-Throttle level: **1** (1 iteration since last human direction 2026-05-12). Next: Feel Lab expansion.
+Throttle level: **2** (2 iterations since last human direction 2026-05-12). Next: Air dash implementation.
 
 If you only read one section, read **Open questions waiting on you** below.
 
@@ -83,6 +83,35 @@ Goal: store-ready build.
 The full iteration log lives here, newest first. Every iteration appends an entry. Skim the dates to find where you last left off.
 
 <!-- ITERATION ENTRIES BELOW — DO NOT REMOVE OLDER ENTRIES -->
+
+### [2026-05-12] — iter 53 — Feel Lab expansion + interaction variety
+
+Branch: `iter/feel-lab-expansion`
+Throttle: 2 (normal)
+Gate: Gate 0 closing / Gate 1 prep
+
+**Primary: expanded Feel Lab geometry — high-tier ascent, narrow ledges, wall corner, drop ledge, vertical moving platform, dev menu teleport buttons.**
+
+- **`scenes/levels/feel_lab.tscn`** — 6 new sub_resources, 30+ new nodes across 7 new groups:
+  - **FloorEast** — 30×1×30 dark-concrete slab at (35,−0.5,−10) extends the playable floor into the high ascent zone, providing a runway from the main floor to the new platforms.
+  - **HighAscent (HA1–HA4)** — Four platforms (Plat_3x05x3/Plat_4x05x4) forming a staircase at surface heights ~1.5 / 3.5 / 6.0 / 8.25 m. HA1 is reachable with a single jump from the floor; HA2–HA4 each require a double jump (the gap between tiers is ~2.0–2.5 m, exceeding the Snappy single-jump apex of ~1.74 m). Staircase runs northeast from x=28,z=−8 to x=32,z=−22.
+  - **NarrowLedges (NL1–NL5)** — Thin platforms (Mesh_LedgeNarrow: 3.5×0.3×0.9 m, mat_concrete) over void north of the east slab at y=1.35–2.85 m. Each is 0.9 m deep — forces accurate depth landing. Stepping-stone route runs northwest from (28,z=7) to (27,z=19).
+  - **WallJumpCorner (WJL/WJR)** — Two parallel 1×4×4 walls at x=−8 and x=−12, both at z=−16. Creates a 4 m wide corridor for future wall-jump mechanic testing. Tagged collision_layer=65 (World + CameraOccluder) so the camera handles occlusion correctly.
+  - **DropTestLedge** — 6×0.5×3 platform (mat_concrete) at (0, 2.75, 19), surface at 3.0 m, jutting 1 m beyond the main floor's north edge into fog. Walk to the edge and step off to test fall tracking and camera follow-fall behaviour.
+  - **MovingPlatformVert** — Second AnimatableBody3D platform at (18, 0.25, −4), travel=(0,5,0), period=5 s. Acts as a vertical elevator alongside the high ascent zone, testing the camera's y-ratchet on a slow continuous ascent.
+- **`tools/dev_menu/dev_menu_overlay.gd`** — New "Teleport" sub-section in the Level panel: 10 named zone buttons (Spawn / Platforms / HA1–HA4 / Narrow ledges / Wall corner / Drop ledge / Moving plat.). Uses new `_teleport_player(pos)` helper: calls `set_spawn_transform` + `respawn` on the player node fetched from the "player" group.
+
+**Side quest:** none.
+
+**Perf:** no new shaders, no particles. 30+ new static meshes; all share existing sub_resources (no extra draw-call cost beyond geometry — mobile GPU cost is vertex count, not node count). Frametime delta: ~0 (static geometry). Draw call delta: estimated +2–4 for new MeshInstance3Ds (shared materials batch well under the mobile renderer). On-device pending.
+**Bugs fixed:** none.
+**New dev-menu controls:** Teleport sub-section (10 zone buttons in Level panel).
+**Assets acquired:** none.
+**Research added:** none.
+
+**Needs human attention:**
+- **Double jump tuning on device.** HA1→HA2 requires double jump (2.0 m gap). Enable `air_jumps = 1` in dev menu Controller → Jump sliders. The staircase is calibrated for Snappy; Floaty's higher apex may make some tiers reachable with single jump — verify on device.
+- **Narrow ledge depth perception.** NL1–NL5 are 0.9 m deep — testing whether the blob shadow + depth cues are sufficient to land these without air dash. Report if they feel fair or too blind.
 
 ### [2026-05-12] — iter 52 — double jump implementation
 

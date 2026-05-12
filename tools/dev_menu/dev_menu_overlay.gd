@@ -241,6 +241,23 @@ func _build_level_section(vbox: VBoxContainer) -> void:
 			Engine.time_scale = v
 			DevMenu.time_scale_changed.emit(v),
 		1.0)
+	vbox.add_child(_make_label("Teleport", SECTION_FONT_SIZE, false))
+	var _teleport_zones: Array[Dictionary] = [
+		{"label": "Spawn",          "pos": Vector3(0, 1, 0)},
+		{"label": "Platforms (P1)", "pos": Vector3(4, 2, 0)},
+		{"label": "HA1 (tier 1.5m)","pos": Vector3(28, 2.0, -8)},
+		{"label": "HA2 (tier 3.5m)","pos": Vector3(30, 4.0, -13)},
+		{"label": "HA3 (tier 6m)",  "pos": Vector3(32, 6.5, -18)},
+		{"label": "HA4 (tier 8.5m)","pos": Vector3(32, 9.0, -22)},
+		{"label": "Narrow ledges",  "pos": Vector3(28, 2.0, 7)},
+		{"label": "Wall corner",    "pos": Vector3(-10, 1, -16)},
+		{"label": "Drop ledge",     "pos": Vector3(0, 4.0, 19)},
+		{"label": "Moving plat.",   "pos": Vector3(-2, 2, 12)},
+	]
+	for zone: Dictionary in _teleport_zones:
+		var lbl: String = zone["label"]
+		var pos: Vector3 = zone["pos"]
+		_make_button(vbox, "→ " + lbl, func() -> void: _teleport_player(pos))
 
 
 func _build_touch_section(vbox: VBoxContainer) -> void:
@@ -342,6 +359,18 @@ func _build_theme() -> Theme:
 	for cls in ["Button", "OptionButton", "LineEdit"]:
 		t.set_constant("h_separation", cls, 16)
 	return t
+
+
+func _teleport_player(pos: Vector3) -> void:
+	var players := get_tree().get_nodes_in_group(&"player")
+	if players.is_empty():
+		return
+	var p := players[0]
+	var t := Transform3D(Basis(), pos)
+	if p.has_method(&"set_spawn_transform"):
+		p.call(&"set_spawn_transform", t)
+	if p.has_method(&"respawn"):
+		p.call(&"respawn")
 
 
 func _make_label(text: String, font_size: int, bold: bool = false) -> Label:
