@@ -16,10 +16,10 @@ authored with it in mind.
 
 ## Active iteration
 
-- _No iteration currently in flight._ Iter 55 (Threshold greybox) landed 2026-05-12 — see
+- _No iteration currently in flight._ Iter 56 (win-state flow + CameraHint) landed 2026-05-12 — see
   Recently completed.
 - Next iteration should pull from the top of the P0 queue below.
-  Throttle: **4** (4 iterations since last human direction session 2026-05-12).
+  Throttle: **5** (5 iterations since last human direction session 2026-05-12).
 
 ## Queue (ranked, top is next)
 
@@ -70,9 +70,10 @@ The next iteration should pull from the top of this list. Items marked
    item). See DECISIONS.md 2026-05-12 ADR.
 8. **Threshold polish / Gate 1 pass.** After on-device greybox playtest: move industrial
    press into critical path, wire ambient lighting volumes, texture pass (concrete kit),
-   add data shard collectible, hook up CameraHint to camera_rig.gd. Blocked on
-   on-device feel from item 7. _(Promoted over Assisted Phase 2 — level is the
-   Gate 1 critical path; assist mechanics are supporting.)_
+   add data shard collectible. ~~CameraHint wired (iter 56).~~ ~~Win-state flow + results
+   panel wired (iter 56).~~ Remaining items blocked on on-device feel from item 7.
+   _(Promoted over Assisted Phase 2 — level is the Gate 1 critical path; assist mechanics
+   are supporting.)_
 9. **Assisted profile Phase 2.** Phase 1 (sticky landing) shipped iter 27.
    Phase 2 (ledge magnetism + arc assist) approved by human as a heavy-
    impact game-feel mechanic — build it after #5 / #6 are validated on
@@ -163,6 +164,21 @@ These mirror "Open questions waiting on you" in the README.
   drive the next tuning iteration.
 
 ## Recently completed (last 5)
+
+- 2026-05-12 — Iteration 56. **Win-state flow + CameraHint integration.** `game.gd`:
+  `is_running`, `shards_collected`, `shards_total`, `start_run()`, `level_complete()`,
+  `_process()` timer tick, `reset_run()` now also clears `is_running` and `shards_collected`.
+  `scripts/ui/results_panel.gd`: new `CanvasLayer` class; programmatic UI (backdrop +
+  `CenterContainer` + `VBoxContainer`); TIME / PAR / SHARDS rows (36 pt font); PAR tinted
+  green/red vs. actual time; REPLAY button (40 pt, 360×120 px minimum). `win_state.gd`:
+  calls `Game.level_complete()` (stops timer then emits signal) instead of emitting directly.
+  `threshold.gd`: `par_time_seconds = 35.0` export; `start_run()` call; `shards_total` auto-count
+  from `"data_shard"` group; `ResultsPanel.new()` instantiated as child; `_on_level_completed()`
+  passes time/par/shards to panel. `camera_rig.gd`: `_hint_distance_extra` state var;
+  `_get_active_hint_extra()` queries `"camera_hints"` group each frame; lerp at 3/sec toward
+  active max `pull_back_amount`; `effective_distance = distance + _hint_distance_extra` applied
+  in ground distance-maintenance and camera-Y. 11 unit tests in `_test_game_gate1_api`
+  (661 → 672 assertions). Two new DECISIONS.md ADRs. On-device pending.
 
 - 2026-05-12 — Iteration 55. **Threshold greybox.** Six new level scripts under `scripts/levels/`:
   `checkpoint.gd` (Area3D, sets spawn + emits `Game.checkpoint_reached`), `camera_hint.gd`

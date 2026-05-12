@@ -5,10 +5,10 @@ A mobile 3D platformer. Brutalist megastructure inspired by *BLAME!*. Controller
 ## Status
 
 Current gate: **Gate 0 — Feel Lab** (closing out; Gate 1 prep in flight)
-Last activity: 2026-05-12 — iter 55: Threshold greybox — three-zone level geometry, checkpoint, win state, hazard system
+Last activity: 2026-05-12 — iter 56: Win-state flow (run timer, results panel, par time) + CameraHint integration
 Test device build: ✅ verified 2026-05-12 — runs in Godot 4.6 on PC and on Nothing Phone 4(a) Pro
 Performance: 144 fps / 6.9 ms in editor at 1920×1080 (Feel Lab); on-device frametimes TBD
-Throttle level: **4** (4 iterations since last human direction 2026-05-12). Next: Threshold polish / Lung greybox / Assisted Phase 2.
+Throttle level: **5** (5 iterations since last human direction 2026-05-12). Next: Threshold polish (data shard collectible / concrete texture / press into critical path) — blocked on on-device feel.
 
 If you only read one section, read **Open questions waiting on you** below.
 
@@ -83,6 +83,48 @@ Goal: store-ready build.
 The full iteration log lives here, newest first. Every iteration appends an entry. Skim the dates to find where you last left off.
 
 <!-- ITERATION ENTRIES BELOW — DO NOT REMOVE OLDER ENTRIES -->
+
+### [2026-05-12] — iter 56 — Win-state flow + CameraHint integration
+
+Branch: `claude/gifted-shannon-XtVFe`
+Throttle: 5 (soft)
+Gate: Gate 1 — Vertical Slice prep
+
+**Primary: Complete win-state pipeline — run timer, results panel, par time, shard tracking hooks.**
+
+**`game.gd`** promoted from stub to Gate 1 runtime:
+- New fields: `is_running: bool`, `shards_collected: int`, `shards_total: int`
+- `_process(delta)`: increments `run_time_seconds` only when `is_running`
+- `start_run()`: zeros timer + shards, sets `is_running = true`; called from level's `_ready()`
+- `level_complete()`: clears `is_running`, emits `level_completed` — timer always stops before signal consumers fire
+- `reset_run()`: now also clears `is_running` and `shards_collected` (backwards-compat: existing tests pass)
+
+**`scripts/ui/results_panel.gd`** — new `CanvasLayer` class, all UI programmatic:
+- Backdrop: full-rect `ColorRect` (charcoal 88% opacity), `MOUSE_FILTER_STOP`
+- Layout: `CenterContainer` (full-rect) → `VBoxContainer` (560 px wide min)
+- Three rows: TIME / PAR / SHARDS at 36 pt font, 180 px key column
+- PAR row modulated green when ≤ par, red when over (immediate visual grade)
+- REPLAY button: 360×120 px minimum, 40 pt — thumb-reachable. Calls `Game.reset_run()` + `reload_current_scene()`
+- Hidden by default (`hide()` in `_ready()`); shown via `show_results(time, par, shards, total)`
+
+**`win_state.gd`**: calls `Game.level_complete()` instead of emitting `level_completed` directly — ensures timer stops atomically with the signal.
+
+**`threshold.gd`**: `par_time_seconds = 35.0` export; `Game.shards_total` auto-counted from `"data_shard"` group (0 until shard collectible is placed); `Game.level_completed` → `_on_level_completed()` → `ResultsPanel.show_results(...)`.
+
+**Side quest — CameraHint integration in `camera_rig.gd`:**
+- `_hint_distance_extra: float = 0.0` state var
+- `_get_active_hint_extra()`: queries `"camera_hints"` group, returns max `pull_back_amount` among hints with player inside
+- `_hint_distance_extra` lerps toward target at 3/sec every frame (including airborne, so blend is already in progress on landing)
+- Ground branch uses `effective_distance = distance + _hint_distance_extra` for both horizontal distance and camera-Y. The three CameraHint markers in threshold.tscn (pull_back 2/3/5 m) are now live.
+
+**Tests:** `_test_game_gate1_api` (11 assertions): is_running/shards defaults, start_run state, level_complete timer stop, reset_run Gate 1 field clearing, shards_total level-ownership invariant. 661 → 672 total.
+
+**Perf:** no new draw calls (panel hidden by default; results phase freezes physics). Delta vs last: 0 ms / 0 draw calls (greybox only).
+
+**Needs human attention:**
+- **On-device playtest still needed for Threshold.** Run it, reach the win trigger, verify results panel shows. Check par time = 35 s feels right (expected to be ~2× skilled time at this greybox stage — tune down after first clear).
+- **MaintArm1 timing / industrial press** — still needs device feel before moving press into critical path.
+- **Data shard collectible** is the next standalone Gate 1 piece. `Game.shards_total` auto-counts `"data_shard"` group — drop one `DataShard` node and it wires up automatically.
 
 ### [2026-05-12] — iter 55 — Threshold greybox
 

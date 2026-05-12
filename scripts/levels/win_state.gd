@@ -1,8 +1,9 @@
 extends Area3D
 class_name WinState
-## Level-completion trigger. Fires Game.level_completed when the player
-## enters for the first time. ResultsPanel wired at Gate 1; for now the
-## signal is emitted and a console message confirms it.
+## Level-completion trigger. Calls Game.level_complete() (which stops the
+## run timer then emits level_completed) when the player enters for the
+## first time. The level script listens to level_completed and shows
+## its ResultsPanel overlay.
 
 var _triggered: bool = false
 
@@ -18,5 +19,4 @@ func _on_body_entered(body: Node3D) -> void:
 		return
 	_triggered = true
 	if has_node("/root/Game"):
-		Game.level_completed.emit()
-	print("[WinState] Level complete — results screen stub. Gate 1 wires ResultsPanel.")
+		Game.level_complete()

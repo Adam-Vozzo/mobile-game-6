@@ -15,6 +15,47 @@ Append, don't rewrite. Supersession adds a new entry referencing the old.
 
 ---
 
+## 2026-05-12 — Win-state flow: Game.level_complete(), ResultsPanel as instantiated CanvasLayer
+
+Status: accepted
+Context: Gate 1 requires a results panel (time / par / shards) and a replay button.
+Three integration options: (a) instantiate ResultsPanel in the level script's _ready(),
+(b) add as a static child in the .tscn, (c) make it a second autoload. Option (a) keeps
+the panel's lifetime tied to the level scene (auto-freed on reload) and avoids editing the
+450-line threshold.tscn. Option (b) is correct but requires text-editing a complex .tscn
+which is error-prone without the editor. Option (c) is wrong — the panel is level-local.
+Decision: `ResultsPanel.new()` in `threshold._ready()` (programmatic instantiation). Panel
+is a CanvasLayer with all UI built in `_ready()` — no .tscn dependency. `Game.level_complete()`
+(new method) stops the timer then emits `level_completed`; `WinState` calls `level_complete()`
+rather than emitting the signal directly so the timer always stops before listeners fire.
+Alternatives considered:
+- Static .tscn child: rejected for this iteration — error-prone without the editor.
+  Correct architecture for Gate 1+ when the editor is available.
+- Separate autoload for results: rejected — panel is level-local data, not global.
+Consequences: All future levels should use the same pattern (`ResultsPanel.new()` in
+`_ready()`, connect to `Game.level_completed`, call `show_results()`). If a design revision
+wants a shared results scene, extract to a `.tscn` — the `show_results()` API is stable.
+`reset_run()` now also zeroes `is_running` and `shards_collected` (backwards-compatible).
+
+## 2026-05-12 — CameraHint integration: lerp extra distance, ground branch only
+
+Status: accepted
+Context: `camera_hint.gd` stubs were placed in threshold.tscn with `pull_back_amount`
+values (2, 3, 5 m), but camera_rig.gd ignored them entirely.
+Decision: `_get_active_hint_extra()` queries the `"camera_hints"` group each frame,
+returns the max `pull_back_amount` among hints containing the player. `_hint_distance_extra`
+lerps toward this at 3/sec (≈95% blend in 1 s) every frame regardless of floor state.
+In the ground branch, `effective_distance = distance + _hint_distance_extra` replaces the
+raw `distance` in horizontal maintenance and camera-Y calculations.
+Alternatives considered:
+- Per-hint blend_time: too complex for Gate 1; max-of-active is simpler and sufficient.
+- Airborne branch: skipped — the rigid-translate model locks camera position during jumps;
+  hint effect would be invisible mid-air. Blend starts anyway while airborne so it's ready
+  on landing.
+Consequences: Level authors now get working pull-back by setting `pull_back_amount` on any
+CameraHint volume. The three existing hints in threshold.tscn (pull_back 2/3/5) are live.
+At Gate 1 the values should be tuned on device.
+
 ## 2026-05-12 — Air dash: all profiles default to speed = 0; enable per device session
 
 Status: accepted

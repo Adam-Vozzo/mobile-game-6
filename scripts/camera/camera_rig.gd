@@ -146,6 +146,10 @@ var _reference_floor_y: float = 0.0
 # spuriously trigger the track-up branch. Distinct from `_reference_floor_y`:
 # this one drives the *threshold*, the smoothed one drives the *target*.
 var _apex_anchor_y: float = 0.0
+# Extra spring-arm distance (metres) blended in while the player is inside a
+# CameraHint volume. Lerps toward the max pull_back_amount among all active
+# hints at 3 /sec (→ 95% blend in ~1 s). Zero when no hints are active.
+var _hint_distance_extra: float = 0.0
 
 @onready var _camera: Camera3D = $Camera
 
@@ -162,6 +166,14 @@ func _process(delta: float) -> void:
 		return
 	var target_pos := _target.global_position
 	var on_floor := _is_target_on_floor()
+	# Blend hint distance every frame (runs while airborne too, so the extra
+	# distance is already lerping when the player lands inside a hint volume).
+	_hint_distance_extra = lerpf(
+		_hint_distance_extra,
+		_get_active_hint_extra(),
+		1.0 - exp(-3.0 * delta),
+	)
+	var effective_distance := distance + _hint_distance_extra
 	# Apex anchor: instant tracking of grounded player.y, held during
 	# airborne. Used only for the apex check (= track-up threshold). Keeping
 	# this distinct from the smoothed `_reference_floor_y` is the whole point
@@ -218,7 +230,7 @@ func _process(delta: float) -> void:
 		var current_dist := horiz.length()
 		if current_dist > 0.001:
 			var dir := horiz / current_dist
-			var dist_error := current_dist - distance
+			var dist_error := current_dist - effective_distance
 			cam_pos.x += dir.x * dist_error
 			cam_pos.z += dir.z * dist_error
 		# Fall pull is gated on being above apex — below apex the camera is
@@ -228,7 +240,7 @@ func _process(delta: float) -> void:
 		# `_pitch_rad` is ≤ 0; -_pitch_rad is the elevation angle. Using `absf`
 		# would V-shape as the drag crosses horizontal — see iter 22 fix on main.
 		var elevation := -_pitch_rad
-		cam_pos.y = effective_target.y + sin(elevation) * distance + aim_height + fall_offset
+		cam_pos.y = effective_target.y + sin(elevation) * effective_distance + aim_height + fall_offset
 
 		# Probe for occlusion, then apply a hysteresis latch: any hit re-arms
 		# the "occluded" state for `occlusion_release_delay` seconds, during
@@ -490,6 +502,17 @@ func _occlude(aim: Vector3, desired: Vector3) -> Dictionary:
 		return {"hit": false, "pos": desired}
 	var safe_dist := maxf(occlusion_min_distance, hit_dist - occlusion_margin)
 	return {"hit": true, "pos": aim + dir * safe_dist}
+
+
+# Returns the largest pull_back_amount among all active CameraHint volumes
+# (i.e. those that currently contain the player). Returns 0.0 when none are
+# active so _hint_distance_extra bleeds back to zero at the same 3/sec rate.
+func _get_active_hint_extra() -> float:
+	var max_extra: float = 0.0
+	for hint: Node in get_tree().get_nodes_in_group(&"camera_hints"):
+		if hint is CameraHint and (hint as CameraHint).is_player_inside():
+			max_extra = maxf(max_extra, (hint as CameraHint).pull_back_amount)
+	return max_extra
 
 
 func _on_camera_param_changed(param_name: StringName, value: float) -> void:
