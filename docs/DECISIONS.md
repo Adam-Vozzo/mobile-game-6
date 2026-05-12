@@ -374,3 +374,127 @@ Assisted. All existing tests pass (non-Assisted profiles have sticky params == 0
 `_was_on_floor_last_frame` is also the correct place for the juice system's
 landing-squash trigger (per `assist_mechanics.md` implication) — extracted here so
 future juice work doesn't need to add a second `is_on_floor()` call.
+
+## 2026-05-12 — Gate 1 first level: Threshold (Lung and Spine queued)
+
+Status: accepted
+Context: Three Gate 1 candidate level concepts were authored in iter 30 — `spine.md`
+(vertical wall-jump column ascent), `lung.md` (horizontal ventilation chamber with
+moving baffles), `threshold.md` (3-zone contrast study: habitation → maintenance →
+industrial). Per CLAUDE.md, level concept selection is a human call. Human direction
+session 2026-05-12 surveyed all three and picked Threshold to build first, noting
+that "all level concepts sound really awesome" and that the others should be built
+if Threshold is feature-complete.
+Decision: Build Threshold as the first Gate 1 level greybox. Lung and Spine are not
+discarded — they queue behind Threshold and ship in the same Gate 1 if Threshold
+proves the kit + controller. Authoring proceeds per `docs/LEVEL_DESIGN.md` workflow
+(parti / genius loci / double-reading / procession / verbs / par route / skill range
+/ kit requirements / greybox) and the `threshold.md` design doc; design-on-paper is
+already through step 5 there.
+Alternatives considered:
+- Build Spine first to validate wall-jump (which doesn't exist yet). Rejected:
+  wall-jump as a mechanic isn't yet planned for Gate 0; Threshold's contrast study
+  works with the existing movement set + the approved double jump (see ADR below).
+- Build all three simultaneously. Rejected: human explicitly asked for sequencing
+  ("let's start with threshold") and the team-of-one cadence makes parallel level
+  authoring an iteration-coverage trap.
+Consequences: `docs/PLAN.md` P0 queue now contains Threshold greybox as item 7,
+dependent on the camera vertical-follow rewrite (item 2) and double jump (item 4)
+landing first. Lung and Spine remain in `docs/levels/` as ready-to-author specs but
+do not have queue slots until Threshold's verdict is in. The Gate 1 success criterion
+"At least 2 controller profiles to compare on device" can still be evaluated against
+Threshold alone — controller comparison is mechanic-level, not level-count-level.
+
+## 2026-05-12 — Double jump approved as expected Gate 1 mechanic
+
+Status: accepted
+Context: Project Void's CharacterBody3D player ships with single jump only (per
+`character_controllers.md` SMB-grammar baseline). The human direction session
+2026-05-12 surfaced double jump as a likely-necessary mechanic ("Double jump will
+likely be necessary; build levels with double jump in mind"). This is a craft-pillar
+decision — controller feel and level design are the two non-negotiable pillars per
+CLAUDE.md, and adding a second airborne jump changes both the controller's response
+surface and the level designer's vertical vocabulary materially.
+Decision: Implement double jump as a `ControllerProfile`-resourced mechanic with the
+same default-off-on-current-profiles pattern used for sticky landing in iter 27.
+Three new `ControllerProfile` properties (all default 0 = disabled, backwards
+compatible): `air_jumps: int` (number of jumps available while airborne), `air_jump_velocity_multiplier: float`
+(multiplier on `jump_velocity` for non-grounded jumps; lets the second jump be weaker
+than the first if a profile wants that feel), and `air_jump_horizontal_preserve: float`
+(0..1, how much horizontal velocity carries through the air jump; mirrors the
+preserved-horizontal-velocity-through-jumps invariant from CLAUDE.md). Player state:
+`_air_jumps_remaining: int` decremented per air jump, reset to `profile.air_jumps`
+on `is_on_floor()`. Dev menu sliders for all three params. Unit tests for the state
+machine (initial count, decrement, reset on land, no-air-jump-when-zero, boundary).
+Threshold and any subsequent Gate 1 level should be authored with double jump in mind
+— beats can include heights only reachable via double jump, or via single-jump-plus-
+wall-context once wall-jump exists.
+Alternatives considered:
+- Implement double jump as a hardcoded player.gd state (not profile-resourced).
+  Rejected: violates CLAUDE.md's "All tunable values live in `Resource` files" rule
+  and would block per-profile feel experimentation (e.g. Snappy gets one air jump,
+  Floaty gets two, Momentum gets zero).
+- Defer double jump to Gate 1 and start Threshold without it. Rejected: the human
+  explicitly asked for levels authored *with double jump in mind*, so the mechanic
+  needs to exist (even if disabled per-profile) before greybox starts.
+- Conflate double jump with air dash. Rejected: they're distinct mechanics with
+  different feel signatures and different `ControllerProfile` parameter surfaces;
+  air dash is also approved (see `air_dash.md`) and they'll coexist as separate
+  toggleable profile properties.
+Consequences: Three new profile properties bump the profile resource format —
+existing `.tres` files keep working because the props default to 0. Dev menu's
+Controller section gains a "Double Jump" subsection (3 sliders). Test count grows
+by ~10 assertions. Gate 1 levels are now allowed to design around 2-jump heights;
+single-jump-only levels remain authorable by setting `air_jumps = 0` on the active
+profile during a beat-by-beat playtest.
+
+## 2026-05-12 — Ghost trail (SMB attempt-replay) deferred to speedrunning track
+
+Status: accepted (supersedes the implicit "Gate 1 ghost trail" expectation from
+`docs/research/ghost_trail_prototype.md` and CLAUDE.md Gate 1 success criteria)
+Context: `docs/research/ghost_trail_prototype.md` (iter 10) sketches a MultiMesh-
+based attempt-replay overlay (1 draw call, 300 instances, alpha-by-recency).
+CLAUDE.md's Gate 1 success criteria include "Attempt-replay overlay (SMB-style ghost
+trails)". The human direction session 2026-05-12 reviewed this and concluded ghost
+trail is "on-hold. makes sense if the game becomes about speedrunning, otherwise
+likely unnecessary."
+Decision: Ghost trail / attempt-replay is **on hold** as a Gate 1 deliverable.
+The MultiMesh prototype work in `ghost_trail_prototype.md` is shelved, not deleted —
+research and implementation sketches stay in the repo for future revival. The Gate 1
+checklist item "Attempt-replay (ghost trails)" remains in `README.md`'s roadmap but
+should be treated as soft (not blocking Gate 1 close-out). The mechanic returns if
+playtesting drives the game toward a speedrunning identity — at which point the
+trail comes back along with par-time tracking, leaderboards, and any other
+speedrun-coded surface.
+Alternatives considered:
+- Build ghost trail at minimum fidelity now to keep the option open. Rejected: a
+  half-built trail with no pedagogical purpose is worse than no trail; commitment
+  is what makes the SMB trail feel essential rather than gimmicky.
+- Strike the Gate 1 checklist item entirely. Rejected: leaving it as a soft item
+  preserves the design history of considering it, in case the speedrunning direction
+  emerges later.
+Consequences: PLAN.md Gate 1 critical path no longer routes through trail
+implementation. `Game.player_respawned` signal stays wired for whatever future
+consumer comes along (currently just used for telemetry). Checkpoint design
+(`checkpoint_design.md`) had recommended Option A partly because mid-level
+checkpoints break the ghost-trail-anchor invariant; that recommendation stands
+on its own merits (mobile reboot UX, level pacing) so the recommendation does
+not change with this ADR.
+
+## 2026-05-12 — Snappy reboot_duration stays at 0.5 s
+
+Status: accepted (closes out the `level_design_references.md` recommendation)
+Context: `docs/research/level_design_references.md` (iter 9) recommends Snappy
+`reboot_duration` ≤ 0.35 s for precision feel based on SMB grammar. The current
+default is 0.5 s ("cinematic"). Human direction session 2026-05-12 evaluated the
+recommendation on-device and chose to keep 0.5 s ("let's try 0.5").
+Decision: Snappy `reboot_duration` stays at 0.5 s. Other profiles unchanged.
+The research recommendation is closed out as evaluated-and-rejected; the door is
+open to revisit if level-design playtesting suggests respawn cadence is too slow
+for the precision/momentum feel pattern.
+Alternatives considered:
+- Drop to 0.35 s per research. Rejected by human after on-device feel.
+- Drop to 0.3 s (the precision-floor in SMB analysis). Rejected for the same reason.
+Consequences: No code change. `level_design_references.md` open implication
+"shorten Snappy reboot_duration to ≤ 0.35 s" should be marked as evaluated and
+rejected in the next research-doc update.
