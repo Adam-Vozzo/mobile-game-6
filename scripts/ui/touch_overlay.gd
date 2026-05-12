@@ -16,6 +16,13 @@ class_name TouchOverlay
 ## Fraction of viewport width that is "stick territory" (left of divider = stick zone).
 @export_range(0.3, 0.7, 0.01) var stick_zone_ratio: float = 0.5
 
+@export_category("Dash gesture")
+## Minimum swipe distance (px) to classify a right-zone touch as an air dash,
+## not a camera drag. Exposed for dev-menu tuning.
+@export_range(20.0, 120.0, 5.0) var dash_px_threshold: float = 40.0
+## Maximum elapsed time (seconds) for a swipe to still qualify as a dash.
+@export_range(0.05, 0.5, 0.01) var dash_time_threshold: float = 0.20
+
 @export_category("Jump button")
 ## Centre of the jump button in viewport pixels. By default this is computed
 ## from `jump_button_margin` so the button anchors to the bottom-right corner;
@@ -36,6 +43,9 @@ var _touches: Dictionary = {}    # index → KIND_*
 var _stick_origin: Vector2 = Vector2.ZERO
 var _stick_knob:   Vector2 = Vector2.ZERO
 var _drag_last:    Dictionary = {}    # index → Vector2
+# Gesture recognition: track the start position + timestamp of each KIND_DRAG
+# touch so we can detect a quick swipe (dash) vs a slow drag (camera).
+var _dash_start:   Dictionary = {}    # index → {pos: Vector2, time: float}
 
 # --- reposition mode ---
 var _reposition_mode: bool = false
@@ -125,6 +135,10 @@ func _handle_touch(event: InputEventScreenTouch) -> void:
 				TouchInput.set_jump_held(true)
 			KIND_DRAG:
 				_drag_last[event.index] = event.position
+				_dash_start[event.index] = {
+					"pos":  event.position,
+					"time": Time.get_ticks_msec() / 1000.0,
+				}
 	else:
 		var kind: int = _touches.get(event.index, KIND_NONE)
 		match kind:
@@ -136,6 +150,7 @@ func _handle_touch(event: InputEventScreenTouch) -> void:
 				TouchInput.set_jump_held(false)
 			KIND_DRAG:
 				_drag_last.erase(event.index)
+				_dash_start.erase(event.index)
 		_touches.erase(event.index)
 	queue_redraw()
 
@@ -154,6 +169,21 @@ func _handle_drag(event: InputEventScreenDrag) -> void:
 			TouchInput.set_move_vector(v)
 			queue_redraw()
 		KIND_DRAG:
+			# Check for a quick swipe (dash gesture) before treating as camera drag.
+			var start: Dictionary = _dash_start.get(event.index, {})
+			if not start.is_empty():
+				var elapsed := Time.get_ticks_msec() / 1000.0 - float(start.get("time", 0.0))
+				if elapsed < dash_time_threshold:
+					var total: Vector2 = event.position - (start.get("pos", event.position) as Vector2)
+					if total.length() >= dash_px_threshold:
+						TouchInput.air_dash_triggered.emit(total.normalized())
+						# Reset anchor so follow-up movement goes to camera drag
+						_dash_start[event.index] = {
+							"pos":  event.position,
+							"time": Time.get_ticks_msec() / 1000.0,
+						}
+						_drag_last[event.index] = event.position
+						return
 			var last: Vector2 = _drag_last.get(event.index, event.position)
 			TouchInput.add_camera_drag_delta(event.position - last)
 			_drag_last[event.index] = event.position

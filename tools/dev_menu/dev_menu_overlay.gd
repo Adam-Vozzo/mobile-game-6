@@ -137,6 +137,7 @@ func _build_controller_section(vbox: VBoxContainer) -> void:
 	_build_controller_respawn(vbox)
 	_build_controller_slope(vbox)
 	_build_controller_assist(vbox)
+	_build_controller_air_dash(vbox)
 
 
 func _build_controller_movement(vbox: VBoxContainer) -> void:
@@ -201,6 +202,16 @@ func _build_controller_assist(vbox: VBoxContainer) -> void:
 		"Sticky factor",       0.0,   0.8,  0.05, &"landing_sticky_factor")
 	_profile_sliders[&"landing_sticky_frames"] = _make_profile_slider(vbox,
 		"Sticky frames",       0.0,   6.0,  1.0,  &"landing_sticky_frames")
+
+
+func _build_controller_air_dash(vbox: VBoxContainer) -> void:
+	vbox.add_child(_make_label("Controller — Air Dash", SECTION_FONT_SIZE, true))
+	_profile_sliders[&"air_dash_speed"] = _make_profile_slider(vbox,
+		"Dash speed",          0.0,   20.0,  0.5,  &"air_dash_speed")
+	_profile_sliders[&"air_dash_duration"] = _make_profile_slider(vbox,
+		"Dash dur (s)",        0.05,   0.5,  0.01, &"air_dash_duration")
+	_profile_sliders[&"air_dash_gravity_scale"] = _make_profile_slider(vbox,
+		"Dash gravity ×",      0.0,    1.0,  0.05, &"air_dash_gravity_scale")
 
 
 func _build_camera_section(vbox: VBoxContainer) -> void:

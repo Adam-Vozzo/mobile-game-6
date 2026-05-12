@@ -63,6 +63,16 @@ class_name ControllerProfile
 ## Duration of the reboot effect (red flash → dark → fade in).
 @export_range(0.05, 1.5, 0.05) var reboot_duration: float = 0.5
 
+@export_category("Air Dash")
+## Horizontal speed during the air dash burst, m/s. 0 = dash disabled (default for all
+## profiles). Start conservative; tune up per profile on device.
+@export_range(0.0, 20.0, 0.5) var air_dash_speed: float = 0.0
+## How long the dash burst lasts, seconds.
+@export_range(0.05, 0.5, 0.01) var air_dash_duration: float = 0.18
+## Gravity scale during the dash (0 = fully suspended, 1 = normal gravity).
+## 0.15 keeps a slight arc so the dash doesn't read as flying.
+@export_range(0.0, 1.0, 0.05) var air_dash_gravity_scale: float = 0.15
+
 @export_category("Assisted")
 ## Speed multiplier applied to horizontal velocity for `landing_sticky_frames`
 ## physics frames after the player touches down. 0 = disabled (default for all

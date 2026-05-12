@@ -15,6 +15,49 @@ Append, don't rewrite. Supersession adds a new entry referencing the old.
 
 ---
 
+## 2026-05-12 — Air dash: all profiles default to speed = 0; enable per device session
+
+Status: accepted
+Context: The air dash research note (`docs/research/air_dash.md`) identified two schools of
+thought: (a) enable universally on all profiles (mobile players always need depth-error recovery),
+or (b) profile-exclusive to preserve SMB-feel purity on Snappy. A third option — enable only on
+Assisted — was considered as a middle ground.
+Decision: `air_dash_speed = 0.0` default on all four profiles (Snappy, Floaty, Momentum, Assisted).
+The human must turn it on per profile via the dev menu "Dash speed" slider during on-device tuning.
+This is not a deferral — the feature is fully implemented and charges/timer/gravity all work. The
+default-off state simply preserves the existing on-device feel verdict until the human has felt
+the dash and chosen per-profile values. The research note recommends starting with Assisted only.
+Alternatives considered:
+- Enable on all profiles by default (universal). Rejected: would change the feel of existing
+  profiles before the human has had a chance to evaluate them on device. Throttle rule: don't
+  pick feel winners autonomously.
+- Enable only on Assisted. Rejected: arbitrary pre-selection; all profiles should get an equal
+  evaluation pass.
+Consequences: the first device session after this PR should test dash on each profile and set
+the "Dash speed" slider to a non-zero value for any profile where it improves play. The human
+then confirms the per-profile values before they get baked into the .tres files.
+
+## 2026-05-12 — Air dash touch gesture: right-zone quick swipe (Option A)
+
+Status: accepted
+Context: Two input options from `docs/research/air_dash.md`: Option A (right-zone horizontal swipe,
+directional) vs Option B (double-tap jump button, forward-only). Option A requires gesture
+disambiguation in `touch_overlay.gd` (swipe vs camera drag); Option B avoids disambiguation but
+sacrifices direction and conflicts with variable-jump-height touch release.
+Decision: Option A. A quick swipe (≥ 40 px in ≤ 0.20 s) on the right zone is classified as a
+dash gesture and fires `TouchInput.air_dash_triggered`. Anything else falls through to camera drag
+as before. Both thresholds are `@export` vars tunable from the dev menu (future: expose in Touch
+Controls section if device testing shows misfire rate). The swipe direction is emitted as a 2D
+screen-space vector; `player.gd` rotates it into world space by the camera yaw, consistent with
+how the virtual stick's move vector is transformed.
+Alternatives considered:
+- Option B (double-tap). Rejected: forward-only; double-tap conflicts with jump-cut timing.
+- Both A and B with a Settings toggle. Deferred: adds complexity before device validation.
+  Revisit at Gate 3 settings pass if players request it.
+Consequences: camera drag on the right zone is unaffected for slow/long touches. Fast swipes
+trigger a dash. If misfire rate is too high on device, `dash_px_threshold` can be raised via the
+dev menu; if misses are common, `dash_time_threshold` can be raised.
+
 ## 2026-05-08 — Autoload named `TouchInput`, not `Input`
 
 Status: accepted

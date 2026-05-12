@@ -46,6 +46,12 @@ var _squash_tween: Tween = null
 # (via _tick_timers) and on each ground/coyote jump (via _try_jump) so the
 # pool refills for the next aerial phase. Decremented per air jump.
 var _air_jumps_remaining: int = 0
+# Air dash state. One charge per airborne phase; recharges on landing.
+# _is_dashing blocks _apply_horizontal and scales gravity while active.
+var _dash_charges: int = 0
+var _dash_timer: float = 0.0
+var _dash_dir: Vector3 = Vector3.ZERO
+var _is_dashing: bool = false
 
 @onready var _visual: Node3D = $Visual
 @onready var _body_mesh: MeshInstance3D = $Visual/Body
@@ -61,6 +67,7 @@ func _ready() -> void:
 		DevMenu.squash_stretch_param_changed.connect(_on_squash_stretch_param)
 	if has_node("/root/TouchInput"):
 		TouchInput.jump_pressed.connect(_on_jump_pressed)
+		TouchInput.air_dash_triggered.connect(_on_air_dash_triggered)
 
 
 func set_profile(p: ControllerProfile) -> void:
@@ -106,6 +113,8 @@ func _physics_process(delta: float) -> void:
 	if Input.is_action_just_pressed(&"respawn"):
 		respawn()
 		return
+	if Input.is_action_just_pressed(&"air_dash"):
+		_try_air_dash(Vector3.ZERO)
 	var move_dir := _camera_relative_move_dir()
 	_apply_horizontal(delta, on_floor, move_dir)
 	_apply_gravity(delta, jump_held)
@@ -124,11 +133,19 @@ func _tick_timers(delta: float, on_floor: bool) -> void:
 		_coyote_timer = profile.coyote_time
 		_last_grounded_pos_y = global_position.y
 		_air_jumps_remaining = profile.air_jumps
+		_dash_charges = 1   # recharge on landing regardless of profile speed
+		_is_dashing = false  # landing always ends an in-progress dash
+		_dash_timer = 0.0
 	else:
 		_coyote_timer = maxf(0.0, _coyote_timer - delta)
 		# Capture falling speed while airborne. On the just_landed frame, on_floor
 		# is true so this branch is skipped, preserving the pre-landing value.
 		_last_fall_speed = velocity.y
+		# Tick down active dash
+		if _is_dashing:
+			_dash_timer = maxf(0.0, _dash_timer - delta)
+			if _dash_timer <= 0.0:
+				_is_dashing = false
 	if _buffer_timer > 0.0:
 		_buffer_timer = maxf(0.0, _buffer_timer - delta)
 	# Landing detection for Assisted profile sticky-landing mechanic (and juice).
@@ -169,6 +186,8 @@ func _camera_relative_move_dir() -> Vector3:
 
 
 func _apply_horizontal(delta: float, on_floor: bool, move_dir: Vector3) -> void:
+	if _is_dashing:
+		return  # horizontal velocity is held at dash speed; _try_air_dash set it
 	var current_h := Vector3(velocity.x, 0.0, velocity.z)
 	var target_h := move_dir * profile.max_speed
 	var accel: float
@@ -197,6 +216,8 @@ func _apply_gravity(delta: float, jump_held: bool) -> void:
 		g = profile.gravity_rising
 	else:
 		g = profile.gravity_falling
+	if _is_dashing:
+		g *= profile.air_dash_gravity_scale
 	velocity.y = maxf(-profile.terminal_velocity, velocity.y - g * delta)
 
 
@@ -281,6 +302,9 @@ func respawn() -> void:
 	_buffer_timer = 0.0
 	_coyote_timer = 0.0
 	_air_jumps_remaining = 0
+	_dash_charges = 0
+	_dash_timer = 0.0
+	_is_dashing = false
 	# Kill any running squash-stretch tween so it doesn't fight _run_reboot_effect.
 	if _squash_tween != null:
 		_squash_tween.kill()
@@ -315,6 +339,50 @@ func _on_squash_stretch_param(param: StringName, value: float) -> void:
 	match param:
 		&"impact_squash_scale": _impact_squash_scale = value
 		&"jump_stretch_scale":  _jump_stretch_scale = value
+
+
+func _on_air_dash_triggered(dir_2d: Vector2) -> void:
+	# Touch overlay emits a 2D screen-space direction; rotate into world space
+	# using the camera yaw, consistent with _camera_relative_move_dir().
+	var dir_3d := Basis(Vector3.UP, _camera_yaw) * Vector3(dir_2d.x, 0.0, dir_2d.y)
+	_try_air_dash(dir_3d)
+
+
+## Trigger an air dash in `dir` (world space, horizontal). Pass Vector3.ZERO to
+## fall back to the current horizontal velocity direction (keyboard usage).
+## Guards: rebooting, already dashing, no charges, on floor, speed disabled.
+func _try_air_dash(dir: Vector3) -> void:
+	if _is_rebooting or _is_dashing or _dash_charges <= 0 or is_on_floor():
+		return
+	if profile.air_dash_speed <= 0.0:
+		return
+	var dash_dir := dir
+	if dash_dir.length() < 0.01:
+		dash_dir = Vector3(velocity.x, 0.0, velocity.z).normalized()
+	if dash_dir.length() < 0.01:
+		# Absolute fallback: face direction of visual (local -Z)
+		dash_dir = -_visual.global_basis.z if _visual else Vector3.FORWARD
+	_dash_charges -= 1
+	_dash_timer = profile.air_dash_duration
+	_dash_dir = dash_dir.normalized()
+	_is_dashing = true
+	velocity.x = _dash_dir.x * profile.air_dash_speed
+	velocity.z = _dash_dir.z * profile.air_dash_speed
+	velocity.y = 0.0
+	if DevMenu.is_juice_on(&"squash_stretch"):
+		_play_dash_stretch()
+
+
+func _play_dash_stretch() -> void:
+	if _visual == null:
+		return
+	if _squash_tween:
+		_squash_tween.kill()
+	_squash_tween = create_tween()
+	_squash_tween.set_ease(Tween.EASE_OUT).set_trans(Tween.TRANS_QUAD)
+	_squash_tween.tween_property(_visual, "scale", Vector3(1.25, 0.75, 1.25), 0.05)
+	_squash_tween.set_ease(Tween.EASE_IN_OUT).set_trans(Tween.TRANS_SINE)
+	_squash_tween.tween_property(_visual, "scale", Vector3.ONE, 0.15)
 
 
 func _run_reboot_effect() -> void:

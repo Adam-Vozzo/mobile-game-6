@@ -5,10 +5,10 @@ A mobile 3D platformer. Brutalist megastructure inspired by *BLAME!*. Controller
 ## Status
 
 Current gate: **Gate 0 — Feel Lab** (closing out; Gate 1 prep in flight)
-Last activity: 2026-05-12 — iter 53: Feel Lab expansion (high ascent, narrow ledges, wall corner, drop ledge, vertical moving platform, teleport buttons)
+Last activity: 2026-05-12 — iter 54: Air dash implementation (ControllerProfile params, player.gd state machine, touch swipe gesture, dev-menu sliders, 19 unit tests)
 Test device build: ✅ verified 2026-05-12 — runs in Godot 4.6 on PC and on Nothing Phone 4(a) Pro
 Performance: 144 fps / 6.9 ms in editor at 1920×1080 (Feel Lab); on-device frametimes TBD
-Throttle level: **2** (2 iterations since last human direction 2026-05-12). Next: Air dash implementation.
+Throttle level: **3** (3 iterations since last human direction 2026-05-12). Next: Threshold greybox.
 
 If you only read one section, read **Open questions waiting on you** below.
 
@@ -83,6 +83,31 @@ Goal: store-ready build.
 The full iteration log lives here, newest first. Every iteration appends an entry. Skim the dates to find where you last left off.
 
 <!-- ITERATION ENTRIES BELOW — DO NOT REMOVE OLDER ENTRIES -->
+
+### [2026-05-12] — iter 54 — Air dash implementation
+
+Branch: `iter/air-dash`
+Throttle: 3 (normal)
+Gate: Gate 0 closing / Gate 1 prep
+
+**Primary: Air dash mechanic — full implementation from ControllerProfile params through touch gesture to dev-menu sliders.**
+
+- **`scripts/controller/controller_profile.gd`** — New `@export_category("Air Dash")` with three params: `air_dash_speed` (0–20 m/s, default 0 = disabled, backwards-compatible on all existing profiles), `air_dash_duration` (0.05–0.5 s, default 0.18 s), `air_dash_gravity_scale` (0–1, default 0.15 = near-suspended gravity during burst).
+- **`scripts/player/player.gd`** — Four new state vars (`_dash_charges`, `_dash_timer`, `_dash_dir`, `_is_dashing`). `_tick_timers`: on landing, `_dash_charges = 1` + clears dash; in airborne branch, ticks down `_dash_timer` and clears `_is_dashing` on expiry. `_apply_horizontal`: early-return when `_is_dashing` (holds velocity constant). `_apply_gravity`: scales `g` by `air_dash_gravity_scale` when dashing. `respawn()`: clears all dash state. New methods: `_try_air_dash(dir: Vector3)` (guards + trigger), `_play_dash_stretch()` (XZ stretch + Y squish via `_squash_tween`, gated behind `squash_stretch`), `_on_air_dash_triggered(dir_2d)` (touch signal handler — rotates screen 2D dir by camera yaw into world space). Keyboard trigger: `E` key → `_try_air_dash(Vector3.ZERO)` (uses current velocity direction as fallback).
+- **`scripts/autoload/touch_input.gd`** — New `signal air_dash_triggered(dir: Vector2)`.
+- **`scripts/ui/touch_overlay.gd`** — New `@export_category("Dash gesture")` with `dash_px_threshold` (40 px default) and `dash_time_threshold` (0.20 s default). New `_dash_start` dict tracks press position+time per KIND_DRAG touch. `_handle_touch`: seeds / erases `_dash_start` on press/release. `_handle_drag`: quick-swipe check (total travel ≥ threshold AND elapsed < time threshold) fires `TouchInput.air_dash_triggered`; resets anchor to prevent double-trigger; falls through to camera drag otherwise.
+- **`tools/dev_menu/dev_menu_overlay.gd`** — New `_build_controller_air_dash()` subsection: "Dash speed" / "Dash dur (s)" / "Dash gravity ×" sliders wired to `_profile_sliders` dict. Called from `_build_controller_section()`.
+- **`project.godot`** — New `air_dash` input action bound to `E` key (physical_keycode=69) for editor testing.
+- **`tests/test_controller_kinematics.gd`** — `_test_air_dash_logic()`: 19 assertions. Backwards-compat (all 4 profiles default to speed=0), default param range checks, charge management (refill on land / decrement on use / exhaustion guard), speed guard, velocity formula (dir × speed), gravity scaling (scale×g, scale=0, scale=1), direction fallback (zero input → velocity dir, non-zero input → input dir). Total: 642 → 661.
+- **`docs/JUICE.md`** — "Dash stretch" added to Squash & stretch table (prototype).
+
+**Side quest:** none.
+
+**Perf:** no frametime change expected — one extra guard in `_apply_horizontal`, one extra multiply in `_apply_gravity` per physics frame. Both O(1).
+
+**New dev-menu controls:** Controller — Air Dash: Dash speed, Dash dur (s), Dash gravity ×.
+
+**On-device pending.** Enable via dev menu: set "Dash speed" > 0 on the target profile (Assisted recommended first). Keyboard E to test in editor.
 
 ### [2026-05-12] — iter 53 — Feel Lab expansion + interaction variety
 

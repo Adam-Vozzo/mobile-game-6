@@ -16,10 +16,10 @@ authored with it in mind.
 
 ## Active iteration
 
-- _No iteration currently in flight._ Iter 53 (Feel Lab expansion) landed 2026-05-12 — see
+- _No iteration currently in flight._ Iter 54 (Air dash) landed 2026-05-12 — see
   Recently completed.
-- Next iteration should pull from the top of the P0 queue below: **Air dash implementation**.
-  Throttle: **2** (2 iterations since last human direction session 2026-05-12).
+- Next iteration should pull from the top of the P0 queue below: **Threshold greybox**.
+  Throttle: **3** (3 iterations since last human direction session 2026-05-12).
 
 ## Queue (ranked, top is next)
 
@@ -56,11 +56,13 @@ The next iteration should pull from the top of this list. Items marked
    x=−8/−12), drop-test cliff ledge (3m above main floor north edge), vertical
    moving platform elevator at x=18. Dev menu "Teleport" sub-section: 10 named
    zone buttons. On-device pending.
-6. **Air dash implementation.** _Next up._ Research-ready in
-   `docs/research/air_dash.md`. Three new `ControllerProfile` params
-   (default 0 = off, backwards-compatible), right-zone swipe input via
-   TouchInput, dev menu sliders, unit tests. Test alongside double jump
-   in the expanded Feel Lab.
+6. ~~**Air dash implementation.**~~ Done 2026-05-12 (iter 54). Three new `ControllerProfile`
+   params (`air_dash_speed` default 0 = disabled on all profiles, `air_dash_duration` 0.18 s,
+   `air_dash_gravity_scale` 0.15). `player.gd`: `_dash_charges/timer/dir/_is_dashing` state;
+   `_try_air_dash()`, `_play_dash_stretch()`, `_on_air_dash_triggered()`. Touch input: right-zone
+   quick-swipe (≥40 px in <0.20 s) fires `TouchInput.air_dash_triggered`; player rotates 2D
+   screen dir by camera yaw. Dev menu: "Controller — Air Dash" section (3 sliders). Keyboard: E.
+   19 unit tests. On-device pending — enable via "Dash speed" slider.
 7. **Threshold greybox.** First Gate 1 level. Double jump now available for
    level design. Five beats per `docs/levels/threshold.md` (habitation →
    maintenance → industrial contrast). Build geometry, place `CameraHint`
@@ -155,6 +157,18 @@ These mirror "Open questions waiting on you" in the README.
   drive the next tuning iteration.
 
 ## Recently completed (last 5)
+
+- 2026-05-12 — Iteration 54. **Air dash implementation.** Three new `ControllerProfile`
+  props: `air_dash_speed` (0 = disabled, backwards-compatible), `air_dash_duration` (0.18 s),
+  `air_dash_gravity_scale` (0.15). `player.gd`: 4 state vars, `_try_air_dash()` with full
+  guard set, `_play_dash_stretch()` (XZ/Y tween, squash_stretch-gated), `_on_air_dash_triggered()`
+  (rotates 2D screen→world). `_tick_timers`: recharge on landing, tick + expire in airborne
+  branch. `_apply_horizontal`: early-return when dashing. `_apply_gravity`: scale g by
+  `air_dash_gravity_scale`. `touch_input.gd`: `air_dash_triggered(dir: Vector2)` signal.
+  `touch_overlay.gd`: `_dash_start` dict + quick-swipe check in `_handle_drag`. Two tunables:
+  `dash_px_threshold` (40 px), `dash_time_threshold` (0.20 s). `dev_menu_overlay.gd`: "Controller
+  — Air Dash" subsection (3 `_profile_sliders`). `project.godot`: `air_dash` action (E key).
+  19 unit tests (642 → 661). JUICE.md: dash stretch → prototype. On-device pending.
 
 - 2026-05-12 — Iteration 53. **Feel Lab expansion + interaction variety.**
   `scenes/levels/feel_lab.tscn`: 6 new sub_resources, 30+ new nodes. East
