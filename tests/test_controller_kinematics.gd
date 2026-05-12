@@ -86,6 +86,7 @@ func _ready() -> void:
 	_test_apex_anchor_split()
 	_test_double_jump_logic()
 	_test_air_dash_logic()
+	_test_game_gate1_api()
 	_report()
 
 
@@ -3029,3 +3030,45 @@ func _test_air_dash_logic() -> void:
 	resolved   = input_dir if input_dir.length() > 0.01 else vel_h.normalized()
 	_ok("non-zero input → dash direction uses input direction (-Z)",
 		resolved.is_equal_approx(Vector3(0.0, 0.0, -1.0)))
+
+
+func _test_game_gate1_api() -> void:
+	## Gate 1 additions to the Game autoload: is_running, shards_collected/total,
+	## start_run(), level_complete(). Also validates that reset_run() clears the
+	## new fields (backwards-compat for code that calls reset_run without start_run).
+	print("\n-- Game Gate 1 API --")
+	var g: GM = GM.new()
+
+	# Default values for all new Gate 1 fields.
+	_ok("Game.is_running default is false", g.is_running == false)
+	_ok("Game.shards_collected default is 0", g.shards_collected == 0)
+	_ok("Game.shards_total default is 0", g.shards_total == 0)
+
+	# start_run(): activates timer and clears per-run state.
+	g.run_time_seconds = 5.0
+	g.shards_collected = 3
+	g.start_run()
+	_ok("start_run: is_running set to true", g.is_running == true)
+	_ok("start_run: run_time_seconds zeroed", _near(g.run_time_seconds, 0.0))
+	_ok("start_run: shards_collected zeroed", g.shards_collected == 0)
+
+	# level_complete(): stops timer; level_completed signal emitted (existence checked
+	# in _test_game_autoload_contract; emission is tested via connected callback).
+	g.level_complete()
+	_ok("level_complete: is_running set to false (timer stops)", g.is_running == false)
+
+	# reset_run(): clears all run-state including Gate 1 fields.
+	g.is_running = true
+	g.shards_collected = 2
+	g.reset_run()
+	_ok("reset_run: is_running cleared to false", g.is_running == false)
+	_ok("reset_run: shards_collected cleared to 0", g.shards_collected == 0)
+
+	# shards_total is level-owned: set by the level script, not by start_run/reset_run.
+	g.shards_total = 3
+	g.start_run()
+	_ok("shards_total unchanged by start_run (level sets it)", g.shards_total == 3)
+	g.reset_run()
+	_ok("shards_total unchanged by reset_run (level sets it)", g.shards_total == 3)
+
+	g.free()
