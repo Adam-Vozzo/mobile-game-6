@@ -5,10 +5,10 @@ A mobile 3D platformer. Brutalist megastructure inspired by *BLAME!*. Controller
 ## Status
 
 Current gate: **Gate 0 — Feel Lab**
-Last iteration: 2026-05-12 — iter 49: airborne offset math tests + BLAME! level vocabulary (548 assertions)
+Last iteration: 2026-05-12 — iter 50: Game level-path contract tests + Audio bus constant tests (560 assertions)
 Test device build: not yet — hand-authored scenes pending first Godot 4.6 import; see Open questions
 Performance: not yet measured on Nothing Phone 4(a) Pro
-Throttle level: **HARD (25 autonomous iterations since 2026-05-11 human session).** Next iterations are hardening only unless human provides direction.
+Throttle level: **HARD (26 autonomous iterations since 2026-05-11 human session).** Next iterations are hardening only unless human provides direction.
 
 If you only read one section, read **Open questions waiting on you** below.
 
@@ -16,7 +16,7 @@ If you only read one section, read **Open questions waiting on you** below.
 
 Things Claude can't decide alone, or where it's stalled and needs direction. Each is blocking some piece of forward progress.
 
-> **⚠ HARD THROTTLE — 25 autonomous iterations since last human session (2026-05-11).**
+> **⚠ HARD THROTTLE — 26 autonomous iterations since last human session (2026-05-11).**
 > Claude has stalled on hardening work (tests + research) and is waiting for human
 > direction before doing anything further. The P0 queue is entirely blocked on the
 > first Godot 4.6 import. No new feature surface has been added since iteration 25.
@@ -100,6 +100,24 @@ Goal: store-ready build.
 The full iteration log lives here, newest first. Every iteration appends an entry. Skim the dates to find where you last left off.
 
 <!-- ITERATION ENTRIES BELOW — DO NOT REMOVE OLDER ENTRIES -->
+
+### [2026-05-12] — `claude/gifted-shannon-SAGze` — iter 50: Game level-path contract tests + Audio bus constant tests
+
+- **Throttle: HARD (26 autonomous iterations since 2026-05-11 human session).** Hardening only.
+- **Primary: `_test_game_level_path_contract` — 7 assertions documenting that `current_level_path`
+  survives `reset_run()` and `register_attempt()`.**
+  This invariant is critical for Gate 1's scene lifecycle (`reset_run()` is a counter reset, not a
+  level unload). Tests: write + read-back, two resets across two distinct paths, explicit clear, and
+  type check (String not StringName).
+- **Side quest: `_test_audio_bus_constants` — 5 assertions documenting the Audio autoload's bus name
+  contract.** Gate 1 SFX calls will reference `Audio.BUS_SFX_PLAYER` / `BUS_SFX_WORLD`; this test
+  catches accidental renames before they surface as silent AudioServer misses. Also verifies all four
+  bus names are distinct.
+- **Total assertions: 548 → 560.**
+- **Perf:** no change. No new nodes or draw calls.
+- **No new dev-menu controls. No assets acquired.**
+- **Needs human attention:** 26 iterations at HARD throttle; all P0 items blocked on first Godot 4.6
+  import. See Open questions below.
 
 ### [2026-05-12] — `claude/gifted-shannon-Ilq31` — iter 49: airborne offset math tests + BLAME! level vocabulary
 
