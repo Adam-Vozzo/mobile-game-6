@@ -83,7 +83,7 @@ func _ready() -> void:
 	_test_vertical_follow_ratchet()
 	_test_default_apex_height_formula()
 	_test_reference_floor_smoothing()
-	_test_takeoff_reference_snap()
+	_test_apex_anchor_split()
 	_report()
 
 
@@ -2633,19 +2633,16 @@ func _test_default_apex_height_formula() -> void:
 
 # Helpers for the vertical-follow tests.
 
-func _eff_y(player_y: float, reference_floor_y: float, apex_h: float, multiplier: float) -> float:
-	## Mirror of camera_rig.gd::_compute_effective_y. Three regimes around
-	## the reference floor: track up (above apex band), track down (below
-	## reference, e.g. falling off a ledge), hold (inside the band).
-	var band := apex_h * multiplier
-	if band <= 0.0:
-		return player_y
-	var apex_y := reference_floor_y + band
-	if player_y > apex_y:
-		return player_y - band
-	if player_y < reference_floor_y:
-		return player_y
-	return reference_floor_y
+func _eff_y(player_y: float, anchor_y: float, apex_h: float, multiplier: float) -> float:
+	## Mirror of camera_rig.gd::_compute_effective_y when the apex anchor and
+	## reference floor are the same value — i.e. the steady-state case where
+	## the player has been standing on a tier long enough for the smoothed
+	## reference to converge to the instant-tracked anchor. Delegates to
+	## `_eff_y_split` with `apex_anchor_y == reference_y == anchor_y`. For
+	## testing the split case (anchor ≠ reference, e.g. during a jump after
+	## a recent tier change while smoothing is still in progress), use
+	## `_eff_y_split` directly.
+	return _eff_y_split(player_y, anchor_y, anchor_y, apex_h, multiplier)
 
 
 func _apex_formula(jump_velocity: float, gravity_rising: float) -> float:
@@ -2774,93 +2771,107 @@ func _ref_update_initial(player_y: float) -> float:
 	return player_y
 
 
-func _test_takeoff_reference_snap() -> void:
-	## Mirrors the takeoff-detection block at the top of `camera_rig.gd::_process`.
-	## When the player goes from grounded → airborne, we snap `_reference_floor_y`
-	## to `player.y` and recompute `_air_offset` so the camera position stays
-	## continuous. Without the snap, a jump while reference is still smoothing
-	## toward the player's current tier would compute apex_y from the
-	## mid-smoothing value — a normal jump from the new tier would then exceed
-	## apex_y and trigger spurious track-up motion mid-jump.
-	print("\n-- Camera takeoff reference snap --")
+func _test_apex_anchor_split() -> void:
+	## Mirrors the apex-anchor / reference split in `camera_rig.gd`. The apex
+	## threshold uses `_apex_anchor_y` (instant-tracked on grounded frames,
+	## held during airborne) so the check is tied to the player's actual
+	## takeoff floor; the hold and track-down branches use `_reference_floor_y`
+	## (smoothed) so tier-change transitions still glide rather than snap.
+	## This split fixes the "jump-too-soon-after-landing" jitter while
+	## preserving the smoothed landing transition.
+	print("\n-- Camera apex-anchor / reference split --")
 	const DEFAULT_MULT := 1.15
 	var snappy_apex := (11.5 * 11.5) / (2.0 * 38.0)  # ≈ 1.74 m
-	# Approximate semi-implicit-Euler peak at 60 fps with Snappy params.
-	# Stays a bit below the analytic max — see `_test_default_apex_height_formula`.
-	var snappy_peak_euler := 1.646
+	var snappy_peak_euler := 1.646  # semi-implicit Euler peak at 60 fps with Snappy params
 
-	# --- Scenario: player jumped from tier A (Y=0) to tier B (Y=1.5).
-	# Reference was 0 pre-jump, smoothed partway during the airborne phase
-	# up to landing, and has been smoothing further on grounded frames since
-	# they landed. Pre-takeoff reference is mid-smooth at 0.5 (about 1/3
-	# of the way to 1.5). Camera Y is at `ref + lift = 0.5 + 2.85 = 3.35`.
+	# --- The bug pre-split: jump-too-soon-after-tier-change ---
+	# Scenario: player landed on tier Y=1.5 from Y=0. Reference smooths 0→1.5
+	# at 6/sec; mid-smooth value is e.g. 0.5. Player jumps before smoothing
+	# completes. Apex anchor is at 1.5 (instant-tracked on the last grounded
+	# frame), reference is held at 0.5 during airborne.
 	var ref_mid_smooth := 0.5
-	var player_takeoff_y := 1.5
-	var cam_y_pre := 3.35
-	# Camera lift = sin(22°) * 6 + 0.6 = 2.25 + 0.60 = 2.85, matching
-	# `camera_rig.gd::_place_camera_initial` / `_process` ground branch.
-	# `cam_y_pre` (3.35) above already reflects ref_mid_smooth + 2.85.
+	var anchor_takeoff := 1.5
+	var player_peak := anchor_takeoff + snappy_peak_euler  # 3.146
 
-	# --- Snap: reference → player.y ---
-	var snapped_ref := _ref_snap_at_takeoff(ref_mid_smooth, player_takeoff_y)
-	_ok("snap: reference becomes player.y at takeoff",
-		_near(snapped_ref, player_takeoff_y))
-	_ok("snap: reference no longer at mid-smoothing value",
-		not _near(snapped_ref, ref_mid_smooth))
-	_ok("snap is idempotent: same player.y → same reference",
-		_near(_ref_snap_at_takeoff(snapped_ref, player_takeoff_y), player_takeoff_y))
+	# With the split, the apex threshold is `anchor + band = 1.5 + 2.0 = 3.5`.
+	# Player peak 3.146 < 3.5 → hold → effective_y = reference (0.5).
+	var split_at_peak := _eff_y_split(player_peak, anchor_takeoff, ref_mid_smooth, snappy_apex, DEFAULT_MULT)
+	_ok("split: peak below `anchor + band` → hold branch (effective_y = reference)",
+		_near(split_at_peak, ref_mid_smooth))
 
-	# --- Offset recompute: keeps camera world Y continuous ---
-	# After snap, effective_y = compute_effective_y(player.y) with new ref.
-	# player.y == ref → hold branch → effective_y = ref.
-	var new_effective_y := _eff_y(player_takeoff_y, snapped_ref, snappy_apex, DEFAULT_MULT)
-	_ok("post-snap: effective_y at takeoff equals snapped reference",
-		_near(new_effective_y, snapped_ref))
-	# new _air_offset = camera_pre - new_effective.
-	var new_air_offset_y := cam_y_pre - new_effective_y
-	# After rigid translate: cam_post = effective + air_offset.
-	var cam_y_post := new_effective_y + new_air_offset_y
-	_ok("post-snap: camera Y is continuous (no pop on takeoff frame)",
-		_near(cam_y_post, cam_y_pre))
+	# Pre-split (the buggy state): apex threshold was `reference + band = 0.5 + 2.0 = 2.5`.
+	# Same player peak 3.146 > 2.5 → track-up → effective_y = player.y - band.
+	var presplit_at_peak := _eff_y(player_peak, ref_mid_smooth, snappy_apex, DEFAULT_MULT)
+	_ok("pre-split: peak above `reference + band` → spurious track-up",
+		presplit_at_peak > ref_mid_smooth)
 
-	# --- During the jump: held branch fires (no track-up) ---
-	# Player's actual peak at semi-implicit Euler: `takeoff_y + peak_euler`.
-	var player_y_peak := snapped_ref + snappy_peak_euler
-	var effective_y_at_peak := _eff_y(player_y_peak, snapped_ref, snappy_apex, DEFAULT_MULT)
-	_ok("during jump: at Euler peak with default multiplier → hold (no track-up)",
-		_near(effective_y_at_peak, snapped_ref))
-	# Even at the analytic peak (a bit higher than Euler), the 15% headroom
-	# from `apex_height_multiplier = 1.15` keeps the player below apex_y.
-	var player_y_analytic_peak := snapped_ref + snappy_apex
-	_ok("during jump: at analytic peak with default multiplier → hold",
-		_near(_eff_y(player_y_analytic_peak, snapped_ref, snappy_apex, DEFAULT_MULT), snapped_ref))
+	# The split eliminates the spurious motion: at peak, effective_y stays at
+	# reference, which is the same value it had pre-takeoff. No discontinuity.
+	_ok("split: at peak, effective_y equals reference (= pre-takeoff effective_y)",
+		_near(split_at_peak, ref_mid_smooth))
 
-	# --- Contrast: WITHOUT the snap (the pre-fix behaviour) ---
-	# Reference would still be at mid-smoothing. Same Euler peak would now
-	# exceed apex_y = ref_mid_smooth + apex_band, triggering track-up.
-	var effective_y_unfixed := _eff_y(player_y_peak, ref_mid_smooth, snappy_apex, DEFAULT_MULT)
-	_ok("pre-fix: same peak with mid-smoothing reference → track-up fires",
-		effective_y_unfixed > ref_mid_smooth)
-	var camera_motion_amount := absf(effective_y_unfixed - ref_mid_smooth)
-	_ok("pre-fix: track-up amount is non-trivial (visible camera motion)",
-		camera_motion_amount > 0.1)
+	# --- effective_y is continuous across takeoff ---
+	# Pre-takeoff: grounded with apex_anchor = player.y (instant tracked).
+	# anchor = 1.5, reference = 0.5. Player.y = 1.5.
+	# apex_y = 1.5 + 2.0 = 3.5. player.y (1.5) > 3.5? No. < reference (0.5)? No. Hold → reference.
+	var preflight := _eff_y_split(1.5, 1.5, ref_mid_smooth, snappy_apex, DEFAULT_MULT)
+	_ok("pre-takeoff (grounded): effective_y = reference (= 0.5, mid-smoothing)",
+		_near(preflight, ref_mid_smooth))
 
-	# --- Same-tier takeoff (no mid-smoothing in progress): snap is a no-op ---
-	# If reference was already at player.y (smoothing converged or never
-	# diverged), the snap doesn't change anything.
-	var ref_settled := 1.5
-	var snapped_settled := _ref_snap_at_takeoff(ref_settled, 1.5)
-	_ok("same-tier takeoff: snap is a no-op when reference already at player.y",
-		_near(snapped_settled, ref_settled))
-	var settled_air_offset_y := cam_y_pre - 1.5
-	_ok("same-tier takeoff: _air_offset unchanged from pre-takeoff value",
-		_near(settled_air_offset_y, new_air_offset_y))
+	# Takeoff frame: airborne. Anchor held at 1.5. Reference held at 0.5.
+	# Same effective_y. NO change at the takeoff transition.
+	var first_air_frame := _eff_y_split(1.5, 1.5, ref_mid_smooth, snappy_apex, DEFAULT_MULT)
+	_ok("takeoff frame: effective_y unchanged from pre-takeoff (no rotation, no pop)",
+		_near(first_air_frame, preflight))
+
+	# --- Above-apex still triggers track-up ---
+	# A double-jump from Y=1.5 reaching ~1.5 + 2 × 1.646 = 4.79 m exceeds the
+	# anchor-band ceiling (1.5 + 2.0 = 3.5) and should track up.
+	var double_jump_peak := anchor_takeoff + 2.0 * snappy_peak_euler
+	var double_jump_eff := _eff_y_split(double_jump_peak, anchor_takeoff, ref_mid_smooth, snappy_apex, DEFAULT_MULT)
+	_ok("split: double-jump peak above `anchor + band` → tracks up (camera lifts as designed)",
+		double_jump_eff > ref_mid_smooth)
+	_ok("split: track-up returns player.y - band (1:1 lift above anchor)",
+		_near(double_jump_eff, double_jump_peak - snappy_apex * DEFAULT_MULT))
+
+	# --- Below-reference still triggers track-down ---
+	# Walking off a ledge from Y=1.5 (anchor 1.5, reference settled at 1.5),
+	# then falling to Y=0.5 (below reference). Anchor held at 1.5, reference
+	# held at 1.5. Player.y < reference → track-down.
+	var anchor_settled := 1.5
+	var reference_settled := 1.5
+	var falling_eff := _eff_y_split(0.5, anchor_settled, reference_settled, snappy_apex, DEFAULT_MULT)
+	_ok("split: below reference → track-down (effective_y = player.y)",
+		_near(falling_eff, 0.5))
+
+	# --- Boundary at reference (held branch is strict `<`) ---
+	_ok("split: player.y exactly at reference → hold (boundary strict)",
+		_near(_eff_y_split(1.5, anchor_settled, reference_settled, snappy_apex, DEFAULT_MULT),
+			reference_settled))
+
+	# --- Anchor == reference equivalence (steady state) ---
+	# When grounded and settled, anchor == reference == player.y. The split
+	# helper reduces to the original `_eff_y` semantics in this case.
+	var p := 2.0
+	_ok("anchor == reference equivalence: split === eff_y (held band)",
+		_near(_eff_y_split(p + 1.0, p, p, snappy_apex, DEFAULT_MULT),
+			_eff_y(p + 1.0, p, snappy_apex, DEFAULT_MULT)))
+	_ok("anchor == reference equivalence: split === eff_y (track-up)",
+		_near(_eff_y_split(p + 3.0, p, p, snappy_apex, DEFAULT_MULT),
+			_eff_y(p + 3.0, p, snappy_apex, DEFAULT_MULT)))
 
 
-# Mirrors camera_rig.gd's takeoff branch: snap reference to player.y on the
-# is_on_floor: true → false transition. The previous reference value is
-# explicitly discarded — the whole point is to overwrite it with the current
-# floor.
-@warning_ignore("unused_parameter")
-func _ref_snap_at_takeoff(current_ref: float, player_y: float) -> float:
-	return player_y
+# Mirrors camera_rig.gd::_compute_effective_y when the apex anchor and
+# reference floor are *split* — i.e. their semantic distinction (apex
+# anchor = instant-tracked, reference = smoothed) matters. The original
+# `_eff_y` is a wrapper that passes the same value for both.
+func _eff_y_split(player_y: float, apex_anchor_y: float, reference_y: float,
+		apex_h: float, multiplier: float) -> float:
+	var band := apex_h * multiplier
+	if band <= 0.0:
+		return player_y
+	if player_y > apex_anchor_y + band:
+		return player_y - band
+	if player_y < reference_y:
+		return player_y
+	return reference_y
