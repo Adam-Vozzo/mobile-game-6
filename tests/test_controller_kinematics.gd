@@ -18,6 +18,7 @@ const PB := preload("res://scripts/autoload/perf_budget.gd")
 const TI := preload("res://scripts/autoload/touch_input.gd")
 const GM := preload("res://scripts/autoload/game.gd")
 const DM := preload("res://scripts/autoload/dev_menu.gd")
+const AU := preload("res://scripts/autoload/audio.gd")
 
 var _pass_count := 0
 var _fail_count := 0
@@ -77,6 +78,8 @@ func _ready() -> void:
 	_test_dev_menu_state_machine()
 	_test_perf_budget_particle_api()
 	_test_airborne_offset_math()
+	_test_game_level_path_contract()
+	_test_audio_bus_constants()
 	_report()
 
 
@@ -2376,3 +2379,74 @@ func _test_airborne_offset_math() -> void:
 	var player_centre := Vector3.ZERO
 	_ok("camera behind player → positive Z offset",
 		(cam_behind - player_centre).z > 0.0)
+
+
+func _test_game_level_path_contract() -> void:
+	## Documents that current_level_path is NOT cleared by reset_run() or
+	## register_attempt(). This invariant is critical for Gate 1 scene
+	## lifecycle: the reloader must know which level to restart, and that
+	## path must survive any number of run resets within the same session.
+	print("\n-- Game current_level_path contract --")
+	var g: GM = GM.new()
+
+	# 1. Field is writable.
+	g.current_level_path = "res://scenes/levels/feel_lab.tscn"
+	_ok("current_level_path is writable and readable",
+		g.current_level_path == "res://scenes/levels/feel_lab.tscn")
+
+	# 2. reset_run() must NOT clear current_level_path.
+	# Rationale: a run reset (player dies, respawns at level start) is
+	# a counter reset, not a level unload — the scene context persists.
+	g.reset_run()
+	_ok("reset_run does NOT clear current_level_path",
+		g.current_level_path == "res://scenes/levels/feel_lab.tscn")
+
+	# 3. register_attempt() must NOT clear current_level_path.
+	g.register_attempt()
+	_ok("register_attempt does NOT clear current_level_path",
+		g.current_level_path == "res://scenes/levels/feel_lab.tscn")
+
+	# 4. Path can be updated mid-session (as it would be when a new level loads).
+	g.current_level_path = "res://scenes/levels/style_test.tscn"
+	_ok("current_level_path can be updated to a different path",
+		g.current_level_path == "res://scenes/levels/style_test.tscn")
+
+	# 5. reset_run() still does not touch the updated path.
+	g.reset_run()
+	_ok("reset_run does NOT clear current_level_path after path update",
+		g.current_level_path == "res://scenes/levels/style_test.tscn")
+
+	# 6. Field can be cleared explicitly (blank = no level loaded).
+	g.current_level_path = ""
+	_ok("current_level_path can be set to empty string explicitly",
+		g.current_level_path == "")
+
+	# 7. Type is String, not StringName — resource paths use the String type.
+	g.current_level_path = "res://scenes/levels/feel_lab.tscn"
+	_ok("current_level_path is a String (not StringName)",
+		typeof(g.current_level_path) == TYPE_STRING)
+
+	g.free()
+
+
+func _test_audio_bus_constants() -> void:
+	## Documents the Audio autoload's bus name contract. Gate 1 SFX calls
+	## will use Audio.BUS_SFX_PLAYER / BUS_SFX_WORLD — this test catches
+	## any accidental renaming before it surfaces as a silent AudioServer miss.
+	print("\n-- Audio autoload bus constants --")
+
+	_ok("BUS_MASTER is 'Master'",    AU.BUS_MASTER    == &"Master")
+	_ok("BUS_SFX_PLAYER is 'SFX_Player'", AU.BUS_SFX_PLAYER == &"SFX_Player")
+	_ok("BUS_SFX_WORLD is 'SFX_World'",   AU.BUS_SFX_WORLD  == &"SFX_World")
+	_ok("BUS_MUSIC is 'Music'",      AU.BUS_MUSIC     == &"Music")
+
+	# No two bus names are the same — duplicate names would route SFX to the
+	# wrong channel silently at runtime.
+	var names: Array[StringName] = [
+		AU.BUS_MASTER, AU.BUS_SFX_PLAYER, AU.BUS_SFX_WORLD, AU.BUS_MUSIC
+	]
+	var seen: Dictionary = {}
+	for n in names:
+		seen[n] = true
+	_ok("all four bus constants are distinct (no accidental duplicates)",
+		seen.size() == 4)

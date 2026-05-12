@@ -14,14 +14,14 @@ instrumented and tunable.
 
 ## Active iteration
 
-- Branch: `claude/gifted-shannon-Ilq31`
-- Focus: iter 49. **Airborne offset math tests + BLAME! level vocabulary research.**
-  `_test_airborne_offset_math` (8 assertions): offset definition, rigid-translate X/Y/3D,
-  zero-delta stationarity, offset invariant, drag propagation, sign convention — covers the
-  `_air_offset` branch in `camera_rig.gd` (previously untested). Side quest:
-  `docs/research/blame_level_vocab.md` — Spine/Lung/Threshold mapped to BLAME! archetypes
-  with 7 greybox implications; INDEX.md "deeper BLAME! analysis" open item closed.
-  Total: 540 → 548 assertions. Throttle: HARD (25 autonomous iterations).
+- Branch: `claude/gifted-shannon-SAGze`
+- Focus: iter 50. **Game level-path contract tests + Audio bus constant tests.**
+  `_test_game_level_path_contract` (7 assertions): write + read-back, reset_run does NOT clear
+  path (twice, across two paths), register_attempt does NOT clear path, explicit empty-string
+  clear, type is String not StringName. Documents the Gate 1 invariant that current_level_path
+  survives counter resets. Side quest: `_test_audio_bus_constants` (5 assertions): exact
+  StringName values for all four bus constants, distinctness guard.
+  Total: 548 → 560 assertions. Throttle: HARD (26 autonomous iterations).
 
 ## Queue (ranked, top is next)
 
@@ -154,6 +154,15 @@ These mirror "Open questions waiting on you" in the README.
   (Per CLAUDE.md: level concept selection is a human call.)
 
 ## Recently completed (last 5)
+
+- 2026-05-12 — Iteration 50. **Game level-path contract tests + Audio bus constant tests.**
+  `_test_game_level_path_contract` (7 assertions): documents that `Game.current_level_path` is
+  NOT cleared by `reset_run()` or `register_attempt()` — critical Gate 1 invariant (scene
+  reloader needs the path to persist across run resets). Tests: write + read-back, reset_run ×2
+  across two paths, register_attempt preservation, explicit clear, type-is-String check.
+  Side quest: `_test_audio_bus_constants` (5 assertions) — exact StringName values for
+  BUS_MASTER/BUS_SFX_PLAYER/BUS_SFX_WORLD/BUS_MUSIC, and all-distinct guard.
+  Total: 548 → 560 assertions. Throttle: HARD (26 iterations since human session).
 
 - 2026-05-12 — Iteration 49. **Airborne offset math tests + BLAME! level vocabulary.**
   `_test_airborne_offset_math` (8 assertions) added to `tests/test_controller_kinematics.gd` —
