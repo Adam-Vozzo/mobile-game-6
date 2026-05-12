@@ -64,6 +64,8 @@ func _ready() -> void:
 	_test_tripod_horiz_distance_correction()
 	_test_moving_platform_math()
 	_test_camera_pub_yaw_formula()
+	_test_jump_arc_geometry()
+	_test_profile_timing_windows()
 	_report()
 
 
@@ -1941,3 +1943,99 @@ func _test_camera_pub_yaw_formula() -> void:
 			all_quarter = false
 	_ok("pub_yaw: four cardinal camera positions are each PI/2 apart (uniform angular spacing)",
 		all_quarter)
+
+
+func _test_jump_arc_geometry() -> void:
+	## Documents jump-arc shape invariants not captured by jump-height or cut-math tests.
+	##
+	## t_apex = jump_velocity / gravity_rising is the time (seconds) to reach the
+	## top of the arc under the rising-gravity band. A playable arc requires roughly
+	## 0.15 s (snappy/twitchy) to 0.90 s (floaty/hang). Values outside this window
+	## produce either jittery or Flappy-Bird-style arcs.
+	##
+	## terminal_velocity > max_speed: falling must be faster than running. If
+	## terminal_velocity ≤ max_speed the player falls "slowly" relative to horizontal
+	## motion, which feels unphysical and makes depth-perception harder.
+	##
+	## Ordering: Assisted > Floaty > Momentum > Snappy for t_apex — more forgiving
+	## profiles spend more time near the apex, giving mobile players more correction
+	## time during platform approach.
+	print("\n-- Jump arc geometry (t_apex, terminal_velocity > max_speed) --")
+	var sp: CP = _load_profile("res://resources/profiles/snappy.tres")
+	var fp: CP = _load_profile("res://resources/profiles/floaty.tres")
+	var mp: CP = _load_profile("res://resources/profiles/momentum.tres")
+	var ap: CP = _load_profile("res://resources/profiles/assisted.tres")
+
+	# Per-profile: time to apex in playable range [0.15, 0.90] s.
+	for entry: Array in [["snappy", sp], ["floaty", fp], ["momentum", mp], ["assisted", ap]]:
+		var name := entry[0] as String
+		var p := entry[1] as CP
+		if p == null:
+			continue
+		var t_apex := p.jump_velocity / p.gravity_rising
+		_ok(name + ": t_apex = jump_velocity/gravity_rising in [0.15, 0.90] s",
+			t_apex >= 0.15 and t_apex <= 0.90)
+
+	# Per-profile: terminal_velocity > max_speed (fall faster than run).
+	for entry: Array in [["snappy", sp], ["floaty", fp], ["momentum", mp], ["assisted", ap]]:
+		var name := entry[0] as String
+		var p := entry[1] as CP
+		if p == null:
+			continue
+		_ok(name + ": terminal_velocity > max_speed (falling always faster than running)",
+			p.terminal_velocity > p.max_speed)
+
+	# Cross-profile arc ordering: Assisted > Floaty > Momentum > Snappy.
+	if sp != null and fp != null:
+		_ok("floaty t_apex > snappy t_apex (slower, more hang-time arc)",
+			(fp.jump_velocity / fp.gravity_rising) > (sp.jump_velocity / sp.gravity_rising))
+	if fp != null and mp != null:
+		_ok("floaty t_apex > momentum t_apex (floaty hangs longer; momentum stays fast)",
+			(fp.jump_velocity / fp.gravity_rising) > (mp.jump_velocity / mp.gravity_rising))
+	if mp != null and sp != null:
+		_ok("momentum t_apex > snappy t_apex (momentum arc slower than snappy despite high speed)",
+			(mp.jump_velocity / mp.gravity_rising) > (sp.jump_velocity / sp.gravity_rising))
+
+
+func _test_profile_timing_windows() -> void:
+	## Documents coyote-time and jump-buffer design ranges and the full
+	## per-profile ordering chain. More forgiving profiles must always have
+	## wider timing windows so the hierarchy is self-consistent:
+	##   Assisted >= Floaty >= Snappy >= Momentum (widest to narrowest).
+	##
+	## Assisted >= Floaty is already asserted in _test_assisted_params; this
+	## function adds the Floaty >= Snappy >= Momentum links and verifies all
+	## values stay within the [0.05, 0.30] s design envelope used by
+	## CLAUDE.md §Character controller.
+	print("\n-- Profile timing windows (coyote + buffer ordering) --")
+	var sp: CP = _load_profile("res://resources/profiles/snappy.tres")
+	var fp: CP = _load_profile("res://resources/profiles/floaty.tres")
+	var mp: CP = _load_profile("res://resources/profiles/momentum.tres")
+	var ap: CP = _load_profile("res://resources/profiles/assisted.tres")
+
+	# All values within the [0.05, 0.30] s design envelope.
+	for entry: Array in [["snappy", sp], ["floaty", fp], ["momentum", mp], ["assisted", ap]]:
+		var name := entry[0] as String
+		var p := entry[1] as CP
+		if p == null:
+			continue
+		_ok(name + ": coyote_time in [0.05, 0.30] s design envelope",
+			p.coyote_time >= 0.05 and p.coyote_time <= 0.30)
+		_ok(name + ": jump_buffer in [0.05, 0.30] s design envelope",
+			p.jump_buffer >= 0.05 and p.jump_buffer <= 0.30)
+
+	# Ordering chain: Floaty >= Snappy >= Momentum for coyote.
+	if fp != null and sp != null:
+		_ok("floaty coyote_time >= snappy coyote_time (floaty more forgiving on ledge timing)",
+			fp.coyote_time >= sp.coyote_time)
+	if sp != null and mp != null:
+		_ok("snappy coyote_time >= momentum coyote_time (momentum demands precision timing)",
+			sp.coyote_time >= mp.coyote_time)
+
+	# Ordering chain: Floaty >= Snappy >= Momentum for jump_buffer.
+	if fp != null and sp != null:
+		_ok("floaty jump_buffer >= snappy jump_buffer (floaty absorbs early presses more)",
+			fp.jump_buffer >= sp.jump_buffer)
+	if sp != null and mp != null:
+		_ok("snappy jump_buffer >= momentum jump_buffer (momentum tighter pre-press window)",
+			sp.jump_buffer >= mp.jump_buffer)
