@@ -1,4 +1,4 @@
-[gd_scene load_steps=70 format=3]
+[gd_scene load_steps=73 format=3]
 
 [ext_resource type="Script" path="res://scripts/levels/threshold.gd" id="1_thresh"]
 [ext_resource type="Script" path="res://scripts/levels/rotating_hazard.gd" id="2_roth"]
@@ -13,6 +13,7 @@
 [ext_resource type="Material" path="res://resources/materials/mat_concrete.tres" id="11_matC"]
 [ext_resource type="Material" path="res://resources/materials/mat_concrete_dark.tres" id="12_matCd"]
 [ext_resource type="Script" path="res://tools/debug/player_debug_draw.gd" id="13_dbg"]
+[ext_resource type="PackedScene" path="res://scenes/levels/data_shard.tscn" id="14_shard"]
 
 [sub_resource type="Environment" id="Env_Threshold"]
 background_mode = 1
@@ -214,6 +215,13 @@ radius = 3.0
 
 [sub_resource type="SphereShape3D" id="Shape_CameraHintLg"]
 radius = 6.0
+
+[sub_resource type="BoxMesh" id="Mesh_ShardLedge"]
+material = ExtResource("12_matCd")
+size = Vector3(3, 0.5, 3)
+
+[sub_resource type="BoxShape3D" id="Shape_ShardLedge"]
+size = Vector3(3, 0.5, 3)
 
 [node name="Threshold" type="Node3D"]
 script = ExtResource("1_thresh")
@@ -674,3 +682,15 @@ pull_back_amount = 5.0
 
 [node name="Shape" type="CollisionShape3D" parent="Beat4_Ketsu/CameraHint3"]
 shape = SubResource("Shape_CameraHintLg")
+
+[node name="ShardLedge" type="StaticBody3D" parent="Zone3_Industrial"]
+transform = Transform3D(1, 0, 0, 0, 1, 0, 0, 0, 1, 7, -6.25, 82)
+
+[node name="Mesh" type="MeshInstance3D" parent="Zone3_Industrial/ShardLedge"]
+mesh = SubResource("Mesh_ShardLedge")
+
+[node name="Collider" type="CollisionShape3D" parent="Zone3_Industrial/ShardLedge"]
+shape = SubResource("Shape_ShardLedge")
+
+[node name="DataShard" parent="Zone3_Industrial" instance=ExtResource("14_shard")]
+transform = Transform3D(1, 0, 0, 0, 1, 0, 0, 0, 1, 7, -4.0, 82)

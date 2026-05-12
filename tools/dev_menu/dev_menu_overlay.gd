@@ -281,6 +281,7 @@ func _build_level_section(vbox: VBoxContainer) -> void:
 		{"label": "Maint. arm",      "pos": Vector3(0, -4.5, 57)},
 		{"label": "Checkpoint",      "pos": Vector3(0, -4.5, 70)},
 		{"label": "Gantries G1",     "pos": Vector3(0, -5.25, 80)},
+		{"label": "Shard ledge",     "pos": Vector3(7, -5.5, 82)},
 		{"label": "Gantries G4",     "pos": Vector3(0, -17.25, 104)},
 		{"label": "Ketsu K1",        "pos": Vector3(0, -17.75, 112)},
 		{"label": "Terminal",        "pos": Vector3(0, -20.25, 133)},
@@ -289,6 +290,8 @@ func _build_level_section(vbox: VBoxContainer) -> void:
 		var lbl: String = zone["label"]
 		var pos: Vector3 = zone["pos"]
 		_make_button(vbox, "→ " + lbl, func() -> void: _teleport_player(pos))
+
+	_make_button(vbox, "Respawn shard", func() -> void: _respawn_shard())
 
 
 func _build_touch_section(vbox: VBoxContainer) -> void:
@@ -402,6 +405,15 @@ func _teleport_player(pos: Vector3) -> void:
 		p.call(&"set_spawn_transform", t)
 	if p.has_method(&"respawn"):
 		p.call(&"respawn")
+
+
+func _respawn_shard() -> void:
+	# Reset Game shard counter and re-enable all data shards in the scene.
+	if has_node("/root/Game"):
+		Game.shards_collected = 0
+	for shard: Node in get_tree().get_nodes_in_group(&"data_shard"):
+		if shard.has_method(&"respawn_shard"):
+			shard.call(&"respawn_shard")
 
 
 func _make_label(text: String, font_size: int, bold: bool = false) -> Label:

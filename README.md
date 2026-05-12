@@ -5,10 +5,10 @@ A mobile 3D platformer. Brutalist megastructure inspired by *BLAME!*. Controller
 ## Status
 
 Current gate: **Gate 0 — Feel Lab** (closing out; Gate 1 prep in flight)
-Last activity: 2026-05-12 — iter 56: Win-state flow (run timer, results panel, par time) + CameraHint integration
+Last activity: 2026-05-12 — iter 57: Data shard collectible implemented and placed in Threshold
 Test device build: ✅ verified 2026-05-12 — runs in Godot 4.6 on PC and on Nothing Phone 4(a) Pro
 Performance: 144 fps / 6.9 ms in editor at 1920×1080 (Feel Lab); on-device frametimes TBD
-Throttle level: **5** (5 iterations since last human direction 2026-05-12). Next: Threshold polish (data shard collectible / concrete texture / press into critical path) — blocked on on-device feel.
+Throttle level: **6** (6 iterations since last human direction 2026-05-12). Next: Threshold remaining polish (concrete texture / industrial press into critical path) — blocked on on-device feel.
 
 If you only read one section, read **Open questions waiting on you** below.
 
@@ -83,6 +83,40 @@ Goal: store-ready build.
 The full iteration log lives here, newest first. Every iteration appends an entry. Skim the dates to find where you last left off.
 
 <!-- ITERATION ENTRIES BELOW — DO NOT REMOVE OLDER ENTRIES -->
+
+### [2026-05-12] — iter 57 — Data shard collectible
+
+Branch: `claude/gifted-shannon-eELv5`
+Throttle: 6 (soft)
+Gate: Gate 1 — Vertical Slice prep
+
+**Primary: Data shard collectible — Gate 1 one-collectible-per-level requirement.**
+
+**`scripts/levels/data_shard.gd`** — new `DataShard` class (Area3D):
+- Adds self to `"data_shard"` group on `_ready()` — auto-counted by `threshold.gd` via `get_tree().get_nodes_in_group()`
+- Programmatic visual built in `_ready()`: SurfaceTool octahedron gem (unshaded cyan emissive, `CULL_DISABLED`), `OmniLight3D` (cyan 0.12/0.90/0.95, energy 1.4, range 4.5 m), `SphereShape3D` (radius 0.6 m)
+- Slow Y-spin: `rotate_y(delta * 1.15)` ≈ 66 deg/s in `_process`
+- `_collect()`: increments `Game.shards_collected`, hides mesh, pulses light (1.4 → 7.0 over 0.05 s, fades → 0.0 over 0.30 s via Tween), then hides light
+- `respawn_shard()`: resets `_collected` flag and restores visibility — used by dev menu without level reload
+
+**`scenes/levels/data_shard.tscn`** — minimal Area3D stub with script reference.
+
+**`scenes/levels/threshold.tscn`** — two new nodes added to Zone3_Industrial:
+- `ShardLedge` StaticBody3D at (7, −6.25, 82), size 3×0.5×3 m (surface y = −6.0) — small detour platform off the right side of G1
+- `DataShard` instance at (7, −4.0, 82) — glows cyan in the industrial void, visible from the gantry sequence; requires jumping from the ledge (NOT collectable while standing; IS collectable at Snappy jump apex — verified by unit test)
+
+**Dev menu (Level section):**
+- New teleport: "Shard ledge" → (7, −5.5, 82)
+- New button: "Respawn shard" — resets `Game.shards_collected = 0` and calls `respawn_shard()` on all `"data_shard"` group members
+
+**Tests:** `_test_data_shard_placement` — 7 assertions: collection threshold (0.88 m), standing-on-ledge NOT in range, at jump-apex IS in range, G1 right-edge 3D separation NOT in range, increment + double-collect guard. Total: 672 → 679 assertions.
+
+**JUICE.md:** 3 new entries — shard idle glow (prototype), shard collect pulse (prototype), shard slow spin (prototype).
+
+Perf delta: +1 OmniLight3D per level (no shadow). Draw calls: +1 per DataShard. Within budget.
+Bugs fixed: none.
+New dev-menu controls: "Shard ledge" teleport, "Respawn shard" button.
+On-device pending.
 
 ### [2026-05-12] — iter 56 — Win-state flow + CameraHint integration
 
