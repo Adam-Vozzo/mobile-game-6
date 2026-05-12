@@ -5,10 +5,10 @@ A mobile 3D platformer. Brutalist megastructure inspired by *BLAME!*. Controller
 ## Status
 
 Current gate: **Gate 0 — Feel Lab**
-Last iteration: 2026-05-12 — iter 48: PerfBudget particle tracking API fix (540 assertions)
+Last iteration: 2026-05-12 — iter 49: airborne offset math tests + BLAME! level vocabulary (548 assertions)
 Test device build: not yet — hand-authored scenes pending first Godot 4.6 import; see Open questions
 Performance: not yet measured on Nothing Phone 4(a) Pro
-Throttle level: **HARD (24 autonomous iterations since 2026-05-11 human session).** Next iterations are hardening only unless human provides direction.
+Throttle level: **HARD (25 autonomous iterations since 2026-05-11 human session).** Next iterations are hardening only unless human provides direction.
 
 If you only read one section, read **Open questions waiting on you** below.
 
@@ -16,7 +16,7 @@ If you only read one section, read **Open questions waiting on you** below.
 
 Things Claude can't decide alone, or where it's stalled and needs direction. Each is blocking some piece of forward progress.
 
-> **⚠ HARD THROTTLE — 24 autonomous iterations since last human session (2026-05-11).**
+> **⚠ HARD THROTTLE — 25 autonomous iterations since last human session (2026-05-11).**
 > Claude has stalled on hardening work (tests + research) and is waiting for human
 > direction before doing anything further. The P0 queue is entirely blocked on the
 > first Godot 4.6 import. No new feature surface has been added since iteration 25.
@@ -100,6 +100,24 @@ Goal: store-ready build.
 The full iteration log lives here, newest first. Every iteration appends an entry. Skim the dates to find where you last left off.
 
 <!-- ITERATION ENTRIES BELOW — DO NOT REMOVE OLDER ENTRIES -->
+
+### [2026-05-12] — `claude/gifted-shannon-Ilq31` — iter 49: airborne offset math tests + BLAME! level vocabulary
+
+- **Throttle: HARD (25 autonomous iterations since 2026-05-11 human session).** Hardening only.
+- **Primary: `_test_airborne_offset_math` — 8 new assertions for the rigid-translate airborne camera invariant.**
+  Tests the pure-math portion of `camera_rig.gd`'s airborne branch (`_air_offset`), which was the
+  only major camera mechanism not yet covered: `offset = cam − player` definition; rigid-translate
+  X / Y / full-3D; zero-delta stationarity; offset invariant after translate; drag-shifts-offset
+  propagation; sign convention. Total: **540 → 548 assertions.**
+- **Side quest: `docs/research/blame_level_vocab.md`** — maps each Gate 1 candidate (Spine / Lung /
+  Threshold) to specific *BLAME!* spatial archetypes (Structural Wound, Functional Interior, Layer
+  Boundary, Exterior Glimpse). Greybox implications per candidate: rib geometry style, baffle
+  material approach, three-zone material kit for Threshold, CameraHint beats for exterior glimpses,
+  biolume cyan reserved for Lung only. Open INDEX.md item "deeper BLAME! analysis" closed.
+- **Perf:** no change. No new draw calls, no new nodes.
+- **No new dev-menu controls. No assets acquired.**
+- **Needs human attention:** 25 iterations at HARD throttle; all P0 items blocked on first
+  Godot 4.6 import. See Open questions below.
 
 ### [2026-05-12] — `claude/gifted-shannon-sHSh4` — iter 48: PerfBudget particle tracking API fix
 

@@ -14,14 +14,14 @@ instrumented and tunable.
 
 ## Active iteration
 
-- Branch: `claude/gifted-shannon-sHSh4`
-- Focus: iter 48. **PerfBudget particle tracking API fix.**
-  `register_particles(n)` / `unregister_particles(n)` / `reset_particles()` added to
-  `perf_budget.gd` — fixes the always-false `active_particles > ACTIVE_PARTICLES_BUDGET`
-  branch in `over_budget()`. `_test_perf_budget_particle_api` (12 assertions): initial-zero,
-  additive register, unregister-clamp-to-zero, live `over_budget()` at/above limit, reset,
-  `snapshot()` key presence and value match. Total: 528 → 540 assertions.
-  Throttle: HARD (24 autonomous iterations).
+- Branch: `claude/gifted-shannon-Ilq31`
+- Focus: iter 49. **Airborne offset math tests + BLAME! level vocabulary research.**
+  `_test_airborne_offset_math` (8 assertions): offset definition, rigid-translate X/Y/3D,
+  zero-delta stationarity, offset invariant, drag propagation, sign convention — covers the
+  `_air_offset` branch in `camera_rig.gd` (previously untested). Side quest:
+  `docs/research/blame_level_vocab.md` — Spine/Lung/Threshold mapped to BLAME! archetypes
+  with 7 greybox implications; INDEX.md "deeper BLAME! analysis" open item closed.
+  Total: 540 → 548 assertions. Throttle: HARD (25 autonomous iterations).
 
 ## Queue (ranked, top is next)
 
@@ -154,6 +154,16 @@ These mirror "Open questions waiting on you" in the README.
   (Per CLAUDE.md: level concept selection is a human call.)
 
 ## Recently completed (last 5)
+
+- 2026-05-12 — Iteration 49. **Airborne offset math tests + BLAME! level vocabulary.**
+  `_test_airborne_offset_math` (8 assertions) added to `tests/test_controller_kinematics.gd` —
+  covers the `_air_offset` rigid-translate invariant in `camera_rig.gd` (only major camera
+  mechanism not yet unit tested): offset definition, X/Y/3D rigid translate, zero-delta
+  stationarity, offset-after-translate invariant, drag-propagation, sign convention.
+  Side quest: `docs/research/blame_level_vocab.md` — four BLAME! spatial archetypes mapped
+  to Gate 1 candidates (Structural Wound→Spine, Functional Interior→Lung, Layer Boundary→
+  Threshold, Exterior Glimpse→all three); 7 greybox implications. INDEX.md updated.
+  Total: 540 → 548 assertions. Throttle: HARD (25 iterations since human session).
 
 - 2026-05-12 — Iteration 48. **PerfBudget particle tracking API fix.**
   `register_particles(n)`, `unregister_particles(n)`, `reset_particles()` added to

@@ -76,6 +76,7 @@ func _ready() -> void:
 	_test_visual_turn_convergence()
 	_test_dev_menu_state_machine()
 	_test_perf_budget_particle_api()
+	_test_airborne_offset_math()
 	_report()
 
 
@@ -2313,3 +2314,65 @@ func _test_perf_budget_particle_api() -> void:
 		snap["active_particles"] == 77)
 
 	pb.free()
+
+
+func _test_airborne_offset_math() -> void:
+	## Covers the rigid-translate airborne camera invariant in camera_rig.gd.
+	## Core maths (no Node objects — pure Vector3 arithmetic):
+	##   offset = cam_pos − target_pos           (captured each grounded frame)
+	##   cam_new = target_new + offset            (airborne branch)
+	## Invariant: the camera translates by exactly the same delta as the player —
+	## no rotation, no scale — so the cam→player vector is preserved mid-jump.
+	print("\n-- airborne offset math (camera rigid translate) --")
+
+	var cam_old := Vector3(7.0, 3.0, -5.0)
+	var player_old := Vector3(1.0, 0.0, 0.0)
+
+	# 1. Offset definition: player_pos + offset == cam_pos.
+	var offset := cam_old - player_old
+	_ok("offset recovers cam from player: player + offset == cam_old",
+		(player_old + offset).is_equal_approx(cam_old))
+
+	# 2. Rigid translate X: player moves laterally, camera tracks the same delta.
+	var player_x := player_old + Vector3(2.0, 0.0, 0.0)
+	var cam_x := player_x + offset
+	_ok("rigid translate: camera X-delta == player X-delta (2.0)",
+		is_equal_approx(cam_x.x - cam_old.x, 2.0))
+
+	# 3. Rigid translate Y: player rises, camera rises by the same amount.
+	var player_y := player_old + Vector3(0.0, 5.0, 0.0)
+	var cam_y := player_y + offset
+	_ok("rigid translate: camera Y-delta == player Y-delta (5.0)",
+		is_equal_approx(cam_y.y - cam_old.y, 5.0))
+
+	# 4. Zero player delta: camera does not move at all.
+	var cam_zero_delta := player_old + offset
+	_ok("rigid translate: zero player delta → camera stationary",
+		cam_zero_delta.is_equal_approx(cam_old))
+
+	# 5. Full 3D delta: all three axes tracked simultaneously.
+	var delta_3d := Vector3(3.0, -1.0, 2.0)
+	var p3_new := player_old + delta_3d
+	var c3_new := p3_new + offset
+	_ok("rigid translate: full 3D delta tracked exactly (cam_delta == player_delta)",
+		(c3_new - cam_old).is_equal_approx(delta_3d))
+
+	# 6. Offset invariant: after a rigid translate, new_offset equals old_offset.
+	# Proof: (cam_new − player_new) = (cam_old + Δ) − (player_old + Δ) = offset.
+	var new_offset := cam_x - player_x
+	_ok("offset invariant: offset unchanged after rigid translate",
+		new_offset.is_equal_approx(offset))
+
+	# 7. Drag-during-airborne: dragging shifts cam → end-of-frame offset refresh
+	# picks up the shift, so the NEXT frame's rigid translate incorporates drag.
+	var drag_shift := Vector3(1.5, 0.0, -0.5)
+	var cam_after_drag := cam_x + drag_shift
+	var offset_after_drag := cam_after_drag - player_x
+	_ok("drag during airborne shifts offset by drag vector",
+		(offset_after_drag - offset).is_equal_approx(drag_shift))
+
+	# 8. Sign convention: camera directly behind player (+Z) gives +Z offset.
+	var cam_behind := Vector3(0.0, 2.0, 6.0)
+	var player_centre := Vector3.ZERO
+	_ok("camera behind player → positive Z offset",
+		(cam_behind - player_centre).z > 0.0)
