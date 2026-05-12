@@ -1243,7 +1243,7 @@ func _test_squash_stretch_math() -> void:
 
 	# Landing squash formulas at impact_squash_scale=1.0 (full intensity).
 	# squash_y  = 1.0 - impact * 0.45;  squash_xz = 1.0 + impact * 0.20
-	for impact in [0.0, 0.5, 1.0]:
+	for impact: float in [0.0, 0.5, 1.0]:
 		var squash_y  := 1.0 - impact * 0.45
 		var squash_xz := 1.0 + impact * 0.20
 		_ok("squash: impact %.1f → squash_y <= 1.0 (Y compresses or stays)" % impact,

@@ -4,43 +4,26 @@ A mobile 3D platformer. Brutalist megastructure inspired by *BLAME!*. Controller
 
 ## Status
 
-Current gate: **Gate 0 — Feel Lab**
-Last iteration: 2026-05-12 — iter 50: Game level-path contract tests + Audio bus constant tests (560 assertions)
-Test device build: not yet — hand-authored scenes pending first Godot 4.6 import; see Open questions
-Performance: not yet measured on Nothing Phone 4(a) Pro
-Throttle level: **HARD (26 autonomous iterations since 2026-05-11 human session).** Next iterations are hardening only unless human provides direction.
+Current gate: **Gate 0 — Feel Lab** (closing out; Gate 1 prep in flight)
+Last iteration: 2026-05-12 — iter 51: human direction session — on-device verified, Threshold picked, double-jump approved
+Test device build: ✅ verified 2026-05-12 — runs in Godot 4.6 on PC and on Nothing Phone 4(a) Pro
+Performance: 144 fps / 6.9 ms in editor at 1920×1080 (Feel Lab); on-device frametimes TBD
+Throttle level: **RESET.** Active human direction. Queue re-prioritised below.
 
 If you only read one section, read **Open questions waiting on you** below.
 
 ## Open questions waiting on you
 
-Things Claude can't decide alone, or where it's stalled and needs direction. Each is blocking some piece of forward progress.
+Things Claude can't decide alone, or where it's stalled and needs direction.
 
-> **⚠ HARD THROTTLE — 26 autonomous iterations since last human session (2026-05-11).**
-> Claude has stalled on hardening work (tests + research) and is waiting for human
-> direction before doing anything further. The P0 queue is entirely blocked on the
-> first Godot 4.6 import. No new feature surface has been added since iteration 25.
->
-> **Suggested next directions (pick one or more):**
-> 1. **Open the project in Godot 4.6** and run the first-run checklist in `docs/ANDROID.md`,
->    paste any import errors. **This unblocks the entire P0 queue** and is the highest-value
->    thing you can do right now — it takes ~10 minutes and unlocks ~40 iterations of blocked work.
-> 2. **Give a first feel verdict** (Snappy / Floaty / Momentum) — even rough notes
->    ("Snappy feels good but the jump arc is too low") give Claude a tuning target.
-> 3. **Approve the style direction** (cold palette, fog, brutalist primitives) so the
->    `scenes/levels/style_test.tscn` greybox can be used as the template for Gate 1 geometry.
-> 4. **Gate transition signal** ("Gate 0 is done, proceed to Gate 1") if you feel the
->    Feel Lab is instrumented enough — Claude will begin greyboxing the chosen level immediately.
-> 5. **Pick a Gate 1 level to build.** Three concepts are ready in `docs/levels/`:
->    - **Spine** — vertical column ascent via wall jump. 5 beats. ~60–75 s skilled.
->    - **Lung** — horizontal ventilation chamber, moving platform timing. 4 beats. ~70–80 s skilled.
->    - **Threshold** — 3-zone contrast study (habitation → maintenance → industrial). 5 beats. ~70 s skilled.
->    Read the parti and procession for each in `docs/levels/<name>.md`.
+> **🟢 Throttle reset 2026-05-12.** Human direction session unblocked the P0 queue. Camera vertical-follow rewrite + Snappy speed nudge + double-jump implementation now in flight. See `docs/PLAN.md` for current iteration target.
 
-- [ ] **Open the project in Godot 4.6 and run the on-device first-run checklist in `docs/ANDROID.md`.** This is the only thing that will catch syntax mistakes in any of the hand-authored `.tscn`/`.tres` files. If anything fails, paste the Output panel error and Claude will fix it next iteration.
-- [ ] **First feel verdict — Snappy vs Floaty vs Momentum.** Once the build runs, open the dev menu (F1 in editor, 3-finger tap on device), switch the Profile dropdown between Snappy / Floaty / Momentum and play each for 30–60 seconds. Note: jump arc, air momentum feel, landing, coyote forgiveness. Any notes you give go straight into the next tuning pass.
-- [ ] **Gate 1 level selection.** Three concepts ready in `docs/levels/`. Pick one: Spine (wall jump), Lung (timing), or Threshold (scale contrast). This is the only human gate before Claude can start greyboxing.
-- [x] **Auto-merge git workflow confirmed and instrumented.** Now enforced by `.github/workflows/auto-merge.yml` — PRs labeled `auto-merge` are squash-merged automatically. Iteration-startup rules in `docs/CLAUDE.md` require checking your own open PRs before opening a new branch, to prevent the duplicate-PR loop that ate iter 1.
+- [x] **Open the project in Godot 4.6 and run the on-device first-run checklist in `docs/ANDROID.md`.** Done 2026-05-12 — runs in editor and deploys to Nothing Phone 4(a) Pro. Remaining ANDROID.md items: headless CI signing via env vars, release Play Store build (both gate-locked to ship).
+- [x] **First feel verdict — Snappy vs Floaty vs Momentum.** Snappy feel approved as good overall; tune-down (max_speed 6.5 → 6.0) queued. Floaty and Momentum verdicts to come as level design forces switching between them.
+- [x] **Gate 1 level selection.** Threshold picked as the first build. Lung and Spine remain queued — Claude will build them after Threshold is feature-complete.
+- [x] **Auto-merge git workflow confirmed and instrumented.** Now enforced by `.github/workflows/auto-merge.yml` — PRs labeled `auto-merge` are squash-merged automatically.
+- [ ] **Asset suggestions for first-pick approval.** Human has asked for browseable options (3–5 candidates per slot with source/licence/fidelity notes) for the first style-defining assets — Stray mesh, ambient audio bed, architecture kit — before autonomous asset acquisition resumes. Claude will surface an options doc when the relevant iteration comes up.
+- [ ] **Ongoing Snappy tuning passes.** Snappy feel is good but will keep getting small tweaks as level design progresses. Whenever a level beat feels wrong, note "Snappy felt too X on that beat" — it goes into the next tuning iteration.
 
 ## Roadmap
 
@@ -60,7 +43,7 @@ Goal: one scene, one character controller, fully instrumented and tunable.
 - [x] Dev menu skeleton with live tunables
 - [x] Spring-arm camera with lookahead and right-drag override _(occlusion avoidance via raycast added iter 1; camera params live in dev menu)_
 - [x] Touch input: virtual stick + jump, repositionable _(positions exposed as `@export`s; drag-to-place UI queued)_
-- [ ] Android export pipeline verified on test device
+- [x] Android export pipeline verified on test device _(2026-05-12 — runs on Nothing Phone 4(a) Pro)_
 
 ### Gate 1 — Vertical Slice
 
@@ -100,6 +83,25 @@ Goal: store-ready build.
 The full iteration log lives here, newest first. Every iteration appends an entry. Skim the dates to find where you last left off.
 
 <!-- ITERATION ENTRIES BELOW — DO NOT REMOVE OLDER ENTRIES -->
+
+### [2026-05-12] — `human/session-2026-05-12-capture-direction` — iter 51: human direction session — Gate 0 verified, Threshold picked, double-jump approved
+
+- **Throttle: RESET** (was HARD-26). Human direction session ended the throttle.
+- **Gate 0 on-device verification: ✅.** Project runs in Godot 4.6 on PC and deploys to the Nothing Phone 4(a) Pro test device. No import errors. README's "Test device build" status flipped from not-yet to verified; Gate 0 box "Android export pipeline verified on test device" ticked.
+- **Feel verdict (Snappy):** "feel is good, we can keep playing with this as we design more levels. Character could be a tiny bit slower." → Snappy `max_speed` 6.5 → 6.0 queued as PR 3 of this session.
+- **Camera vertical-follow rule:** "Camera should not move vertically until the character moves above the default max jump height, or walks on a higher level of ground. Stops the camera moving so much." → Camera vertical-follow ratchet queued as PR 2 of this session. New `_reference_floor_y` state + default-apex threshold; composes with the existing `_air_offset` rigid-translate.
+- **Gate 1 level picked: Threshold.** "All level concepts sound really awesome; let's start with threshold, but all can be built if one is feature-complete." → Lung and Spine remain queued behind Threshold.
+- **Feel Lab expansion requested:** "Enlarge the feel lab and include more variety of interaction for the platformer to test game-feel." → Queued as a P0 item.
+- **Style direction approval:** noted that Feel Lab is grey-box now and visual style will iterate over time. The shared Environment / fog / lighting / material values across `feel_lab.tscn` and `style_test.tscn` are the current baseline; Gate 1 levels start from those values and diverge as art direction is set.
+- **Audio direction:** set aside for now.
+- **Snappy `reboot_duration`:** keep at 0.5 s. Research recommendation of ≤ 0.35 s rejected at this stage.
+- **Double jump approved as an expected mechanic.** Build it in the lab with dev menu tunables. Threshold (and Spine / Lung when built) will be authored with double jump in mind.
+- **Air dash + Assisted Phase 2:** build mechanics in the Feel Lab with dev tools; both heavily impact game-feel and need on-device testing. No Gate-1-blocker on these.
+- **Ghost trail: on hold.** Only revisit if the game becomes about speedrunning.
+- **Asset acquisition workflow:** for first style-defining picks (Stray mesh, ambient audio bed, architecture kit), Claude will surface browseable options for human approval before committing. After ~3 confirmed picks, autonomous mode resumes per CLAUDE.md.
+- **Test parse-error fix:** `tests/test_controller_kinematics.gd:1246` — `for impact in [...]` → `for impact: float in [...]` so `:=` can infer `squash_y` and `squash_xz`. Was blocking the test runner from loading.
+- **Perf:** Feel Lab in editor at 1920×1080 reports 144 fps / 6.9 ms (well under the 9 ms budget).
+- **Throttle reset.** Next iteration: PR 2 (camera vertical-follow ratchet) + PR 3 (Snappy speed nudge).
 
 ### [2026-05-12] — `claude/gifted-shannon-SAGze` — iter 50: Game level-path contract tests + Audio bus constant tests
 

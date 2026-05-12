@@ -9,43 +9,66 @@ human** section below.
 
 ## Current gate
 
-**Gate 0 — Feel Lab.** Goal: one scene, one character controller, fully
-instrumented and tunable.
+**Gate 0 — Feel Lab** (closing out; on-device verified 2026-05-12).
+**Gate 1 — Vertical Slice** prep is in flight: Threshold picked as the first level
+to build; double-jump is approved as an expected mechanic and levels should be
+authored with it in mind.
 
 ## Active iteration
 
-- Branch: `claude/gifted-shannon-SAGze`
-- Focus: iter 50. **Game level-path contract tests + Audio bus constant tests.**
-  `_test_game_level_path_contract` (7 assertions): write + read-back, reset_run does NOT clear
-  path (twice, across two paths), register_attempt does NOT clear path, explicit empty-string
-  clear, type is String not StringName. Documents the Gate 1 invariant that current_level_path
-  survives counter resets. Side quest: `_test_audio_bus_constants` (5 assertions): exact
-  StringName values for all four bus constants, distinctness guard.
-  Total: 548 → 560 assertions. Throttle: HARD (26 autonomous iterations).
+- Branch: `human/session-2026-05-12-capture-direction` (and PRs that follow in the same session)
+- Focus: iter 51 = human direction session capture. Three PRs in flight, one per item:
+  1. **Capture human direction + test parse-error fix** (this PR).
+  2. **Camera vertical-follow ratchet** — camera holds Y unless player exceeds the default
+     jump apex above the reference floor, or lands on higher ground. Composes with the
+     existing `_air_offset` rigid-translate.
+  3. **Snappy `max_speed` 6.5 → 6.0** — first on-device feel tune. Preserves the
+     `floaty < snappy` cross-profile test invariant (Floaty is 5.5).
+  Throttle: **RESET** (was HARD-26).
 
 ## Queue (ranked, top is next)
 
 The next iteration should pull from the top of this list. Items marked
 "P0" advance Gate 0 directly; "P1" is supporting; "P2" is opportunistic.
 
-### P0 — Gate 0 critical path
+### P0 — Gate 0 close-out + Gate 1 prep
 
-1. **On-device smoke test.** Open the project in Godot 4.6 Mobile, fix
-   any import warnings (the kickoff was authored without a Godot binary,
-   so all `.tscn`/`.tres` files were hand-written — there may be syntax
-   nits the editor catches on first import), then run the Feel Lab in
-   editor and on device via one-click deploy. Capture frametime, draw
-   calls, and a 30-second gameplay clip if possible. Log results in
-   README's Updates entry.
-   _Blocked — needs human to open Godot 4.6._
-2. **Tune Snappy on device.** Adjust `resources/profiles/snappy.tres`
-   gravity / jump_velocity / accel / coyote / buffer based on first
-   on-device feel. Avoid making more profiles until Snappy is felt.
-   _Blocked — needs on-device feel; do after smoke test._
-3. **First feel of all four profiles.** Now that Snappy / Floaty /
-   Momentum / Assisted are all in the dev menu dropdown, the human can
-   switch between all four on device and flag what needs adjusting.
-   _Blocked — needs on-device feel._
+1. ~~**On-device smoke test.**~~ Done 2026-05-12. Project runs in Godot 4.6 on PC
+   and deploys to Nothing Phone 4(a) Pro. Feel Lab reports 144 fps / 6.9 ms in
+   editor at 1920×1080. ANDROID.md gaps remaining: headless CI signing via env
+   vars, release Play Store build (both gate-locked to ship).
+2. **Camera vertical-follow ratchet** (in flight, PR 2). Camera holds its Y
+   unless the player either (a) exceeds the default jump apex above the current
+   reference floor, or (b) lands on higher ground (reference floor updates).
+   Reduces motion-sickness from constant vertical jiggle on every normal jump.
+   Composes with the existing `_air_offset` airborne rigid-translate. New
+   `_reference_floor_y` state + apex-threshold derived from active profile.
+   Dev menu sliders for the apex multiplier and the floor-update threshold.
+   New unit-test group documenting the ratchet semantics.
+3. **Snappy `max_speed` 6.5 → 6.0** (in flight, PR 3). First on-device feel
+   tune. Preserves the `floaty < snappy` cross-profile test invariant (Floaty
+   is 5.5). Expect further small tweaks as level design progresses.
+4. **Double jump implementation.** New `ControllerProfile` props (`air_jumps:
+   int` default 0 = off, plus a velocity-multiplier for the second jump),
+   player.gd `_air_jumps_remaining` counter reset on `is_on_floor()`, dev menu
+   sliders, unit tests. Approved by human 2026-05-12 as an expected mechanic;
+   Threshold (and future levels) authored with it in mind.
+5. **Feel Lab expansion + interaction variety.** Add higher tiers (to exercise
+   the new vertical-follow ratchet), wall-jump corner, varied slopes, narrow
+   ledges over fog, a drop-test pit, and a wider open area. Becomes the
+   playground for #4 (double jump) and #6 (air dash). Brutalist primitives,
+   no new art.
+6. **Air dash implementation.** Research-ready in `docs/research/air_dash.md`.
+   Three new `ControllerProfile` params (default 0 = off, backwards-compatible),
+   right-zone swipe input via TouchInput, dev menu sliders, unit tests. Test
+   alongside double jump in the expanded Feel Lab.
+7. **Threshold greybox.** First Gate 1 level. Depends on stable #2 / #4. Five
+   beats per `docs/levels/threshold.md` (habitation → maintenance → industrial
+   contrast). Build geometry, place `CameraHint` beats, drop in collectible +
+   win state stubs.
+8. ~~**Author Assisted profile Phase 1 (`assisted.tres`).**~~ Done (iter 27).
+   Phase 2 (ledge magnetism + arc assist) approved by human as a heavy-impact
+   game-feel mechanic — build it after #2/#4 are validated on device.
 4. ~~**Author Assisted profile Phase 1 (`assisted.tres`).**~~ Done (iter 27).
    Sticky landing mechanic in `player.gd`, profile file, dev menu entry.
    Phase 2 (ledge magnetism + arc assist) still pending — requires device
@@ -138,22 +161,30 @@ The next iteration should pull from the top of this list. Items marked
 
 These mirror "Open questions waiting on you" in the README.
 
-- **First on-device verification (top README question).** Until the
-  human runs the project in Godot 4.6 once, we don't know whether any
-  hand-authored `.tscn`/`.tres` files have syntax mistakes. Iteration 2
-  should be paused on its first task until the human confirms the
-  project imports cleanly (or paste any errors so iteration 2 can fix
-  them).
-- **First feel verdict.** Once the build runs, the human should try
-  Snappy → Floaty → Momentum in the dev menu dropdown and note any
-  feel issues. Those notes drive iteration 2's tuning pass.
-- **Gate 1 level concept selection.** Three concepts are in `docs/levels/`:
-  `spine.md`, `lung.md`, `threshold.md`. Read the parti and procession for each
-  and pick the one to build. Each has different primary verbs and spatial
-  challenges — pick based on what feel most like the game you want to ship.
-  (Per CLAUDE.md: level concept selection is a human call.)
+- **First asset suggestions for human approval.** Before autonomous asset acquisition
+  resumes per CLAUDE.md, the first style-defining picks (Stray mesh, ambient audio
+  bed, architecture kit) get an options doc — 3–5 candidates per slot with source,
+  licence, and a fidelity-check note against the brutalist palette. After ~3
+  confirmed picks, autonomous mode resumes.
+- **Ongoing Snappy tuning passes.** Snappy feel is good but will keep getting small
+  tweaks as level design progresses. Notes of the form "Snappy felt too X on beat Y"
+  drive the next tuning iteration.
 
 ## Recently completed (last 5)
+
+- 2026-05-12 — Iteration 51. **Human direction session.** Gate 0 verified on-device
+  (Godot 4.6 PC + Nothing Phone 4(a) Pro deploy). Feel verdict: Snappy is good, drop
+  `max_speed` from 6.5 to 6.0 (PR 3). Camera vertical-follow rule: hold Y unless above
+  default jump apex or on higher ground (PR 2). Gate 1 level: **Threshold** picked
+  first; Lung and Spine queued behind it. Double jump approved as expected mechanic.
+  Air dash + Assisted Phase 2 approved for Feel Lab testing. Ghost trail on hold
+  (only revisit if game becomes about speedrunning). Snappy `reboot_duration` stays
+  at 0.5 s. Asset acquisition workflow: surface options for first style-defining picks
+  before autonomous mode resumes. Side fix: `tests/test_controller_kinematics.gd`
+  parse error at the squash-math loop — `for impact in [...]` → `for impact: float in
+  [...]` (was blocking the test runner from loading). Throttle: **RESET** (was
+  HARD-26). Four DECISIONS.md entries added (Threshold pick, double jump approved,
+  ghost trail deferred, reboot duration kept at 0.5 s).
 
 - 2026-05-12 — Iteration 50. **Game level-path contract tests + Audio bus constant tests.**
   `_test_game_level_path_contract` (7 assertions): documents that `Game.current_level_path` is
