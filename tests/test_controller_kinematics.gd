@@ -15,6 +15,8 @@ extends Node
 
 const CP := preload("res://scripts/controller/controller_profile.gd")
 const PB := preload("res://scripts/autoload/perf_budget.gd")
+const TI := preload("res://scripts/autoload/touch_input.gd")
+const GM := preload("res://scripts/autoload/game.gd")
 
 var _pass_count := 0
 var _fail_count := 0
@@ -68,6 +70,8 @@ func _ready() -> void:
 	_test_jump_arc_geometry()
 	_test_profile_timing_windows()
 	_test_perf_budget_logic()
+	_test_touch_input_state_machine()
+	_test_game_autoload_contract()
 	_report()
 
 
@@ -2077,3 +2081,83 @@ func _perf_over_budget(tris: int, draws: int, particles: int, frametime_ms: floa
 	return (tris > PB.TRIANGLE_BUDGET or draws > PB.DRAW_CALL_BUDGET
 		or particles > PB.ACTIVE_PARTICLES_BUDGET
 		or frametime_ms > PB.FRAMETIME_BUDGET_MS)
+
+
+func _test_touch_input_state_machine() -> void:
+	## Covers TouchInput's pure-logic methods without a scene tree.
+	## Does not call _ready(); _ready() only sets process_mode, which is
+	## a Node property accessible without being in the tree.
+	print("\n-- TouchInput state machine --")
+	var ti: TI = TI.new()
+
+	# set_move_vector: limit_length(1.0) contract
+	ti.set_move_vector(Vector2(0.6, 0.8))
+	_ok("set_move_vector: unit vector (length 1.0) passes through unchanged",
+		_near(ti.move_vector.length(), 1.0))
+	ti.set_move_vector(Vector2(10.0, 0.0))
+	_ok("set_move_vector: oversized vector clamped to length 1.0",
+		_near(ti.move_vector.length(), 1.0))
+	ti.set_move_vector(Vector2.ZERO)
+	_ok("set_move_vector: zero vector stays zero",
+		_near(ti.move_vector.length(), 0.0))
+
+	# set_jump_held: 4-case state machine
+	ti.set_jump_held(false)
+	_ok("set_jump_held: false→false is a no-op (stays false)", not ti.jump_held)
+	ti.set_jump_held(true)
+	_ok("set_jump_held: false→true sets jump_held", ti.jump_held)
+	ti.set_jump_held(true)
+	_ok("set_jump_held: true→true is a no-op (stays held)", ti.jump_held)
+	ti.set_jump_held(false)
+	_ok("set_jump_held: true→false clears jump_held", not ti.jump_held)
+
+	# add_camera_drag_delta / consume_camera_drag_delta: accumulate-then-clear
+	ti.add_camera_drag_delta(Vector2(5.0, 3.0))
+	ti.add_camera_drag_delta(Vector2(1.0, -1.0))
+	var d := ti.consume_camera_drag_delta()
+	_ok("consume_camera_drag_delta: returns accumulated sum (6, 2)",
+		_near(d.x, 6.0) and _near(d.y, 2.0))
+	_ok("consume_camera_drag_delta: second call returns zero (accumulator cleared)",
+		_near(ti.consume_camera_drag_delta().length(), 0.0))
+
+	# get_move_vector: returns stored vector when non-trivially non-zero
+	ti.set_move_vector(Vector2(1.0, 0.0))
+	_ok("get_move_vector: returns move_vector.x==1.0 when set",
+		_near(ti.get_move_vector().x, 1.0))
+	ti.set_move_vector(Vector2.ZERO)
+	# No keyboard actions active in test context, so result is ~zero
+	_ok("get_move_vector: returns ~zero when move_vector is zero (no keyboard in test)",
+		ti.get_move_vector().length_squared() < 0.01)
+
+	ti.free()
+
+
+func _test_game_autoload_contract() -> void:
+	## Documents the Game autoload's current public contract. Gate 1 will expand
+	## this autoload; any regression in existing fields/methods is caught here.
+	print("\n-- Game autoload contract --")
+	var g: GM = GM.new()
+
+	# Variable defaults
+	_ok("Game.attempts default is 0", g.attempts == 0)
+	_ok("Game.run_time_seconds default is 0.0", _near(g.run_time_seconds, 0.0))
+	_ok("Game.current_level_path default is empty string", g.current_level_path == "")
+
+	# register_attempt(): increments monotonically
+	g.register_attempt()
+	_ok("register_attempt: increments attempts to 1", g.attempts == 1)
+	g.register_attempt()
+	_ok("register_attempt: second call increments to 2", g.attempts == 2)
+
+	# reset_run(): zeroes both counters
+	g.run_time_seconds = 7.5
+	g.reset_run()
+	_ok("reset_run: zeroes attempts", g.attempts == 0)
+	_ok("reset_run: zeroes run_time_seconds", _near(g.run_time_seconds, 0.0))
+
+	# Signal existence: Gate 1 relies on all three
+	_ok("Game has player_respawned signal", g.has_signal(&"player_respawned"))
+	_ok("Game has checkpoint_reached signal", g.has_signal(&"checkpoint_reached"))
+	_ok("Game has level_completed signal", g.has_signal(&"level_completed"))
+
+	g.free()
