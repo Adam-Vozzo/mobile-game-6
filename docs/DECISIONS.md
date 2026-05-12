@@ -738,7 +738,8 @@ adjust.
 
 ## 2026-05-13 — Camera reference snap on takeoff (interrupts mid-smoothing)
 
-Status: accepted (refines the 2026-05-13 reference-floor smoothing in PR #67)
+Status: superseded 2026-05-13 by the apex-anchor / reference split (see entry below).
+Original status was "accepted (refines the 2026-05-13 reference-floor smoothing in PR #67)"
 Context: After PRs #67 / #68 / #69 all landed, on-device feedback surfaced one
 more case: "if you jump too soon after landing on a new surface level the
 camera will do a little vertical movement." Tracing the math:
@@ -812,6 +813,89 @@ analytic peak, the pre-fix track-up contrast, and the same-tier no-op
 case. No other code paths affected. The previous PR #67 / #68 / #69
 behaviours (smoothing on landings, track-down on falls, apex-multiplier
 headroom) all compose unchanged on top of this fix.
+
+## 2026-05-13 — Camera apex anchor split from smoothed reference (supersedes takeoff snap)
+
+Status: accepted (supersedes the 2026-05-13 takeoff-snap ADR above)
+Context: PR #71's takeoff snap fixed the "jump-too-soon-after-tier-change"
+spurious track-up — but on-device it introduced **two new artefacts** the
+user described as "camera snapping, both on flat ground and on recent new
+height jumps":
+1. On the takeoff frame, snapping `_reference_floor_y` to `player.y`
+   instantly changes `effective_target.y` (from the mid-smoothing value
+   to the takeoff Y). The `_air_offset` recompute keeps the camera's
+   *position* continuous, but `aim_point.y = effective_target.y + aim_height`
+   also jumps in the same frame — and `look_at(aim_point)` therefore
+   rotates by a small angle (~atan(Δaim/tripod_radius), a couple of
+   degrees on a typical mid-smoothing case). Every jump showed a
+   one-frame tilt.
+2. After landing back at the same tier, the camera position is at the
+   pre-takeoff (mid-smoothing) value but the on-floor branch's target is
+   the new tier's settled position. The asymmetric lerp "restarts" the
+   smoothing — perceptually a delayed motion after the jump finishes.
+The fundamental issue: PR #71 conflated two distinct concepts under the
+single `_reference_floor_y` variable:
+- The **threshold** for the apex check (should reflect the *actual*
+  takeoff floor — instant on grounded, held on airborne).
+- The **target** for the camera's vertical position (should *smooth*
+  toward the player's tier so landings glide).
+Snapping one updates the other; smoothing one breaks the threshold check.
+Decision: Split them.
+- `_reference_floor_y` (existing): smoothed toward `player.y` on grounded
+  frames at `reference_floor_smoothing` per second, held during airborne.
+  Drives the *target* — hold-branch return and track-down threshold in
+  `_compute_effective_y`. PR #67's smoothing behaviour preserved exactly.
+- `_apex_anchor_y` (new): **instant** tracking of grounded `player.y` (no
+  smoothing), held during airborne. Drives the *threshold* — the apex
+  check `player.y > anchor + apex_band` in `_compute_effective_y` and
+  `_conditional_fall_offset`.
+Implementation:
+```
+if on_floor:
+    _apex_anchor_y = target_pos.y
+_update_reference_floor(target_pos.y, on_floor, delta)
+
+# In _compute_effective_y:
+var apex_y := _apex_anchor_y + apex_h         # threshold uses instant-anchor
+if player_y > apex_y: return player_y - apex_h  # track up
+if player_y < _reference_floor_y: return player_y  # track down (smoothed ref)
+return _reference_floor_y                        # hold (smoothed ref)
+```
+Across the takeoff transition, `effective_target.y` is **unchanged**
+(both anchor and reference were held from the same grounded value
+moments before; only the *update* of anchor stops, but the held value
+is correct). No `aim_point` jump, no `look_at` rotation, no `_air_offset`
+recompute needed. Smoothing of `_reference_floor_y` continues across
+takeoff (held), through airborne (held), and resumes on landing (toward
+the new tier) — the lerp is uninterrupted.
+The PR #71 takeoff snap and `_was_on_floor` tracking are removed.
+Alternatives considered:
+- Keep PR #71 + add aim_point hysteresis to suppress the one-frame
+  rotation. Rejected: piling fix on fix, and the lerp-restart-on-landing
+  artefact would remain.
+- Snap reference *and* recompute aim_point so the camera shifts to keep
+  cam-to-aim vector constant. Rejected: introduces a position pop (1m+
+  on the mid-smoothing case) which is exactly what PR #71 set out to
+  avoid.
+- Use only the instant anchor (drop the smoothed reference entirely).
+  Rejected: re-introduces PR #67's "camera snaps too fast vertically
+  when landing on a new floor level" — the smoothing was specifically
+  added to fix that, and removing it would regress.
+- Use only the smoothed reference (drop the apex anchor). This is the
+  PR #67–#71 design; it's what caused all the on-device artefacts to
+  begin with. Rejected.
+Consequences: One new state variable (`_apex_anchor_y`), one trivial
+instant-track update at the top of `_process`, two callsite changes in
+`_compute_effective_y` and `_conditional_fall_offset` (reference →
+anchor for the threshold). The takeoff-snap branch and `_was_on_floor`
+variable are removed. Tests: `_test_takeoff_reference_snap` removed;
+new `_test_apex_anchor_split` (10 assertions) verifies that the split
+eliminates the spurious track-up at the bug scenario peak, that the
+held branch + track-up + track-down branches still fire correctly with
+the split, and that the original `_eff_y` (anchor == reference) is
+equivalent to `_eff_y_split` when both anchor arguments match. PR #67's
+reference smoothing, PR #68's track-down on falls, PR #69's apex-band
+headroom all compose unchanged on top of this split.
 
 ## 2026-05-12 — Snappy reboot_duration stays at 0.5 s
 

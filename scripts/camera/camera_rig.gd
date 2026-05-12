@@ -132,21 +132,20 @@ var _last_occluded_pos: Vector3 = Vector3.ZERO
 # player's vertical motion only when they've cleared the apex band.
 var _air_offset: Vector3 = Vector3.ZERO
 # Vertical-follow ratchet: the Y of the floor the player most recently stood
-# on. Camera holds its Y at this reference + the configured camera-height
-# offset whenever the player is below `reference + apex_height * multiplier`.
-# Updates every grounded frame so stairs, ramps, and platform-to-platform
-# hops all flow into the camera; airborne frames leave the reference alone
-# so jumps don't lift the camera unless the apex is exceeded.
+# on, smoothed toward player.y on each grounded frame at
+# `reference_floor_smoothing` per second. Drives the camera's *target* Y for
+# the held / track-down branches — so when the player lands on a new tier
+# the camera eases up/down rather than snapping. Held while airborne so
+# jumps don't lift it.
 var _reference_floor_y: float = 0.0
-# Tracks the player's grounded state from the previous frame so we can
-# detect takeoff (true → false) and landing (false → true) transitions.
-# Used by the takeoff reference snap: if the reference was still smoothing
-# toward the player's current floor when they jumped, the apex check would
-# fire spuriously during the jump (apex_y = mid_smooth + band sits below
-# the jump's actual peak even though the player is only doing a normal
-# jump from the new tier). Snapping on takeoff makes the check use the
-# correct anchor.
-var _was_on_floor: bool = true
+# Apex anchor: the Y of the floor the player is currently standing on, with
+# *instant* tracking on each grounded frame (no smoothing). Held while
+# airborne. Used only for the apex check (`apex_y = anchor + band`) — keeps
+# the threshold tied to the player's actual takeoff floor, so a normal jump
+# from a tier the smoothed reference hasn't caught up to yet doesn't
+# spuriously trigger the track-up branch. Distinct from `_reference_floor_y`:
+# this one drives the *threshold*, the smoothed one drives the *target*.
+var _apex_anchor_y: float = 0.0
 
 @onready var _camera: Camera3D = $Camera
 
@@ -163,23 +162,25 @@ func _process(delta: float) -> void:
 		return
 	var target_pos := _target.global_position
 	var on_floor := _is_target_on_floor()
-	# Takeoff detection: if the reference floor was still smoothing toward
-	# the player's current floor when they jumped, the apex check would fire
-	# spuriously during the jump (mid-smooth reference + band < jump peak).
-	# Snap reference to player.y on the takeoff frame so the check uses the
-	# correct anchor for the whole airborne phase. The _air_offset is
-	# recomputed below against the fresh effective_target so the camera's
-	# world position stays continuous across the snap (no vertical pop).
-	var just_took_off := _was_on_floor and not on_floor
-	if just_took_off:
-		_reference_floor_y = target_pos.y
+	# Apex anchor: instant tracking of grounded player.y, held during
+	# airborne. Used only for the apex check (= track-up threshold). Keeping
+	# this distinct from the smoothed `_reference_floor_y` is the whole point
+	# — the threshold should be tied to the player's actual takeoff floor
+	# (so a normal jump from a tier the smoothed reference hasn't caught up
+	# to yet doesn't spuriously trigger track-up), but the camera's *target*
+	# Y still eases via the smoothed reference (so tier-change transitions
+	# still glide rather than snap).
+	if on_floor:
+		_apex_anchor_y = target_pos.y
+	# else: held — held value is the player's most recent grounded Y, which
+	# is the correct takeoff floor for any airborne ratchet decisions.
 	_update_reference_floor(target_pos.y, on_floor, delta)
-	_was_on_floor = on_floor
 	# Effective target: the position the camera *tracks*. X/Z follow the player
 	# exactly; Y is the vertical-follow ratchet's output (held at reference
-	# floor below apex; tracks the player above apex). All camera-position
-	# math derives from this, so the camera ignores below-apex jumps but
-	# still follows horizontal motion + floor changes + above-apex traversal.
+	# floor below apex; tracks the player above apex / below reference). All
+	# camera-position math derives from this, so the camera ignores below-
+	# apex jumps but still follows horizontal motion + floor changes +
+	# above-apex traversal + below-reference descents.
 	var effective_target := Vector3(
 		target_pos.x,
 		_compute_effective_y(target_pos.y),
@@ -190,16 +191,8 @@ func _process(delta: float) -> void:
 	if not _initialized:
 		_place_camera_initial(effective_target)
 		_air_offset = _camera.global_position - effective_target
+		_apex_anchor_y = target_pos.y
 		_initialized = true
-
-	# Takeoff: recompute _air_offset against the freshly-snapped
-	# effective_target. The airborne rigid translate below uses
-	# `effective_target + _air_offset`, so updating both together keeps
-	# `_camera.global_position` continuous — the camera stays exactly where
-	# it was on the last grounded frame, but the conceptual anchor is now
-	# the snapped reference.
-	if just_took_off:
-		_air_offset = _camera.global_position - effective_target
 
 	# Airborne: rigid follow. Reconstruct the camera position as
 	# `effective_target + _air_offset` *before* drag/look_at runs, so any
@@ -329,7 +322,7 @@ func _update_reference_floor(player_y: float, on_floor: bool, delta: float) -> v
 
 # Vertical-follow ratchet: returns the Y the camera should track. Three
 # regimes around the reference floor:
-#   1. player_y > reference + apex_band  → track up (player.y - band).
+#   1. player_y > apex_anchor + apex_band → track up (player.y - band).
 #      Above-apex traversal (double-jump, wall-jump, vertical megastructure
 #      beats) still keeps the player in frame, lifting 1:1.
 #   2. player_y < reference              → track down (player.y).
@@ -340,12 +333,18 @@ func _update_reference_floor(player_y: float, on_floor: bool, delta: float) -> v
 #   3. otherwise (in the held band)      → hold at reference_floor_y.
 #      Normal jumps that stay between the floor and the apex don't move
 #      the camera at all.
+#
+# The *threshold* (apex_y) uses `_apex_anchor_y` — instant-tracked on
+# grounded frames, held during airborne — so the check is tied to the
+# player's actual takeoff floor. The *target* (the hold and track-down
+# returns) uses `_reference_floor_y` — smoothed — so tier-change
+# transitions still glide rather than snap.
 func _compute_effective_y(player_y: float) -> float:
 	var apex_h := _get_target_apex_height() * apex_height_multiplier
 	if apex_h <= 0.0:
 		# Multiplier 0 or missing-profile fallback: revert to always-track-Y.
 		return player_y
-	var apex_y := _reference_floor_y + apex_h
+	var apex_y := _apex_anchor_y + apex_h
 	if player_y > apex_y:
 		return player_y - apex_h
 	if player_y < _reference_floor_y:
@@ -373,7 +372,9 @@ func _conditional_fall_offset(player_y: float, vel_y: float) -> float:
 	var apex_h := _get_target_apex_height() * apex_height_multiplier
 	if apex_h <= 0.0:
 		return _vertical_pull_offset(vel_y)
-	if player_y > _reference_floor_y + apex_h:
+	# Mirrors `_compute_effective_y`'s three regimes — fall-pull fires
+	# wherever the ratchet would put the camera in tracking mode.
+	if player_y > _apex_anchor_y + apex_h:
 		return _vertical_pull_offset(vel_y)
 	if player_y < _reference_floor_y:
 		return _vertical_pull_offset(vel_y)
