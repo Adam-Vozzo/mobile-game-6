@@ -5,10 +5,10 @@ A mobile 3D platformer. Brutalist megastructure inspired by *BLAME!*. Controller
 ## Status
 
 Current gate: **Gate 0 — Feel Lab** (closing out; Gate 1 prep in flight)
-Last activity: 2026-05-12 — iter 54: Air dash implementation (ControllerProfile params, player.gd state machine, touch swipe gesture, dev-menu sliders, 19 unit tests)
+Last activity: 2026-05-12 — iter 55: Threshold greybox — three-zone level geometry, checkpoint, win state, hazard system
 Test device build: ✅ verified 2026-05-12 — runs in Godot 4.6 on PC and on Nothing Phone 4(a) Pro
 Performance: 144 fps / 6.9 ms in editor at 1920×1080 (Feel Lab); on-device frametimes TBD
-Throttle level: **3** (3 iterations since last human direction 2026-05-12). Next: Threshold greybox.
+Throttle level: **4** (4 iterations since last human direction 2026-05-12). Next: Threshold polish / Lung greybox / Assisted Phase 2.
 
 If you only read one section, read **Open questions waiting on you** below.
 
@@ -83,6 +83,42 @@ Goal: store-ready build.
 The full iteration log lives here, newest first. Every iteration appends an entry. Skim the dates to find where you last left off.
 
 <!-- ITERATION ENTRIES BELOW — DO NOT REMOVE OLDER ENTRIES -->
+
+### [2026-05-12] — iter 55 — Threshold greybox
+
+Branch: `claude/gifted-shannon-8WfWu`
+Throttle: 4 (normal)
+Gate: Gate 1 — Vertical Slice prep
+
+**Primary: full greybox geometry for Threshold (Gate 1 level 1) — three zones, hazards, checkpoint, win state stub.**
+
+New scripts (all in `scripts/levels/`):
+- **`checkpoint.gd`** — `Area3D`; sets player spawn transform + emits `Game.checkpoint_reached(id)` on first player entry. `reset()` for future run-reset wiring.
+- **`camera_hint.gd`** — `Area3D` stub; registers to `"camera_hints"` group; exposes `is_player_inside()`. Camera-rig integration deferred to Gate 1 (camera_rig.gd will query group).
+- **`hazard_body.gd`** — `Area3D`; instant-kill zone, calls `player.respawn()` on contact. Attach to any hazard geometry as a child.
+- **`win_state.gd`** — `Area3D`; fires `Game.level_completed` once on first player entry; one-shot guard. Prints "[WinState] Level complete" stub.
+- **`rotating_hazard.gd`** — `@tool AnimatableBody3D`; rotates around a configurable axis at a fixed period; `Basis(axis, angle)` for deterministic orientation. `HazardBody` children kill on contact.
+- **`threshold.gd`** — root level script; teleports player to spawn marker in `_ready()`; sets `Game.current_level_path`.
+
+New scene **`scenes/levels/threshold.tscn`** (~450 lines, 70 load_steps):
+- **Zone 1 — Habitation** (z=0–36, y=0): warm sodium lighting. Floor 4×1×36, ceiling 3.15m. Three shelf platforms as furniture-scale ledges (HabShelf1–3 at y=1.275–1.525m), two intermediate platforms (HabP1/P2), exit slab. `CameraHint1` Area3D (pull_back=2).
+- **Zone 2 — Maintenance Buffer** (z=37–68, y=−5 drop then corridor): cold blue-white OmniLights. Tight floor 2m wide, ceiling 2.35m. Three precision ledges (MaintLedge1/2/2b — ledge2b is the par-route skip). `ServiceCart` AnimatableBody3D (ping-pong, travel=(0,0,3), period=2.5s). `MaintArm1` RotatingHazard (Y-axis, period=4s) with co-rotating `HazardBody` child.
+- **Alcove — Checkpoint** (z=68–73): amber `OmniLight3D` (warm 1.0/0.55/0.15), `CheckpointTrigger` Area3D (checkpoint.gd, id=`cp_alcove`). `CameraHint2` (pull_back=3).
+- **Zone 3 — Industrial** (z=75–135, y=−5 → −20): amber industrial OmniLights. Hall 28m wide × 50m tall. Four descending gantries G1–G4 (4m drop each, shared Mesh_Gantry/Shape_Gantry sub_resources). `IndustrialPress` AnimatableBody3D offset to x=8 (atmospheric — not in critical path). Four Ketsu platforms K1–K3 + Terminal. `WinStateTrigger` Area3D (BoxShape 8×2×6). `CameraHint3` (pull_back=5).
+
+All walkable surfaces: `collision_layer = 1`. Large walls/hall geometry: `collision_layer = 65` (World + CameraOccluder). `IndustrialFloorVisual` is pure MeshInstance3D (no physics — player respawns before reaching it).
+
+**Perf:** all greybox geometry (BoxMesh + BoxShape). No new shaders or particles. Shared sub_resources keep draw calls bounded. On-device pending.
+
+**fall_kill_y updated:** all 4 controller profiles updated from −25.0 → −35.0 to give 15 m void below the terminal platform (y=−20). Previous 5 m void was too shallow for industrial-tier depth.
+
+**New dev-menu controls:** "Teleport — Threshold" sub-section (12 zone buttons: Spawn / Hab corridor / Hab shelves / Hab exit / Maint. entry / Service cart / Maint. arm / Checkpoint / Gantries G1 / Gantries G4 / Ketsu K1 / Terminal).
+
+**Needs human attention:**
+- **On-device playtest needed.** Level is greybox-only: white cubes, no textures, no ambient sound. Primary test goal: can you read the three spatial zones from the geometry alone? Does the Threshold 2 scale-shock land (buffer corridor → industrial hall)?
+- **MaintArm1 timing window.** The arm rotates on Y-axis in a 2m-wide corridor — requires the player to time a run-through during the parallel-to-Z phase. May need period adjustment after device feel.
+- **Industrial press is atmospheric-only.** `IndustrialPress` is offset to x=8 (not in the player's path). Gate 1 pass will move it into the critical path once the gantry sequence is confirmed playable. Report if the industrial tier needs more hazard density even for greybox.
+- **Par route (cross-cart jump).** `MaintLedge2b` at z=55.5 is the par-route skip target. Visible from atop the service cart at z=49. Test if it's legible as an intentional skip or looks like an accidental overlap.
 
 ### [2026-05-12] — iter 54 — Air dash implementation
 

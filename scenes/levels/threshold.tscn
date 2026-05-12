@@ -1,0 +1,676 @@
+[gd_scene load_steps=70 format=3]
+
+[ext_resource type="Script" path="res://scripts/levels/threshold.gd" id="1_thresh"]
+[ext_resource type="Script" path="res://scripts/levels/rotating_hazard.gd" id="2_roth"]
+[ext_resource type="Script" path="res://scripts/levels/checkpoint.gd" id="3_cp"]
+[ext_resource type="Script" path="res://scripts/levels/camera_hint.gd" id="4_camhint"]
+[ext_resource type="Script" path="res://scripts/levels/hazard_body.gd" id="5_hazard"]
+[ext_resource type="Script" path="res://scripts/levels/win_state.gd" id="6_win"]
+[ext_resource type="Script" path="res://scripts/levels/moving_platform.gd" id="7_movp"]
+[ext_resource type="PackedScene" path="res://scenes/player/player.tscn" id="8_player"]
+[ext_resource type="PackedScene" path="res://scenes/player/camera_rig.tscn" id="9_camrig"]
+[ext_resource type="PackedScene" path="res://scenes/ui/touch_overlay.tscn" id="10_touch"]
+[ext_resource type="Material" path="res://resources/materials/mat_concrete.tres" id="11_matC"]
+[ext_resource type="Material" path="res://resources/materials/mat_concrete_dark.tres" id="12_matCd"]
+[ext_resource type="Script" path="res://tools/debug/player_debug_draw.gd" id="13_dbg"]
+
+[sub_resource type="Environment" id="Env_Threshold"]
+background_mode = 1
+background_color = Color(0.04, 0.04, 0.05, 1)
+ambient_light_source = 2
+ambient_light_color = Color(0.28, 0.30, 0.35, 1)
+ambient_light_energy = 0.6
+tonemap_mode = 2
+fog_enabled = true
+fog_light_color = Color(0.15, 0.16, 0.20, 1)
+fog_light_energy = 1.0
+fog_density = 0.01
+fog_aerial_perspective = 0.5
+fog_sky_affect = 0.0
+
+[sub_resource type="BoxMesh" id="Mesh_Z1Floor"]
+material = ExtResource("12_matCd")
+size = Vector3(4, 1, 36)
+
+[sub_resource type="BoxShape3D" id="Shape_Z1Floor"]
+size = Vector3(4, 1, 36)
+
+[sub_resource type="BoxMesh" id="Mesh_Z1Wall"]
+material = ExtResource("12_matCd")
+size = Vector3(0.5, 4, 36)
+
+[sub_resource type="BoxShape3D" id="Shape_Z1Wall"]
+size = Vector3(0.5, 4, 36)
+
+[sub_resource type="BoxMesh" id="Mesh_Z1Ceiling"]
+material = ExtResource("12_matCd")
+size = Vector3(4, 0.3, 36)
+
+[sub_resource type="BoxShape3D" id="Shape_Z1Ceiling"]
+size = Vector3(4, 0.3, 36)
+
+[sub_resource type="BoxMesh" id="Mesh_HabP1"]
+material = ExtResource("11_matC")
+size = Vector3(2.5, 0.5, 2.5)
+
+[sub_resource type="BoxShape3D" id="Shape_HabP1"]
+size = Vector3(2.5, 0.5, 2.5)
+
+[sub_resource type="BoxMesh" id="Mesh_HabP2"]
+material = ExtResource("11_matC")
+size = Vector3(2, 0.5, 2)
+
+[sub_resource type="BoxShape3D" id="Shape_HabP2"]
+size = Vector3(2, 0.5, 2)
+
+[sub_resource type="BoxMesh" id="Mesh_HabShelf"]
+material = ExtResource("11_matC")
+size = Vector3(4, 0.25, 1.2)
+
+[sub_resource type="BoxShape3D" id="Shape_HabShelf"]
+size = Vector3(4, 0.25, 1.2)
+
+[sub_resource type="BoxMesh" id="Mesh_HabShelf2"]
+material = ExtResource("11_matC")
+size = Vector3(3.5, 0.25, 1.0)
+
+[sub_resource type="BoxShape3D" id="Shape_HabShelf2"]
+size = Vector3(3.5, 0.25, 1.0)
+
+[sub_resource type="BoxMesh" id="Mesh_HabExit"]
+material = ExtResource("11_matC")
+size = Vector3(3, 0.5, 3)
+
+[sub_resource type="BoxShape3D" id="Shape_HabExit"]
+size = Vector3(3, 0.5, 3)
+
+[sub_resource type="BoxMesh" id="Mesh_Z2Floor"]
+material = ExtResource("12_matCd")
+size = Vector3(2, 1, 31)
+
+[sub_resource type="BoxShape3D" id="Shape_Z2Floor"]
+size = Vector3(2, 1, 31)
+
+[sub_resource type="BoxMesh" id="Mesh_Z2Ceiling"]
+material = ExtResource("12_matCd")
+size = Vector3(2, 0.3, 31)
+
+[sub_resource type="BoxShape3D" id="Shape_Z2Ceiling"]
+size = Vector3(2, 0.3, 31)
+
+[sub_resource type="BoxMesh" id="Mesh_Z2Wall"]
+material = ExtResource("12_matCd")
+size = Vector3(0.5, 3, 31)
+
+[sub_resource type="BoxShape3D" id="Shape_Z2Wall"]
+size = Vector3(0.5, 3, 31)
+
+[sub_resource type="BoxMesh" id="Mesh_MaintLedge"]
+material = ExtResource("11_matC")
+size = Vector3(1.5, 0.3, 0.8)
+
+[sub_resource type="BoxShape3D" id="Shape_MaintLedge"]
+size = Vector3(1.5, 0.3, 0.8)
+
+[sub_resource type="BoxMesh" id="Mesh_ServiceCart"]
+material = ExtResource("11_matC")
+size = Vector3(2, 0.3, 1)
+
+[sub_resource type="BoxShape3D" id="Shape_ServiceCart"]
+size = Vector3(2, 0.3, 1)
+
+[sub_resource type="BoxMesh" id="Mesh_MaintLedge2"]
+material = ExtResource("11_matC")
+size = Vector3(1.2, 0.3, 0.8)
+
+[sub_resource type="BoxShape3D" id="Shape_MaintLedge2"]
+size = Vector3(1.2, 0.3, 0.8)
+
+[sub_resource type="BoxMesh" id="Mesh_MaintArm"]
+material = ExtResource("12_matCd")
+size = Vector3(2.5, 0.4, 0.4)
+
+[sub_resource type="BoxShape3D" id="Shape_MaintArm"]
+size = Vector3(2.5, 0.4, 0.4)
+
+[sub_resource type="BoxShape3D" id="Shape_HazardArm"]
+size = Vector3(2.5, 0.8, 0.5)
+
+[sub_resource type="BoxMesh" id="Mesh_MaintExit"]
+material = ExtResource("11_matC")
+size = Vector3(2, 0.4, 1.5)
+
+[sub_resource type="BoxShape3D" id="Shape_MaintExit"]
+size = Vector3(2, 0.4, 1.5)
+
+[sub_resource type="BoxMesh" id="Mesh_AlcoveFloor"]
+material = ExtResource("12_matCd")
+size = Vector3(4, 1, 5)
+
+[sub_resource type="BoxShape3D" id="Shape_AlcoveFloor"]
+size = Vector3(4, 1, 5)
+
+[sub_resource type="BoxMesh" id="Mesh_AlcoveWall"]
+material = ExtResource("12_matCd")
+size = Vector3(0.5, 4, 5)
+
+[sub_resource type="BoxShape3D" id="Shape_AlcoveWall"]
+size = Vector3(0.5, 4, 5)
+
+[sub_resource type="SphereShape3D" id="Shape_Checkpoint"]
+radius = 1.5
+
+[sub_resource type="BoxMesh" id="Mesh_Gantry"]
+material = ExtResource("11_matC")
+size = Vector3(8, 0.5, 4)
+
+[sub_resource type="BoxShape3D" id="Shape_Gantry"]
+size = Vector3(8, 0.5, 4)
+
+[sub_resource type="BoxMesh" id="Mesh_KetsuPlat"]
+material = ExtResource("11_matC")
+size = Vector3(10, 0.5, 5)
+
+[sub_resource type="BoxShape3D" id="Shape_KetsuPlat"]
+size = Vector3(10, 0.5, 5)
+
+[sub_resource type="BoxMesh" id="Mesh_Terminal"]
+material = ExtResource("11_matC")
+size = Vector3(12, 0.5, 8)
+
+[sub_resource type="BoxShape3D" id="Shape_Terminal"]
+size = Vector3(12, 0.5, 8)
+
+[sub_resource type="BoxMesh" id="Mesh_IndustrialPress"]
+material = ExtResource("12_matCd")
+size = Vector3(14, 4, 5)
+
+[sub_resource type="BoxShape3D" id="Shape_IndustrialPress"]
+size = Vector3(14, 4, 5)
+
+[sub_resource type="BoxMesh" id="Mesh_IndustrialWall"]
+material = ExtResource("12_matCd")
+size = Vector3(0.5, 50, 68)
+
+[sub_resource type="BoxShape3D" id="Shape_IndustrialWall"]
+size = Vector3(0.5, 50, 68)
+
+[sub_resource type="BoxMesh" id="Mesh_IndustrialBack"]
+material = ExtResource("12_matCd")
+size = Vector3(28, 50, 0.5)
+
+[sub_resource type="BoxShape3D" id="Shape_IndustrialBack"]
+size = Vector3(28, 50, 0.5)
+
+[sub_resource type="BoxMesh" id="Mesh_IndustrialFloor"]
+material = ExtResource("12_matCd")
+size = Vector3(28, 1, 68)
+
+[sub_resource type="BoxShape3D" id="Shape_WinState"]
+size = Vector3(8, 2, 6)
+
+[sub_resource type="SphereShape3D" id="Shape_CameraHintSm"]
+radius = 3.0
+
+[sub_resource type="SphereShape3D" id="Shape_CameraHintLg"]
+radius = 6.0
+
+[node name="Threshold" type="Node3D"]
+script = ExtResource("1_thresh")
+
+[node name="WorldEnv" type="WorldEnvironment" parent="."]
+environment = SubResource("Env_Threshold")
+
+[node name="KeyLight" type="DirectionalLight3D" parent="."]
+transform = Transform3D(1, 0, 0, 0, 0.6428, -0.766, 0, 0.766, 0.6428, 0, 20, 0)
+light_color = Color(1, 0.85, 0.55, 1)
+light_energy = 1.5
+shadow_enabled = true
+
+[node name="FillLight" type="DirectionalLight3D" parent="."]
+transform = Transform3D(-1, 0, 0, 0, 0.866, 0.5, 0, 0.5, -0.866, 0, 12, 0)
+light_color = Color(0.55, 0.6, 0.78, 1)
+light_energy = 0.45
+shadow_enabled = false
+
+[node name="PlayerSpawn" type="Marker3D" parent="."]
+transform = Transform3D(1, 0, 0, 0, 1, 0, 0, 0, 1, 0, 1, 0)
+
+[node name="Player" parent="." instance=ExtResource("8_player")]
+transform = Transform3D(1, 0, 0, 0, 1, 0, 0, 0, 1, 0, 1, 0)
+
+[node name="CameraRig" parent="." instance=ExtResource("9_camrig")]
+target_path = NodePath("../Player")
+
+[node name="TouchOverlay" parent="." instance=ExtResource("10_touch")]
+
+[node name="PlayerDebugDraw" type="MeshInstance3D" parent="."]
+script = ExtResource("13_dbg")
+
+[node name="Zone1_Habitation" type="Node3D" parent="."]
+
+[node name="Floor" type="StaticBody3D" parent="Zone1_Habitation"]
+transform = Transform3D(1, 0, 0, 0, 1, 0, 0, 0, 1, 0, -0.5, 18)
+
+[node name="Mesh" type="MeshInstance3D" parent="Zone1_Habitation/Floor"]
+mesh = SubResource("Mesh_Z1Floor")
+
+[node name="Collider" type="CollisionShape3D" parent="Zone1_Habitation/Floor"]
+shape = SubResource("Shape_Z1Floor")
+
+[node name="WallLeft" type="StaticBody3D" parent="Zone1_Habitation"]
+transform = Transform3D(1, 0, 0, 0, 1, 0, 0, 0, 1, -2.25, 1.5, 18)
+collision_layer = 65
+
+[node name="Mesh" type="MeshInstance3D" parent="Zone1_Habitation/WallLeft"]
+mesh = SubResource("Mesh_Z1Wall")
+
+[node name="Collider" type="CollisionShape3D" parent="Zone1_Habitation/WallLeft"]
+shape = SubResource("Shape_Z1Wall")
+
+[node name="WallRight" type="StaticBody3D" parent="Zone1_Habitation"]
+transform = Transform3D(1, 0, 0, 0, 1, 0, 0, 0, 1, 2.25, 1.5, 18)
+collision_layer = 65
+
+[node name="Mesh" type="MeshInstance3D" parent="Zone1_Habitation/WallRight"]
+mesh = SubResource("Mesh_Z1Wall")
+
+[node name="Collider" type="CollisionShape3D" parent="Zone1_Habitation/WallRight"]
+shape = SubResource("Shape_Z1Wall")
+
+[node name="Ceiling" type="StaticBody3D" parent="Zone1_Habitation"]
+transform = Transform3D(1, 0, 0, 0, 1, 0, 0, 0, 1, 0, 3.15, 18)
+
+[node name="Mesh" type="MeshInstance3D" parent="Zone1_Habitation/Ceiling"]
+mesh = SubResource("Mesh_Z1Ceiling")
+
+[node name="Collider" type="CollisionShape3D" parent="Zone1_Habitation/Ceiling"]
+shape = SubResource("Shape_Z1Ceiling")
+
+[node name="HabP1" type="StaticBody3D" parent="Zone1_Habitation"]
+transform = Transform3D(1, 0, 0, 0, 1, 0, 0, 0, 1, 0, 0.25, 8)
+
+[node name="Mesh" type="MeshInstance3D" parent="Zone1_Habitation/HabP1"]
+mesh = SubResource("Mesh_HabP1")
+
+[node name="Collider" type="CollisionShape3D" parent="Zone1_Habitation/HabP1"]
+shape = SubResource("Shape_HabP1")
+
+[node name="HabP2" type="StaticBody3D" parent="Zone1_Habitation"]
+transform = Transform3D(1, 0, 0, 0, 1, 0, 0, 0, 1, 0.5, 0.25, 13)
+
+[node name="Mesh" type="MeshInstance3D" parent="Zone1_Habitation/HabP2"]
+mesh = SubResource("Mesh_HabP2")
+
+[node name="Collider" type="CollisionShape3D" parent="Zone1_Habitation/HabP2"]
+shape = SubResource("Shape_HabP2")
+
+[node name="HabShelf1" type="StaticBody3D" parent="Zone1_Habitation"]
+transform = Transform3D(1, 0, 0, 0, 1, 0, 0, 0, 1, 0, 1.275, 18)
+
+[node name="Mesh" type="MeshInstance3D" parent="Zone1_Habitation/HabShelf1"]
+mesh = SubResource("Mesh_HabShelf")
+
+[node name="Collider" type="CollisionShape3D" parent="Zone1_Habitation/HabShelf1"]
+shape = SubResource("Shape_HabShelf")
+
+[node name="HabShelf2" type="StaticBody3D" parent="Zone1_Habitation"]
+transform = Transform3D(1, 0, 0, 0, 1, 0, 0, 0, 1, -0.2, 1.525, 23)
+
+[node name="Mesh" type="MeshInstance3D" parent="Zone1_Habitation/HabShelf2"]
+mesh = SubResource("Mesh_HabShelf2")
+
+[node name="Collider" type="CollisionShape3D" parent="Zone1_Habitation/HabShelf2"]
+shape = SubResource("Shape_HabShelf2")
+
+[node name="HabShelf3" type="StaticBody3D" parent="Zone1_Habitation"]
+transform = Transform3D(1, 0, 0, 0, 1, 0, 0, 0, 1, 0.2, 1.275, 28)
+
+[node name="Mesh" type="MeshInstance3D" parent="Zone1_Habitation/HabShelf3"]
+mesh = SubResource("Mesh_HabShelf2")
+
+[node name="Collider" type="CollisionShape3D" parent="Zone1_Habitation/HabShelf3"]
+shape = SubResource("Shape_HabShelf2")
+
+[node name="HabExit" type="StaticBody3D" parent="Zone1_Habitation"]
+transform = Transform3D(1, 0, 0, 0, 1, 0, 0, 0, 1, 0, 0.25, 33)
+
+[node name="Mesh" type="MeshInstance3D" parent="Zone1_Habitation/HabExit"]
+mesh = SubResource("Mesh_HabExit")
+
+[node name="Collider" type="CollisionShape3D" parent="Zone1_Habitation/HabExit"]
+shape = SubResource("Shape_HabExit")
+
+[node name="CameraHint1" type="Area3D" parent="Zone1_Habitation"]
+transform = Transform3D(1, 0, 0, 0, 1, 0, 0, 0, 1, 0, 1.5, 2)
+script = ExtResource("4_camhint")
+pull_back_amount = 2.0
+
+[node name="Shape" type="CollisionShape3D" parent="Zone1_Habitation/CameraHint1"]
+shape = SubResource("Shape_CameraHintSm")
+
+[node name="Zone2_Maintenance" type="Node3D" parent="."]
+
+[node name="Floor" type="StaticBody3D" parent="Zone2_Maintenance"]
+transform = Transform3D(1, 0, 0, 0, 1, 0, 0, 0, 1, 0, -5.5, 52.5)
+
+[node name="Mesh" type="MeshInstance3D" parent="Zone2_Maintenance/Floor"]
+mesh = SubResource("Mesh_Z2Floor")
+
+[node name="Collider" type="CollisionShape3D" parent="Zone2_Maintenance/Floor"]
+shape = SubResource("Shape_Z2Floor")
+
+[node name="Ceiling" type="StaticBody3D" parent="Zone2_Maintenance"]
+transform = Transform3D(1, 0, 0, 0, 1, 0, 0, 0, 1, 0, -3.15, 52.5)
+
+[node name="Mesh" type="MeshInstance3D" parent="Zone2_Maintenance/Ceiling"]
+mesh = SubResource("Mesh_Z2Ceiling")
+
+[node name="Collider" type="CollisionShape3D" parent="Zone2_Maintenance/Ceiling"]
+shape = SubResource("Shape_Z2Ceiling")
+
+[node name="WallLeft" type="StaticBody3D" parent="Zone2_Maintenance"]
+transform = Transform3D(1, 0, 0, 0, 1, 0, 0, 0, 1, -1.25, -4, 52.5)
+collision_layer = 65
+
+[node name="Mesh" type="MeshInstance3D" parent="Zone2_Maintenance/WallLeft"]
+mesh = SubResource("Mesh_Z2Wall")
+
+[node name="Collider" type="CollisionShape3D" parent="Zone2_Maintenance/WallLeft"]
+shape = SubResource("Shape_Z2Wall")
+
+[node name="WallRight" type="StaticBody3D" parent="Zone2_Maintenance"]
+transform = Transform3D(1, 0, 0, 0, 1, 0, 0, 0, 1, 1.25, -4, 52.5)
+collision_layer = 65
+
+[node name="Mesh" type="MeshInstance3D" parent="Zone2_Maintenance/WallRight"]
+mesh = SubResource("Mesh_Z2Wall")
+
+[node name="Collider" type="CollisionShape3D" parent="Zone2_Maintenance/WallRight"]
+shape = SubResource("Shape_Z2Wall")
+
+[node name="MaintLedge1" type="StaticBody3D" parent="Zone2_Maintenance"]
+transform = Transform3D(1, 0, 0, 0, 1, 0, 0, 0, 1, 0, -4.65, 43)
+
+[node name="Mesh" type="MeshInstance3D" parent="Zone2_Maintenance/MaintLedge1"]
+mesh = SubResource("Mesh_MaintLedge")
+
+[node name="Collider" type="CollisionShape3D" parent="Zone2_Maintenance/MaintLedge1"]
+shape = SubResource("Shape_MaintLedge")
+
+[node name="ServiceCart" type="AnimatableBody3D" parent="Zone2_Maintenance"]
+transform = Transform3D(1, 0, 0, 0, 1, 0, 0, 0, 1, 0, -4.65, 49)
+script = ExtResource("7_movp")
+travel = Vector3(0, 0, 3)
+period_seconds = 2.5
+
+[node name="Mesh" type="MeshInstance3D" parent="Zone2_Maintenance/ServiceCart"]
+mesh = SubResource("Mesh_ServiceCart")
+
+[node name="Collider" type="CollisionShape3D" parent="Zone2_Maintenance/ServiceCart"]
+shape = SubResource("Shape_ServiceCart")
+
+[node name="MaintLedge2" type="StaticBody3D" parent="Zone2_Maintenance"]
+transform = Transform3D(1, 0, 0, 0, 1, 0, 0, 0, 1, 0.1, -4.65, 54)
+
+[node name="Mesh" type="MeshInstance3D" parent="Zone2_Maintenance/MaintLedge2"]
+mesh = SubResource("Mesh_MaintLedge2")
+
+[node name="Collider" type="CollisionShape3D" parent="Zone2_Maintenance/MaintLedge2"]
+shape = SubResource("Shape_MaintLedge2")
+
+[node name="MaintLedge2b" type="StaticBody3D" parent="Zone2_Maintenance"]
+transform = Transform3D(1, 0, 0, 0, 1, 0, 0, 0, 1, 0, -4.65, 55.5)
+
+[node name="Mesh" type="MeshInstance3D" parent="Zone2_Maintenance/MaintLedge2b"]
+mesh = SubResource("Mesh_MaintLedge2")
+
+[node name="Collider" type="CollisionShape3D" parent="Zone2_Maintenance/MaintLedge2b"]
+shape = SubResource("Shape_MaintLedge2")
+
+[node name="MaintArm1" type="AnimatableBody3D" parent="Zone2_Maintenance"]
+transform = Transform3D(1, 0, 0, 0, 1, 0, 0, 0, 1, 0, -4.5, 59)
+script = ExtResource("2_roth")
+rotation_axis = Vector3(0, 1, 0)
+period_seconds = 4.0
+
+[node name="ArmMesh" type="MeshInstance3D" parent="Zone2_Maintenance/MaintArm1"]
+mesh = SubResource("Mesh_MaintArm")
+
+[node name="ArmCollider" type="CollisionShape3D" parent="Zone2_Maintenance/MaintArm1"]
+shape = SubResource("Shape_MaintArm")
+
+[node name="HazardZone" type="Area3D" parent="Zone2_Maintenance/MaintArm1"]
+script = ExtResource("5_hazard")
+
+[node name="HazardShape" type="CollisionShape3D" parent="Zone2_Maintenance/MaintArm1/HazardZone"]
+shape = SubResource("Shape_HazardArm")
+
+[node name="MaintExit" type="StaticBody3D" parent="Zone2_Maintenance"]
+transform = Transform3D(1, 0, 0, 0, 1, 0, 0, 0, 1, 0, -4.8, 63.5)
+
+[node name="Mesh" type="MeshInstance3D" parent="Zone2_Maintenance/MaintExit"]
+mesh = SubResource("Mesh_MaintExit")
+
+[node name="Collider" type="CollisionShape3D" parent="Zone2_Maintenance/MaintExit"]
+shape = SubResource("Shape_MaintExit")
+
+[node name="Z2Light1" type="OmniLight3D" parent="Zone2_Maintenance"]
+transform = Transform3D(1, 0, 0, 0, 1, 0, 0, 0, 1, 0, -4, 45)
+light_color = Color(0.70, 0.80, 1.0, 1)
+light_energy = 2.5
+omni_range = 12.0
+
+[node name="Z2Light2" type="OmniLight3D" parent="Zone2_Maintenance"]
+transform = Transform3D(1, 0, 0, 0, 1, 0, 0, 0, 1, 0, -4, 61)
+light_color = Color(0.70, 0.80, 1.0, 1)
+light_energy = 2.5
+omni_range = 12.0
+
+[node name="Alcove_Checkpoint" type="Node3D" parent="."]
+
+[node name="AlcoveFloor" type="StaticBody3D" parent="Alcove_Checkpoint"]
+transform = Transform3D(1, 0, 0, 0, 1, 0, 0, 0, 1, 0, -5.5, 70.5)
+
+[node name="Mesh" type="MeshInstance3D" parent="Alcove_Checkpoint/AlcoveFloor"]
+mesh = SubResource("Mesh_AlcoveFloor")
+
+[node name="Collider" type="CollisionShape3D" parent="Alcove_Checkpoint/AlcoveFloor"]
+shape = SubResource("Shape_AlcoveFloor")
+
+[node name="AlcoveWallLeft" type="StaticBody3D" parent="Alcove_Checkpoint"]
+transform = Transform3D(1, 0, 0, 0, 1, 0, 0, 0, 1, -2.25, -3, 70.5)
+collision_layer = 65
+
+[node name="Mesh" type="MeshInstance3D" parent="Alcove_Checkpoint/AlcoveWallLeft"]
+mesh = SubResource("Mesh_AlcoveWall")
+
+[node name="Collider" type="CollisionShape3D" parent="Alcove_Checkpoint/AlcoveWallLeft"]
+shape = SubResource("Shape_AlcoveWall")
+
+[node name="AlcoveWallRight" type="StaticBody3D" parent="Alcove_Checkpoint"]
+transform = Transform3D(1, 0, 0, 0, 1, 0, 0, 0, 1, 2.25, -3, 70.5)
+collision_layer = 65
+
+[node name="Mesh" type="MeshInstance3D" parent="Alcove_Checkpoint/AlcoveWallRight"]
+mesh = SubResource("Mesh_AlcoveWall")
+
+[node name="Collider" type="CollisionShape3D" parent="Alcove_Checkpoint/AlcoveWallRight"]
+shape = SubResource("Shape_AlcoveWall")
+
+[node name="CheckpointTrigger" type="Area3D" parent="Alcove_Checkpoint"]
+transform = Transform3D(1, 0, 0, 0, 1, 0, 0, 0, 1, 0, -4.5, 70)
+script = ExtResource("3_cp")
+checkpoint_id = &"cp_alcove"
+
+[node name="Shape" type="CollisionShape3D" parent="Alcove_Checkpoint/CheckpointTrigger"]
+shape = SubResource("Shape_Checkpoint")
+
+[node name="WarmLight" type="OmniLight3D" parent="Alcove_Checkpoint"]
+transform = Transform3D(1, 0, 0, 0, 1, 0, 0, 0, 1, 0, -3, 70)
+light_color = Color(1.0, 0.55, 0.15, 1)
+light_energy = 3.0
+omni_range = 8.0
+
+[node name="CameraHint2" type="Area3D" parent="Alcove_Checkpoint"]
+transform = Transform3D(1, 0, 0, 0, 1, 0, 0, 0, 1, 0, -4, 73.5)
+script = ExtResource("4_camhint")
+pull_back_amount = 3.0
+
+[node name="Shape" type="CollisionShape3D" parent="Alcove_Checkpoint/CameraHint2"]
+shape = SubResource("Shape_CameraHintSm")
+
+[node name="Zone3_Industrial" type="Node3D" parent="."]
+
+[node name="HallWallLeft" type="StaticBody3D" parent="Zone3_Industrial"]
+transform = Transform3D(1, 0, 0, 0, 1, 0, 0, 0, 1, -14.25, -10, 107)
+collision_layer = 65
+
+[node name="Mesh" type="MeshInstance3D" parent="Zone3_Industrial/HallWallLeft"]
+mesh = SubResource("Mesh_IndustrialWall")
+
+[node name="Collider" type="CollisionShape3D" parent="Zone3_Industrial/HallWallLeft"]
+shape = SubResource("Shape_IndustrialWall")
+
+[node name="HallWallRight" type="StaticBody3D" parent="Zone3_Industrial"]
+transform = Transform3D(1, 0, 0, 0, 1, 0, 0, 0, 1, 14.25, -10, 107)
+collision_layer = 65
+
+[node name="Mesh" type="MeshInstance3D" parent="Zone3_Industrial/HallWallRight"]
+mesh = SubResource("Mesh_IndustrialWall")
+
+[node name="Collider" type="CollisionShape3D" parent="Zone3_Industrial/HallWallRight"]
+shape = SubResource("Shape_IndustrialWall")
+
+[node name="HallBackWall" type="StaticBody3D" parent="Zone3_Industrial"]
+transform = Transform3D(1, 0, 0, 0, 1, 0, 0, 0, 1, 0, -10, 141.25)
+collision_layer = 65
+
+[node name="Mesh" type="MeshInstance3D" parent="Zone3_Industrial/HallBackWall"]
+mesh = SubResource("Mesh_IndustrialBack")
+
+[node name="Collider" type="CollisionShape3D" parent="Zone3_Industrial/HallBackWall"]
+shape = SubResource("Shape_IndustrialBack")
+
+[node name="G1" type="StaticBody3D" parent="Zone3_Industrial"]
+transform = Transform3D(1, 0, 0, 0, 1, 0, 0, 0, 1, 0, -5.25, 81)
+
+[node name="Mesh" type="MeshInstance3D" parent="Zone3_Industrial/G1"]
+mesh = SubResource("Mesh_Gantry")
+
+[node name="Collider" type="CollisionShape3D" parent="Zone3_Industrial/G1"]
+shape = SubResource("Shape_Gantry")
+
+[node name="G2" type="StaticBody3D" parent="Zone3_Industrial"]
+transform = Transform3D(1, 0, 0, 0, 1, 0, 0, 0, 1, 0, -9.25, 89)
+
+[node name="Mesh" type="MeshInstance3D" parent="Zone3_Industrial/G2"]
+mesh = SubResource("Mesh_Gantry")
+
+[node name="Collider" type="CollisionShape3D" parent="Zone3_Industrial/G2"]
+shape = SubResource("Shape_Gantry")
+
+[node name="G3" type="StaticBody3D" parent="Zone3_Industrial"]
+transform = Transform3D(1, 0, 0, 0, 1, 0, 0, 0, 1, 0, -13.25, 97)
+
+[node name="Mesh" type="MeshInstance3D" parent="Zone3_Industrial/G3"]
+mesh = SubResource("Mesh_Gantry")
+
+[node name="Collider" type="CollisionShape3D" parent="Zone3_Industrial/G3"]
+shape = SubResource("Shape_Gantry")
+
+[node name="G4" type="StaticBody3D" parent="Zone3_Industrial"]
+transform = Transform3D(1, 0, 0, 0, 1, 0, 0, 0, 1, 0, -17.25, 105)
+
+[node name="Mesh" type="MeshInstance3D" parent="Zone3_Industrial/G4"]
+mesh = SubResource("Mesh_Gantry")
+
+[node name="Collider" type="CollisionShape3D" parent="Zone3_Industrial/G4"]
+shape = SubResource("Shape_Gantry")
+
+[node name="IndustrialPress" type="AnimatableBody3D" parent="Zone3_Industrial"]
+transform = Transform3D(1, 0, 0, 0, 1, 0, 0, 0, 1, 8, -12, 99)
+script = ExtResource("7_movp")
+travel = Vector3(0, -5, 0)
+period_seconds = 5.0
+
+[node name="Mesh" type="MeshInstance3D" parent="Zone3_Industrial/IndustrialPress"]
+mesh = SubResource("Mesh_IndustrialPress")
+
+[node name="Collider" type="CollisionShape3D" parent="Zone3_Industrial/IndustrialPress"]
+shape = SubResource("Shape_IndustrialPress")
+
+[node name="IndustrialFloorVisual" type="MeshInstance3D" parent="Zone3_Industrial"]
+transform = Transform3D(1, 0, 0, 0, 1, 0, 0, 0, 1, 0, -30.5, 107)
+mesh = SubResource("Mesh_IndustrialFloor")
+
+[node name="Z3Light1" type="OmniLight3D" parent="Zone3_Industrial"]
+transform = Transform3D(1, 0, 0, 0, 1, 0, 0, 0, 1, 0, -7, 85)
+light_color = Color(1.0, 0.65, 0.25, 1)
+light_energy = 3.5
+omni_range = 22.0
+
+[node name="Z3Light2" type="OmniLight3D" parent="Zone3_Industrial"]
+transform = Transform3D(1, 0, 0, 0, 1, 0, 0, 0, 1, 0, -14, 103)
+light_color = Color(1.0, 0.65, 0.25, 1)
+light_energy = 3.5
+omni_range = 25.0
+
+[node name="Z3Light3" type="OmniLight3D" parent="Zone3_Industrial"]
+transform = Transform3D(1, 0, 0, 0, 1, 0, 0, 0, 1, 0, -19, 130)
+light_color = Color(1.0, 0.60, 0.20, 1)
+light_energy = 4.0
+omni_range = 30.0
+
+[node name="Beat4_Ketsu" type="Node3D" parent="."]
+
+[node name="K1" type="StaticBody3D" parent="Beat4_Ketsu"]
+transform = Transform3D(1, 0, 0, 0, 1, 0, 0, 0, 1, 0, -17.75, 112)
+
+[node name="Mesh" type="MeshInstance3D" parent="Beat4_Ketsu/K1"]
+mesh = SubResource("Mesh_KetsuPlat")
+
+[node name="Collider" type="CollisionShape3D" parent="Beat4_Ketsu/K1"]
+shape = SubResource("Shape_KetsuPlat")
+
+[node name="K2" type="StaticBody3D" parent="Beat4_Ketsu"]
+transform = Transform3D(1, 0, 0, 0, 1, 0, 0, 0, 1, 0, -18.75, 119)
+
+[node name="Mesh" type="MeshInstance3D" parent="Beat4_Ketsu/K2"]
+mesh = SubResource("Mesh_KetsuPlat")
+
+[node name="Collider" type="CollisionShape3D" parent="Beat4_Ketsu/K2"]
+shape = SubResource("Shape_KetsuPlat")
+
+[node name="K3" type="StaticBody3D" parent="Beat4_Ketsu"]
+transform = Transform3D(1, 0, 0, 0, 1, 0, 0, 0, 1, 0, -19.75, 126)
+
+[node name="Mesh" type="MeshInstance3D" parent="Beat4_Ketsu/K3"]
+mesh = SubResource("Mesh_KetsuPlat")
+
+[node name="Collider" type="CollisionShape3D" parent="Beat4_Ketsu/K3"]
+shape = SubResource("Shape_KetsuPlat")
+
+[node name="Terminal" type="StaticBody3D" parent="Beat4_Ketsu"]
+transform = Transform3D(1, 0, 0, 0, 1, 0, 0, 0, 1, 0, -20.25, 135)
+
+[node name="Mesh" type="MeshInstance3D" parent="Beat4_Ketsu/Terminal"]
+mesh = SubResource("Mesh_Terminal")
+
+[node name="Collider" type="CollisionShape3D" parent="Beat4_Ketsu/Terminal"]
+shape = SubResource("Shape_Terminal")
+
+[node name="WinStateTrigger" type="Area3D" parent="Beat4_Ketsu"]
+transform = Transform3D(1, 0, 0, 0, 1, 0, 0, 0, 1, 0, -19.75, 135)
+script = ExtResource("6_win")
+
+[node name="Shape" type="CollisionShape3D" parent="Beat4_Ketsu/WinStateTrigger"]
+shape = SubResource("Shape_WinState")
+
+[node name="CameraHint3" type="Area3D" parent="Beat4_Ketsu"]
+transform = Transform3D(1, 0, 0, 0, 1, 0, 0, 0, 1, 0, -19.5, 135)
+script = ExtResource("4_camhint")
+pull_back_amount = 5.0
+
+[node name="Shape" type="CollisionShape3D" parent="Beat4_Ketsu/CameraHint3"]
+shape = SubResource("Shape_CameraHintLg")

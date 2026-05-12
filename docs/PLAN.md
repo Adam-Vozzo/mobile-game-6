@@ -16,10 +16,10 @@ authored with it in mind.
 
 ## Active iteration
 
-- _No iteration currently in flight._ Iter 54 (Air dash) landed 2026-05-12 — see
+- _No iteration currently in flight._ Iter 55 (Threshold greybox) landed 2026-05-12 — see
   Recently completed.
-- Next iteration should pull from the top of the P0 queue below: **Threshold greybox**.
-  Throttle: **3** (3 iterations since last human direction session 2026-05-12).
+- Next iteration should pull from the top of the P0 queue below.
+  Throttle: **4** (4 iterations since last human direction session 2026-05-12).
 
 ## Queue (ranked, top is next)
 
@@ -63,11 +63,17 @@ The next iteration should pull from the top of this list. Items marked
    quick-swipe (≥40 px in <0.20 s) fires `TouchInput.air_dash_triggered`; player rotates 2D
    screen dir by camera yaw. Dev menu: "Controller — Air Dash" section (3 sliders). Keyboard: E.
    19 unit tests. On-device pending — enable via "Dash speed" slider.
-7. **Threshold greybox.** First Gate 1 level. Double jump now available for
-   level design. Five beats per `docs/levels/threshold.md` (habitation →
-   maintenance → industrial contrast). Build geometry, place `CameraHint`
-   beats, drop in collectible + win state stubs.
-8. **Assisted profile Phase 2.** Phase 1 (sticky landing) shipped iter 27.
+7. ~~**Threshold greybox.**~~ Done 2026-05-12 (iter 55). `scenes/levels/threshold.tscn`
+   built: three zones (Habitation/Maintenance/Industrial), 6 new level scripts
+   (checkpoint.gd, camera_hint.gd, hazard_body.gd, win_state.gd, rotating_hazard.gd,
+   threshold.gd). On-device pending; industrial press atmospheric-only (Gate 1 pass
+   item). See DECISIONS.md 2026-05-12 ADR.
+8. **Threshold polish / Gate 1 pass.** After on-device greybox playtest: move industrial
+   press into critical path, wire ambient lighting volumes, texture pass (concrete kit),
+   add data shard collectible, hook up CameraHint to camera_rig.gd. Blocked on
+   on-device feel from item 7. _(Promoted over Assisted Phase 2 — level is the
+   Gate 1 critical path; assist mechanics are supporting.)_
+9. **Assisted profile Phase 2.** Phase 1 (sticky landing) shipped iter 27.
    Phase 2 (ledge magnetism + arc assist) approved by human as a heavy-
    impact game-feel mechanic — build it after #5 / #6 are validated on
    device. See `docs/research/assist_mechanics.md` for implementation
@@ -157,6 +163,22 @@ These mirror "Open questions waiting on you" in the README.
   drive the next tuning iteration.
 
 ## Recently completed (last 5)
+
+- 2026-05-12 — Iteration 55. **Threshold greybox.** Six new level scripts under `scripts/levels/`:
+  `checkpoint.gd` (Area3D, sets spawn + emits `Game.checkpoint_reached`), `camera_hint.gd`
+  (Area3D stub, group `"camera_hints"`, exposes `is_player_inside()`), `hazard_body.gd`
+  (Area3D instant-kill, calls `player.respawn()`), `win_state.gd` (Area3D, one-shot
+  `Game.level_completed`), `rotating_hazard.gd` (`@tool AnimatableBody3D`, `Basis(axis,angle)`
+  rotation, `HazardBody` children kill on contact), `threshold.gd` (level root, teleports
+  player to spawn, sets `Game.current_level_path`). `scenes/levels/threshold.tscn` (~450 lines,
+  70 load_steps): Zone 1 Habitation (warm sodium, furniture-scale shelf platforms, z=0–36),
+  Zone 2 Maintenance Buffer (cold OmniLights, 2m-wide corridor, ServiceCart ping-pong platform,
+  MaintArm1 RotatingHazard, par-route skip via MaintLedge2b, z=37–68), Alcove Checkpoint
+  (amber OmniLight, CheckpointTrigger), Zone 3 Industrial (28m-wide hall, 4 descending gantries
+  G1–G4, IndustrialPress atmospheric-only at x=8, 4 Ketsu platforms + Terminal, WinStateTrigger).
+  Three CameraHint markers placed. All 4 controller profiles: `fall_kill_y` −25 → −35 to give
+  15m void depth below terminal. Dev menu: "Teleport — Threshold" sub-section (12 zone buttons).
+  On-device pending.
 
 - 2026-05-12 — Iteration 54. **Air dash implementation.** Three new `ControllerProfile`
   props: `air_dash_speed` (0 = disabled, backwards-compatible), `air_dash_duration` (0.18 s),
