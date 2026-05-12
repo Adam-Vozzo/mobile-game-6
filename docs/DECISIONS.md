@@ -561,6 +561,68 @@ reset the reference floor or modify the apex band — air jumps that exceed the
 band are exactly the case where the camera *should* track Y, so the ratchet
 handles the second jump's height-gain naturally.
 
+## 2026-05-13 — Camera reference-floor smoothing (follow-up to 2026-05-12 ratchet)
+
+Status: accepted (refines, does not supersede, the 2026-05-12 vertical-follow ratchet)
+Context: First on-device session with the vertical-follow ratchet (PR #65)
+exposed a follow-up issue: when the player lands on a new floor tier
+(higher or lower), the camera "snaps too fast vertically." The ratchet was
+working correctly on the input side — `_reference_floor_y` updated instantly
+on each grounded frame — and the asymmetric position-smoothing was easing
+the camera through the resulting Y delta, but the combined effect still
+read as a hard cut. Two contributors: (a) `effective_target.y` jumps the
+full tier delta in a single frame, so the *target* the camera is chasing
+slams to its new value even though the camera position eases; (b) the
+asymmetric smoothing's ease-out rate (6 / sec, ~10% closure per 60 fps
+frame) was tuned for occlusion-recovery distances of a few centimetres,
+not multi-metre Y deltas.
+Decision: Smooth `_reference_floor_y` itself on grounded frames at a
+configurable rate, with a snap-threshold escape hatch for very large
+deltas. Two new `@export`s on `camera_rig.gd`:
+- `reference_floor_smoothing: float = 6.0` (range 0..30 per second). Default
+  6 / sec gives an ~400 ms settle on a 1–2 m platform-tier shift (3 time
+  constants ≈ 0.5 s to 95%). 0 disables smoothing → instant snap (the
+  pre-fix behaviour, kept as an opt-out).
+- `reference_floor_snap_threshold: float = 8.0` (range 0.5..30 m). Y deltas
+  above this still snap directly to the player. Covers respawn (player
+  teleports to spawn) and very long falls (10 m+ drops where a slow ease
+  would visibly lag and read as broken).
+`_update_reference_floor` now takes a `delta` parameter and applies a
+frame-rate-independent exponential ease toward `player_y` when the delta is
+inside the snap threshold; outside it, snaps as before. The first-frame
+(`not _initialized`) and not-on-floor branches are unchanged — initial
+camera pose still snaps to spawn, airborne frames still hold the reference
+to keep below-apex jumps from leaking Y motion.
+The smoothing composes cleanly with the existing asymmetric position lerp
+on top: the *target* now eases too, so the position lerp ends up easing a
+slowly-moving target rather than racing to a sudden one. End-to-end this
+turns the tier-change feel from "cut" into "follow".
+Alternatives considered:
+- Slow `ease_out_smoothing` further (was 6 / sec → 3 / sec). Rejected:
+  slows ALL camera ease-out (occlusion-recovery too), which felt
+  unresponsive in tight geometry; also doesn't fix the fundamental issue
+  (`effective_target` still jumps a full tier in one frame).
+- Reset asymmetric smoothing thresholds based on Y delta magnitude.
+  Rejected: more state, harder to predict, doesn't solve the design issue
+  (the *target* should ease, not the *follower*).
+- Listen for `Game.player_respawned` to snap the reference (instead of a
+  snap threshold). Rejected: the signal-based approach only handles
+  respawn — long falls / very tall jumps would still feel laggy. A delta-
+  magnitude threshold handles both with one knob.
+- Smooth `_reference_floor_y` continuously (every frame, not just
+  grounded). Rejected: would leak airborne motion into the reference,
+  defeating the ratchet's whole point of holding Y during normal jumps.
+Consequences: Two new `@export`s, two new dev-menu sliders ("Floor
+smoothing" and "Floor snap thresh") in the Camera — Tuning sub-section, one
+new test group (`_test_reference_floor_smoothing`, 13 assertions) covering
+single-frame lift, multi-frame convergence (10 / 30 frames), monotonicity
++ asymptote, descent symmetry, snap-threshold boundary, rate-0 fallback,
+rate-ordering, and initial-frame snap. The previous PR-#65 invariants
+(effective-Y math, multiplier scaling, etc.) are unchanged. Future double-
+jump implementation does not need to know about this — air jumps that
+exceed the apex band still lift the camera via the ratchet's player.y-
+tracking branch (no reference update mid-jump, by design).
+
 ## 2026-05-12 — Snappy reboot_duration stays at 0.5 s
 
 Status: accepted (closes out the `level_design_references.md` recommendation)

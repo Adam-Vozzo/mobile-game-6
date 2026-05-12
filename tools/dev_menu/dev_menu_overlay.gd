@@ -215,6 +215,14 @@ func _build_camera_section(vbox: VBoxContainer) -> void:
 	# reference floor; above the band the camera tracks Y. 0 reverts to
 	# always-track-Y (legacy behaviour); ~1 is "ignore normal jumps".
 	_make_cam_slider(vbox, "Apex multiplier", &"apex_height_multiplier", 0.0, 5.0, 0.05, 1.0)
+	# Reference-floor smoothing: rate (per second) at which the camera eases
+	# up/down to a new floor when the player lands on a different tier.
+	# 0 = instant snap (the pre-fix behaviour); default 6 ≈ 400 ms settle.
+	_make_cam_slider(vbox, "Floor smoothing", &"reference_floor_smoothing", 0.0, 30.0, 0.5, 6.0)
+	# Floor snap threshold: Y delta beyond which the floor still snaps
+	# instantly. Handles respawn and very long falls where a slow ease
+	# would read as broken / camera-stuck.
+	_make_cam_slider(vbox, "Floor snap thresh", &"reference_floor_snap_threshold", 0.5, 30.0, 0.5, 8.0)
 	# Pitch min, lookahead, recenter sliders removed — tripod camera doesn't use them.
 
 
