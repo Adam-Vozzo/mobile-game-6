@@ -5,10 +5,10 @@ A mobile 3D platformer. Brutalist megastructure inspired by *BLAME!*. Controller
 ## Status
 
 Current gate: **Gate 0 — Feel Lab** (closing out; Gate 1 prep in flight)
-Last iteration: 2026-05-12 — iter 51: human direction session — on-device verified, Threshold picked, double-jump approved
+Last activity: 2026-05-13 — iter 51 follow-ups (camera vertical-follow feel polish: smoothing, follow-falls, peak-jitter headroom)
 Test device build: ✅ verified 2026-05-12 — runs in Godot 4.6 on PC and on Nothing Phone 4(a) Pro
 Performance: 144 fps / 6.9 ms in editor at 1920×1080 (Feel Lab); on-device frametimes TBD
-Throttle level: **RESET.** Active human direction. Queue re-prioritised below.
+Throttle level: **RESET.** Next iteration: double jump implementation (top of `docs/PLAN.md` P0 queue).
 
 If you only read one section, read **Open questions waiting on you** below.
 
@@ -84,6 +84,18 @@ The full iteration log lives here, newest first. Every iteration appends an entr
 
 <!-- ITERATION ENTRIES BELOW — DO NOT REMOVE OLDER ENTRIES -->
 
+### [2026-05-13] — iter 51 follow-ups — camera vertical-follow feel polish
+
+Three on-device tuning PRs on top of [#65](https://github.com/Adam-Vozzo/mobile-game-6/pull/65) (the original vertical-follow ratchet):
+
+- **[#67](https://github.com/Adam-Vozzo/mobile-game-6/pull/67) — Reference-floor smoothing.** "Camera snaps too fast vertically when landing on a new floor level." Reference floor now eases toward player.y at 6/sec (~400 ms settle on a 1–2 m tier shift) instead of snapping. 8 m snap threshold preserves the instant jump for respawn / very long falls. Two new dev-menu sliders ("Floor smoothing", "Floor snap thresh"). 13 new test assertions.
+- **[#68](https://github.com/Adam-Vozzo/mobile-game-6/pull/68) — Follow the fall.** "When the player starts falling onto lower ground, lower the camera with the player, don't wait for them to touch the ground to start moving." `_compute_effective_y` gains a third regime: when `player.y < reference_floor_y`, track 1:1. Fall-pull also enabled in this regime so the camera leads the descent. 9 new test assertions.
+- **[#69](https://github.com/Adam-Vozzo/mobile-game-6/pull/69) — Apex peak-jitter headroom.** "At the peak of the player's jump the camera is moving up and down slightly." Default `apex_height_multiplier` 1.0 → 1.15. The 15% headroom absorbs Jolt's capsule-resolution jitter and semi-implicit Euler overshoot that were flickering the held/tracking branches at peak. 5 new test assertions.
+
+**Total test count:** 560 → ~625 (35 added by PR #65, 13 by #67, 9 by #68, 5 by #69).
+**Three new DECISIONS.md ADRs** documenting each refinement with full diagnosis and rejected alternatives.
+**No new feature surface beyond camera tuning** — base ratchet was unchanged; everything is on top of PR #65's structure.
+
 ### [2026-05-12] — `human/session-2026-05-12-capture-direction` — iter 51: human direction session — Gate 0 verified, Threshold picked, double-jump approved
 
 - **Throttle: RESET** (was HARD-26). Human direction session ended the throttle.
@@ -101,7 +113,7 @@ The full iteration log lives here, newest first. Every iteration appends an entr
 - **Asset acquisition workflow:** for first style-defining picks (Stray mesh, ambient audio bed, architecture kit), Claude will surface browseable options for human approval before committing. After ~3 confirmed picks, autonomous mode resumes per CLAUDE.md.
 - **Test parse-error fix:** `tests/test_controller_kinematics.gd:1246` — `for impact in [...]` → `for impact: float in [...]` so `:=` can infer `squash_y` and `squash_xz`. Was blocking the test runner from loading.
 - **Perf:** Feel Lab in editor at 1920×1080 reports 144 fps / 6.9 ms (well under the 9 ms budget).
-- **Throttle reset.** Next iteration: PR 2 (camera vertical-follow ratchet) + PR 3 (Snappy speed nudge).
+- **Throttle reset.** Next iteration after iter 51 follow-ups: **double jump implementation** (top of `docs/PLAN.md` P0 queue).
 
 ### [2026-05-12] — `claude/gifted-shannon-SAGze` — iter 50: Game level-path contract tests + Audio bus constant tests
 
