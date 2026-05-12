@@ -63,9 +63,11 @@ Suggested:
 
 - [`brutalism_blame.md`](brutalism_blame.md) — Nihei's *BLAME!* visual grammar (scale ambiguity, darkness as material, recursion, navigation-by-infrastructure), brutalist architecture principles (béton brut, expressed structure, mass over surface), megastructure hierarchy (mega-column → floor slab → service run → habitation volume), Kevin Lynch legibility vocabulary. 10 concrete implications for Project Void: cold grey palette, darkness as architecture, Stray red as sole warm accent, multi-scale kit pieces, expressed structure in geometry, service-run compression sequences, column-array depth shots, "failed program" landmark props, no skybox, vertical axis primary.
 
+- [`blame_level_vocab.md`](blame_level_vocab.md) — Gate 1 prerequisite: maps each of the three Gate 1 candidate levels (Spine / Lung / Threshold) to specific *BLAME!* spatial archetypes. Four recurring types catalogued: Structural Wound (Spine), Functional Interior (Lung), Layer Boundary (Threshold), Exterior Glimpse (all three). Greybox implications per candidate: rib geometry (rectangular, not curved), baffle material (emissive underside strip), three zone materials for Threshold, exterior-glimpse CameraHint beat, biolume cyan exclusive to Lung at Gate 1. 7 concrete Void implications.
+
 Suggested:
 - ~~Christopher Alexander on parti and pattern~~ Done (iter 14, `alexander_pattern_language.md`).
-- Deeper *BLAME!* volume-by-volume architectural analysis (each volume of the manga has a distinct spatial character worth mapping).
+- ~~Deeper *BLAME!* volume-by-volume architectural analysis.~~ Done (iter 49, `blame_level_vocab.md` — focused on Gate 1 candidate mapping).
 
 ## Checkpoint and respawn design
 
