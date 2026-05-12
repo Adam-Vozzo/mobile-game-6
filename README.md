@@ -5,10 +5,10 @@ A mobile 3D platformer. Brutalist megastructure inspired by *BLAME!*. Controller
 ## Status
 
 Current gate: **Gate 0 — Feel Lab**
-Last iteration: 2026-05-12 — iter 47: apply Android latency mitigations + dev menu state tests (528 assertions)
+Last iteration: 2026-05-12 — iter 48: PerfBudget particle tracking API fix (540 assertions)
 Test device build: not yet — hand-authored scenes pending first Godot 4.6 import; see Open questions
 Performance: not yet measured on Nothing Phone 4(a) Pro
-Throttle level: **HARD (23 autonomous iterations since 2026-05-11 human session).** Next iterations are hardening only unless human provides direction.
+Throttle level: **HARD (24 autonomous iterations since 2026-05-11 human session).** Next iterations are hardening only unless human provides direction.
 
 If you only read one section, read **Open questions waiting on you** below.
 
@@ -16,7 +16,7 @@ If you only read one section, read **Open questions waiting on you** below.
 
 Things Claude can't decide alone, or where it's stalled and needs direction. Each is blocking some piece of forward progress.
 
-> **⚠ HARD THROTTLE — 23 autonomous iterations since last human session (2026-05-11).**
+> **⚠ HARD THROTTLE — 24 autonomous iterations since last human session (2026-05-11).**
 > Claude has stalled on hardening work (tests + research) and is waiting for human
 > direction before doing anything further. The P0 queue is entirely blocked on the
 > first Godot 4.6 import. No new feature surface has been added since iteration 25.
@@ -100,6 +100,26 @@ Goal: store-ready build.
 The full iteration log lives here, newest first. Every iteration appends an entry. Skim the dates to find where you last left off.
 
 <!-- ITERATION ENTRIES BELOW — DO NOT REMOVE OLDER ENTRIES -->
+
+### [2026-05-12] — `claude/gifted-shannon-sHSh4` — iter 48: PerfBudget particle tracking API fix
+
+- **Throttle: HARD (24 autonomous iterations since 2026-05-11 human session).** Hardening only.
+- **Primary: `perf_budget.gd` refactor-backlog item — always-false particle branch fixed.**
+  `register_particles(n: int)`, `unregister_particles(n: int)` (clamped to 0), and
+  `reset_particles()` added to `PerfBudget`. The `over_budget()` `active_particles >
+  ACTIVE_PARTICLES_BUDGET` branch was permanently false since `active_particles` was never
+  written. Gate 1 can now call `register_particles(node.amount)` at scene load and
+  `reset_particles()` from `Game.reset_run()` to make the particle budget actually fire.
+- **Side quest:** none (HARD throttle; one task per run).
+- **New test group: `_test_perf_budget_particle_api`** (12 assertions):
+  initial-zero state; additive `register_particles`; `unregister_particles` clamp-to-zero;
+  live `over_budget()` at the limit (not over) and one above (over); `reset_particles`
+  zeroes counter and clears budget flag; `snapshot()` key presence and value match.
+- **Total assertions: 528 → 540.**
+- **Perf:** no change. No new draw calls, no new nodes.
+- **No new dev-menu controls. No new assets.**
+- **Needs human attention:** 24 iterations at HARD throttle; all P0 items blocked on first
+  Godot 4.6 import. See Open questions below.
 
 ### [2026-05-12] — `claude/gifted-shannon-bsRRS` — iter 47: apply Android latency mitigations + dev menu state tests
 

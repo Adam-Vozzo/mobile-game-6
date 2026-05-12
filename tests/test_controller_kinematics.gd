@@ -75,6 +75,7 @@ func _ready() -> void:
 	_test_game_autoload_contract()
 	_test_visual_turn_convergence()
 	_test_dev_menu_state_machine()
+	_test_perf_budget_particle_api()
 	_report()
 
 
@@ -2263,3 +2264,52 @@ func _test_dev_menu_state_machine() -> void:
 	_ok("toggle back to false: is_open is false", not dm.is_open)
 
 	dm.free()
+
+
+func _test_perf_budget_particle_api() -> void:
+	## Covers the register_particles / unregister_particles / reset_particles API
+	## added to perf_budget.gd (iter 48).  Prior to this fix, active_particles
+	## was always 0, so the over_budget() particle branch was permanently false.
+	## Uses PB.new() — _process is never called, so triangles/draws/frametime
+	## stay at 0, letting us isolate the particle branch of over_budget().
+	print("\n-- PerfBudget particle tracking API --")
+	var pb: PB = PB.new()
+
+	# Initial state: counter starts at zero.
+	_ok("active_particles starts at 0", pb.active_particles == 0)
+
+	# register_particles: additive increments.
+	pb.register_particles(50)
+	_ok("register_particles(50): active_particles is 50", pb.active_particles == 50)
+	pb.register_particles(100)
+	_ok("register_particles(100) stacks: active_particles is 150", pb.active_particles == 150)
+
+	# unregister_particles: decrements and clamps to 0.
+	pb.unregister_particles(30)
+	_ok("unregister_particles(30): active_particles is 120", pb.active_particles == 120)
+	pb.unregister_particles(9999)
+	_ok("unregister_particles beyond total: clamped to 0, not negative",
+		pb.active_particles == 0)
+
+	# over_budget() particle branch with live state.
+	_ok("active_particles 0 → over_budget() particle branch false", not pb.over_budget())
+	pb.register_particles(pb.ACTIVE_PARTICLES_BUDGET)
+	_ok("active_particles == ACTIVE_PARTICLES_BUDGET → not over budget (strictly >)",
+		not pb.over_budget())
+	pb.register_particles(1)
+	_ok("active_particles == ACTIVE_PARTICLES_BUDGET+1 → over_budget() true",
+		pb.over_budget())
+
+	# reset_particles: zeroes the counter, clears over-budget state.
+	pb.reset_particles()
+	_ok("reset_particles: active_particles is 0", pb.active_particles == 0)
+	_ok("after reset_particles: over_budget() false (all metrics zero)", not pb.over_budget())
+
+	# snapshot() reflects the live counter.
+	pb.register_particles(77)
+	var snap := pb.snapshot()
+	_ok("snapshot() contains key 'active_particles'", snap.has("active_particles"))
+	_ok("snapshot()['active_particles'] matches active_particles after register",
+		snap["active_particles"] == 77)
+
+	pb.free()
