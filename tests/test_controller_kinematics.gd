@@ -2564,6 +2564,25 @@ func _test_vertical_follow_ratchet() -> void:
 	_ok("rate below reference: falls 1:1 with player.y (1 m drop → 1 m effective_y drop)",
 		_near(fall1 - fall2, 1.0))
 
+	# --- Default multiplier 1.15: analytic max is comfortably inside hold band ---
+	# Player at analytic max (Snappy ~1.74 m) sits in the held band because
+	# 1.15 × 1.74 = 2.001 m, comfortably above the player's reachable peak.
+	# The 15% headroom absorbs Jolt floor-physics jitter that can momentarily
+	# push player.y a few mm over the analytic peak.
+	const DEFAULT_MULT := 1.15
+	_ok("default multiplier 1.15: player AT analytic max → held (no tracking)",
+		_near(_eff_y(snappy_apex, 0.0, snappy_apex, DEFAULT_MULT), 0.0))
+	_ok("default multiplier 1.15: player 5 cm above analytic max → still held",
+		_near(_eff_y(snappy_apex + 0.05, 0.0, snappy_apex, DEFAULT_MULT), 0.0))
+	_ok("default multiplier 1.15: player 14% above analytic max → still held",
+		_near(_eff_y(snappy_apex * 1.14, 0.0, snappy_apex, DEFAULT_MULT), 0.0))
+	# A double-jump or wall-jump should still trigger tracking — i.e. heights
+	# significantly above the analytic max (say >30%) should clear the band.
+	_ok("default multiplier 1.15: 30% above analytic max → tracks (double-jump territory)",
+		_eff_y(snappy_apex * 1.30, 0.0, snappy_apex, DEFAULT_MULT) > 0.0)
+	_ok("default multiplier 1.15: 50% above analytic max → tracks (wall-jump / vertical traversal)",
+		_eff_y(snappy_apex * 1.50, 0.0, snappy_apex, DEFAULT_MULT) > 0.0)
+
 
 func _test_default_apex_height_formula() -> void:
 	## Documents player.gd::get_default_apex_height, which derives the camera

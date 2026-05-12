@@ -214,7 +214,7 @@ func _build_camera_section(vbox: VBoxContainer) -> void:
 	# jump apex. Camera holds Y while player is within this band above the
 	# reference floor; above the band the camera tracks Y. 0 reverts to
 	# always-track-Y (legacy behaviour); ~1 is "ignore normal jumps".
-	_make_cam_slider(vbox, "Apex multiplier", &"apex_height_multiplier", 0.0, 5.0, 0.05, 1.0)
+	_make_cam_slider(vbox, "Apex multiplier", &"apex_height_multiplier", 0.0, 5.0, 0.05, 1.15)
 	# Reference-floor smoothing: rate (per second) at which the camera eases
 	# up/down to a new floor when the player lands on a different tier.
 	# 0 = instant snap (the pre-fix behaviour); default 6 ≈ 400 ms settle.

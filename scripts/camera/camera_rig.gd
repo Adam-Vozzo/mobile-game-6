@@ -45,7 +45,15 @@ class_name CameraRig
 ## multiplier > 1 makes the camera lazier about following jumps; setting it
 ## < 1 (toward 0) makes the camera follow earlier — at the limit (0) the
 ## camera reverts to always-track-Y behaviour.
-@export_range(0.0, 5.0, 0.05) var apex_height_multiplier: float = 1.0
+##
+## Default 1.15 sits 15% above the *analytic* max single jump height
+## (`v² / 2g`). The 15% headroom absorbs floor-physics jitter at peak — Jolt's
+## capsule-vs-static-mesh resolution can nudge `player.y` by a few mm above
+## the analytic max, and without headroom the held/tracking branches flicker
+## back and forth across the boundary on those frames. The threshold is
+## still well below any double-jump reachable height, so above-apex
+## traversal still triggers tracking as designed.
+@export_range(0.0, 5.0, 0.05) var apex_height_multiplier: float = 1.15
 ## Rate (per second) at which the reference floor catches up to the player
 ## when grounded. Big tier changes (landing on a higher/lower platform) ease
 ## in rather than snap. Higher = snappier transition (toward instant); lower
