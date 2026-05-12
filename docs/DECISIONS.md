@@ -481,6 +481,86 @@ checkpoints break the ghost-trail-anchor invariant; that recommendation stands
 on its own merits (mobile reboot UX, level pacing) so the recommendation does
 not change with this ADR.
 
+## 2026-05-12 — Camera vertical-follow ratchet (hold Y unless above default apex or on higher ground)
+
+Status: accepted
+Context: First on-device verification (2026-05-12, Nothing Phone 4(a) Pro)
+surfaced the existing camera's full-vertical-tracking behaviour as motion-sickness
+inducing on phone — every normal jump pumped the camera up and down by the full
+arc, and on a small handheld screen that constant Y motion against a foggy
+brutalist background reads as visual chop rather than scene motion. The user's
+ask: "Camera should not move vertically until the character moves above the
+default max jump height, or walks on a higher level of ground. Stops the camera
+moving so much." The principle is sound for the megastructure aesthetic too —
+the world's verticality should feel monumental against a held horizon, not
+chased by a tracking one.
+Decision: Add a vertical-follow ratchet to `camera_rig.gd`. Two new pieces of
+state:
+- `_reference_floor_y: float` — the Y of the floor the player most recently
+  stood on. Updated every grounded frame (so stairs, slopes, and platform-to-
+  platform hops flow into the camera); held while airborne.
+- `apex_height_multiplier: float` — `@export_range(0, 5, 0.05)` default `1.0`.
+  Multiplies the active profile's max jump apex (`v² / 2g`) to form the held-Y
+  band. `0` disables the ratchet entirely (legacy always-track-Y fallback for
+  non-Player targets).
+The ratchet is one pure function, `_compute_effective_y(player_y)`:
+```
+band = profile_apex * multiplier
+if band <= 0: return player_y    # fallback
+apex_y = reference_floor_y + band
+if player_y > apex_y: return player_y - band
+return reference_floor_y
+```
+All camera-position math now derives from `effective_target = (player.x,
+_compute_effective_y(player.y), player.z)` rather than raw player position.
+Below apex, Y is pinned to the reference floor; above apex, the camera lifts
+1:1 with the player so double-jumps / wall-jumps / vertical traversal still
+keep the player in frame. The airborne `_air_offset` rigid-translate is now
+captured relative to `effective_target`, so it composes correctly — below-apex
+jumps don't leak into the offset and re-apply as Y motion the next frame.
+Fall-pull (`_vertical_pull_offset`) is now gated through `_conditional_fall_offset`:
+disabled while the player is below the apex band (where the camera is held by
+design — a fall pull there would yank it down and reintroduce the motion we're
+removing), enabled above the band where the player needs to see the ground.
+The apex height is queried live from the active controller profile via a new
+`Player.get_default_apex_height()` method (camera duck-types via `has_method`).
+That way profile hot-swaps from the dev menu auto-rescale the band — no manual
+sync slider needed for the apex itself, only the multiplier.
+Alternatives considered:
+- A simpler Y dead-band ("don't move Y unless player.y delta exceeds N
+  metres"). Rejected: a fixed-metre dead-band doesn't adapt to the active
+  profile's jump height; Floaty (2.5 m apex) and Snappy (1.74 m apex) need
+  different bands or the rule breaks for one profile while feeling right
+  for the other. Deriving from `v² / 2g` solves this automatically.
+- Camera-on-rails / fixed-per-level Y like SMB 3D. Rejected: too constraining
+  for a level-design vocabulary that ranges from a wall-jump column (Spine)
+  to a 3-zone horizontal contrast (Threshold). The ratchet gives most of the
+  same calmness while preserving the tripod model's adaptiveness.
+- Reference-floor smoothing toward player.y (continuous lerp rather than
+  discrete update). Rejected for now: the existing asymmetric position-
+  smoothing on the camera already smooths the transition when the reference
+  jumps to a new tier, and adding a second smoothing layer would dilute the
+  "camera moves immediately to the new tier when you arrive there" feel that
+  works in SMB 3D / Odyssey.
+- Camera position holds Y but `look_at` keeps tilting toward the player on
+  below-apex jumps. Rejected: the user's complaint was specifically about
+  "the camera moving so much"; pitching the camera up on every hop reads as
+  exactly the same motion as translating it. Both must be pinned for the
+  feel to land.
+Consequences: One new `@export` (`apex_height_multiplier`), one new dev-menu
+slider ("Apex multiplier", 0–5, default 1.0), two new state vars, four new
+private methods on the camera (`_update_reference_floor`, `_compute_effective_y`,
+`_get_target_apex_height`, `_conditional_fall_offset`), one new public method
+on `Player` (`get_default_apex_height`). Tests: 21 new assertions in
+`_test_vertical_follow_ratchet` (effective-Y math, multiplier scaling, boundary
+continuity, monotonicity above apex) plus 14 in `_test_default_apex_height_formula`
+(per-profile sanity bounds + edge cases of `v² / 2g`). The four shipped profiles
+all stay within a [0.8, 4.0] m apex band; Assisted is highest at ~3.3 m which is
+intentional for accessibility. Future double-jump implementation should NOT
+reset the reference floor or modify the apex band — air jumps that exceed the
+band are exactly the case where the camera *should* track Y, so the ratchet
+handles the second jump's height-gain naturally.
+
 ## 2026-05-12 — Snappy reboot_duration stays at 0.5 s
 
 Status: accepted (closes out the `level_design_references.md` recommendation)

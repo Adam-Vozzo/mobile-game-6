@@ -29,8 +29,23 @@ class_name CameraRig
 
 @export_category("Fall pull")
 ## Multiplier applied to the player's negative Y velocity to drop the
-## camera while falling. Helps the player see what's below.
+## camera while falling. Helps the player see what's below. Only applied
+## when the player is above the apex-height threshold — below the threshold
+## the camera is held still and fall pull would re-introduce the vertical
+## motion the vertical-follow ratchet is removing.
 @export_range(0.0, 1.0, 0.01) var vertical_pull: float = 0.18
+
+@export_category("Vertical follow")
+## Multiplier on the active profile's default jump apex height
+## (`Player.get_default_apex_height()`). The camera holds its Y while the
+## player stays below `reference_floor_y + apex_height * multiplier`; above
+## that band, the camera tracks the player's Y so a double-jump or wall-
+## jump above the normal arc still keeps the player in frame. The reference
+## floor is whatever floor Y the player most recently stood on. Setting the
+## multiplier > 1 makes the camera lazier about following jumps; setting it
+## < 1 (toward 0) makes the camera follow earlier — at the limit (0) the
+## camera reverts to always-track-Y behaviour.
+@export_range(0.0, 5.0, 0.05) var apex_height_multiplier: float = 1.0
 
 @export_category("Manual override")
 @export_range(0.0001, 0.05, 0.0001) var yaw_drag_sens: float = 0.005
@@ -85,11 +100,21 @@ var _pitch_rad: float = 0.0
 var _is_occluded: bool = false
 var _clear_streak_seconds: float = 0.0
 var _last_occluded_pos: Vector3 = Vector3.ZERO
-# Camera position offset from the player, refreshed every frame. While the
-# player is airborne, this offset is held constant and the camera's world
-# position is reconstructed as `target_pos + _air_offset` — a rigid translate
-# that follows the jumping player without rotating around them.
+# Camera position offset from the *effective* target, refreshed every frame.
+# Effective target's X/Z equals the player's; its Y is the vertical-follow
+# ratchet's output (reference floor below apex, player.y above apex). While
+# the player is airborne, this offset is held constant and the camera's world
+# position is reconstructed as `effective_target + _air_offset` — a rigid
+# translate that follows the player's horizontal motion exactly and the
+# player's vertical motion only when they've cleared the apex band.
 var _air_offset: Vector3 = Vector3.ZERO
+# Vertical-follow ratchet: the Y of the floor the player most recently stood
+# on. Camera holds its Y at this reference + the configured camera-height
+# offset whenever the player is below `reference + apex_height * multiplier`.
+# Updates every grounded frame so stairs, ramps, and platform-to-platform
+# hops all flow into the camera; airborne frames leave the reference alone
+# so jumps don't lift the camera unless the apex is exceeded.
+var _reference_floor_y: float = 0.0
 
 @onready var _camera: Camera3D = $Camera
 
@@ -105,29 +130,44 @@ func _process(delta: float) -> void:
 	if _target == null:
 		return
 	var target_pos := _target.global_position
-	var aim_point := target_pos + Vector3(0.0, aim_height, 0.0)
+	var on_floor := _is_target_on_floor()
+	_update_reference_floor(target_pos.y, on_floor)
+	# Effective target: the position the camera *tracks*. X/Z follow the player
+	# exactly; Y is the vertical-follow ratchet's output (held at reference
+	# floor below apex; tracks the player above apex). All camera-position
+	# math derives from this, so the camera ignores below-apex jumps but
+	# still follows horizontal motion + floor changes + above-apex traversal.
+	var effective_target := Vector3(
+		target_pos.x,
+		_compute_effective_y(target_pos.y),
+		target_pos.z,
+	)
+	var aim_point := effective_target + Vector3(0.0, aim_height, 0.0)
 
 	if not _initialized:
-		_place_camera_initial(target_pos)
-		_air_offset = _camera.global_position - target_pos
+		_place_camera_initial(effective_target)
+		_air_offset = _camera.global_position - effective_target
 		_initialized = true
 
 	# Airborne: rigid follow. Reconstruct the camera position as
-	# `target_pos + _air_offset` *before* drag/look_at runs, so any movement
-	# the player did this frame is reflected as a pure translation. The
-	# offset itself is captured at the end of the previous (grounded) frame,
-	# so the camera→player vector is preserved across the entire jump and
-	# look_at gives the same basis frame after frame — no yaw or pitch
-	# rotation while airborne. Drag and landing both update the offset
-	# correctly via the unified end-of-frame save below.
-	var on_floor := _is_target_on_floor()
+	# `effective_target + _air_offset` *before* drag/look_at runs, so any
+	# horizontal motion the player did this frame is reflected as a pure
+	# translation, while vertical motion under apex is absorbed (effective_y
+	# stays pinned to reference floor). The offset itself is captured at the
+	# end of the previous (grounded) frame, so the camera→effective-target
+	# vector is preserved across the entire jump and look_at gives the same
+	# basis frame after frame — no yaw or pitch rotation while airborne. Drag
+	# and landing both update the offset correctly via the unified end-of-
+	# frame save below.
 	if not on_floor:
-		_camera.global_position = target_pos + _air_offset
+		_camera.global_position = effective_target + _air_offset
 
-	_apply_drag_input(target_pos)
+	_apply_drag_input(effective_target)
 
 	if on_floor:
 		# Ground: tripod-style distance maintenance + occlusion + smoothing.
+		# Horizontal distance still uses raw target_pos so the camera tracks
+		# the player's actual X/Z; only Y is held by the ratchet.
 		var cam_pos := _camera.global_position
 		var horiz := Vector3(target_pos.x - cam_pos.x, 0.0, target_pos.z - cam_pos.z)
 		var current_dist := horiz.length()
@@ -136,11 +176,14 @@ func _process(delta: float) -> void:
 			var dist_error := current_dist - distance
 			cam_pos.x += dir.x * dist_error
 			cam_pos.z += dir.z * dist_error
-		var fall_offset := _vertical_pull_offset(_get_target_velocity().y)
+		# Fall pull is gated on being above apex — below apex the camera is
+		# held still by design, and pulling it down on descent would
+		# reintroduce the vertical motion the ratchet is removing.
+		var fall_offset := _conditional_fall_offset(target_pos.y, _get_target_velocity().y)
 		# `_pitch_rad` is ≤ 0; -_pitch_rad is the elevation angle. Using `absf`
 		# would V-shape as the drag crosses horizontal — see iter 22 fix on main.
 		var elevation := -_pitch_rad
-		cam_pos.y = target_pos.y + sin(elevation) * distance + aim_height + fall_offset
+		cam_pos.y = effective_target.y + sin(elevation) * distance + aim_height + fall_offset
 
 		# Probe for occlusion, then apply a hysteresis latch: any hit re-arms
 		# the "occluded" state for `occlusion_release_delay` seconds, during
@@ -191,30 +234,87 @@ func _process(delta: float) -> void:
 			_camera.global_position.z - target_pos.z)
 		_target.call(&"set_camera_yaw", pub_yaw)
 
-	# Refresh the air offset every frame. On the ground this captures the
-	# latest camera/player relationship in case the player takes off next
-	# frame; in the air it propagates any drag-induced offset changes.
-	_air_offset = _camera.global_position - target_pos
+	# Refresh the air offset every frame, relative to the *effective* target.
+	# On the ground this captures the latest camera/effective relationship in
+	# case the player takes off next frame; in the air it propagates any drag-
+	# induced offset changes. Storing relative to effective_target (not raw
+	# target_pos) keeps below-apex jumps from leaking into the offset and re-
+	# applying as Y motion on the next frame.
+	_air_offset = _camera.global_position - effective_target
 
 
-func _place_camera_initial(target_pos: Vector3) -> void:
+func _place_camera_initial(anchor: Vector3) -> void:
 	var elevation := -_pitch_rad
-	_camera.global_position = target_pos + Vector3(
+	_camera.global_position = anchor + Vector3(
 		0.0,
 		sin(elevation) * distance + aim_height,
 		cos(elevation) * distance,
 	)
 
 
-# Drag rotates the camera around the player. Yaw orbits in the XZ plane;
-# pitch tilts the camera up/down while preserving the horizontal radius.
-# We re-derive theta/phi from the current camera position each call so the
-# camera's geometric drift along the look axis stays consistent with drag.
-func _apply_drag_input(target_pos: Vector3) -> void:
+# Vertical-follow ratchet: reference floor tracks the Y of the floor the
+# player is currently standing on. Updates every grounded frame; airborne
+# frames leave the reference alone so jumps don't lift the camera unless
+# the apex band is exceeded (see _compute_effective_y).
+func _update_reference_floor(player_y: float, on_floor: bool) -> void:
+	if not _initialized:
+		_reference_floor_y = player_y
+		return
+	if on_floor:
+		_reference_floor_y = player_y
+
+
+# Vertical-follow ratchet: returns the Y the camera should track. Below the
+# apex band the camera holds at reference_floor_y; above it, the camera
+# tracks (player.y - apex_height) so the player sits roughly one apex-height
+# below the camera's natural baseline once they've cleared the threshold —
+# i.e. the camera lifts at the same rate as the player above apex.
+func _compute_effective_y(player_y: float) -> float:
+	var apex_h := _get_target_apex_height() * apex_height_multiplier
+	if apex_h <= 0.0:
+		# Multiplier 0 or missing-profile fallback: revert to always-track-Y.
+		return player_y
+	var apex_y := _reference_floor_y + apex_h
+	if player_y > apex_y:
+		return player_y - apex_h
+	return _reference_floor_y
+
+
+# Live read of the active controller profile's max jump apex height (m).
+# Camera uses this rather than its own @export so the band auto-adjusts when
+# profiles hot-swap from the dev menu. Returns 0.0 if target doesn't expose
+# the method — _compute_effective_y treats that as "always follow Y".
+func _get_target_apex_height() -> float:
+	if _target != null and _target.has_method(&"get_default_apex_height"):
+		return float(_target.call(&"get_default_apex_height"))
+	return 0.0
+
+
+# Vertical-pull is the fall-aware camera drop that helps the player see
+# what's below. Only fires when the player is above the apex threshold —
+# otherwise the camera is held still by the ratchet and a fall pull would
+# yank it back down, re-introducing the vertical motion we removed.
+func _conditional_fall_offset(player_y: float, vel_y: float) -> float:
+	var apex_h := _get_target_apex_height() * apex_height_multiplier
+	if apex_h <= 0.0:
+		return _vertical_pull_offset(vel_y)
+	if player_y <= _reference_floor_y + apex_h:
+		return 0.0
+	return _vertical_pull_offset(vel_y)
+
+
+# Drag rotates the camera around the effective target. Yaw orbits in the
+# XZ plane; pitch tilts the camera up/down while preserving the horizontal
+# radius. We re-derive theta/phi from the current camera position each call
+# so the camera's geometric drift along the look axis stays consistent with
+# drag. `pivot` is the effective target (raw player X/Z + ratchet-held Y),
+# matching the rest of the camera's Y-handling so drag rotates around the
+# same point the camera is tracking.
+func _apply_drag_input(pivot: Vector3) -> void:
 	var drag := TouchInput.consume_camera_drag_delta()
 	if drag.length_squared() == 0.0:
 		return
-	var to_cam := _camera.global_position - target_pos
+	var to_cam := _camera.global_position - pivot
 	var radius := to_cam.length()
 	if radius < 0.001:
 		return
@@ -231,7 +331,7 @@ func _apply_drag_input(target_pos: Vector3) -> void:
 	)
 	_pitch_rad = -phi
 	var cos_phi := cos(phi)
-	_camera.global_position = target_pos + Vector3(
+	_camera.global_position = pivot + Vector3(
 		radius * cos_phi * sin(theta),
 		radius * sin(phi),
 		radius * cos_phi * cos(theta),
@@ -333,6 +433,8 @@ func _on_camera_param_changed(param_name: StringName, value: float) -> void:
 			aim_height = value
 		&"pitch_max_degrees":
 			pitch_max_degrees = value
+		&"apex_height_multiplier":
+			apex_height_multiplier = value
 		# Lookahead and auto-recenter sliders are no-ops in the tripod model.
 		_:
 			pass
