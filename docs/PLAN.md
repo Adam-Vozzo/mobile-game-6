@@ -14,15 +14,15 @@ instrumented and tunable.
 
 ## Active iteration
 
-- Branch: `claude/gifted-shannon-NplIj`
-- Focus: iter 45. **TouchInput + Game autoload contract tests.**
-  `_test_touch_input_state_machine` (11 assertions) — touch_input.gd had zero coverage;
-  documents set_move_vector limit_length contract, set_jump_held 4-case state machine,
-  camera drag accumulate+consume cycle, get_move_vector fallback.
-  Side quest: `_test_game_autoload_contract` (10 assertions) — game.gd had zero coverage;
-  documents variable defaults, register_attempt() increment, reset_run() reset, and all 3
-  signal names. Gate 1 expansions to game.gd will be caught on regression.
-  Total: 483 → 504 assertions. Throttle: HARD (21 autonomous iterations).
+- Branch: `claude/gifted-shannon-DLQsk`
+- Focus: iter 46. **Android input latency research + visual-turn convergence tests.**
+  `docs/research/android_input_latency.md` — end-to-end Android touch pipeline (28–70 ms),
+  Godot 4 latency sources, jump-buffer architecture validation, 120 Hz display interpolation,
+  5 concrete implications (use_accumulated_input=false, buffer sizing, physics interpolation,
+  Floaty feel diagnostic, juice > platform optimization). INDEX.md updated.
+  Side quest: `_test_visual_turn_convergence` (8 assertions) — lerp_angle wrap, 30-frame
+  convergence, snap at weight=1, deadband boundary semantics not covered by iter 26.
+  Total: 504 → 512 assertions. Throttle: HARD (22 autonomous iterations).
 
 ## Queue (ranked, top is next)
 
@@ -155,6 +155,15 @@ These mirror "Open questions waiting on you" in the README.
   (Per CLAUDE.md: level concept selection is a human call.)
 
 ## Recently completed (last 5)
+
+- 2026-05-12 — Iteration 46. **Android input latency research + visual-turn convergence tests.**
+  `docs/research/android_input_latency.md` — touch pipeline breakdown (28–70 ms end-to-end),
+  Godot `Input.use_accumulated_input = false` recommendation, jump-buffer sizing rationale,
+  120 Hz physics interpolation note, Floaty feel diagnostic, juice > platform. INDEX.md updated.
+  `_test_visual_turn_convergence` (8 assertions): weight in (0,1) at 60fps, weight==1.0 snap,
+  `lerp_angle` direct arc, `lerp_angle` wrap through ±PI boundary, 30-frame convergence < 0.01 rad,
+  deadband strict `<` boundary (0.19/0.20/0.21 × 0.2 threshold).
+  Total: 504 → 512 assertions. Throttle: HARD (22 iterations since human session).
 
 - 2026-05-12 — Iteration 45. **TouchInput + Game autoload contract tests.**
   `_test_touch_input_state_machine` (11 assertions): set_move_vector limit_length pipeline

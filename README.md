@@ -5,10 +5,10 @@ A mobile 3D platformer. Brutalist megastructure inspired by *BLAME!*. Controller
 ## Status
 
 Current gate: **Gate 0 — Feel Lab**
-Last iteration: 2026-05-12 — iter 45: TouchInput + Game autoload contract tests (504 assertions)
+Last iteration: 2026-05-12 — iter 46: Android input latency research + visual-turn convergence tests (512 assertions)
 Test device build: not yet — hand-authored scenes pending first Godot 4.6 import; see Open questions
 Performance: not yet measured on Nothing Phone 4(a) Pro
-Throttle level: **HARD (21 autonomous iterations since 2026-05-11 human session).** Next iterations are hardening only unless human provides direction.
+Throttle level: **HARD (22 autonomous iterations since 2026-05-11 human session).** Next iterations are hardening only unless human provides direction.
 
 If you only read one section, read **Open questions waiting on you** below.
 
@@ -16,7 +16,7 @@ If you only read one section, read **Open questions waiting on you** below.
 
 Things Claude can't decide alone, or where it's stalled and needs direction. Each is blocking some piece of forward progress.
 
-> **⚠ HARD THROTTLE — 20 autonomous iterations since last human session (2026-05-11).**
+> **⚠ HARD THROTTLE — 22 autonomous iterations since last human session (2026-05-11).**
 > Claude has stalled on hardening work (tests + research) and is waiting for human
 > direction before doing anything further. The P0 queue is entirely blocked on the
 > first Godot 4.6 import. No new feature surface has been added since iteration 25.
@@ -100,6 +100,26 @@ Goal: store-ready build.
 The full iteration log lives here, newest first. Every iteration appends an entry. Skim the dates to find where you last left off.
 
 <!-- ITERATION ENTRIES BELOW — DO NOT REMOVE OLDER ENTRIES -->
+
+### [2026-05-12] — `claude/gifted-shannon-DLQsk` — iter 46: Android input latency research + visual-turn convergence tests
+
+- **Throttle: HARD (22 autonomous iterations since 2026-05-11 human session).** Hardening only. No behaviour change.
+- **Primary: `docs/research/android_input_latency.md`** — Android/Godot 4 touch pipeline analysis. End-to-end latency 28–70 ms (hardware→kernel→InputDispatcher→Godot→GPU). Five concrete implications for Project Void:
+  1. Add `Input.use_accumulated_input = false` in `touch_overlay.gd::_ready()` — saves 4–8 ms average on continuous drag.
+  2. Current jump-buffer architecture is correct (buffer set in `_input()`, not `_physics_process()`; 100–150 ms sized to full pipeline).
+  3. Enable `physics/common/physics_interpolation = true` before first device test (Nothing Phone 4(a) Pro has 120 Hz display; 60 Hz physics without interpolation looks choppy).
+  4. If Floaty feels laggy on device: suspect `ground_acceleration`, not input latency.
+  5. Juice (squash-stretch + audio) raises perceived responsiveness more than any platform optimization.
+- **Side quest: `_test_visual_turn_convergence`** (8 assertions) — covers the `lerp_angle` branch of `_update_visual_facing` not exercised by iter 26's `_test_visual_facing_formula`:
+  - Default speed (12.0) at 60 fps: weight ∈ (0, 1) (neither frozen nor instant-snap).
+  - High `speed * delta ≥ 1`: weight clamps to 1.0 (instant snap, no overshoot).
+  - `lerp_angle` direct arc: mid-point of 0 → PI/2 at t=0.5 is PI/4.
+  - `lerp_angle` wrap: mid-point of 3.1 → −3.1 at t=0.5 is ≈ PI (short arc through ±PI boundary, not the long 6.2 rad arc).
+  - 30-frame convergence: remaining angle < 0.01 rad after 30 frames at default weight.
+  - Deadband boundary: 0.19 < 0.2 (early return); `not (0.2 < 0.2)` (at threshold, NOT excluded); `not (0.21 < 0.2)` (above threshold, proceeds).
+- **Total assertions: 504 → 512.**
+- **Perf:** no runtime changes. No new dev-menu controls. No new assets.
+- **Needs human attention:** 22 iterations at HARD throttle; all P0 items still blocked on first Godot 4.6 import. See Open questions below.
 
 ### [2026-05-12] — `claude/gifted-shannon-NplIj` — iter 45: TouchInput + Game autoload contract tests
 

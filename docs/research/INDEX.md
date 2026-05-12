@@ -136,6 +136,20 @@ Suggested (still open):
   changes (new fields: `is_running`, `shards_collected`, `shards_total`; updated methods:
   `start_run`, `level_complete`, `reset_run`, `_process`).
 
+## Mobile touch — input latency
+
+- [`android_input_latency.md`](android_input_latency.md) — End-to-end Android
+  touch latency budget (28–70 ms typical on mid-range devices), breakdown by
+  stage (hardware → kernel → InputDispatcher → Godot event loop → physics tick
+  → GPU). Key findings: (1) Godot's `Input.use_accumulated_input = false` saves
+  4–8 ms average — add to `touch_overlay.gd::_ready()`; (2) current jump-buffer
+  architecture already correctly papers over the full pipeline (buffer ≥ 80 ms
+  minimum; current 100–150 ms defaults are right); (3) enable Godot 4.3+
+  `physics/common/physics_interpolation` before first device test for smooth
+  120 Hz display; (4) if Floaty feels laggy on device, suspect `ground_acceleration`
+  not input latency; (5) juice (squash-stretch + audio) raises perceived
+  responsiveness more than any platform-level optimization.
+
 ## Performance & rendering
 
 - [`godot_mobile_perf.md`](godot_mobile_perf.md) — Godot 4 Mobile renderer capabilities/limits, TBDR tile-based GPU architecture (Adreno/Mali), draw call and triangle budgets, ASTC texture notes, baked vs dynamic lighting tradeoffs, Jolt physics profiling tips, in-game profiling steps. Implications: bake lights before Gate 1; keep alpha-blended objects exceptional; target ≤ 50 draw calls at Gate 1; no MSAA; profile Jolt separately.
