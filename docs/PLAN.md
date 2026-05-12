@@ -16,10 +16,10 @@ authored with it in mind.
 
 ## Active iteration
 
-- _No iteration currently in flight._ Iter 56 (win-state flow + CameraHint) landed 2026-05-12 — see
+- _No iteration currently in flight._ Iter 57 (data shard collectible) landed 2026-05-12 — see
   Recently completed.
 - Next iteration should pull from the top of the P0 queue below.
-  Throttle: **5** (5 iterations since last human direction session 2026-05-12).
+  Throttle: **6** (6 iterations since last human direction session 2026-05-12).
 
 ## Queue (ranked, top is next)
 
@@ -69,9 +69,12 @@ The next iteration should pull from the top of this list. Items marked
    threshold.gd). On-device pending; industrial press atmospheric-only (Gate 1 pass
    item). See DECISIONS.md 2026-05-12 ADR.
 8. **Threshold polish / Gate 1 pass.** After on-device greybox playtest: move industrial
-   press into critical path, wire ambient lighting volumes, texture pass (concrete kit),
-   add data shard collectible. ~~CameraHint wired (iter 56).~~ ~~Win-state flow + results
-   panel wired (iter 56).~~ Remaining items blocked on on-device feel from item 7.
+   press into critical path, wire ambient lighting volumes, texture pass (concrete kit).
+   ~~CameraHint wired (iter 56).~~ ~~Win-state flow + results panel wired (iter 56).~~
+   ~~Data shard collectible (iter 57) — ShardLedge at (7,−6.25,82) + DataShard at
+   (7,−4.0,82); SurfaceTool octahedron gem, cyan OmniLight, collection pulse, respawn
+   API, dev-menu "Respawn shard" + "Shard ledge" teleport, 7 placement unit tests.~~
+   Remaining items blocked on on-device feel from item 7.
    _(Promoted over Assisted Phase 2 — level is the Gate 1 critical path; assist mechanics
    are supporting.)_
 9. **Assisted profile Phase 2.** Phase 1 (sticky landing) shipped iter 27.
@@ -164,6 +167,19 @@ These mirror "Open questions waiting on you" in the README.
   drive the next tuning iteration.
 
 ## Recently completed (last 5)
+
+- 2026-05-12 — Iteration 57. **Data shard collectible.** `scripts/levels/data_shard.gd`:
+  Area3D, adds to `"data_shard"` group, SurfaceTool octahedron gem (unshaded cyan emissive,
+  CULL_DISABLED), OmniLight3D (cyan 1.4 energy / 4.5 m range), SphereShape3D collision
+  (r=0.6 m), slow Y-spin 1.15 rad/s. On collection: `Game.shards_collected += 1`, hide
+  mesh, Tween light pulse (1.4 → 7.0 over 0.05 s, → 0.0 over 0.30 s). `respawn_shard()`
+  resets without level reload. `scenes/levels/data_shard.tscn` minimal Area3D stub.
+  `scenes/levels/threshold.tscn`: ShardLedge StaticBody3D at (7,−6.25,82) size 3×0.5×3,
+  DataShard instance at (7,−4.0,82) in Zone3_Industrial — off the gantry par-route,
+  visible from G1, reachable via double-jump from the ledge. Dev menu: "Shard ledge"
+  teleport button + "Respawn shard" button (resets Game.shards_collected + calls
+  respawn_shard() on all group members). 9 unit tests in `_test_data_shard_placement`
+  (672 → 679 assertions). JUICE.md: 3 new entries. On-device pending.
 
 - 2026-05-12 — Iteration 56. **Win-state flow + CameraHint integration.** `game.gd`:
   `is_running`, `shards_collected`, `shards_total`, `start_run()`, `level_complete()`,

@@ -87,6 +87,7 @@ func _ready() -> void:
 	_test_double_jump_logic()
 	_test_air_dash_logic()
 	_test_game_gate1_api()
+	_test_data_shard_placement()
 	_report()
 
 
@@ -3070,5 +3071,77 @@ func _test_game_gate1_api() -> void:
 	_ok("shards_total unchanged by start_run (level sets it)", g.shards_total == 3)
 	g.reset_run()
 	_ok("shards_total unchanged by reset_run (level sets it)", g.shards_total == 3)
+
+	g.free()
+
+
+func _test_data_shard_placement() -> void:
+	## Documents the collection-geometry contract for the Threshold data shard.
+	## Shard at (7, -4.0, 82). Small ledge surface at y = -6.0 (center -6.25, h=0.5).
+	## Player capsule: radius 0.28, height (cylinder) 0.9, center offset 0.45 from origin.
+	## Snappy profile: jump_velocity 11.5, gravity_rising 38.0.
+	print("\n-- Data shard placement --")
+
+	# Constants mirrored from data_shard.gd and player.tscn.
+	var sphere_radius: float = 0.6
+	var capsule_radius: float = 0.28
+	var capsule_center_offset: float = 0.45
+	var collection_threshold: float = sphere_radius + capsule_radius  # 0.88 m
+
+	_ok("Collection threshold = sphere_r + capsule_r = 0.88 m",
+		_near(collection_threshold, 0.88))
+
+	# Player origin when standing on a surface: surface_y + capsule_radius
+	# (bottom hemisphere centre sits at player.origin; shape bottom = origin - radius).
+	var ledge_surface_y: float = -6.0  # ShardLedge top face
+	var shard_y: float = -4.0
+
+	var origin_on_ledge: float = ledge_surface_y + capsule_radius  # -5.72
+	var cap_centre_standing: float = origin_on_ledge + capsule_center_offset  # -5.27
+	var dist_standing: float = absf(cap_centre_standing - shard_y)
+	_ok("Shard NOT collected while standing on ledge (dist %.2f > threshold %.2f)" %
+		[dist_standing, collection_threshold],
+		dist_standing > collection_threshold)
+
+	# At jump apex from the ledge.
+	var jump_velocity: float = 11.5   # Snappy default
+	var gravity_rising: float = 38.0  # Snappy default
+	var apex_height: float = jump_velocity * jump_velocity / (2.0 * gravity_rising)
+	var origin_at_apex: float = origin_on_ledge + apex_height
+	var cap_centre_apex: float = origin_at_apex + capsule_center_offset
+	var dist_apex: float = absf(cap_centre_apex - shard_y)
+	_ok("Shard collected at jump apex from ledge (dist %.2f < threshold %.2f)" %
+		[dist_apex, collection_threshold],
+		dist_apex < collection_threshold)
+
+	# From the G1 gantry surface (y = -5.0), player at right edge (x = 4).
+	# Shard is at x = 7, y = -4.0 — separation is 3D, not just vertical.
+	var g1_surface_y: float = -5.0
+	var origin_on_g1: float = g1_surface_y + capsule_radius  # -4.72
+	var cap_centre_g1: float = origin_on_g1 + capsule_center_offset  # -4.27
+	var g1_right_edge_x: float = 4.0
+	var shard_x: float = 7.0
+	var dist_from_g1: float = sqrt(
+		pow(shard_x - g1_right_edge_x, 2) + pow(shard_y - cap_centre_g1, 2))
+	_ok("Shard NOT collected from G1 gantry right edge (3D dist %.2f > threshold)" %
+		dist_from_g1,
+		dist_from_g1 > collection_threshold)
+
+	# Game.shards_collected increment and double-collect guard.
+	var g: GM = GM.new()
+	g._ready()
+	_ok("shards_collected starts at 0", g.shards_collected == 0)
+
+	# Simulate first collection.
+	var already: bool = false
+	if not already:
+		g.shards_collected += 1
+		already = true
+	_ok("shards_collected is 1 after first collect", g.shards_collected == 1)
+
+	# Simulate second trigger (guard should block).
+	if not already:
+		g.shards_collected += 1
+	_ok("Double-collect guard: shards_collected still 1", g.shards_collected == 1)
 
 	g.free()

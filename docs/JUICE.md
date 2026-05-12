@@ -92,6 +92,14 @@ Status legend:
 | Corner perf HUD | prototype | FPS + frametime; always-on, toggle via Debug viz section; zero draw-call overhead |
 | Velocity + state | prototype | player velocity + floor/air state; toggled off by default |
 
+## Collectible juice — no top-level toggle (individual element always-on while shard exists)
+
+| element | status | notes |
+|---------|--------|-------|
+| Shard idle glow | prototype | OmniLight3D (cyan 0.12/0.90/0.95, energy 1.4, range 4.5 m) on DataShard; casts a subtle cyan pool onto nearby geometry; 1 draw call, no shadow |
+| Shard collect pulse | prototype | On `_collect()`: energy spikes 1.4 → 7.0 over 0.05 s, fades 7.0 → 0.0 over 0.30 s via Tween; mesh hidden immediately; light fades independently so the pulse reads even on low-refresh displays |
+| Shard slow spin | prototype | `rotate_y(delta * 1.15)` in `_process` — ~66 deg/s, readable at camera distance |
+
 ## UI juice — currently no toggle
 
 | element | status | notes |
