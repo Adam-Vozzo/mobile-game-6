@@ -63,6 +63,9 @@ const _REPO_FONT_NM := 18
 
 
 func _ready() -> void:
+	# Saves 4–8 ms per continuous-drag frame by bypassing the event accumulator.
+	# android_input_latency.md implication #1.
+	Input.use_accumulated_input = false
 	add_to_group(&"touch_overlay")
 	mouse_filter = Control.MOUSE_FILTER_IGNORE
 	set_anchors_and_offsets_preset(Control.PRESET_FULL_RECT)

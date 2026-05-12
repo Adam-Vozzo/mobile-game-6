@@ -14,15 +14,15 @@ instrumented and tunable.
 
 ## Active iteration
 
-- Branch: `claude/gifted-shannon-DLQsk`
-- Focus: iter 46. **Android input latency research + visual-turn convergence tests.**
-  `docs/research/android_input_latency.md` — end-to-end Android touch pipeline (28–70 ms),
-  Godot 4 latency sources, jump-buffer architecture validation, 120 Hz display interpolation,
-  5 concrete implications (use_accumulated_input=false, buffer sizing, physics interpolation,
-  Floaty feel diagnostic, juice > platform optimization). INDEX.md updated.
-  Side quest: `_test_visual_turn_convergence` (8 assertions) — lerp_angle wrap, 30-frame
-  convergence, snap at weight=1, deadband boundary semantics not covered by iter 26.
-  Total: 504 → 512 assertions. Throttle: HARD (22 autonomous iterations).
+- Branch: `claude/gifted-shannon-bsRRS`
+- Focus: iter 47. **Apply Android latency mitigations + dev menu state tests.**
+  `Input.use_accumulated_input = false` in `touch_overlay.gd::_ready()` (saves 4–8 ms/drag frame).
+  `common/physics_interpolation=true` in `project.godot` (smooth 120 Hz playback on Nothing Phone).
+  Bug fix: `g.free()` moved from `_test_visual_turn_convergence` (wrong scope) to
+  `_test_game_autoload_contract` (correct). Side quest: `_test_dev_menu_state_machine`
+  (16 assertions) — first coverage of DevMenu autoload: juice defaults, debug_viz defaults,
+  asymmetric default policy (juice=true, debug=false), state transitions, open/close machine.
+  Total: 512 → 528 assertions. Throttle: HARD (23 autonomous iterations).
 
 ## Queue (ranked, top is next)
 
@@ -155,6 +155,16 @@ These mirror "Open questions waiting on you" in the README.
   (Per CLAUDE.md: level concept selection is a human call.)
 
 ## Recently completed (last 5)
+
+- 2026-05-12 — Iteration 47. **Apply Android latency mitigations + dev menu state tests.**
+  `Input.use_accumulated_input = false` in `touch_overlay.gd::_ready()` — saves 4–8 ms per
+  continuous-drag frame (researched in iter 46; this is the implementation). `common/physics_interpolation=true`
+  in `project.godot` — smooth 120 Hz display for Nothing Phone test device. Bug fix: `g.free()`
+  misplaced in `_test_visual_turn_convergence` moved to `_test_game_autoload_contract`. Side quest:
+  `_test_dev_menu_state_machine` (16 assertions) — DevMenu autoload first coverage: juice defaults
+  (all ON), debug_viz defaults (perf_hud ON, others OFF), asymmetric unknown-key defaults
+  (juice→true, debug→false), state transitions, open/close machine. Total: 512 → 528 assertions.
+  Throttle: HARD (23 iterations since human session).
 
 - 2026-05-12 — Iteration 46. **Android input latency research + visual-turn convergence tests.**
   `docs/research/android_input_latency.md` — touch pipeline breakdown (28–70 ms end-to-end),

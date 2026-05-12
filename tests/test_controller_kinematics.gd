@@ -17,6 +17,7 @@ const CP := preload("res://scripts/controller/controller_profile.gd")
 const PB := preload("res://scripts/autoload/perf_budget.gd")
 const TI := preload("res://scripts/autoload/touch_input.gd")
 const GM := preload("res://scripts/autoload/game.gd")
+const DM := preload("res://scripts/autoload/dev_menu.gd")
 
 var _pass_count := 0
 var _fail_count := 0
@@ -73,6 +74,7 @@ func _ready() -> void:
 	_test_touch_input_state_machine()
 	_test_game_autoload_contract()
 	_test_visual_turn_convergence()
+	_test_dev_menu_state_machine()
 	_report()
 
 
@@ -2161,6 +2163,8 @@ func _test_game_autoload_contract() -> void:
 	_ok("Game has checkpoint_reached signal", g.has_signal(&"checkpoint_reached"))
 	_ok("Game has level_completed signal", g.has_signal(&"level_completed"))
 
+	g.free()
+
 
 func _test_visual_turn_convergence() -> void:
 	## Covers the lerp_angle branch of _update_visual_facing not exercised by
@@ -2211,4 +2215,51 @@ func _test_visual_turn_convergence() -> void:
 	_ok("horiz_speed 0.21 is NOT below deadband (above min_speed; lerp proceeds)",
 		not (0.21 < turn_min))
 
-	g.free()
+
+func _test_dev_menu_state_machine() -> void:
+	## DevMenu autoload juice/debug-viz state management and open/close machine.
+	## _ready() is not called (no scene tree), so _overlay stays null — set_open
+	## and toggle only flip is_open, which is the logic under test here.
+	print("\n-- dev menu state machine --")
+	var dm: DM = DM.new()
+
+	# Juice defaults: all seven named keys are ON at startup.
+	_ok("juice screen_shake default ON", dm.is_juice_on(&"screen_shake"))
+	_ok("juice particles default ON", dm.is_juice_on(&"particles"))
+	_ok("juice blob_shadow default ON", dm.is_juice_on(&"blob_shadow"))
+
+	# Unknown juice key falls back to true (default-true safety convention).
+	_ok("is_juice_on: unknown key defaults to true",
+		dm.is_juice_on(&"__nonexistent_key"))
+
+	# State transitions: off then back on.
+	dm.set_juice(&"particles", false)
+	_ok("set_juice OFF: particles is false", not dm.is_juice_on(&"particles"))
+	dm.set_juice(&"particles", true)
+	_ok("set_juice ON: particles restored to true", dm.is_juice_on(&"particles"))
+
+	# Debug viz: perf_hud starts ON; velocity_vec and other overlays start OFF.
+	_ok("debug_viz perf_hud default ON", dm.is_debug_viz_on(&"perf_hud"))
+	_ok("debug_viz velocity_vec default OFF", not dm.is_debug_viz_on(&"velocity_vec"))
+
+	# Unknown debug key falls back to false (opposite to juice — keeps HUD tidy).
+	_ok("is_debug_viz_on: unknown key defaults to false",
+		not dm.is_debug_viz_on(&"__nonexistent_key"))
+
+	# Debug viz state transition.
+	dm.set_debug_viz(&"velocity_vec", true)
+	_ok("set_debug_viz ON: velocity_vec becomes true",
+		dm.is_debug_viz_on(&"velocity_vec"))
+
+	# Open/close state machine: starts closed, set_open, then toggle round-trips.
+	_ok("dev menu closed by default", not dm.is_open)
+	dm.set_open(true)
+	_ok("set_open(true): is_open is true", dm.is_open)
+	dm.set_open(false)
+	_ok("set_open(false): is_open is false", not dm.is_open)
+	dm.toggle()
+	_ok("toggle from false: is_open becomes true", dm.is_open)
+	dm.toggle()
+	_ok("toggle back to false: is_open is false", not dm.is_open)
+
+	dm.free()
