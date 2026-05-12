@@ -14,15 +14,16 @@ instrumented and tunable.
 
 ## Active iteration
 
-- Branch: `claude/gifted-shannon-5IJTD`
-- Focus: iter 43. **Jump arc geometry tests + profile timing window tests.**
-  `_test_jump_arc_geometry` (11 assertions) — t_apex = jump_velocity/gravity_rising in
-  [0.15, 0.90] s per profile; terminal_velocity > max_speed per profile; cross-profile
-  arc ordering (Floaty > Snappy, Floaty > Momentum, Momentum > Snappy for t_apex).
-  `_test_profile_timing_windows` (12 assertions) — coyote_time and jump_buffer in
-  [0.05, 0.30] s per profile; full ordering chain Floaty ≥ Snappy ≥ Momentum for both
-  coyote and buffer.
-  Total: 452 → 475 assertions. Throttle: HARD (19 autonomous iterations).
+- Branch: `claude/gifted-shannon-4hSyy`
+- Focus: iter 44. **Perf budget logic tests + Gate 1 scene lifecycle research.**
+  `_test_perf_budget_logic` (8 assertions) — constants read via PB preload so drift in
+  perf_budget.gd is caught: FRAMETIME_BUDGET_MS==9.0, DRAW_CALL_BUDGET==50,
+  TRIANGLE_BUDGET==80 000, ACTIVE_PARTICLES_BUDGET>0; + OR logic (all-under→false,
+  frametime>9.0→true, draws>50→true, tris>80 000→true).
+  Side quest: `docs/research/gate1_scene_lifecycle.md` — reload options (A/B/C),
+  run-timer in Game autoload, ResultsPanel as CanvasLayer overlay, shard tracking,
+  hitch avoidance, 6 gate1 game.gd change list.
+  Total: 475 → 483 assertions. Throttle: HARD (20 autonomous iterations).
 
 ## Queue (ranked, top is next)
 
@@ -155,6 +156,18 @@ These mirror "Open questions waiting on you" in the README.
   (Per CLAUDE.md: level concept selection is a human call.)
 
 ## Recently completed (last 5)
+
+- 2026-05-12 — Iteration 44. **Perf budget logic tests + Gate 1 scene lifecycle research.**
+  `_test_perf_budget_logic` (8 assertions): reads PB constants via preload —
+  FRAMETIME_BUDGET_MS==9.0, DRAW_CALL_BUDGET==50, TRIANGLE_BUDGET==80 000,
+  ACTIVE_PARTICLES_BUDGET>0; OR logic: all-under→false, frametime spike→true,
+  draws+1→true, tris+1→true. Mirror helper `_perf_over_budget` uses actual PB
+  constants so any drift in perf_budget.gd is caught automatically.
+  Side quest: `docs/research/gate1_scene_lifecycle.md` — three reload approaches,
+  run-timer in Game autoload (`start_run`/`level_complete`/`_process`), ResultsPanel
+  as CanvasLayer overlay (no scene change mid-session), shard tracking, hitch avoidance,
+  6 concrete `game.gd` Gate 1 change items. INDEX.md updated.
+  Total: 475 → 483 assertions. Throttle: HARD (20 iterations since human session).
 
 - 2026-05-12 — Iteration 43. **Jump arc geometry tests + profile timing window tests.**
   `_test_jump_arc_geometry` (11 assertions): t_apex = jump_velocity/gravity_rising in [0.15,0.90] s

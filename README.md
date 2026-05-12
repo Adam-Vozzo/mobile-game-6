@@ -5,10 +5,10 @@ A mobile 3D platformer. Brutalist megastructure inspired by *BLAME!*. Controller
 ## Status
 
 Current gate: **Gate 0 — Feel Lab**
-Last iteration: 2026-05-12 — iter 43: jump arc geometry tests + profile timing window tests (475 assertions)
+Last iteration: 2026-05-12 — iter 44: perf budget logic tests + Gate 1 scene lifecycle research (483 assertions)
 Test device build: not yet — hand-authored scenes pending first Godot 4.6 import; see Open questions
 Performance: not yet measured on Nothing Phone 4(a) Pro
-Throttle level: **HARD (19 autonomous iterations since 2026-05-11 human session).** Next iterations are hardening only unless human provides direction.
+Throttle level: **HARD (20 autonomous iterations since 2026-05-11 human session).** Next iterations are hardening only unless human provides direction.
 
 If you only read one section, read **Open questions waiting on you** below.
 
@@ -16,27 +16,26 @@ If you only read one section, read **Open questions waiting on you** below.
 
 Things Claude can't decide alone, or where it's stalled and needs direction. Each is blocking some piece of forward progress.
 
-> **Throttle cleared 2026-05-11.** Direct human-direction session reworked the
-> camera, dev-menu UX, lighting, and visual feedback. P0 items remain blocked on
-> the on-device first-run check below; until that lands, autonomous iterations
-> should resume the HARD throttle if more than ~5 pass without further human
-> direction.
+> **⚠ HARD THROTTLE — 20 autonomous iterations since last human session (2026-05-11).**
+> Claude has stalled on hardening work (tests + research) and is waiting for human
+> direction before doing anything further. The P0 queue is entirely blocked on the
+> first Godot 4.6 import. No new feature surface has been added since iteration 25.
 >
 > **Suggested next directions (pick one or more):**
-> 1. Open the project in Godot 4.6, run the first-run checklist in `docs/ANDROID.md`,
->    paste any import errors. This unblocks the entire P0 queue.
-> 2. Give a first feel verdict (Snappy / Floaty / Momentum) — even rough notes
+> 1. **Open the project in Godot 4.6** and run the first-run checklist in `docs/ANDROID.md`,
+>    paste any import errors. **This unblocks the entire P0 queue** and is the highest-value
+>    thing you can do right now — it takes ~10 minutes and unlocks ~40 iterations of blocked work.
+> 2. **Give a first feel verdict** (Snappy / Floaty / Momentum) — even rough notes
 >    ("Snappy feels good but the jump arc is too low") give Claude a tuning target.
-> 3. Approve the style direction (cold palette, fog, brutalist primitives) so the
->    `scenes/levels/style_test.tscn` greybox can be used as the template for Gate 1
->    geometry.
-> 4. Give a gate-transition signal ("Gate 0 is done, proceed to Gate 1 vertical slice
->    planning") if you feel the Feel Lab is instrumented enough.
-> 5. **NEW: Pick a Gate 1 level to build.** Three concepts are ready in `docs/levels/`:
->    - **Spine** — vertical column ascent via wall jump. 5 beats. ~60–75 s skilled. Wall jump primary.
->    - **Lung** — horizontal ventilation chamber, moving platform timing. 4 beats. ~70–80 s skilled. Timing primary.
->    - **Threshold** — 3-zone contrast study (habitation → maintenance → industrial). 5 beats. ~70 s skilled. Scale-shift primary.
->    Read the parti and procession for each in `docs/levels/<name>.md`. Tell Claude which to build and it will greybox immediately.
+> 3. **Approve the style direction** (cold palette, fog, brutalist primitives) so the
+>    `scenes/levels/style_test.tscn` greybox can be used as the template for Gate 1 geometry.
+> 4. **Gate transition signal** ("Gate 0 is done, proceed to Gate 1") if you feel the
+>    Feel Lab is instrumented enough — Claude will begin greyboxing the chosen level immediately.
+> 5. **Pick a Gate 1 level to build.** Three concepts are ready in `docs/levels/`:
+>    - **Spine** — vertical column ascent via wall jump. 5 beats. ~60–75 s skilled.
+>    - **Lung** — horizontal ventilation chamber, moving platform timing. 4 beats. ~70–80 s skilled.
+>    - **Threshold** — 3-zone contrast study (habitation → maintenance → industrial). 5 beats. ~70 s skilled.
+>    Read the parti and procession for each in `docs/levels/<name>.md`.
 
 - [ ] **Open the project in Godot 4.6 and run the on-device first-run checklist in `docs/ANDROID.md`.** This is the only thing that will catch syntax mistakes in any of the hand-authored `.tscn`/`.tres` files. If anything fails, paste the Output panel error and Claude will fix it next iteration.
 - [ ] **First feel verdict — Snappy vs Floaty vs Momentum.** Once the build runs, open the dev menu (F1 in editor, 3-finger tap on device), switch the Profile dropdown between Snappy / Floaty / Momentum and play each for 30–60 seconds. Note: jump arc, air momentum feel, landing, coyote forgiveness. Any notes you give go straight into the next tuning pass.
@@ -101,6 +100,17 @@ Goal: store-ready build.
 The full iteration log lives here, newest first. Every iteration appends an entry. Skim the dates to find where you last left off.
 
 <!-- ITERATION ENTRIES BELOW — DO NOT REMOVE OLDER ENTRIES -->
+
+### [2026-05-12] — `claude/gifted-shannon-4hSyy` — iter 44: perf budget logic tests + Gate 1 scene lifecycle research
+
+- **Throttle: HARD (20 autonomous iterations since 2026-05-11 human session).** Hardening only. No behaviour change.
+- **Primary: `_test_perf_budget_logic`** (8 assertions) — first test coverage for `perf_budget.gd`. Uses `const PB := preload(...)` so the test reads constants directly from the script; any drift in `perf_budget.gd` is caught automatically rather than silently.
+  - Constants: `FRAMETIME_BUDGET_MS == 9.0` (8–10 ms CLAUDE.md band), `DRAW_CALL_BUDGET == 50` (godot_mobile_perf.md Gate 1 target), `TRIANGLE_BUDGET == 80 000` (CLAUDE.md §Budgets), `ACTIVE_PARTICLES_BUDGET > 0`.
+  - Logic: all-under → not over_budget; frametime 10.1 ms → over; draw calls 51 → over; tris 80 001 → over.
+- **Side quest: `docs/research/gate1_scene_lifecycle.md`** — Gate 1 implementation reference for level reload, run timer, win state trigger, and shard tracking. Key conclusions: use `reload_current_scene()` for Gate 1 restart; `ResultsPanel` as `CanvasLayer` overlay (no scene change); run timer in `Game._process`; `shards_total` set in level `_ready()`. Includes 6 concrete `game.gd` change items for Gate 1. INDEX.md updated.
+- **Total assertions: 475 → 483.**
+- **Perf:** no runtime changes. No new dev-menu controls. No new assets.
+- **Needs human attention:** 20 iterations at HARD throttle, all P0 items still blocked on first Godot 4.6 import. See Open questions below.
 
 ### [2026-05-12] — `claude/gifted-shannon-5IJTD` — iter 43: jump arc geometry tests + profile timing window tests
 
