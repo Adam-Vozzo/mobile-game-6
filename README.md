@@ -5,10 +5,10 @@ A mobile 3D platformer. Brutalist megastructure inspired by *BLAME!*. Controller
 ## Status
 
 Current gate: **Gate 0 — Feel Lab**
-Last iteration: 2026-05-12 — iter 44: perf budget logic tests + Gate 1 scene lifecycle research (483 assertions)
+Last iteration: 2026-05-12 — iter 45: TouchInput + Game autoload contract tests (504 assertions)
 Test device build: not yet — hand-authored scenes pending first Godot 4.6 import; see Open questions
 Performance: not yet measured on Nothing Phone 4(a) Pro
-Throttle level: **HARD (20 autonomous iterations since 2026-05-11 human session).** Next iterations are hardening only unless human provides direction.
+Throttle level: **HARD (21 autonomous iterations since 2026-05-11 human session).** Next iterations are hardening only unless human provides direction.
 
 If you only read one section, read **Open questions waiting on you** below.
 
@@ -100,6 +100,23 @@ Goal: store-ready build.
 The full iteration log lives here, newest first. Every iteration appends an entry. Skim the dates to find where you last left off.
 
 <!-- ITERATION ENTRIES BELOW — DO NOT REMOVE OLDER ENTRIES -->
+
+### [2026-05-12] — `claude/gifted-shannon-NplIj` — iter 45: TouchInput + Game autoload contract tests
+
+- **Throttle: HARD (21 autonomous iterations since 2026-05-11 human session).** Hardening only. No behaviour change.
+- **Primary: `_test_touch_input_state_machine`** (11 assertions) — `touch_input.gd` had zero unit test coverage. Tests the pure-logic layer without a scene tree:
+  - `set_move_vector`: unit vector passes through unchanged; oversized vector clamped to length 1.0; zero stays zero.
+  - `set_jump_held`: all 4 state transitions (false→false, false→true, true→true, true→false).
+  - `consume_camera_drag_delta`: accumulated sum correct; second call returns zero (accumulator cleared).
+  - `get_move_vector`: returns stored vector when non-zero; returns ~zero in test context (no keyboard actions active).
+- **Side quest: `_test_game_autoload_contract`** (10 assertions) — `game.gd` had zero unit coverage. Documents the current public API so Gate 1 additions don't silently break existing fields/methods:
+  - Variable defaults: `attempts == 0`, `run_time_seconds == 0.0`, `current_level_path == ""`.
+  - `register_attempt()`: increments `attempts` to 1, then 2.
+  - `reset_run()`: zeroes both `attempts` and `run_time_seconds`.
+  - Signal existence: `player_respawned`, `checkpoint_reached`, `level_completed` all registered.
+- **Total assertions: 483 → 504.**
+- **Perf:** no runtime changes. No new dev-menu controls. No new assets.
+- **Needs human attention:** 21 iterations at HARD throttle; all P0 items still blocked on first Godot 4.6 import. See Open questions below.
 
 ### [2026-05-12] — `claude/gifted-shannon-4hSyy` — iter 44: perf budget logic tests + Gate 1 scene lifecycle research
 

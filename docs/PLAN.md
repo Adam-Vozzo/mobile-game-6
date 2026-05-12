@@ -14,16 +14,15 @@ instrumented and tunable.
 
 ## Active iteration
 
-- Branch: `claude/gifted-shannon-4hSyy`
-- Focus: iter 44. **Perf budget logic tests + Gate 1 scene lifecycle research.**
-  `_test_perf_budget_logic` (8 assertions) — constants read via PB preload so drift in
-  perf_budget.gd is caught: FRAMETIME_BUDGET_MS==9.0, DRAW_CALL_BUDGET==50,
-  TRIANGLE_BUDGET==80 000, ACTIVE_PARTICLES_BUDGET>0; + OR logic (all-under→false,
-  frametime>9.0→true, draws>50→true, tris>80 000→true).
-  Side quest: `docs/research/gate1_scene_lifecycle.md` — reload options (A/B/C),
-  run-timer in Game autoload, ResultsPanel as CanvasLayer overlay, shard tracking,
-  hitch avoidance, 6 gate1 game.gd change list.
-  Total: 475 → 483 assertions. Throttle: HARD (20 autonomous iterations).
+- Branch: `claude/gifted-shannon-NplIj`
+- Focus: iter 45. **TouchInput + Game autoload contract tests.**
+  `_test_touch_input_state_machine` (11 assertions) — touch_input.gd had zero coverage;
+  documents set_move_vector limit_length contract, set_jump_held 4-case state machine,
+  camera drag accumulate+consume cycle, get_move_vector fallback.
+  Side quest: `_test_game_autoload_contract` (10 assertions) — game.gd had zero coverage;
+  documents variable defaults, register_attempt() increment, reset_run() reset, and all 3
+  signal names. Gate 1 expansions to game.gd will be caught on regression.
+  Total: 483 → 504 assertions. Throttle: HARD (21 autonomous iterations).
 
 ## Queue (ranked, top is next)
 
@@ -156,6 +155,16 @@ These mirror "Open questions waiting on you" in the README.
   (Per CLAUDE.md: level concept selection is a human call.)
 
 ## Recently completed (last 5)
+
+- 2026-05-12 — Iteration 45. **TouchInput + Game autoload contract tests.**
+  `_test_touch_input_state_machine` (11 assertions): set_move_vector limit_length pipeline
+  (unit/oversized/zero), set_jump_held 4-state machine (false→false, false→true,
+  true→true, true→false), camera drag accumulate-then-clear (add×2→consume→zero).
+  `get_move_vector` returns stored vector when non-zero, ~zero in test context.
+  `_test_game_autoload_contract` (10 assertions): defaults (attempts=0, run_time_seconds=0.0,
+  current_level_path=""), register_attempt() +1/+2, reset_run() zeroes both, plus
+  has_signal checks for player_respawned / checkpoint_reached / level_completed.
+  Total: 483 → 504 assertions. Throttle: HARD (21 iterations since human session).
 
 - 2026-05-12 — Iteration 44. **Perf budget logic tests + Gate 1 scene lifecycle research.**
   `_test_perf_budget_logic` (8 assertions): reads PB constants via preload —
