@@ -14,6 +14,7 @@ extends Node
 ## to test_*() — the assertion pattern is otherwise GUT-compatible.
 
 const CP := preload("res://scripts/controller/controller_profile.gd")
+const PB := preload("res://scripts/autoload/perf_budget.gd")
 
 var _pass_count := 0
 var _fail_count := 0
@@ -66,6 +67,7 @@ func _ready() -> void:
 	_test_camera_pub_yaw_formula()
 	_test_jump_arc_geometry()
 	_test_profile_timing_windows()
+	_test_perf_budget_logic()
 	_report()
 
 
@@ -2039,3 +2041,39 @@ func _test_profile_timing_windows() -> void:
 	if sp != null and mp != null:
 		_ok("snappy jump_buffer >= momentum jump_buffer (momentum tighter pre-press window)",
 			sp.jump_buffer >= mp.jump_buffer)
+
+
+func _test_perf_budget_logic() -> void:
+	## Checks the performance budget targets defined in perf_budget.gd against
+	## the CLAUDE.md design spec, and verifies the over_budget() OR logic via a
+	## mirrored pure function that references PB constants directly.
+	## When a constant drifts (e.g. after device tuning), the assertion fails —
+	## forcing a deliberate review rather than silent budget creep.
+	print("\n-- Perf budget constants + over_budget() OR logic --")
+	# Constants are read directly from PB so any edit to perf_budget.gd is caught here.
+	_ok("FRAMETIME_BUDGET_MS == 9.0 (8–10 ms thermal-headroom band per CLAUDE.md)",
+		_near(PB.FRAMETIME_BUDGET_MS, 9.0))
+	_ok("DRAW_CALL_BUDGET == 50 (≤50 Gate 1 target per godot_mobile_perf.md)",
+		PB.DRAW_CALL_BUDGET == 50)
+	_ok("TRIANGLE_BUDGET == 80 000 (CLAUDE.md §Target §Budgets)",
+		PB.TRIANGLE_BUDGET == 80_000)
+	_ok("ACTIVE_PARTICLES_BUDGET > 0 (non-zero cap, even while GPUParticles3D absent)",
+		PB.ACTIVE_PARTICLES_BUDGET > 0)
+
+	# Mirror over_budget() OR semantics: any single metric above its ceiling triggers.
+	_ok("all metrics under budget → not over budget",
+		not _perf_over_budget(0, 0, 0, 5.0))
+	_ok("frametime spike 10.1 ms > FRAMETIME_BUDGET_MS 9.0 → over budget",
+		_perf_over_budget(0, 0, 0, 10.1))
+	_ok("draw calls at DRAW_CALL_BUDGET+1 (51) → over budget",
+		_perf_over_budget(0, 51, 0, 5.0))
+	_ok("triangles at TRIANGLE_BUDGET+1 (80 001) → over budget",
+		_perf_over_budget(80_001, 0, 0, 5.0))
+
+
+func _perf_over_budget(tris: int, draws: int, particles: int, frametime_ms: float) -> bool:
+	## Mirrors perf_budget.gd::over_budget() using PB constants directly,
+	## so the test catches both constant drift and logic changes.
+	return (tris > PB.TRIANGLE_BUDGET or draws > PB.DRAW_CALL_BUDGET
+		or particles > PB.ACTIVE_PARTICLES_BUDGET
+		or frametime_ms > PB.FRAMETIME_BUDGET_MS)

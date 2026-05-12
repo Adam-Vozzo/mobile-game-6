@@ -123,6 +123,19 @@ Suggested (still open):
 - ~~Mark Brown / Game Maker's Toolkit — specific 3D platformer level-design episodes.~~ Covered above (holistic_level_design.md).
 - ~~Steve Lee (doublefunction.co.uk) — GDC talk "An Approach to Holistic Level Design."~~ Done (iter 17, holistic_level_design.md).
 
+## Gate 1 — implementation
+
+- [`gate1_scene_lifecycle.md`](gate1_scene_lifecycle.md) — Godot 4 implementation
+  patterns for the Gate 1 level loop: three reload options (`reload_current_scene` vs
+  soft-reset vs preload-swap; recommendation: Option A for Gate 1), run-timer pattern
+  in the `Game` autoload (`start_run` / `level_complete` / `_process` accumulation),
+  `WinState` Area3D trigger → `ResultsPanel` CanvasLayer overlay architecture (no scene
+  change during the results screen), shard tracking via `Game.shards_collected` / 
+  `shards_total` zeroed implicitly by the reload, frame-hitch avoidance (no `await`
+  chain, no loading screen for Gate 1). 6 concrete implications for `game.gd` Gate 1
+  changes (new fields: `is_running`, `shards_collected`, `shards_total`; updated methods:
+  `start_run`, `level_complete`, `reset_run`, `_process`).
+
 ## Performance & rendering
 
 - [`godot_mobile_perf.md`](godot_mobile_perf.md) — Godot 4 Mobile renderer capabilities/limits, TBDR tile-based GPU architecture (Adreno/Mali), draw call and triangle budgets, ASTC texture notes, baked vs dynamic lighting tradeoffs, Jolt physics profiling tips, in-game profiling steps. Implications: bake lights before Gate 1; keep alpha-blended objects exceptional; target ≤ 50 draw calls at Gate 1; no MSAA; profile Jolt separately.
