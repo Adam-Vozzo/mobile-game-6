@@ -83,6 +83,7 @@ func _ready() -> void:
 	_test_vertical_follow_ratchet()
 	_test_default_apex_height_formula()
 	_test_reference_floor_smoothing()
+	_test_takeoff_reference_snap()
 	_report()
 
 
@@ -2770,4 +2771,96 @@ func _ref_update(current_ref: float, player_y: float, on_floor: bool,
 # Mirrors the not-yet-initialised first-frame branch — reference always snaps
 # regardless of smoothing rate, since the camera has no prior pose to ease from.
 func _ref_update_initial(player_y: float) -> float:
+	return player_y
+
+
+func _test_takeoff_reference_snap() -> void:
+	## Mirrors the takeoff-detection block at the top of `camera_rig.gd::_process`.
+	## When the player goes from grounded → airborne, we snap `_reference_floor_y`
+	## to `player.y` and recompute `_air_offset` so the camera position stays
+	## continuous. Without the snap, a jump while reference is still smoothing
+	## toward the player's current tier would compute apex_y from the
+	## mid-smoothing value — a normal jump from the new tier would then exceed
+	## apex_y and trigger spurious track-up motion mid-jump.
+	print("\n-- Camera takeoff reference snap --")
+	const DEFAULT_MULT := 1.15
+	var snappy_apex := (11.5 * 11.5) / (2.0 * 38.0)  # ≈ 1.74 m
+	# Approximate semi-implicit-Euler peak at 60 fps with Snappy params.
+	# Stays a bit below the analytic max — see `_test_default_apex_height_formula`.
+	var snappy_peak_euler := 1.646
+
+	# --- Scenario: player jumped from tier A (Y=0) to tier B (Y=1.5).
+	# Reference was 0 pre-jump, smoothed partway during the airborne phase
+	# up to landing, and has been smoothing further on grounded frames since
+	# they landed. Pre-takeoff reference is mid-smooth at 0.5 (about 1/3
+	# of the way to 1.5). Camera Y is at `ref + lift = 0.5 + 2.85 = 3.35`.
+	var ref_mid_smooth := 0.5
+	var player_takeoff_y := 1.5
+	var cam_y_pre := 3.35
+	# Camera lift = sin(22°) * 6 + 0.6 = 2.25 + 0.60 = 2.85, matching
+	# `camera_rig.gd::_place_camera_initial` / `_process` ground branch.
+	# `cam_y_pre` (3.35) above already reflects ref_mid_smooth + 2.85.
+
+	# --- Snap: reference → player.y ---
+	var snapped_ref := _ref_snap_at_takeoff(ref_mid_smooth, player_takeoff_y)
+	_ok("snap: reference becomes player.y at takeoff",
+		_near(snapped_ref, player_takeoff_y))
+	_ok("snap: reference no longer at mid-smoothing value",
+		not _near(snapped_ref, ref_mid_smooth))
+	_ok("snap is idempotent: same player.y → same reference",
+		_near(_ref_snap_at_takeoff(snapped_ref, player_takeoff_y), player_takeoff_y))
+
+	# --- Offset recompute: keeps camera world Y continuous ---
+	# After snap, effective_y = compute_effective_y(player.y) with new ref.
+	# player.y == ref → hold branch → effective_y = ref.
+	var new_effective_y := _eff_y(player_takeoff_y, snapped_ref, snappy_apex, DEFAULT_MULT)
+	_ok("post-snap: effective_y at takeoff equals snapped reference",
+		_near(new_effective_y, snapped_ref))
+	# new _air_offset = camera_pre - new_effective.
+	var new_air_offset_y := cam_y_pre - new_effective_y
+	# After rigid translate: cam_post = effective + air_offset.
+	var cam_y_post := new_effective_y + new_air_offset_y
+	_ok("post-snap: camera Y is continuous (no pop on takeoff frame)",
+		_near(cam_y_post, cam_y_pre))
+
+	# --- During the jump: held branch fires (no track-up) ---
+	# Player's actual peak at semi-implicit Euler: `takeoff_y + peak_euler`.
+	var player_y_peak := snapped_ref + snappy_peak_euler
+	var effective_y_at_peak := _eff_y(player_y_peak, snapped_ref, snappy_apex, DEFAULT_MULT)
+	_ok("during jump: at Euler peak with default multiplier → hold (no track-up)",
+		_near(effective_y_at_peak, snapped_ref))
+	# Even at the analytic peak (a bit higher than Euler), the 15% headroom
+	# from `apex_height_multiplier = 1.15` keeps the player below apex_y.
+	var player_y_analytic_peak := snapped_ref + snappy_apex
+	_ok("during jump: at analytic peak with default multiplier → hold",
+		_near(_eff_y(player_y_analytic_peak, snapped_ref, snappy_apex, DEFAULT_MULT), snapped_ref))
+
+	# --- Contrast: WITHOUT the snap (the pre-fix behaviour) ---
+	# Reference would still be at mid-smoothing. Same Euler peak would now
+	# exceed apex_y = ref_mid_smooth + apex_band, triggering track-up.
+	var effective_y_unfixed := _eff_y(player_y_peak, ref_mid_smooth, snappy_apex, DEFAULT_MULT)
+	_ok("pre-fix: same peak with mid-smoothing reference → track-up fires",
+		effective_y_unfixed > ref_mid_smooth)
+	var camera_motion_amount := absf(effective_y_unfixed - ref_mid_smooth)
+	_ok("pre-fix: track-up amount is non-trivial (visible camera motion)",
+		camera_motion_amount > 0.1)
+
+	# --- Same-tier takeoff (no mid-smoothing in progress): snap is a no-op ---
+	# If reference was already at player.y (smoothing converged or never
+	# diverged), the snap doesn't change anything.
+	var ref_settled := 1.5
+	var snapped_settled := _ref_snap_at_takeoff(ref_settled, 1.5)
+	_ok("same-tier takeoff: snap is a no-op when reference already at player.y",
+		_near(snapped_settled, ref_settled))
+	var settled_air_offset_y := cam_y_pre - 1.5
+	_ok("same-tier takeoff: _air_offset unchanged from pre-takeoff value",
+		_near(settled_air_offset_y, new_air_offset_y))
+
+
+# Mirrors camera_rig.gd's takeoff branch: snap reference to player.y on the
+# is_on_floor: true → false transition. The previous reference value is
+# explicitly discarded — the whole point is to overwrite it with the current
+# floor.
+@warning_ignore("unused_parameter")
+func _ref_snap_at_takeoff(current_ref: float, player_y: float) -> float:
 	return player_y

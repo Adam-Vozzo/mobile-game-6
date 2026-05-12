@@ -736,6 +736,83 @@ paths affected. If the user reports the camera now feels "too lazy" about
 following genuine high jumps, the multiplier slider is the single knob to
 adjust.
 
+## 2026-05-13 — Camera reference snap on takeoff (interrupts mid-smoothing)
+
+Status: accepted (refines the 2026-05-13 reference-floor smoothing in PR #67)
+Context: After PRs #67 / #68 / #69 all landed, on-device feedback surfaced one
+more case: "if you jump too soon after landing on a new surface level the
+camera will do a little vertical movement." Tracing the math:
+- Player jumps onto a higher tier at Y=1.5 from Y=0. Reference was 0
+  pre-jump (held during airborne), and on landing starts smoothing
+  0 → 1.5 at 6/sec (≈400 ms settle).
+- Player jumps again ~100 ms after landing, before smoothing completes.
+  Reference is mid-transit at ~0.5.
+- Reference is held during the airborne phase (no update on non-grounded
+  frames, as designed).
+- `apex_y = reference + apex_band` = 0.5 + 2.0 = **2.5**.
+- The player's actual peak during a normal jump from Y=1.5 is roughly
+  1.5 + 1.646 (Euler) = **3.15**, which **exceeds** apex_y.
+- Track-up branch fires for the part of the jump where player.y > 2.5 —
+  `effective_y` lifts, the airborne rigid translate carries it into the
+  camera, and the camera rises then drops as the player crests and
+  descends. Visible vertical motion during a "normal" jump.
+The held-band check should be calibrated to the floor the player is
+**actually jumping from**, not to whatever the smoothing was mid-
+transitioning to at the moment of takeoff.
+Decision: On the grounded → airborne transition (takeoff), snap
+`_reference_floor_y = player.y` and recompute `_air_offset` against the
+fresh `effective_target` in the same frame. The snap makes the airborne
+apex check use the takeoff position as its anchor; the offset recompute
+keeps the camera's world position continuous (no vertical pop on the
+takeoff frame). Implementation:
+```
+var just_took_off := _was_on_floor and not on_floor
+if just_took_off:
+    _reference_floor_y = target_pos.y
+_update_reference_floor(target_pos.y, on_floor, delta)
+_was_on_floor = on_floor
+
+# ... compute effective_target from the snapped reference ...
+
+if just_took_off:
+    _air_offset = _camera.global_position - effective_target
+```
+The smoothing semantics resume after landing: on the next grounded frame
+after the snap+jump, `_update_reference_floor` continues smoothing
+toward the player's current floor as before. If the player lands back at
+the same tier, smoothing converges instantly (ref already equals player.y);
+if they land on a different tier, smoothing eases the camera to the new
+floor exactly as PR #67 designed.
+Alternatives considered:
+- Track `_airborne_anchor_y` separately, distinct from `_reference_floor_y`,
+  and use it for apex calculations during airborne frames. Rejected: two
+  pieces of state with overlapping semantics, plus the offset recompute is
+  still needed to avoid the pop, so no real simplicity gain over the
+  one-state snap approach.
+- Increase `reference_floor_smoothing` rate to make the smoothing finish
+  before a jump could be timed during it (e.g. 20/sec → 100 ms settle).
+  Rejected: the original PR #67 problem was the smoothing being too
+  *abrupt*; bumping the rate back up re-introduces that. The snap-on-
+  takeoff approach keeps the gentle smoothing for landings (where it's
+  visible motion) and only bypasses it at takeoff (where it would
+  otherwise leak into the airborne arc).
+- Use velocity to detect takeoff (vy > 0 + previously grounded). Rejected:
+  `is_on_floor()` is already the controller's authoritative grounded
+  state, and `_was_on_floor` is one more frame of state; threading
+  velocity through the camera adds a second source of truth.
+- Apply the snap on every grounded-frame edge case (e.g. detect mid-
+  smoothing and snap eagerly). Rejected: the smoothing during grounded
+  frames is *desired behaviour* (PR #67) for landings on new tiers; only
+  the airborne phase needs the snapped value.
+Consequences: One new state variable (`_was_on_floor`), one takeoff-
+detection block in `_process`, one new test group (`_test_takeoff_reference_snap`,
+10 assertions) covering the snap itself, idempotence, offset recompute
+math, camera-position continuity, held-branch behaviour at Euler peak and
+analytic peak, the pre-fix track-up contrast, and the same-tier no-op
+case. No other code paths affected. The previous PR #67 / #68 / #69
+behaviours (smoothing on landings, track-down on falls, apex-multiplier
+headroom) all compose unchanged on top of this fix.
+
 ## 2026-05-12 — Snappy reboot_duration stays at 0.5 s
 
 Status: accepted (closes out the `level_design_references.md` recommendation)
