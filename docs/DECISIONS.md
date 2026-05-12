@@ -680,6 +680,62 @@ asymmetric position lerp is unchanged — only the *target* the camera
 chases has a new branch; the smoothing layers downstream apply
 identically.
 
+## 2026-05-13 — Camera apex multiplier default 1.0 → 1.15 (peak-jitter headroom)
+
+Status: accepted (refines the 2026-05-12 ratchet)
+Context: On-device feedback after PRs #65 / #67 / #68: "at the peak of the
+player's jump the camera is moving up and down slightly. It shouldn't be
+moving vertically until above the player's max single jump height."
+Tracing the math through `_compute_effective_y`, the analytic peak of a
+Snappy jump is `v²/(2g) = 1.740 m`. With `apex_height_multiplier = 1.0`
+the held-band ceiling is at the same value, and the strict-`>` check
+should keep a player at peak in the held branch. In practice though, two
+contributors push `player.global_position.y` over the threshold for a
+frame or two at the apex:
+1. Jolt's capsule-vs-static-mesh resolution can nudge the player's Y up
+   by a few millimetres on certain ticks (penetration-correction
+   artefacts that are usually invisible but become observable at the
+   exact moment vy crosses zero).
+2. Semi-implicit Euler with a variable-rate physics step occasionally
+   overshoots the analytic apex by sub-mm before the next gravity step
+   pulls velocity negative.
+Either contributor flicks `player.y > apex_y` from false → true → false
+for a frame or two. Each tracking frame, `effective_y = player.y - apex_h
+≈ a few mm above 0`, which the airborne rigid-translate carries straight
+into the camera Y. Tiny but visible vertical jitter at peak.
+Decision: Bump `apex_height_multiplier` default from `1.0` to `1.15`. The
+held-band ceiling is now at `1.15 × v²/(2g) = 2.001 m` for Snappy — 26 cm
+above the analytic peak. Floor-physics jitter can't reach this. The
+threshold is still well below any double-jump reachable height (a second
+jump from peak with full `jump_velocity` reaches roughly `2.0 × v²/(2g)`,
+i.e. 3.48 m or about 200% of the held-band ceiling), so above-apex
+traversal still triggers tracking as designed. Slider range unchanged
+(0..5); users who want strict-at-max can drop to 1.0 manually.
+Alternatives considered:
+- Add hysteresis: once in hold mode, require `player.y > apex_y + buffer`
+  to enter tracking; once in tracking, require `player.y < apex_y -
+  buffer` to return. Rejected as more state for the same observable
+  behaviour — the buffer multiplier on its own gives the same boundary
+  separation with a single tunable.
+- Quantise `effective_y` (snap to nearest cm) so sub-cm noise is
+  filtered. Rejected: above-apex tracking would feel stair-stepped
+  rather than smooth.
+- Move camera updates into `_physics_process` and rely on
+  `physics_interpolation` for visual smoothing. Worth doing eventually
+  (cleaner sync between player and camera tick rates), but a larger
+  surgical change than this issue needs.
+- Filter `player.y` through a low-pass before comparing to apex_y.
+  Rejected: introduces latency on real above-apex events (double jump,
+  wall jump), where the camera should react immediately.
+Consequences: One default value change in `camera_rig.gd`, matching slider
+default in `dev_menu_overlay.gd`, 5 new test assertions in
+`_test_vertical_follow_ratchet` documenting the 1.15 buffer behaviour
+(player at analytic max still held; 5 cm above max still held; 14% above
+still held; 30% / 50% above clear the band as designed). No other code
+paths affected. If the user reports the camera now feels "too lazy" about
+following genuine high jumps, the multiplier slider is the single knob to
+adjust.
+
 ## 2026-05-12 — Snappy reboot_duration stays at 0.5 s
 
 Status: accepted (closes out the `level_design_references.md` recommendation)
