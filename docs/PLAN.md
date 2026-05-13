@@ -17,6 +17,7 @@ authored with it in mind.
 ## Active iteration
 
 - _No iteration currently in flight._
+- **🟢 Iter 71 complete.** Asset options document written (`docs/ASSET_OPTIONS.md`): 4 Stray-mesh candidates (A1 Quaternius LowPoly Robot recommended), 4 ambient-audio candidates (B1 AlaskaRobotics hum + B2 IanStarGem fans recommended), 5 concrete-kit candidates (C2 Poly Haven + Godot add-on recommended). All CC0 or CC-BY confirmed; fidelity check vs brutalist palette included. Side quest: pre-jump anticipation squish (`_play_jump_stretch` gains coil_y=1−0.18×scale, coil_xz=1+0.08×scale, 0.04 s EASE_IN prepend; 10 unit tests 854 → 864); JUICE.md updated.
 - **🟢 Iter 70 complete.** Zone 2 emissive surfaces (iter 70): `HazardStripe` amber danger stripe on `MaintArm1` underside (Color(0.9,0.55,0.1), energy 1.8); `CartLight` cold blue-white indicator on `ServiceCart` top (Color(0.4,0.55,0.9), energy 1.2); `ConduitLeft`/`ConduitRight` thin blue-white floor-edge strips running Zone 2 length (BoxMesh 0.06×0.06×20 m, ±7.7 m from centre at y=−4.85). Side quest: 8 orphaned pre-redesign sub-resources removed (Z1/Z2 wall/ceiling meshes+shapes), load_steps 82→79. On-device pending — emissive intensities and conduit strip width need feel tuning.
 - **🟢 Iter 69 complete.** Threshold zone atmosphere implemented. Three zone-specific `Environment` sub_resources (Env_Z1 warm sodium / Env_Z2 cold blue-white / Env_Z3 amber) added to `threshold.tscn`. Three `Area3D` zone trigger volumes (Zone1/2/3Trigger, collision_mask=2) fire `_on_zone_body_entered` in `threshold.gd`, swapping `$WorldEnv.environment`. Zone 1 gains 3 sodium-yellow `OmniLight3D` (Z1Light1/2/3) — previously no local lights. Dev menu: "Zone Atmosphere" toggle in Level section via `DevMenu.atmosphere_param_changed`. 8 unit tests (846 → 854). On-device pending for fog/ambient tuning.
 - **🟢 Iter 68 complete.** Momentum profile speed ramp implemented. `ControllerProfile` gains `speed_ramp_rate` (0 = disabled) + `ramp_max_speed`. `player.gd` `_apply_horizontal` ramps `_ramp_speed` toward `ramp_max_speed` with sustained input and decays back to `max_speed` when input is absent. `momentum.tres` now has `speed_ramp_rate = 4.0`, `ramp_max_speed = 18.0`. Dev menu "Ramp rate" + "Ramp top speed" sliders added. 10 unit tests (836 → 846). Side quest: `docs/research/zone_atmosphere.md` — zone-distinct lighting on Mobile renderer, unblocks Threshold ambient volumes item.
@@ -188,16 +189,31 @@ The next iteration should pull from the top of this list. Items marked
 
 These mirror "Open questions waiting on you" in the README.
 
-- **First asset suggestions for human approval.** Before autonomous asset acquisition
-  resumes per CLAUDE.md, the first style-defining picks (Stray mesh, ambient audio
-  bed, architecture kit) get an options doc — 3–5 candidates per slot with source,
-  licence, and a fidelity-check note against the brutalist palette. After ~3
-  confirmed picks, autonomous mode resumes.
+- **First asset suggestions for human approval.** `docs/ASSET_OPTIONS.md` is ready
+  for your review (iter 71). Three slots: Stray mesh (A1 Quaternius recommended),
+  ambient audio (B1+B2 freesound CC0 recommended), concrete kit (C2 Poly Haven + Godot
+  add-on recommended). After ~3 confirmed picks, autonomous asset acquisition resumes
+  per CLAUDE.md. See the doc for full candidate lists with source/licence/fidelity notes.
 - **Ongoing Snappy tuning passes.** Snappy feel is good but will keep getting small
   tweaks as level design progresses. Notes of the form "Snappy felt too X on beat Y"
   drive the next tuning iteration.
 
 ## Recently completed (last 5)
+
+- 2026-05-13 — Iteration 71. **Asset options document + pre-jump anticipation squish.**
+  `docs/ASSET_OPTIONS.md`: 4 Stray-mesh candidates (A1 Quaternius LowPoly Robot CC0 FBX
+  14-anim recommended), 4 ambient-audio candidates (B1 AlaskaRobotics spacecraft hum
+  CC0 17.8 s loop + B2 IanStarGem industrial fans CC0 6.7 s loop recommended), 5
+  concrete-kit candidates (C2 Poly Haven CC0 PBR + Godot add-on recommended). Fidelity
+  check vs brutalist palette included for each. `PLAN.md` Blocked item updated: doc is
+  ready for human review.
+  `scripts/player/player.gd`: `_play_jump_stretch` gains 0.04 s anticipation coil phase
+  (coil_y=1−0.18×scale, coil_xz=1+0.08×scale, EASE_IN TRANS_SINE) prepended before the
+  existing stretch. `docs/JUICE.md`: Pre-jump anticipation promoted from `idea` to
+  `prototype`. Unit tests: `_test_jump_anticipation_squish_math` (10 assertions, 854→864).
+
+- 2026-05-13 — Iteration 70. **Zone 2 emissive surfaces + orphaned sub-resource cleanup.**
+  (See iter 70 README entry for detail.)
 
 - 2026-05-13 — Iteration 69. **Threshold zone atmosphere.**
   `threshold.tscn`: six new sub_resources — `Env_Z1` (ambient warm grey 0.35/0.30/0.22,

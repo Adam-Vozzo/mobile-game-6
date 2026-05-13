@@ -53,7 +53,7 @@ Status legend:
 
 | element | status | notes |
 |---------|--------|-------|
-| Pre-jump anticipation | idea | slight Y squish in the buffer window |
+| Pre-jump anticipation | prototype | coil squish prepended to `_play_jump_stretch`: coil_y=1−0.18×scale, coil_xz=1+0.08×scale over 0.04 s EASE_IN TRANS_SINE, then the existing stretch fires; gated by `squash_stretch` toggle + `_jump_stretch_scale` slider |
 | Apex hold | idea | brief stretch at jump apex — needs apex-state signal, deferred |
 | Land squish | prototype | `_play_land_squash(impact)` on `just_landed` frame; impact = `clamp(-last_fall_speed / terminal, 0, 1)`; squash_y = 1 − impact×0.45×scale, squash_xz = 1 + impact×0.20×scale; TRANS_SPRING recovery in 0.25 s; tunable via "Impact scale" dev-menu slider (0–1, default 0.5); zero draw-call cost |
 | Jump stretch | prototype | `_play_jump_stretch()` on takeoff (inside `_try_jump`); stretch_y = 1 + 0.30×scale, stretch_xz = 1 − 0.15×scale; TRANS_QUAD out + TRANS_SINE in settle over 0.23 s; tunable via "Stretch scale" dev-menu slider (0–1, default 0.5); zero draw-call cost |
