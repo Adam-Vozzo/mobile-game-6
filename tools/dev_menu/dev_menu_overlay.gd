@@ -252,8 +252,16 @@ func _build_level_section(vbox: VBoxContainer) -> void:
 			Engine.time_scale = v
 			DevMenu.time_scale_changed.emit(v),
 		1.0)
+	_build_feel_lab_teleports(vbox)
+	_build_threshold_teleports(vbox)
+	_make_button(vbox, "↺ Reload level", func() -> void:
+		get_tree().reload_current_scene())
+	_build_press_section(vbox)
+
+
+func _build_feel_lab_teleports(vbox: VBoxContainer) -> void:
 	vbox.add_child(_make_label("Teleport — Feel Lab", SECTION_FONT_SIZE, false))
-	var _feel_lab_zones: Array[Dictionary] = [
+	var zones: Array[Dictionary] = [
 		{"label": "Spawn",          "pos": Vector3(0, 1, 0)},
 		{"label": "Platforms (P1)", "pos": Vector3(4, 2, 0)},
 		{"label": "HA1 (tier 1.5m)","pos": Vector3(28, 2.0, -8)},
@@ -265,13 +273,15 @@ func _build_level_section(vbox: VBoxContainer) -> void:
 		{"label": "Drop ledge",     "pos": Vector3(0, 4.0, 19)},
 		{"label": "Moving plat.",   "pos": Vector3(-2, 2, 12)},
 	]
-	for zone: Dictionary in _feel_lab_zones:
+	for zone: Dictionary in zones:
 		var lbl: String = zone["label"]
 		var pos: Vector3 = zone["pos"]
 		_make_button(vbox, "→ " + lbl, func() -> void: _teleport_player(pos))
 
+
+func _build_threshold_teleports(vbox: VBoxContainer) -> void:
 	vbox.add_child(_make_label("Teleport — Threshold", SECTION_FONT_SIZE, false))
-	var _threshold_zones: Array[Dictionary] = [
+	var zones: Array[Dictionary] = [
 		{"label": "Spawn",           "pos": Vector3(0, 1, 0)},
 		{"label": "Hab corridor",    "pos": Vector3(0, 0.5, 6)},
 		{"label": "Hab shelves",     "pos": Vector3(0, 2.0, 23)},
@@ -287,15 +297,11 @@ func _build_level_section(vbox: VBoxContainer) -> void:
 		{"label": "Ketsu K1",        "pos": Vector3(0, -17.75, 112)},
 		{"label": "Terminal",        "pos": Vector3(0, -20.25, 133)},
 	]
-	for zone: Dictionary in _threshold_zones:
+	for zone: Dictionary in zones:
 		var lbl: String = zone["label"]
 		var pos: Vector3 = zone["pos"]
 		_make_button(vbox, "→ " + lbl, func() -> void: _teleport_player(pos))
-
 	_make_button(vbox, "Respawn shard", func() -> void: _respawn_shard())
-	_make_button(vbox, "↺ Reload level", func() -> void:
-		get_tree().reload_current_scene())
-	_build_press_section(vbox)
 
 
 func _build_press_section(vbox: VBoxContainer) -> void:
