@@ -28,36 +28,44 @@ func _ready() -> void:
 
 
 func _build_ui() -> void:
+	var root := _build_overlay_root()
+	add_child(root)
+	var panel := _build_center_panel(root)
+	_build_replay_button(panel)
+
+
+func _build_overlay_root() -> Control:
 	var root := Control.new()
 	root.set_anchors_preset(Control.PRESET_FULL_RECT)
 	root.mouse_filter = Control.MOUSE_FILTER_PASS
-	add_child(root)
-
 	var backdrop := ColorRect.new()
 	backdrop.set_anchors_preset(Control.PRESET_FULL_RECT)
 	backdrop.color = Color(0.04, 0.04, 0.05, 0.88)
 	backdrop.mouse_filter = Control.MOUSE_FILTER_STOP
 	root.add_child(backdrop)
+	return root
 
-	# CenterContainer fills the whole viewport and centres its child.
+
+# CenterContainer fills the whole viewport and centres its child.
+func _build_center_panel(root: Control) -> VBoxContainer:
 	var center := CenterContainer.new()
 	center.set_anchors_preset(Control.PRESET_FULL_RECT)
 	center.mouse_filter = Control.MOUSE_FILTER_PASS
 	root.add_child(center)
-
 	var panel := VBoxContainer.new()
 	panel.custom_minimum_size = Vector2(_PANEL_WIDTH, 0.0)
 	panel.add_theme_constant_override(&"separation", _ROW_SEP)
 	center.add_child(panel)
-
 	_time_val = _add_stat_row(panel, "TIME")
 	_par_val = _add_stat_row(panel, "PAR")
 	_shard_val = _add_stat_row(panel, "SHARDS")
+	return panel
 
+
+func _build_replay_button(panel: VBoxContainer) -> void:
 	var gap := Control.new()
 	gap.custom_minimum_size = Vector2(0.0, 40.0)
 	panel.add_child(gap)
-
 	var replay_btn := Button.new()
 	replay_btn.text = "REPLAY"
 	replay_btn.custom_minimum_size = _BTN_MIN

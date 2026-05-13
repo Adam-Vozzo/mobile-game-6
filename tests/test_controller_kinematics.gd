@@ -102,6 +102,7 @@ func _ready() -> void:
 	_test_ground_camera_y_formula()
 	_test_conditional_fall_offset_regimes()
 	_test_hint_distance_blend()
+	_test_industrial_press_position_formula()
 	_report()
 
 
@@ -3620,3 +3621,81 @@ func _test_hint_distance_blend() -> void:
 	var w_ref := 1.0 - exp(-6.0 * DELTA)
 	_ok("hint blend rate (3/sec) < ref-floor rate (6/sec) → slower pull",
 		w1 < w_ref)
+
+
+func _test_industrial_press_position_formula() -> void:
+	## Mirrors IndustrialPress._target_y() and _update_emissive() — the two
+	## pure-math formulas that determine where the kill-zone physically sits and
+	## how bright the danger strip glows in each phase. Phase indices match the
+	## IndustrialPress.Phase enum: 0=DORMANT 1=WINDUP 2=STROKE 3=REBOUND.
+	print("\n-- IndustrialPress position + emissive formulas --")
+
+	const ORIGIN := 0.0
+	const DEPTH  := 2.5   # default stroke_depth export
+
+	# ── _target_y() ─────────────────────────────────────────────────────────
+	# DORMANT: press stays at origin regardless of phase progress.
+	_ok("dormant p=0.5: constant at origin",
+		_near(_ip_y(0, 0.5, ORIGIN, DEPTH), ORIGIN))
+
+	# WINDUP: linear 0.3 m retraction (anti-slam wind-up).
+	_ok("windup p=0: at origin",
+		_near(_ip_y(1, 0.0, ORIGIN, DEPTH), ORIGIN))
+	_ok("windup p=1: 0.3 m above origin",
+		_near(_ip_y(1, 1.0, ORIGIN, DEPTH), ORIGIN + 0.3))
+	_ok("windup p=0.5: midpoint 0.15 m above",
+		_near(_ip_y(1, 0.5, ORIGIN, DEPTH), ORIGIN + 0.15))
+
+	# STROKE: linear descent to stroke_depth below origin.
+	_ok("stroke p=0: at origin (descent start)",
+		_near(_ip_y(2, 0.0, ORIGIN, DEPTH), ORIGIN))
+	_ok("stroke p=1: at full depth",
+		_near(_ip_y(2, 1.0, ORIGIN, DEPTH), ORIGIN - DEPTH))
+	_ok("stroke p=0.5: half depth",
+		_near(_ip_y(2, 0.5, ORIGIN, DEPTH), ORIGIN - DEPTH * 0.5))
+
+	# REBOUND: linear ascent from full-depth back to origin.
+	_ok("rebound p=0: at full depth (bottom)",
+		_near(_ip_y(3, 0.0, ORIGIN, DEPTH), ORIGIN - DEPTH))
+	_ok("rebound p=1: back at origin",
+		_near(_ip_y(3, 1.0, ORIGIN, DEPTH), ORIGIN))
+	_ok("rebound p=0.5: half-depth on way up",
+		_near(_ip_y(3, 0.5, ORIGIN, DEPTH), ORIGIN - DEPTH * 0.5))
+
+	# Continuity: stroke end == rebound start (no position pop between phases).
+	_ok("continuity: stroke(p=1) == rebound(p=0)",
+		_near(_ip_y(2, 1.0, ORIGIN, DEPTH), _ip_y(3, 0.0, ORIGIN, DEPTH)))
+
+	# ── _update_emissive() energy ────────────────────────────────────────────
+	_ok("dormant: energy 0.3 (dim base glow)",
+		_near(_ip_emissive(0, 0.5), 0.3))
+	_ok("windup p=0: energy 0.3 (start dim)",
+		_near(_ip_emissive(1, 0.0), 0.3))
+	_ok("windup p=1: energy 2.5 (fully charged)",
+		_near(_ip_emissive(1, 1.0), 2.5))
+	_ok("stroke: energy 2.5 (constant danger)",
+		_near(_ip_emissive(2, 0.5), 2.5))
+	_ok("rebound p=0: energy 2.5 (still bright at retraction start)",
+		_near(_ip_emissive(3, 0.0), 2.5))
+	_ok("rebound p=1: energy 0.3 (dimmed, safe window)",
+		_near(_ip_emissive(3, 1.0), 0.3))
+
+
+func _ip_y(phase: int, p: float, origin_y: float, stroke_depth: float) -> float:
+	## Pure-math mirror of IndustrialPress._target_y().
+	match phase:
+		0: return origin_y                                           # DORMANT
+		1: return origin_y + p * 0.3                                # WINDUP
+		2: return origin_y - p * stroke_depth                       # STROKE
+		3: return (origin_y - stroke_depth) + p * stroke_depth      # REBOUND
+	return origin_y
+
+
+func _ip_emissive(phase: int, p: float) -> float:
+	## Pure-math mirror of IndustrialPress._update_emissive() energy formula.
+	match phase:
+		0: return 0.3                    # DORMANT
+		1: return lerpf(0.3, 2.5, p)    # WINDUP
+		2: return 2.5                    # STROKE
+		3: return lerpf(2.5, 0.3, p)    # REBOUND
+	return 0.3

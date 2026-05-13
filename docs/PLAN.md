@@ -16,9 +16,9 @@ authored with it in mind.
 
 ## Active iteration
 
-- _No iteration currently in flight._ Iter 63 (_conditional_fall_offset regime tests) landed 2026-05-13 — see
+- _No iteration currently in flight._ Iter 64 (results_panel refactor + press formula tests) landed 2026-05-13 — see
   Recently completed.
-- **HARD THROTTLE** (12 iterations since last human direction session 2026-05-12). New feature work
+- **HARD THROTTLE** (13 iterations since last human direction session 2026-05-12). New feature work
   stopped. Human direction required. See README "Open questions waiting on you" for 5 concrete options.
 
 ## Queue (ranked, top is next)
@@ -171,6 +171,17 @@ These mirror "Open questions waiting on you" in the README.
   drive the next tuning iteration.
 
 ## Recently completed (last 5)
+
+- 2026-05-13 — Iteration 64. **`results_panel.gd::_build_ui()` refactor + IndustrialPress formula tests (hard throttle hardening).**
+  `results_panel.gd::_build_ui()` was 41 lines (1 over threshold). Extracted three helpers:
+  `_build_overlay_root()` (9 lines — root Control + backdrop ColorRect), `_build_center_panel(root)` (12 lines —
+  CenterContainer + VBox + stat rows), `_build_replay_button(panel)` (8 lines — gap spacer + REPLAY Button).
+  `_build_ui` is now 5 lines. No behaviour change.
+  Side quest: `_test_industrial_press_position_formula` (17 assertions, 769 → 786): two new helpers
+  `_ip_y(phase, p, origin_y, stroke_depth)` and `_ip_emissive(phase, p)` mirror `IndustrialPress._target_y()`
+  and `_update_emissive()`. Coverage: all four phases (DORMANT/WINDUP/STROKE/REBOUND) at p=0, p=0.5, p=1;
+  continuity invariant (stroke(p=1) == rebound(p=0) — no position pop at phase boundary); emissive energy
+  per phase. Throttle: HARD (13).
 
 - 2026-05-13 — Iteration 63. **`_conditional_fall_offset` regime tests + hint-distance blend tests (hard throttle hardening).**
   `_test_conditional_fall_offset_regimes` (18 assertions): new helper `_cfo_mirror` mirrors
@@ -930,3 +941,5 @@ These mirror "Open questions waiting on you" in the README.
 - ~~**Camera pitch manual override V-turn.**~~ Fixed (iter 22). Clamp upper
   bound → 0.0; `absf(_pitch)` → `-_pitch` in `_desired_camera_position`.
   DECISIONS.md entry logged.
+- ~~**`results_panel.gd::_build_ui` over 40 lines.**~~ Done (iter 64). Extracted
+  `_build_overlay_root`, `_build_center_panel`, `_build_replay_button`; `_build_ui` now 5 lines. No behaviour change.
