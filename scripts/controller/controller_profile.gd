@@ -20,6 +20,13 @@ class_name ControllerProfile
 ## Optional damping applied to airborne horizontal velocity each second.
 ## 0.0 = no damping (full preservation, SMB-style); higher = grippier.
 @export_range(0.0, 5.0, 0.05) var air_horizontal_damping: float = 0.0
+## Momentum-ramp: how fast (m/s per second) sustained directional input builds
+## the effective top speed from max_speed toward ramp_max_speed. 0 = disabled
+## (default for all profiles except Momentum). Symmetrical — same rate on decay.
+@export_range(0.0, 20.0, 0.5) var speed_ramp_rate: float = 0.0
+## The ceiling that speed_ramp_rate ramps toward. Ignored when speed_ramp_rate
+## is 0. Should always be > max_speed for the ramp to add anything.
+@export_range(8.0, 30.0, 0.5) var ramp_max_speed: float = 18.0
 
 @export_category("Jump")
 ## Initial upward velocity at jump start, m/s.

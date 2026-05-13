@@ -108,6 +108,7 @@ func _ready() -> void:
 	_test_data_shard_gem_vertices()
 	_test_data_shard_light_params()
 	_test_dash_buffer_camera_logic()
+	_test_speed_ramp_logic()
 	_report()
 
 
@@ -4019,3 +4020,80 @@ func _test_dash_buffer_camera_logic() -> void:
 	# Buffer = vector sum; order of frames doesn't change the total flushed.
 	_ok("buffer accumulation is commutative (frame order invariant)",
 		(d1 + d2).is_equal_approx(d2 + d1))
+
+func _test_speed_ramp_logic() -> void:
+	## Pure-math mirror of the speed-ramp branch in player.gd::_apply_horizontal.
+	##
+	## Logic: when profile.speed_ramp_rate > 0, _ramp_speed ramps from
+	## profile.max_speed up to profile.ramp_max_speed at `speed_ramp_rate` m/s²
+	## while directional input is held, and decays back at the same rate when
+	## input is absent. rate == 0 disables the ramp entirely (all profiles except
+	## Momentum default to 0).
+	print("\n-- Speed ramp logic (Momentum profile) --")
+
+	const SNAPPY_TRES   := preload("res://resources/profiles/snappy.tres")
+	const FLOATY_TRES   := preload("res://resources/profiles/floaty.tres")
+	const MOMENTUM_TRES := preload("res://resources/profiles/momentum.tres")
+
+	# ── rate=0 default means no ramping ────────────────────────────────────────
+	var p := CP.new()
+	_ok("CP default: speed_ramp_rate = 0 (ramp disabled for plain profiles)",
+		p.speed_ramp_rate == 0.0)
+
+	# ── Ramp-up formula: one second of sustained input ─────────────────────────
+	# Mirror: _ramp_speed = minf(_ramp_speed + rate * delta, ramp_max_speed)
+	var rate    := 4.0
+	var max_spd := 11.0
+	var ramp_max := 18.0
+	var ramp_spd := max_spd
+	var dt := 1.0 / 60.0
+	for _i: int in range(60):   # 1 second of input
+		ramp_spd = minf(ramp_spd + rate * dt, ramp_max)
+	var expected_after_1s := minf(max_spd + rate * 1.0, ramp_max)
+	_ok("ramp-up: after 1 s of input speed ≈ max_spd + rate*1 (14.0 m/s)",
+		_near(ramp_spd, expected_after_1s))
+
+	# ── Ramp-up clamps at ramp_max_speed ──────────────────────────────────────
+	for _i: int in range(600):  # 10 seconds
+		ramp_spd = minf(ramp_spd + rate * dt, ramp_max)
+	_ok("ramp-up: speed clamps at ramp_max_speed (18.0 m/s) after sustained input",
+		_near(ramp_spd, ramp_max))
+
+	# ── Ramp-down formula: one second of no input from ramp_max ───────────────
+	# Mirror: _ramp_speed = maxf(_ramp_speed - rate * delta, profile.max_speed)
+	ramp_spd = ramp_max
+	for _i: int in range(60):   # 1 second no input
+		ramp_spd = maxf(ramp_spd - rate * dt, max_spd)
+	var expected_after_1s_decay := maxf(ramp_max - rate * 1.0, max_spd)
+	_ok("ramp-down: after 1 s no input speed ≈ ramp_max − rate*1 (14.0 m/s)",
+		_near(ramp_spd, expected_after_1s_decay))
+
+	# ── Ramp-down floor: never falls below max_speed ──────────────────────────
+	for _i: int in range(600):  # 10 seconds no input
+		ramp_spd = maxf(ramp_spd - rate * dt, max_spd)
+	_ok("ramp-down: speed never falls below max_speed (11.0 m/s)",
+		_near(ramp_spd, max_spd))
+
+	# ── Monotone increasing with sustained input ──────────────────────────────
+	ramp_spd = max_spd
+	var monotone := true
+	var prev_spd := ramp_spd
+	for _i: int in range(60):
+		ramp_spd = minf(ramp_spd + rate * dt, ramp_max)
+		if ramp_spd < prev_spd:
+			monotone = false
+			break
+		prev_spd = ramp_spd
+	_ok("ramp-up is monotone non-decreasing with sustained input", monotone)
+
+	# ── Momentum profile has nonzero rate and meaningful headroom ─────────────
+	_ok("Momentum profile: speed_ramp_rate > 0 (ramp enabled)",
+		MOMENTUM_TRES.speed_ramp_rate > 0.0)
+	_ok("Momentum profile: ramp_max_speed > max_speed (ramp adds top-speed headroom)",
+		MOMENTUM_TRES.ramp_max_speed > MOMENTUM_TRES.max_speed)
+
+	# ── Other profiles have rate == 0 ─────────────────────────────────────────
+	_ok("Snappy profile: speed_ramp_rate = 0 (ramp disabled)",
+		SNAPPY_TRES.speed_ramp_rate == 0.0)
+	_ok("Floaty profile: speed_ramp_rate = 0 (ramp disabled)",
+		FLOATY_TRES.speed_ramp_rate == 0.0)
