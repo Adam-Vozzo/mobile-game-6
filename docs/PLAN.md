@@ -17,6 +17,7 @@ authored with it in mind.
 ## Active iteration
 
 - _No iteration currently in flight._
+- **🟢 Iter 68 complete.** Momentum profile speed ramp implemented. `ControllerProfile` gains `speed_ramp_rate` (0 = disabled) + `ramp_max_speed`. `player.gd` `_apply_horizontal` ramps `_ramp_speed` toward `ramp_max_speed` with sustained input and decays back to `max_speed` when input is absent. `momentum.tres` now has `speed_ramp_rate = 4.0`, `ramp_max_speed = 18.0`. Dev menu "Ramp rate" + "Ramp top speed" sliders added. 10 unit tests (836 → 846). Side quest: `docs/research/zone_atmosphere.md` — zone-distinct lighting on Mobile renderer, unblocks Threshold ambient volumes item.
 - **🟢 Iter 67 complete.** Air-dash buffer-and-discard camera variant (`dash_buffer_camera` toggle) implemented in `touch_overlay.gd`. Both modes (whip-on-fire vs buffer-and-discard) now available from dev menu Touch section for on-device comparison. See DECISIONS.md 2026-05-13.
 - **🟢 THROTTLE RESET 2026-05-14.** Human direction session landed a multi-PR pass:
   Snappy tuning (max_speed 5.0, jump_velocity 12.0, ground_decel 40, air_jumps=1,
@@ -138,11 +139,7 @@ The next iteration should pull from the top of this list. Items marked
   `_current_profile.set(prop, v)` in `_make_profile_slider`. The signal
   is decorative for now (player already reads the resource). No action
   needed until a second consumer appears.
-- **Momentum profile speed ramp.** The current Momentum profile uses the
-  same code path as Snappy/Floaty. The real ramp mechanic (sustained
-  input ramps `current_max_speed` up to a `ramp_max_speed` via a
-  `speed_ramp_rate` param + optional Curve) is deferred until the human
-  has felt the current approximation on device. Log as debt here.
+- ~~**Momentum profile speed ramp.**~~ Done (iter 68). `speed_ramp_rate` + `ramp_max_speed` added to `ControllerProfile`; `_ramp_speed` state in `player.gd`; Momentum `.tres` gets `speed_ramp_rate = 4.0`, `ramp_max_speed = 18.0`. Dev menu "Ramp rate" + "Ramp top speed" sliders. 10 unit tests. On-device pending — profile now meaningfully distinct from Snappy/Floaty.
 - **Snappy reboot_duration tuning.** Research note (level_design_references.md)
   recommends ≤ 0.35 s for precision feel (current default 0.5 s is "cinematic").
   Tune after first on-device feel; SMB analysis suggests 0.3–0.35 s. Floaty
@@ -172,6 +169,7 @@ The next iteration should pull from the top of this list. Items marked
   Pattern A (env vars, Godot 4.3+) and Pattern B (local.properties + Gradle patch).
 - Consider upgrading camera occlusion from point ray to ShapeCast3D
   (capsule) if poke-through is observed in Gate 1 tighter geometry.
+- ~~**Zone atmosphere research (Mobile renderer).**~~ Done (iter 68, side quest). `docs/research/zone_atmosphere.md` — WorldEnvironment swap as zone-identity tool, emissive surfaces over light count (INSIDE principle), 12-OmniLight budget, concrete colour palettes for all three Threshold zones, baked-lighting plan. Unblocks Threshold "ambient volumes" when device-feel blocker clears.
 - ~~**Gate 1 level concepts.**~~ Done (iter 30). Three candidates in `docs/levels/`:
   `spine.md` (wall-jump column ascent), `lung.md` (ventilation timing chamber),
   `threshold.md` (3-zone contrast study). Human must select one. Greybox follows.
@@ -193,6 +191,26 @@ These mirror "Open questions waiting on you" in the README.
   drive the next tuning iteration.
 
 ## Recently completed (last 5)
+
+- 2026-05-13 — Iteration 68. **Momentum profile speed ramp.**
+  `controller_profile.gd`: two new `@export_range` properties in the Movement category —
+  `speed_ramp_rate: float = 0.0` (m/s per second; 0 = disabled, backwards-compatible for all
+  profiles) and `ramp_max_speed: float = 18.0` (ceiling for the ramp). `player.gd`: new
+  `_ramp_speed: float` state var; `_apply_profile_to_body()` initialises it to `profile.max_speed`;
+  `respawn()` resets it to `profile.max_speed`; `_apply_horizontal()` ramps it up toward
+  `ramp_max_speed` at `speed_ramp_rate * delta` per frame when `move_dir.length() > 0.01`, and
+  decays back at the same rate when input is absent. `effective_max` substitutes for
+  `profile.max_speed` in `target_h` when the ramp is enabled. `momentum.tres` gains
+  `speed_ramp_rate = 4.0` (≈1.75 s to reach top speed from rest) and `ramp_max_speed = 18.0`.
+  Dev menu: "Ramp rate" (0–20, step 0.5) and "Ramp top speed" (8–30, step 0.5) added to
+  `_build_controller_movement`; both are `_profile_sliders` so they bulk-sync on profile swap.
+  Unit tests: `_test_speed_ramp_logic` (10 assertions, 836 → 846): rate=0 default; ramp-up
+  formula after 1 s; ramp-up clamp at ramp_max; ramp-down after 1 s; ramp-down floor; monotone
+  increase; Momentum rate > 0; Momentum ramp_max > max_speed; Snappy rate = 0; Floaty rate = 0.
+  Side quest: `docs/research/zone_atmosphere.md` — zone-distinct atmosphere on Godot 4 Mobile
+  renderer; WorldEnvironment swap technique; emissive-surface principle (INSIDE); 12-light budget;
+  concrete palette for Threshold Zones 1/2/3; baked-lighting plan. INDEX.md updated.
+  On-device pending — Momentum now meaningfully distinct from Snappy/Floaty.
 
 - 2026-05-13 — Iteration 67. **Air-dash buffer-and-discard camera variant.**
   `touch_overlay.gd`: `dash_buffer_camera` export bool (default false); `_dash_drag_buffer`

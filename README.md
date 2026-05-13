@@ -92,6 +92,24 @@ The full iteration log lives here, newest first. Every iteration appends an entr
 
 <!-- ITERATION ENTRIES BELOW — DO NOT REMOVE OLDER ENTRIES -->
 
+### [2026-05-13] — iter 68 — Momentum profile speed ramp
+
+Branch: `claude/gifted-shannon-mUWlC`
+Throttle: 🟢 NORMAL (1 iteration since 2026-05-14 direction session)
+Gate: Gate 1 — Vertical Slice prep
+
+**Primary: Momentum profile speed ramp — `speed_ramp_rate` + `ramp_max_speed`.**
+Momentum previously used the same `max_speed`-to-`move_toward` path as Snappy/Floaty. Now it has a real ramp: sustained directional input builds `_ramp_speed` toward `ramp_max_speed` at `speed_ramp_rate` m/s per second; releasing input decays it symmetrically back to `max_speed`. When `speed_ramp_rate == 0` (default for all profiles) the ramp is bypassed entirely — no change to Snappy/Floaty/Assisted.
+
+`momentum.tres` now: `speed_ramp_rate = 4.0` (ramps from 11 m/s to 18 m/s over ~1.75 s of sustained running), `ramp_max_speed = 18.0`. Feel: slow to start, then builds to a meaningfully faster top speed than Snappy (18 vs 5 m/s). Dev menu: "Ramp rate" + "Ramp top speed" sliders in Controller — Movement, auto-synced on profile swap.
+
+**Tests.** `_test_speed_ramp_logic` (10 assertions, 836 → 846): rate=0 default guard; ramp-up formula after 1 s (11→15 m/s); clamp at ramp_max; ramp-down after 1 s (18→14 m/s); floor at max_speed; monotone increase invariant; Momentum rate > 0; Momentum ramp_max > max_speed; Snappy/Floaty rate = 0.
+
+**Side quest.** `docs/research/zone_atmosphere.md` — zone-distinct lighting on Godot 4 Mobile renderer (FogVolume is Forward+ only). Key findings: WorldEnvironment swap (one node per zone, current = toggle) is the right technique; emissive surfaces carry more zone identity than light count (INSIDE principle); 12-OmniLight budget for Threshold; concrete colour palettes for all three zones; baked-lighting plan. Unblocks Threshold "ambient volumes" item when device-feel clears. `docs/research/INDEX.md` updated.
+
+**Perf.** No change — one float clamp per physics frame is negligible.
+**On-device pending.** Momentum now meaningfully distinct; needs device comparison with Snappy before profile verdict.
+
 ### [2026-05-13] — iter 67 — air-dash buffer-and-discard camera variant
 
 Branch: `claude/gifted-shannon-RrbLW`

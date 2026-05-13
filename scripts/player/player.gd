@@ -46,6 +46,11 @@ var _squash_tween: Tween = null
 # (via _tick_timers) and on each ground/coyote jump (via _try_jump) so the
 # pool refills for the next aerial phase. Decremented per air jump.
 var _air_jumps_remaining: int = 0
+# Momentum-profile speed ramp: current effective top speed, always in the range
+# [profile.max_speed, profile.ramp_max_speed]. Ramped up by sustained input,
+# decayed back to max_speed when input is released. Irrelevant (ignored) when
+# profile.speed_ramp_rate == 0 (all non-Momentum profiles).
+var _ramp_speed: float = 0.0
 # Air dash state. One charge per airborne phase; recharges on landing.
 # _is_dashing blocks _apply_horizontal and scales gravity while active.
 var _dash_charges: int = 0
@@ -99,6 +104,7 @@ func _apply_profile_to_body() -> void:
 	# Preserve platform-velocity on takeoff (SMB-style momentum off moving
 	# platforms): Godot 4 default for `platform_on_leave` is ADD_VELOCITY.
 	platform_on_leave = CharacterBody3D.PLATFORM_ON_LEAVE_ADD_VELOCITY
+	_ramp_speed = profile.max_speed   # reset speed ramp on profile swap
 
 
 func _physics_process(delta: float) -> void:
@@ -189,7 +195,18 @@ func _apply_horizontal(delta: float, on_floor: bool, move_dir: Vector3) -> void:
 	if _is_dashing:
 		return  # horizontal velocity is held at dash speed; _try_air_dash set it
 	var current_h := Vector3(velocity.x, 0.0, velocity.z)
-	var target_h := move_dir * profile.max_speed
+	# Speed ramp: sustained input builds top speed up to ramp_max_speed.
+	# Decays back to max_speed when input is absent. Disabled when rate == 0.
+	var effective_max := profile.max_speed
+	if profile.speed_ramp_rate > 0.0:
+		if move_dir.length() > 0.01:
+			_ramp_speed = minf(_ramp_speed + profile.speed_ramp_rate * delta,
+				profile.ramp_max_speed)
+		else:
+			_ramp_speed = maxf(_ramp_speed - profile.speed_ramp_rate * delta,
+				profile.max_speed)
+		effective_max = _ramp_speed
+	var target_h := move_dir * effective_max
 	var accel: float
 	if move_dir.length() < 0.01 and on_floor:
 		accel = profile.ground_deceleration
@@ -305,6 +322,7 @@ func respawn() -> void:
 	_dash_charges = 0
 	_dash_timer = 0.0
 	_is_dashing = false
+	_ramp_speed = profile.max_speed
 	# Kill any running squash-stretch tween so it doesn't fight _run_reboot_effect.
 	if _squash_tween != null:
 		_squash_tween.kill()

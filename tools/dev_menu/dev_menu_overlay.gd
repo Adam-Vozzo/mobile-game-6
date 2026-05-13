@@ -152,6 +152,10 @@ func _build_controller_movement(vbox: VBoxContainer) -> void:
 		"Air accel",          5.0,  200.0,  1.0,  &"air_acceleration")
 	_profile_sliders[&"air_horizontal_damping"] = _make_profile_slider(vbox,
 		"Air damping",        0.0,    5.0,  0.05, &"air_horizontal_damping")
+	_profile_sliders[&"speed_ramp_rate"] = _make_profile_slider(vbox,
+		"Ramp rate",          0.0,   20.0,  0.5,  &"speed_ramp_rate")
+	_profile_sliders[&"ramp_max_speed"] = _make_profile_slider(vbox,
+		"Ramp top speed",     8.0,   30.0,  0.5,  &"ramp_max_speed")
 
 
 
