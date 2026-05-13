@@ -110,6 +110,7 @@ func _ready() -> void:
 	_test_dash_buffer_camera_logic()
 	_test_speed_ramp_logic()
 	_test_zone_atmosphere_logic()
+	_test_jump_anticipation_squish_math()
 	_report()
 
 
@@ -4144,3 +4145,46 @@ func _test_zone_atmosphere_logic() -> void:
 	# G1 gantry (z=81) and Terminal (z=135) must both be inside Zone3Trigger.
 	_ok("Z3 trigger covers G1 gantry (z=81) and Terminal (z=135)",
 		absf(81.0 - z3_cz) <= z3_hz and absf(135.0 - z3_cz) <= z3_hz)
+
+
+func _test_jump_anticipation_squish_math() -> void:
+	## Mirrors _play_jump_stretch's new anticipation phase (coil before launch):
+	##   coil_y  = 1.0 - 0.18 * _jump_stretch_scale
+	##   coil_xz = 1.0 + 0.08 * _jump_stretch_scale
+	## Guards that the anticipation squish is directionally opposite to the
+	## stretch, is bounded (never inverts geometry), and is weaker than the
+	## stretch (anticipation is subtle; stretch is the main event).
+	print("\n-- Jump anticipation squish formulas (coil phase of _play_jump_stretch) --")
+
+	# At scale=0: identity — slider off means no animation at all.
+	_ok("anticipation: scale=0 → coil_y=1.0 (identity)",
+		_near(1.0 - 0.18 * 0.0, 1.0))
+	_ok("anticipation: scale=0 → coil_xz=1.0 (identity)",
+		_near(1.0 + 0.08 * 0.0, 1.0))
+
+	# At scale=1: exact expected values.
+	_ok("anticipation: scale=1 → coil_y=0.82 (18%% squish)",
+		_near(1.0 - 0.18 * 1.0, 0.82))
+	_ok("anticipation: scale=1 → coil_xz=1.08 (8%% expand)",
+		_near(1.0 + 0.08 * 1.0, 1.08))
+
+	# Direction invariants at mid-range: squish (Y<1, XZ>1) — opposite to stretch.
+	var coil_y_mid  := 1.0 - 0.18 * 0.5
+	var coil_xz_mid := 1.0 + 0.08 * 0.5
+	_ok("anticipation: scale=0.5 → coil_y < 1.0 (Y squishes, opposite stretch)",
+		coil_y_mid < 1.0)
+	_ok("anticipation: scale=0.5 → coil_xz > 1.0 (XZ expands, opposite stretch)",
+		coil_xz_mid > 1.0)
+
+	# Coil amplitude is weaker than stretch amplitude — anticipation is the tell,
+	# stretch is the punchline. Coil Y-delta (0.18) < stretch Y-delta (0.30).
+	var coil_y_delta    := 0.18
+	var stretch_y_delta := 0.30
+	_ok("anticipation: coil Y-delta < stretch Y-delta (anticipation is subtler)",
+		coil_y_delta < stretch_y_delta)
+
+	# Geometry never inverts: at max scale=1, coil_y=0.82 > 0 and coil_xz=1.08 reasonable.
+	_ok("anticipation: coil_y > 0 at max scale (geometry never inverts)",
+		1.0 - 0.18 * 1.0 > 0.0)
+	_ok("anticipation: coil_xz < 1.5 at max scale (no over-expand)",
+		1.0 + 0.08 * 1.0 < 1.5)

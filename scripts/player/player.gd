@@ -298,9 +298,16 @@ func _play_jump_stretch() -> void:
 		return
 	var stretch_y  := 1.0 + 0.30 * _jump_stretch_scale
 	var stretch_xz := 1.0 - 0.15 * _jump_stretch_scale
+	# Anticipation squish: brief coil before the stretch launches (classic
+	# platformer "tell" — compresses then releases).
+	var coil_y   := 1.0 - 0.18 * _jump_stretch_scale
+	var coil_xz  := 1.0 + 0.08 * _jump_stretch_scale
 	if _squash_tween:
 		_squash_tween.kill()
 	_squash_tween = create_tween()
+	_squash_tween.set_ease(Tween.EASE_IN).set_trans(Tween.TRANS_SINE)
+	_squash_tween.tween_property(_visual, "scale",
+		Vector3(coil_xz, coil_y, coil_xz), 0.04)
 	_squash_tween.set_ease(Tween.EASE_OUT).set_trans(Tween.TRANS_QUAD)
 	_squash_tween.tween_property(_visual, "scale",
 		Vector3(stretch_xz, stretch_y, stretch_xz), 0.05)

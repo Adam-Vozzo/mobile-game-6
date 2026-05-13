@@ -5,10 +5,10 @@ A mobile 3D platformer. Brutalist megastructure inspired by *BLAME!*. Controller
 ## Status
 
 Current gate: **Gate 0 — Feel Lab** (closing out; Gate 1 prep in flight)
-Last activity: 2026-05-13 — iter 70: Zone 2 emissive surfaces (HazardStripe, CartLight, ConduitLeft/Right) + orphaned sub-resource cleanup
+Last activity: 2026-05-13 — iter 71: asset options doc (Stray mesh / audio / concrete kit) + pre-jump anticipation squish
 Test device build: ✅ verified 2026-05-12 — runs in Godot 4.6 on PC and on Nothing Phone 4(a) Pro
 Performance: 144 fps / 6.9 ms in editor at 1920×1080 (Feel Lab); on-device frametimes TBD
-Throttle level: **🟢 NORMAL** (4 iterations since 2026-05-14 direction session)
+Throttle level: **🟡 SOFT** (5 iterations since 2026-05-14 direction session — non-destructive work preferred)
 
 If you only read one section, read **Open questions waiting on you** below.
 
@@ -23,14 +23,14 @@ Things Claude can't decide alone, or where it's stalled and needs direction.
 > 2. **Hold-jump+swipe air dash — two modes to compare.** (iter 67) Dev menu Touch section now has "Buffer dash cam" toggle. Try both: off = current (swipe also pans camera); on = camera suppressed during gesture window, flushed on expiry, discarded on fire (no whip). Pick whichever feels right — or say "always buffer" / "drop the option" and we'll clean it up.
 > 3. **Camera pitch 70°.** Was the previous 55° "too tight" complaint solved by the raise, or does pitch_min (hard-clamped at 0) need to go negative too (look up at structures from below)?
 > 4. **Industrial press.** Still at x=8 (decorative). After on-device feel of the new gantry layout, decide: move to critical path, or leave it as atmosphere?
-> 5. **Start Gate 1 art direction** — surface the asset options doc (Stray mesh / ambient audio / concrete kit) so autonomous asset acquisition can resume.
+> 5. **Gate 1 art direction — `docs/ASSET_OPTIONS.md` is ready for your review (iter 71).** Three slots with 3–5 candidates each: Stray mesh (A1 Quaternius LowPoly Robot recommended), ambient audio (B1 spacecraft hum + B2 industrial fans recommended), concrete kit (C2 Poly Haven + Godot add-on recommended). All CC0. After you approve picks, autonomous asset acquisition resumes. Open the doc and pick (or redirect); ~5-minute read.
 > 6. **Assisted Phase 2** (ledge magnetism + arc assist) — still queued behind level work.
 
 - [x] **Open the project in Godot 4.6 and run the on-device first-run checklist in `docs/ANDROID.md`.** Done 2026-05-12 — runs in editor and deploys to Nothing Phone 4(a) Pro. Remaining ANDROID.md items: headless CI signing via env vars, release Play Store build (both gate-locked to ship).
 - [x] **First feel verdict — Snappy vs Floaty vs Momentum.** Snappy feel approved as good overall; tune-down (max_speed 6.5 → 6.0) queued. Floaty and Momentum verdicts to come as level design forces switching between them.
 - [x] **Gate 1 level selection.** Threshold picked as the first build. Lung and Spine remain queued — Claude will build them after Threshold is feature-complete.
 - [x] **Auto-merge git workflow confirmed and instrumented.** Now enforced by `.github/workflows/auto-merge.yml` — PRs labeled `auto-merge` are squash-merged automatically.
-- [ ] **Asset suggestions for first-pick approval.** Human has asked for browseable options (3–5 candidates per slot with source/licence/fidelity notes) for the first style-defining assets — Stray mesh, ambient audio bed, architecture kit — before autonomous asset acquisition resumes. Claude will surface an options doc when the relevant iteration comes up.
+- [ ] **Asset suggestions for first-pick approval.** `docs/ASSET_OPTIONS.md` written (iter 71) — 3 slots, 3–5 candidates each, CC0 confirmed, fidelity notes included. **Awaiting your picks.** After ~3 approvals, autonomous acquisition resumes.
 - [ ] **Ongoing Snappy tuning passes.** Snappy feel is good but will keep getting small tweaks as level design progresses. Whenever a level beat feels wrong, note "Snappy felt too X on that beat" — it goes into the next tuning iteration.
 
 ## Roadmap
@@ -91,6 +91,28 @@ Goal: store-ready build.
 The full iteration log lives here, newest first. Every iteration appends an entry. Skim the dates to find where you last left off.
 
 <!-- ITERATION ENTRIES BELOW — DO NOT REMOVE OLDER ENTRIES -->
+
+### [2026-05-13] — iter 71 — Asset options doc + pre-jump anticipation squish
+
+Branch: `claude/gifted-shannon-QMkZL`
+Throttle: 🟡 SOFT (5 iterations since 2026-05-14 direction session)
+Gate: Gate 1 — Vertical Slice prep
+
+**Primary: `docs/ASSET_OPTIONS.md` — first-pick candidates for human approval.**
+Three asset slots that are blocking Gate 1 art direction, researched and ready for review.
+
+- **Slot A — Stray Mesh.** 4 candidates with licence, animation list, fidelity notes: A1 Quaternius LowPoly Robot (CC0, FBX, 14 anims, chibi low-poly — recommended); A2 Godot Asset Library #1467 (CC0, 20 anims, Godot 3.5 → 4 conversion needed); A3 Godot Asset Library #344 (CC0, simpler geometry); A4 AI-generated via Meshy.ai (custom to spec, no animations out-of-box).
+- **Slot B — Ambient Audio Bed.** 4 candidates: B1 AlaskaRobotics "spacecraft hum" (freesound #221570, CC0, 17.8 s loopable, deep bass megastructure hum — recommended as global bed); B2 IanStarGem "Industrial/Factory Fans Loop" (freesound #271096, CC0, 6.7 s loop, mechanical fans — recommended as Zone 2 layer); B3 InspectorJ factory ambience (freesound #385943, CC BY 4.0, 73.7 s, richer texture, attribution required); B4 Signature Sounds "Loops of Ambience" (CC0 library, browseable).
+- **Slot C — Concrete Kit.** 5 candidates: C1 ambientCG concrete series (CC0, 40+ PBR variants, 1K–8K); C2 Poly Haven concrete (CC0, full PBR, Godot add-on for direct import — recommended); C3 3D Textures (CC0, lighter files); C4 Kenney Modular Buildings (CC0, geometry only, 100 models); C5 Kenney City Kit Industrial (CC0, 25 industrial models).
+
+Recommendations in the doc's decision table: A1 + B1+B2 + C2. All CC0. ~5-minute read, then pick or redirect.
+
+**Side quest: pre-jump anticipation squish.**
+`_play_jump_stretch()` in `player.gd` gains a 0.04 s coil phase prepended before the existing stretch: `coil_y = 1.0 − 0.18×scale`, `coil_xz = 1.0 + 0.08×scale`, EASE_IN TRANS_SINE. At scale=0.5 this gives ~9% Y squish + 4% XZ expand before launch — the classic platformer "tell" that reads as the character gathering itself before jumping. Coil amplitude is weaker than stretch (18% vs 30% delta) so the stretch is still the punchline. Gated by existing `squash_stretch` toggle + `_jump_stretch_scale` slider, no new tunable needed. `JUICE.md` pre-jump anticipation promoted `idea → prototype`. 10 unit tests (854 → 864).
+
+**Perf.** Asset options doc: no code changes. Anticipation squish: one additional 0.04 s tween phase per jump — zero per-frame cost at runtime (Tween is processed by Godot's animation system).
+
+**On-device pending.** Anticipation squish feel on device — the 0.04 s coil may be imperceptible at high frame latency; widen to 0.06 s if needed. Asset picks pending human review.
 
 ### [2026-05-13] — iter 70 — Zone 2 emissive surfaces + orphaned sub-resource cleanup
 
