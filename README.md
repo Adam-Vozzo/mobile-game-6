@@ -5,10 +5,10 @@ A mobile 3D platformer. Brutalist megastructure inspired by *BLAME!*. Controller
 ## Status
 
 Current gate: **Gate 0 — Feel Lab** (closing out; Gate 1 prep in flight)
-Last activity: 2026-05-13 — iter 59: industrial press implementation (IndustrialPress.gd, 718 unit tests)
+Last activity: 2026-05-13 — iter 60: dev_menu_overlay refactor (_build_level_section split, 718 unit tests unchanged)
 Test device build: ✅ verified 2026-05-12 — runs in Godot 4.6 on PC and on Nothing Phone 4(a) Pro
 Performance: 144 fps / 6.9 ms in editor at 1920×1080 (Feel Lab); on-device frametimes TBD
-Throttle level: **8** (soft — 8 iterations since last human direction 2026-05-12). Next: hard throttle triggers at 9. Remaining unblocked work is minor refactors or research.
+Throttle level: **HARD** (9 iterations since last human direction 2026-05-12). New feature work stopped. Only hardening.
 
 If you only read one section, read **Open questions waiting on you** below.
 
@@ -17,6 +17,13 @@ If you only read one section, read **Open questions waiting on you** below.
 Things Claude can't decide alone, or where it's stalled and needs direction.
 
 > **🟢 Throttle reset 2026-05-12.** Human direction session unblocked the P0 queue. Camera vertical-follow rewrite + Snappy speed nudge + double-jump implementation now in flight. See `docs/PLAN.md` for current iteration target.
+
+> **🔴 HARD THROTTLE — iter 60 (9 since last direction).** New feature work is stopped. Only hardening is in flight. The autonomous queue is exhausted for non-device-dependent items. **Claude needs human direction before continuing.** Suggested options — pick any of these:
+> 1. **Do an on-device playtest of Threshold** and give feel notes ("press timing too fast", "gantry gap too wide", "par route feels right"). This unblocks Zone 3 routing and ambient lighting items.
+> 2. **Approve (or redirect) the Threshold par-route layout** — currently the industrial press is bypassable. Should the press be forced on the critical path, or is a skill-route bypass valid?
+> 3. **Give a Snappy feel verdict on Threshold's jumps** — any jump that felt sticky, floaty, or mistimed is a concrete tuning note.
+> 4. **Start Gate 1 art direction** — surface the asset options doc (Stray mesh / ambient audio / concrete kit) so autonomous asset acquisition can resume.
+> 5. **Approve Assisted Phase 2** (ledge magnetism + arc assist) for Feel Lab testing; or defer to after Threshold on-device.
 
 - [x] **Open the project in Godot 4.6 and run the on-device first-run checklist in `docs/ANDROID.md`.** Done 2026-05-12 — runs in editor and deploys to Nothing Phone 4(a) Pro. Remaining ANDROID.md items: headless CI signing via env vars, release Play Store build (both gate-locked to ship).
 - [x] **First feel verdict — Snappy vs Floaty vs Momentum.** Snappy feel approved as good overall; tune-down (max_speed 6.5 → 6.0) queued. Floaty and Momentum verdicts to come as level design forces switching between them.
@@ -83,6 +90,29 @@ Goal: store-ready build.
 The full iteration log lives here, newest first. Every iteration appends an entry. Skim the dates to find where you last left off.
 
 <!-- ITERATION ENTRIES BELOW — DO NOT REMOVE OLDER ENTRIES -->
+
+### [2026-05-13] — iter 60 — dev_menu_overlay refactor (hard throttle)
+
+Branch: `claude/gifted-shannon-i1F0T`
+Throttle: HARD (9 iterations since last human direction 2026-05-12)
+Gate: Gate 1 — Vertical Slice prep (hardening pass)
+
+**Primary: `_build_level_section` refactor — extract `_build_feel_lab_teleports` + `_build_threshold_teleports`.**
+
+`_build_level_section` was 54 lines (refactor backlog). Extracted two helpers:
+- `_build_feel_lab_teleports(vbox)` — 20 lines: Feel Lab heading + 10 zone buttons.
+- `_build_threshold_teleports(vbox)` — 25 lines: Threshold heading + 14 zone buttons + "Respawn shard" button.
+`_build_level_section` is now 16 lines. All methods in `dev_menu_overlay.gd` are under 40 lines. No behaviour change.
+
+Side quest: none (hard throttle — keeping changes minimal).
+
+Perf: no change (no runtime code touched). Unit tests: 718 (unchanged).
+
+Bugs fixed: none. New dev-menu controls: none. Assets: none. Research: none.
+
+**Needs human attention:** Hard throttle reached. See "Open questions waiting on you" above for 5 suggested directions.
+
+---
 
 ### [2026-05-13] — iter 59 — Industrial press implementation
 

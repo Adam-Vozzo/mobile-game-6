@@ -16,10 +16,10 @@ authored with it in mind.
 
 ## Active iteration
 
-- _No iteration currently in flight._ Iter 59 (industrial press implementation) landed 2026-05-13 — see
+- _No iteration currently in flight._ Iter 60 (`_build_level_section` refactor) landed 2026-05-13 — see
   Recently completed.
-- Next iteration should pull from the top of the P0 queue below.
-  Throttle: **8** (8 iterations since last human direction session 2026-05-12).
+- **HARD THROTTLE** (9 iterations since last human direction session 2026-05-12). New feature work
+  stopped. Human direction required. See README "Open questions waiting on you" for 5 concrete options.
 
 ## Queue (ranked, top is next)
 
@@ -171,6 +171,12 @@ These mirror "Open questions waiting on you" in the README.
   drive the next tuning iteration.
 
 ## Recently completed (last 5)
+
+- 2026-05-13 — Iteration 60. **`_build_level_section` refactor (hard throttle hardening).**
+  `dev_menu_overlay.gd`: extracted `_build_feel_lab_teleports` (20 lines) and
+  `_build_threshold_teleports` (25 lines) from `_build_level_section` (was 54 lines, now 16).
+  All methods in the file now under 40 lines. No behaviour change. 718 unit tests unchanged.
+  README and PLAN updated with HARD throttle alert + 5 suggested human directions.
 
 - 2026-05-13 — Iteration 59. **Industrial press implementation.** `scripts/levels/industrial_press.gd`
   (new): extends AnimatableBody3D, class IndustrialPress. Four-beat cycle (dormant/windup/stroke/rebound)
@@ -880,9 +886,8 @@ These mirror "Open questions waiting on you" in the README.
   until after first on-device feel of current Momentum approximation.
 - Camera occlusion upgrade to ShapeCast3D if point-ray poke-through
   observed in Gate 1 geometry.
-- `_build_level_section` in `dev_menu_overlay.gd` is ~52 lines (pre-existing, grew with
-  level-specific additions). Extract `_build_feel_lab_teleports` + `_build_threshold_teleports`
-  helpers to bring it under 40 lines.
+- ~~**`_build_level_section` over 40 lines.**~~ Done (iter 60). Extracted
+  `_build_feel_lab_teleports` + `_build_threshold_teleports`; dispatcher now 16 lines. No behaviour change.
 - `player.gd::_run_reboot_effect` is 44 lines (just over threshold). The
   sequential `await` beats make sub-method extraction awkward in GDScript
   without coroutine indirection. Leave as-is; revisit if it grows further.
