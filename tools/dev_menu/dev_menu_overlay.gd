@@ -413,6 +413,7 @@ func _build_juice_section(vbox: VBoxContainer) -> void:
 		_juice_boxes[key] = btn
 	_build_blob_shadow_tuning(vbox)
 	_build_squash_stretch_tuning(vbox)
+	_build_ghost_trail_tuning(vbox)
 
 
 func _build_blob_shadow_tuning(vbox: VBoxContainer) -> void:
@@ -604,6 +605,18 @@ func _make_squash_slider(parent: Node, label_text: String, param: StringName,
 		mn: float, mx: float, step: float, default_val: float) -> void:
 	_make_slider(parent, label_text, mn, mx, step,
 		func(v: float) -> void: DevMenu.squash_stretch_param_changed.emit(param, v),
+		default_val)
+
+
+func _build_ghost_trail_tuning(vbox: VBoxContainer) -> void:
+	vbox.add_child(_make_label("Ghost Trail — Tuning", SECTION_FONT_SIZE, false))
+	_make_ghost_trail_slider(vbox, "Trail window (s)", &"visible_window_s", 1.0, 5.0, 0.5, 2.0)
+
+
+func _make_ghost_trail_slider(parent: Node, label_text: String, param: StringName,
+		mn: float, mx: float, step: float, default_val: float) -> void:
+	_make_slider(parent, label_text, mn, mx, step,
+		func(v: float) -> void: DevMenu.ghost_trail_param_changed.emit(param, v),
 		default_val)
 
 

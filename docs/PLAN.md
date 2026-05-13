@@ -165,8 +165,8 @@ The next iteration should pull from the top of this list. Items marked
   `docs/research/ghost_trail_prototype.md` — SMB trail design intent, four Godot 4
   options (MultiMesh recommended, 1 draw call, 300 instances), GDScript sketch for
   `game.gd` recorder + `GhostTrailRenderer`, alpha-by-recency formula, 6 implications.
-  Gate 1 implementation task: wire `Game.player_respawned` → recorder, add
-  `GhostTrailRenderer` to the vertical slice level.
+  ~~Gate 1 implementation task: wire `Game.player_respawned` → recorder, add
+  `GhostTrailRenderer` to the vertical slice level.~~ Done (iter 72).
 - ~~Investigate Godot's Compatibility renderer fallback for very-low-end
   devices.~~ Done (iter 23). `docs/research/compatibility_renderer.md` —
   no switch needed; Compatibility APK is viable at Gate 2+ as a second
@@ -199,6 +199,21 @@ These mirror "Open questions waiting on you" in the README.
   drive the next tuning iteration.
 
 ## Recently completed (last 5)
+
+- 2026-05-13 — Iteration 72. **Ghost trail recording + MultiMesh renderer.**
+  `game.gd`: `trail_history: Array[PackedVector3Array]` + `_current_trail` sampled at 30 Hz
+  in `_physics_process`; `_on_player_respawned()` archives trail on respawn (push_front +
+  pop_back if >5); `start_run()` / `reset_run()` manage `_recording` + clear state.
+  `scripts/levels/ghost_trail_renderer.gd` (new): MultiMeshInstance3D; 5×60=300 instances
+  (1 draw call); alpha-by-recency (attempt: 0.35×0.55^idx; point: oldest→newest linear);
+  responds to `ghost_trails` juice toggle and `visible_window_s` param (resizes instance_count
+  on slider change). Dev menu: `ghost_trails` toggle added to juice_state (default OFF),
+  `ghost_trail_param_changed` signal added; "Ghost Trail — Tuning" sub-section with
+  "Trail window (s)" slider 1–5 s. `threshold.tscn`: GhostTrailRenderer node added (load_steps
+  79→80). 10 unit tests (864→874): SAMPLE_INTERVAL precision, 60 fps frame accumulation,
+  MAX_TRAIL_LEN cap, archive depth cap, push_front ordering, alpha formula.
+  Side quest: `smb3d.md` implication #1 corrected (blob shadow was iter 31, not "this iter").
+  On-device pending — enable ghost_trails toggle after ≥3 deaths for meaningful first read.
 
 - 2026-05-13 — Iteration 71. **Asset options document + pre-jump anticipation squish.**
   `docs/ASSET_OPTIONS.md`: 4 Stray-mesh candidates (A1 Quaternius LowPoly Robot CC0 FBX

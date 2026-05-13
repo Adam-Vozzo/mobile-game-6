@@ -36,6 +36,8 @@ signal squash_stretch_param_changed(param: StringName, value: float)
 signal press_param_changed(param: StringName, value: float)
 @warning_ignore("unused_signal")
 signal atmosphere_param_changed(param: StringName, value: Variant)
+@warning_ignore("unused_signal")
+signal ghost_trail_param_changed(param: StringName, value: float)
 
 var is_open: bool = false
 var juice_state: Dictionary[StringName, bool] = {
@@ -46,6 +48,7 @@ var juice_state: Dictionary[StringName, bool] = {
 	&"squash_stretch": true,
 	&"sound_layers": true,
 	&"blob_shadow": true,
+	&"ghost_trails": false,   # default OFF — enable once level has meaningful data
 }
 var debug_viz_state: Dictionary[StringName, bool] = {
 	&"perf_hud": true,

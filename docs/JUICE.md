@@ -47,7 +47,7 @@ Status legend:
 | element | status | notes |
 |---------|--------|-------|
 | Player after-image | idea | low-alpha trail when speed > threshold |
-| Ghost trail (replay) | idea | Gate 1 attempt-replay overlay |
+| Ghost trail (replay) | prototype | `scripts/levels/ghost_trail_renderer.gd` + `game.gd` trail recording; MultiMeshInstance3D (1 draw call, 300 instances at default 2 s window); 30 Hz sampling in `game.gd::_physics_process`; archive on `player_respawned`; max 5 attempts; alpha-by-recency (newest=0.35 × 0.55^attempt); point_t fade oldest→newest; "Trail window (s)" slider 1–5 s in dev menu Juice → Ghost Trail. Default OFF — enable in dev menu once level has meaningful ghost data. 10 unit tests. |
 
 ## Squash & stretch — toggle key `squash_stretch`
 
