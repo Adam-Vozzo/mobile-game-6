@@ -283,6 +283,7 @@ func _build_level_section(vbox: VBoxContainer) -> void:
 		{"label": "Gantries G1",     "pos": Vector3(0, -5.25, 80)},
 		{"label": "Shard ledge",     "pos": Vector3(7, -5.5, 82)},
 		{"label": "Gantries G4",     "pos": Vector3(0, -17.25, 104)},
+		{"label": "Press zone",      "pos": Vector3(8, -10, 93)},
 		{"label": "Ketsu K1",        "pos": Vector3(0, -17.75, 112)},
 		{"label": "Terminal",        "pos": Vector3(0, -20.25, 133)},
 	]
@@ -292,6 +293,26 @@ func _build_level_section(vbox: VBoxContainer) -> void:
 		_make_button(vbox, "→ " + lbl, func() -> void: _teleport_player(pos))
 
 	_make_button(vbox, "Respawn shard", func() -> void: _respawn_shard())
+	_make_button(vbox, "↺ Reload level", func() -> void:
+		get_tree().reload_current_scene())
+	_build_press_section(vbox)
+
+
+func _build_press_section(vbox: VBoxContainer) -> void:
+	vbox.add_child(_make_label("Industrial Press — Tuning", SECTION_FONT_SIZE, false))
+	var params: Array[Dictionary] = [
+		{"label": "Stroke depth m", "prop": &"stroke_depth", "min": 0.5,  "max": 5.0,  "step": 0.05, "default": 2.5},
+		{"label": "Dormant s",      "prop": &"dormant_time",  "min": 0.3,  "max": 3.0,  "step": 0.05, "default": 1.5},
+		{"label": "Windup s",       "prop": &"windup_time",   "min": 0.3,  "max": 2.0,  "step": 0.05, "default": 0.8},
+		{"label": "Stroke s",       "prop": &"stroke_time",   "min": 0.05, "max": 0.5,  "step": 0.01, "default": 0.18},
+		{"label": "Rebound s",      "prop": &"rebound_time",  "min": 0.2,  "max": 2.0,  "step": 0.05, "default": 0.5},
+	]
+	for sp: Dictionary in params:
+		var prop: StringName = sp["prop"]
+		_make_slider(vbox, sp["label"],
+			sp["min"], sp["max"], sp["step"],
+			func(v: float) -> void: DevMenu.press_param_changed.emit(prop, v),
+			sp["default"])
 
 
 func _build_touch_section(vbox: VBoxContainer) -> void:

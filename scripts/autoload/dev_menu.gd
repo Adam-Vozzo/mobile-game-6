@@ -32,6 +32,8 @@ signal reposition_controls_requested
 signal blob_shadow_param_changed(param: StringName, value: float)
 @warning_ignore("unused_signal")
 signal squash_stretch_param_changed(param: StringName, value: float)
+@warning_ignore("unused_signal")
+signal press_param_changed(param: StringName, value: float)
 
 var is_open: bool = false
 var juice_state: Dictionary[StringName, bool] = {

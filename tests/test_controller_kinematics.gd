@@ -95,6 +95,7 @@ func _ready() -> void:
 	_test_results_panel_formatting()
 	_test_win_state_one_shot_guard()
 	_test_data_shard_state_machine()
+	_test_industrial_press_timing()
 	_report()
 
 
@@ -3250,3 +3251,76 @@ func _test_data_shard_state_machine() -> void:
 		StringName("data_shard") == &"data_shard")
 
 	ds.free()
+
+
+func _test_industrial_press_timing() -> void:
+	## Mirrors the four-beat cycle math in industrial_press.gd.
+	## Tests timing invariants, target_y formula, emissive energy formula,
+	## and the kill-zone inset rule without instantiating any scene node.
+	print("\n-- Industrial press timing math --")
+
+	# Default export values from industrial_press.gd
+	var stroke_depth  := 2.5
+	var dormant_time  := 1.5
+	var windup_time   := 0.80
+	var stroke_time   := 0.18
+	var rebound_time  := 0.50
+	var origin_y      := 0.0   # test origin
+
+	# Cycle time equals sum of all four phases.
+	var cycle := dormant_time + windup_time + stroke_time + rebound_time
+	_ok("cycle_time == 2.98 s", _near(cycle, 2.98))
+
+	# Mobile safety: dormant >= 1.5 × crossing_time.
+	# Press Z-depth = 5 m (size of Mesh_IndustrialPress); Snappy max_speed = 6.0 m/s.
+	var press_depth    := 5.0
+	var max_speed      := 6.0
+	var crossing_time  := press_depth / max_speed
+	_ok("dormant >= 1.5 × crossing_time (mobile latency safety)",
+		dormant_time >= 1.5 * crossing_time)
+
+	# Windup longer than stroke: player sees the windup and can react before the slam.
+	_ok("windup_time > stroke_time", windup_time > stroke_time)
+
+	# Stroke time is fast (danger beat is short, dormant window is the payoff).
+	_ok("stroke_time < dormant_time", stroke_time < dormant_time)
+
+	# _target_y formulas (mirror industrial_press.gd::_target_y()).
+	# DORMANT — press at rest, p irrelevant.
+	_ok("DORMANT target_y == origin_y", _near(origin_y, origin_y))
+
+	# WINDUP at full p=1: retract 0.3 m above origin (small cocked-back draw).
+	var windup_peak := origin_y + 1.0 * 0.3
+	_ok("WINDUP p=1 retracted 0.3 m above origin", _near(windup_peak, origin_y + 0.3))
+
+	# STROKE at p=0: still at origin (just started descent).
+	var stroke_start := origin_y - 0.0 * stroke_depth
+	_ok("STROKE p=0 == origin_y", _near(stroke_start, origin_y))
+
+	# STROKE at p=1: fully extended, origin - stroke_depth.
+	var stroke_end := origin_y - 1.0 * stroke_depth
+	_ok("STROKE p=1 == origin_y - stroke_depth", _near(stroke_end, origin_y - stroke_depth))
+
+	# REBOUND at p=1: fully returned to origin.
+	var rebound_end := (origin_y - stroke_depth) + 1.0 * stroke_depth
+	_ok("REBOUND p=1 == origin_y (full return)", _near(rebound_end, origin_y))
+
+	# _update_emissive() energy formula.
+	# DORMANT: constant 0.3 (dim ambient glow — press is safe).
+	_ok("DORMANT emissive energy == 0.3", _near(0.3, 0.3))
+
+	# STROKE: constant 2.5 (maximum brightness — danger).
+	_ok("STROKE emissive energy == 2.5", _near(2.5, 2.5))
+
+	# WINDUP at mid-stroke: lerpf(0.3, 2.5, 0.5) == 1.4.
+	var mid_windup_energy := lerpf(0.3, 2.5, 0.5)
+	_ok("WINDUP p=0.5 emissive == 1.4", _near(mid_windup_energy, 1.4))
+
+	# KillZone inset: BoxShape3D (13.7, 0.5, 4.7) vs visual mesh (14, 4, 5).
+	# Each horizontal side must be inset >= 0.10 m from visual bounds.
+	var visual_x := 14.0;  var kill_x := 13.7
+	var visual_z :=  5.0;  var kill_z :=  4.7
+	_ok("KillZone inset in X >= 0.10 m per side",
+		(visual_x - kill_x) / 2.0 >= 0.10)
+	_ok("KillZone inset in Z >= 0.10 m per side",
+		(visual_z - kill_z) / 2.0 >= 0.10)

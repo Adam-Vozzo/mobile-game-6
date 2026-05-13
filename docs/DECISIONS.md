@@ -15,6 +15,35 @@ Append, don't rewrite. Supersession adds a new entry referencing the old.
 
 ---
 
+## 2026-05-13 — Industrial press: new IndustrialPress script replaces moving_platform for Threshold Zone 3
+
+Status: accepted
+Context: The IndustrialPress node in Threshold Zone 3 was "atmospheric only" (using
+moving_platform.gd with a simple triangle-wave back-and-forth). The machinery_hazards.md
+research (iter 58) specified a four-beat cycle (dormant/windup/stroke/rebound) with an
+emissive amber danger strip. Gate 1 requires at least one functioning hazard beyond the
+RotatingHazard in Zone 2.
+Decision: New `scripts/levels/industrial_press.gd` (extends AnimatableBody3D, class
+IndustrialPress) owns the four-beat cycle. Direct `position.y` mutation in
+`_physics_process` moves the body; child KillZone (HazardBody Area3D) + KillShape
+(BoxShape3D inset 0.15 m) kill on contact. Emissive strip is a child MeshInstance3D
+(amber StandardMaterial3D with animated `emission_energy_multiplier`). Five export
+params tunable live via DevMenu.press_param_changed signal + "Industrial Press — Tuning"
+dev-menu section. Par-route routing through the press NOT wired yet — blocked on
+on-device feel from Threshold Zone 3 greybox.
+Alternatives considered:
+- Extend moving_platform.gd: rejected — moving_platform uses a triangle-wave, not a
+  four-beat state machine; the code would have diverged too far from the base.
+- AnimatableBody3D + move_and_collide: considered but direct position mutation is
+  simpler and matches rotating_hazard.gd precedent. Revisit if tunnelling observed.
+- @tool annotation: skipped — the press only needs to animate at runtime, not in the
+  editor. RotatingHazard uses @tool for its spin preview; the press's vertical motion
+  would be disorienting in the editor without a pause toggle.
+Consequences: moving_platform.gd (id="7_movp") remains for the ServiceCart in Zone 2.
+IndustrialPress now uses id="15_ip" (industrial_press.gd). Future levels can reuse
+IndustrialPress by instancing the script on any AnimatableBody3D with EmissiveStrip and
+KillZone children.
+
 ## 2026-05-12 — Win-state flow: Game.level_complete(), ResultsPanel as instantiated CanvasLayer
 
 Status: accepted
