@@ -162,6 +162,17 @@ Suggested:
 - ~~Godot's Compatibility renderer fallback for very-low-end devices.~~ Done (iter 23, `compatibility_renderer.md`).
 - Tile-based deferred mobile GPU costs (PowerVR/Mali/Adreno).
 
+## Gate 1 — level hazard design
+
+- [`machinery_hazards.md`](machinery_hazards.md) — Industrial machinery as platformer
+  hazards: four-beat machine cycle (dormant / windup / stroke / rebound), cross-axis
+  movement for 3D depth legibility, emissive danger-strip (amber cycle-phase), mobile
+  dormant-window sizing (1.5 × crossing-time minimum), Godot 4 `AnimatableBody3D`
+  implementation sketch for the Threshold industrial press. 7 concrete implications:
+  Y-axis crush, critical-path routing, amber emissive strip, 1.0 s dormant window,
+  0.15 m hitbox inset, crushed-prop first-encounter, dev-menu sliders.
+  Sources: INSIDE factory, Celeste Chapter 2, Hollow Knight, SMB 3D.
+
 ---
 
 ## How to add a research note
