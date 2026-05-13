@@ -5,10 +5,10 @@ A mobile 3D platformer. Brutalist megastructure inspired by *BLAME!*. Controller
 ## Status
 
 Current gate: **Gate 0 — Feel Lab** (closing out; Gate 1 prep in flight)
-Last activity: 2026-05-13 — iter 63: _conditional_fall_offset regime tests + hint blend tests; 743 → 769 assertions
+Last activity: 2026-05-13 — iter 64: results_panel refactor + IndustrialPress formula tests; 769 → 786 assertions
 Test device build: ✅ verified 2026-05-12 — runs in Godot 4.6 on PC and on Nothing Phone 4(a) Pro
 Performance: 144 fps / 6.9 ms in editor at 1920×1080 (Feel Lab); on-device frametimes TBD
-Throttle level: **HARD** (12 iterations since last human direction 2026-05-12). New feature work stopped. Only hardening.
+Throttle level: **HARD** (13 iterations since last human direction 2026-05-12). New feature work stopped. Only hardening.
 
 If you only read one section, read **Open questions waiting on you** below.
 
@@ -90,6 +90,37 @@ Goal: store-ready build.
 The full iteration log lives here, newest first. Every iteration appends an entry. Skim the dates to find where you last left off.
 
 <!-- ITERATION ENTRIES BELOW — DO NOT REMOVE OLDER ENTRIES -->
+
+### [2026-05-13] — iter 64 — results_panel refactor + IndustrialPress formula tests (hard throttle hardening)
+
+Branch: `claude/gifted-shannon-3zuGS`
+Throttle: HARD (13 iterations since last human direction 2026-05-12)
+Gate: Gate 1 — Vertical Slice prep (hardening pass)
+
+**Primary: `results_panel.gd::_build_ui()` refactor (41 → 5 lines).**
+
+`_build_ui()` was 41 lines, 1 over the 40-line threshold. Extracted three private helpers:
+`_build_overlay_root()` (9 lines — root Control + dark backdrop ColorRect),
+`_build_center_panel(root)` (12 lines — CenterContainer + VBox + TIME/PAR/SHARDS stat rows),
+`_build_replay_button(panel)` (8 lines — spacer gap + REPLAY Button). `_build_ui` itself is
+now 5 lines. No behaviour change — all `show_results()` and `_on_replay()` logic untouched.
+
+**Side quest: `_test_industrial_press_position_formula` (17 assertions, 769 → 786).**
+
+First unit-test coverage of `IndustrialPress._target_y()` and `_update_emissive()` — the two
+pure-math formulas that govern where the kill-zone physically sits and how bright the amber
+danger strip glows. New helpers `_ip_y(phase, p, origin_y, stroke_depth)` and
+`_ip_emissive(phase, p)` are pure-math mirrors. Coverage: all four phases (DORMANT/WINDUP/
+STROKE/REBOUND) at p=0/0.5/1; a continuity invariant (stroke(p=1) == rebound(p=0) — no
+position pop at the phase boundary); and emissive energy at boundary values per phase.
+
+Perf: no change (structural refactor + test additions only).
+Bugs fixed: none.
+New dev-menu controls: none.
+Assets acquired: none.
+Research added: none.
+Human attention: see "Open questions waiting on you" — 5 concrete options listed, HARD
+throttle at 13 iterations.
 
 ### [2026-05-13] — iter 63 — _conditional_fall_offset regime tests (hard throttle hardening)
 
