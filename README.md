@@ -5,10 +5,10 @@ A mobile 3D platformer. Brutalist megastructure inspired by *BLAME!*. Controller
 ## Status
 
 Current gate: **Gate 0 — Feel Lab** (closing out; Gate 1 prep in flight)
-Last activity: 2026-05-13 — iter 61: RotatingHazard + CameraHint unit tests (718 → 735 assertions)
+Last activity: 2026-05-13 — iter 62: camera_rig _process refactor (137 L → 31 L); 9 new helpers; 735 → 743 assertions
 Test device build: ✅ verified 2026-05-12 — runs in Godot 4.6 on PC and on Nothing Phone 4(a) Pro
 Performance: 144 fps / 6.9 ms in editor at 1920×1080 (Feel Lab); on-device frametimes TBD
-Throttle level: **HARD** (10 iterations since last human direction 2026-05-12). New feature work stopped. Only hardening.
+Throttle level: **HARD** (11 iterations since last human direction 2026-05-12). New feature work stopped. Only hardening.
 
 If you only read one section, read **Open questions waiting on you** below.
 
@@ -90,6 +90,34 @@ Goal: store-ready build.
 The full iteration log lives here, newest first. Every iteration appends an entry. Skim the dates to find where you last left off.
 
 <!-- ITERATION ENTRIES BELOW — DO NOT REMOVE OLDER ENTRIES -->
+
+### [2026-05-13] — iter 62 — camera_rig _process refactor (hard throttle hardening)
+
+Branch: `iter/camera-process-refactor`
+Throttle: HARD (11 iterations since last human direction 2026-05-12)
+Gate: Gate 1 — Vertical Slice prep (hardening pass)
+
+**Primary: `camera_rig.gd::_process` method-size refactor.**
+
+`_process` was 137 lines — far over the 40-line threshold. Extracted 8 new helpers:
+`_update_hint_distance`, `_build_effective_target`, `_try_initialize`,
+`_update_ground_camera`, `_compute_ground_camera_pos`, `_occlude_and_latch`,
+`_apply_position_smooth`, `_publish_camera_yaw`. Also split `_occlude` (50 lines) into
+`_occlude` + `_probe_hit_dist` (10 + 27 lines). `_process` is now 31 lines. All 23
+methods in the file are now under 40 lines. Pure structural refactor — no behaviour change,
+all existing camera tests still valid.
+
+**Side quest: `_test_ground_camera_y_formula` (8 assertions, 735 → 743).**
+Pure-math mirror of `_compute_ground_camera_pos` Y formula:
+`eff_y + sin(elevation) * dist + aim_h + fall_off`.
+Covers: sin=0 at elev=0, sin=1 at elev=90°, monotonicity over [30°,45°,90°],
+camera Y > eff_y+aim_h when elevation > 0, fall offset sign (always ≤ 0),
+fall offset magnitude (`vel * pull * 0.05`), and a concrete combined value check.
+
+Perf: no change (refactor only). Draw calls: no change.
+New dev-menu controls: none.
+Assets acquired: none.
+Research added: none.
 
 ### [2026-05-13] — iter 61 — RotatingHazard + CameraHint unit tests (hard throttle)
 

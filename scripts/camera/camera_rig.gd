@@ -166,138 +166,131 @@ func _process(delta: float) -> void:
 		return
 	var target_pos := _target.global_position
 	var on_floor := _is_target_on_floor()
-	# Blend hint distance every frame (runs while airborne too, so the extra
-	# distance is already lerping when the player lands inside a hint volume).
+	var effective_distance := _update_hint_distance(delta)
+	# Apex anchor: instant-tracked on grounded frames, held during airborne.
+	# Drives only the apex threshold (held-band upper limit). Distinct from
+	# the smoothed _reference_floor_y, which drives the camera's Y target —
+	# the threshold must be tied to the actual takeoff floor so normal jumps
+	# from a tier the reference hasn't caught up to yet don't trigger track-up.
+	if on_floor:
+		_apex_anchor_y = target_pos.y
+	_update_reference_floor(target_pos.y, on_floor, delta)
+	var effective_target := _build_effective_target(target_pos)
+	var aim_point := effective_target + Vector3(0.0, aim_height, 0.0)
+	_try_initialize(effective_target, target_pos)
+	# Airborne: rigid translate. Camera copies the player's per-frame delta via
+	# _air_offset, locking the input frame from takeoff to landing. Drag still
+	# works; look_at is a near no-op (offset vector unchanged) unless drag ran.
+	if not on_floor:
+		_camera.global_position = effective_target + _air_offset
+	_apply_drag_input(effective_target)
+	if on_floor:
+		_update_ground_camera(target_pos, effective_target, effective_distance, aim_point, delta)
+	_camera.look_at(aim_point, Vector3.UP)
+	_publish_camera_yaw(target_pos)
+	# Refresh air offset every frame so takeoff captures the current pose and
+	# mid-air drag propagates. Stored relative to effective_target (not raw
+	# target_pos) so below-apex vertical motion doesn't leak into the offset.
+	_air_offset = _camera.global_position - effective_target
+
+
+# Blends the CameraHint extra distance every frame (including while airborne,
+# so the pull-back is already easing in when the player lands inside a hint).
+# Returns the total effective arm length for this frame.
+func _update_hint_distance(delta: float) -> float:
 	_hint_distance_extra = lerpf(
 		_hint_distance_extra,
 		_get_active_hint_extra(),
 		1.0 - exp(-3.0 * delta),
 	)
-	var effective_distance := distance + _hint_distance_extra
-	# Apex anchor: instant tracking of grounded player.y, held during
-	# airborne. Used only for the apex check (= track-up threshold). Keeping
-	# this distinct from the smoothed `_reference_floor_y` is the whole point
-	# — the threshold should be tied to the player's actual takeoff floor
-	# (so a normal jump from a tier the smoothed reference hasn't caught up
-	# to yet doesn't spuriously trigger track-up), but the camera's *target*
-	# Y still eases via the smoothed reference (so tier-change transitions
-	# still glide rather than snap).
-	if on_floor:
-		_apex_anchor_y = target_pos.y
-	# else: held — held value is the player's most recent grounded Y, which
-	# is the correct takeoff floor for any airborne ratchet decisions.
-	_update_reference_floor(target_pos.y, on_floor, delta)
-	# Effective target: the position the camera *tracks*. X/Z follow the player
-	# exactly; Y is the vertical-follow ratchet's output (held at reference
-	# floor below apex; tracks the player above apex / below reference). All
-	# camera-position math derives from this, so the camera ignores below-
-	# apex jumps but still follows horizontal motion + floor changes +
-	# above-apex traversal + below-reference descents.
-	var effective_target := Vector3(
-		target_pos.x,
-		_compute_effective_y(target_pos.y),
-		target_pos.z,
-	)
-	var aim_point := effective_target + Vector3(0.0, aim_height, 0.0)
+	return distance + _hint_distance_extra
 
-	if not _initialized:
-		_place_camera_initial(effective_target)
-		_air_offset = _camera.global_position - effective_target
-		_apex_anchor_y = target_pos.y
-		_initialized = true
 
-	# Airborne: rigid follow. Reconstruct the camera position as
-	# `effective_target + _air_offset` *before* drag/look_at runs, so any
-	# horizontal motion the player did this frame is reflected as a pure
-	# translation, while vertical motion under apex is absorbed (effective_y
-	# stays pinned to reference floor). The offset itself is captured at the
-	# end of the previous (grounded) frame, so the camera→effective-target
-	# vector is preserved across the entire jump and look_at gives the same
-	# basis frame after frame — no yaw or pitch rotation while airborne. Drag
-	# and landing both update the offset correctly via the unified end-of-
-	# frame save below.
-	if not on_floor:
-		_camera.global_position = effective_target + _air_offset
+# X/Z follow the player exactly; Y is the vertical-follow ratchet's output.
+func _build_effective_target(target_pos: Vector3) -> Vector3:
+	return Vector3(target_pos.x, _compute_effective_y(target_pos.y), target_pos.z)
 
-	_apply_drag_input(effective_target)
 
-	if on_floor:
-		# Ground: tripod-style distance maintenance + occlusion + smoothing.
-		# Horizontal distance still uses raw target_pos so the camera tracks
-		# the player's actual X/Z; only Y is held by the ratchet.
-		var cam_pos := _camera.global_position
-		var horiz := Vector3(target_pos.x - cam_pos.x, 0.0, target_pos.z - cam_pos.z)
-		var current_dist := horiz.length()
-		if current_dist > 0.001:
-			var dir := horiz / current_dist
-			var dist_error := current_dist - effective_distance
-			cam_pos.x += dir.x * dist_error
-			cam_pos.z += dir.z * dist_error
-		# Fall pull is gated on being above apex — below apex the camera is
-		# held still by design, and pulling it down on descent would
-		# reintroduce the vertical motion the ratchet is removing.
-		var fall_offset := _conditional_fall_offset(target_pos.y, _get_target_velocity().y)
-		# `_pitch_rad` is ≤ 0; -_pitch_rad is the elevation angle. Using `absf`
-		# would V-shape as the drag crosses horizontal — see iter 22 fix on main.
-		var elevation := -_pitch_rad
-		cam_pos.y = effective_target.y + sin(elevation) * effective_distance + aim_height + fall_offset
-
-		# Probe for occlusion, then apply a hysteresis latch: any hit re-arms
-		# the "occluded" state for `occlusion_release_delay` seconds, during
-		# which the camera holds its pulled-in pose even if the probe momentarily
-		# clears. Kills the bounce when walking around a wall corner.
-		var probe := _occlude(aim_point, cam_pos)
-		var probe_hit: bool = probe["hit"]
-		var probe_pos: Vector3 = probe["pos"]
-		if probe_hit:
-			_is_occluded = true
-			_clear_streak_seconds = 0.0
-			_last_occluded_pos = probe_pos
-		elif _is_occluded:
-			_clear_streak_seconds += delta
-			if _clear_streak_seconds >= occlusion_release_delay:
-				_is_occluded = false
-				_clear_streak_seconds = 0.0
-
-		var desired: Vector3
-		if _is_occluded:
-			desired = probe_pos if probe_hit else _last_occluded_pos
-		else:
-			desired = cam_pos
-
-		# Frame-rate-independent asymmetric ease toward the desired pose.
-		var prev_aim_dist := (_camera.global_position - aim_point).length()
-		var desired_aim_dist := (desired - aim_point).length()
-		var rate := pull_in_smoothing if desired_aim_dist < prev_aim_dist else ease_out_smoothing
-		var smooth_t := 1.0 - exp(-rate * delta)
-		_camera.global_position = _camera.global_position.lerp(desired, smooth_t)
-
-	# look_at runs in both states. On the ground it tracks the player as the
-	# tripod adjusts. While airborne the rigid translation preserves the
-	# camera→player vector exactly, so look_at is a no-op unless drag has
-	# changed the offset — which is the only thing that *should* rotate the
-	# camera mid-jump.
-	_camera.look_at(aim_point, Vector3.UP)
-
-	# Publish the yaw the player should rotate input by. We want stick-up to
-	# move the player away from the camera, so the published yaw is the angle
-	# from the player to the camera (atan2(cam.x - player.x, cam.z - player.z)).
-	# Use call() because _target is typed Node3D — Player adds set_camera_yaw.
-	# In the air this is constant frame-to-frame (no drag) → input frame stays
-	# locked from takeoff to landing.
-	if _target.has_method("set_camera_yaw"):
-		var pub_yaw := atan2(
-			_camera.global_position.x - target_pos.x,
-			_camera.global_position.z - target_pos.z)
-		_target.call(&"set_camera_yaw", pub_yaw)
-
-	# Refresh the air offset every frame, relative to the *effective* target.
-	# On the ground this captures the latest camera/effective relationship in
-	# case the player takes off next frame; in the air it propagates any drag-
-	# induced offset changes. Storing relative to effective_target (not raw
-	# target_pos) keeps below-apex jumps from leaking into the offset and re-
-	# applying as Y motion on the next frame.
+func _try_initialize(effective_target: Vector3, target_pos: Vector3) -> void:
+	if _initialized:
+		return
+	_place_camera_initial(effective_target)
 	_air_offset = _camera.global_position - effective_target
+	_apex_anchor_y = target_pos.y
+	_initialized = true
+
+
+# Ground pose pipeline: distance maintenance → occlusion → position smoothing.
+func _update_ground_camera(target_pos: Vector3, effective_target: Vector3,
+		effective_distance: float, aim_point: Vector3, delta: float) -> void:
+	var cam_pos := _compute_ground_camera_pos(target_pos, effective_target, effective_distance)
+	var desired := _occlude_and_latch(aim_point, cam_pos, delta)
+	_apply_position_smooth(aim_point, desired, delta)
+
+
+# Horizontal distance uses raw target_pos (player's actual X/Z); only Y is
+# held by the ratchet via effective_target. Fall pull is gated on tracking
+# regimes so it doesn't yank the camera during held-band jumps.
+func _compute_ground_camera_pos(target_pos: Vector3, effective_target: Vector3,
+		effective_distance: float) -> Vector3:
+	var cam_pos := _camera.global_position
+	var horiz := Vector3(target_pos.x - cam_pos.x, 0.0, target_pos.z - cam_pos.z)
+	var current_dist := horiz.length()
+	if current_dist > 0.001:
+		var dir := horiz / current_dist
+		var dist_error := current_dist - effective_distance
+		cam_pos.x += dir.x * dist_error
+		cam_pos.z += dir.z * dist_error
+	var fall_offset := _conditional_fall_offset(target_pos.y, _get_target_velocity().y)
+	# _pitch_rad ≤ 0; negate to get elevation angle (absf would V-shape at drag
+	# crossing horizontal — see iter 22 DECISIONS.md entry).
+	var elevation := -_pitch_rad
+	cam_pos.y = effective_target.y + sin(elevation) * effective_distance + aim_height + fall_offset
+	return cam_pos
+
+
+# Runs the occlusion probe and updates the hysteresis latch. Any probe hit
+# re-arms the "occluded" state for occlusion_release_delay seconds so the
+# camera stays pulled in while grazing a wall corner. Returns the desired pose.
+func _occlude_and_latch(aim: Vector3, cam_pos: Vector3, delta: float) -> Vector3:
+	var probe := _occlude(aim, cam_pos)
+	var probe_hit: bool = probe["hit"]
+	var probe_pos: Vector3 = probe["pos"]
+	if probe_hit:
+		_is_occluded = true
+		_clear_streak_seconds = 0.0
+		_last_occluded_pos = probe_pos
+	elif _is_occluded:
+		_clear_streak_seconds += delta
+		if _clear_streak_seconds >= occlusion_release_delay:
+			_is_occluded = false
+			_clear_streak_seconds = 0.0
+	if _is_occluded:
+		return probe_pos if probe_hit else _last_occluded_pos
+	return cam_pos
+
+
+# Frame-rate-independent asymmetric ease: pull_in_smoothing when moving toward
+# the player (occluder just entered), ease_out_smoothing when falling back.
+func _apply_position_smooth(aim_point: Vector3, desired: Vector3, delta: float) -> void:
+	var prev_aim_dist := (_camera.global_position - aim_point).length()
+	var desired_aim_dist := (desired - aim_point).length()
+	var rate := pull_in_smoothing if desired_aim_dist < prev_aim_dist else ease_out_smoothing
+	var smooth_t := 1.0 - exp(-rate * delta)
+	_camera.global_position = _camera.global_position.lerp(desired, smooth_t)
+
+
+# Use call() because _target is typed Node3D — Player adds set_camera_yaw.
+# Yaw is the angle from the player to the camera so stick-up moves the player
+# away from the camera regardless of orbit angle.
+func _publish_camera_yaw(target_pos: Vector3) -> void:
+	if not _target.has_method(&"set_camera_yaw"):
+		return
+	var pub_yaw := atan2(
+		_camera.global_position.x - target_pos.x,
+		_camera.global_position.z - target_pos.z,
+	)
+	_target.call(&"set_camera_yaw", pub_yaw)
 
 
 func _place_camera_initial(anchor: Vector3) -> void:
@@ -457,51 +450,56 @@ func _is_target_on_floor() -> bool:
 ## When `hit` is false, `pos == desired`. Sphere cast (rather than a thin ray)
 ## tames the frame-to-frame flicker at wall edges; the boolean lets the
 ## caller apply a release-delay latch on top.
+## Returns `{hit: bool, pos: Vector3}` for the line of sight from `aim` to
+## `desired`. When `hit` is true, `pos` is the safe camera position (the
+## impact point minus the occlusion margin, floored at occlusion_min_distance).
+## When `hit` is false, `pos == desired`. Sphere cast (rather than a thin ray)
+## tames frame-to-frame flicker at wall edges; the boolean lets the caller
+## apply a release-delay latch on top.
 func _occlude(aim: Vector3, desired: Vector3) -> Dictionary:
-	var space := get_world_3d().direct_space_state
 	var to_desired := desired - aim
 	var total_len := to_desired.length()
 	if total_len < 0.001:
 		return {"hit": false, "pos": desired}
 	var dir := to_desired / total_len
+	var hit_dist := _probe_hit_dist(aim, to_desired, total_len)
+	if hit_dist >= total_len:
+		return {"hit": false, "pos": desired}
+	var safe_dist := maxf(occlusion_min_distance, hit_dist - occlusion_margin)
+	return {"hit": true, "pos": aim + dir * safe_dist}
 
+
+# Dispatches to sphere cast (when occlusion_probe_radius > 0) or ray cast.
+# Returns the distance from `aim` to the first contact along `to_desired`, or
+# `total_len` when the sweep is clear (= "no hit" sentinel).
+# cast_motion safe_fraction == 1.0 → no contact along the full sweep.
+func _probe_hit_dist(aim: Vector3, to_desired: Vector3, total_len: float) -> float:
+	var space := get_world_3d().direct_space_state
 	var excludes: Array[RID] = []
 	if _target is PhysicsBody3D:
 		excludes.append((_target as PhysicsBody3D).get_rid())
-
-	var hit_dist := total_len
-	var hit_found := false
 	if occlusion_probe_radius > 0.0:
 		var shape := SphereShape3D.new()
 		shape.radius = occlusion_probe_radius
-		var motion_params := PhysicsShapeQueryParameters3D.new()
-		motion_params.shape = shape
-		motion_params.transform = Transform3D(Basis.IDENTITY, aim)
-		motion_params.motion = to_desired
-		motion_params.collision_mask = occlusion_mask
-		motion_params.exclude = excludes
-		# cast_motion returns [safe_fraction, unsafe_fraction] in [0, 1].
-		# safe_fraction == 1.0 → no contact along the sweep.
-		var fractions := space.cast_motion(motion_params)
+		var params := PhysicsShapeQueryParameters3D.new()
+		params.shape = shape
+		params.transform = Transform3D(Basis.IDENTITY, aim)
+		params.motion = to_desired
+		params.collision_mask = occlusion_mask
+		params.exclude = excludes
+		var fractions := space.cast_motion(params)
 		if fractions.size() == 2 and fractions[0] < 1.0:
-			hit_dist = total_len * fractions[0]
-			hit_found = true
+			return total_len * fractions[0]
 	else:
 		var ray := PhysicsRayQueryParameters3D.new()
 		ray.from = aim
-		ray.to = desired
+		ray.to = aim + to_desired
 		ray.collision_mask = occlusion_mask
 		ray.exclude = excludes
 		var hit := space.intersect_ray(ray)
 		if not hit.is_empty():
-			var hit_pos: Vector3 = hit.position
-			hit_dist = (hit_pos - aim).length()
-			hit_found = true
-
-	if not hit_found:
-		return {"hit": false, "pos": desired}
-	var safe_dist := maxf(occlusion_min_distance, hit_dist - occlusion_margin)
-	return {"hit": true, "pos": aim + dir * safe_dist}
+			return ((hit.position as Vector3) - aim).length()
+	return total_len
 
 
 # Returns the largest pull_back_amount among all active CameraHint volumes

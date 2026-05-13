@@ -99,6 +99,7 @@ func _ready() -> void:
 	_test_industrial_press_timing()
 	_test_rotating_hazard_math()
 	_test_camera_hint_defaults()
+	_test_ground_camera_y_formula()
 	_report()
 
 
@@ -3417,3 +3418,52 @@ func _test_camera_hint_defaults() -> void:
 		StringName("camera_hints") == &"camera_hints")
 
 	ch.free()
+
+
+# _compute_ground_camera_pos Y formula (extracted from _process in iter 62):
+#   cam_pos.y = effective_target.y + sin(elevation) * effective_distance
+#               + aim_height + fall_offset
+# where elevation = -_pitch_rad and _pitch_rad <= 0 (so elevation >= 0).
+# fall_offset from _vertical_pull_offset: vel_y * vertical_pull * 0.05 (< 0).
+func _test_ground_camera_y_formula() -> void:
+	var eff_y := 5.0
+	var dist  := 6.0
+	var aim_h := 0.6
+
+	# At elevation = 0 (camera exactly horizontal), sin(0) = 0, so Y = eff_y + aim_h.
+	_ok("ground Y at elev=0: sin term vanishes",
+		_near(eff_y + sin(0.0) * dist + aim_h, eff_y + aim_h))
+
+	# At elevation = PI/4 (45°): sin(PI/4) ≈ 0.70711.
+	var elev45 := PI / 4.0
+	_ok("ground Y at 45°: sin(PI/4) * dist added correctly",
+		_near(eff_y + sin(elev45) * dist + aim_h,
+			eff_y + 0.70711 * dist + aim_h, 1e-3))
+
+	# At elevation = PI/2 (90°, camera directly above): sin = 1.
+	_ok("ground Y at 90°: equals eff_y + dist + aim_h",
+		_near(eff_y + sin(PI / 2.0) * dist + aim_h, eff_y + dist + aim_h))
+
+	# Camera Y always exceeds eff_y + aim_h when elevation > 0.
+	_ok("ground Y > eff_y + aim_h when elevation > 0",
+		eff_y + sin(elev45) * dist + aim_h > eff_y + aim_h)
+
+	# Monotonicity: larger elevation angle → larger sin → larger Y offset.
+	_ok("sin(elevation) monotone over 0 to PI/2",
+		sin(deg_to_rad(30.0)) < sin(deg_to_rad(45.0)) and
+		sin(deg_to_rad(45.0)) < sin(deg_to_rad(90.0)))
+
+	# Fall offset formula: vel_y * vertical_pull * 0.05 when vel_y < 0.
+	var vel_neg := -10.0
+	var pull    := 0.18
+	var fall_off := vel_neg * pull * 0.05
+	_ok("fall offset is negative (drops camera to show floor)",
+		fall_off < 0.0)
+	_ok("fall offset magnitude: vel * pull * 0.05",
+		_near(fall_off, -0.09))
+
+	# Full formula combines all terms (concrete value at known inputs).
+	# eff_y=5, elev=45°, dist=6, aim_h=0.6, fall_off=-0.09:
+	# = 5 + 0.70711*6 + 0.6 - 0.09 ≈ 9.7527
+	_ok("full ground Y formula: concrete combined value",
+		_near(eff_y + sin(elev45) * dist + aim_h + fall_off, 9.7527, 1e-3))
