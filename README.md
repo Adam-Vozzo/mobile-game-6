@@ -5,10 +5,10 @@ A mobile 3D platformer. Brutalist megastructure inspired by *BLAME!*. Controller
 ## Status
 
 Current gate: **Gate 0 — Feel Lab** (closing out; Gate 1 prep in flight)
-Last activity: 2026-05-13 — iter 62: camera_rig _process refactor (137 L → 31 L); 9 new helpers; 735 → 743 assertions
+Last activity: 2026-05-13 — iter 63: _conditional_fall_offset regime tests + hint blend tests; 743 → 769 assertions
 Test device build: ✅ verified 2026-05-12 — runs in Godot 4.6 on PC and on Nothing Phone 4(a) Pro
 Performance: 144 fps / 6.9 ms in editor at 1920×1080 (Feel Lab); on-device frametimes TBD
-Throttle level: **HARD** (11 iterations since last human direction 2026-05-12). New feature work stopped. Only hardening.
+Throttle level: **HARD** (12 iterations since last human direction 2026-05-12). New feature work stopped. Only hardening.
 
 If you only read one section, read **Open questions waiting on you** below.
 
@@ -90,6 +90,37 @@ Goal: store-ready build.
 The full iteration log lives here, newest first. Every iteration appends an entry. Skim the dates to find where you last left off.
 
 <!-- ITERATION ENTRIES BELOW — DO NOT REMOVE OLDER ENTRIES -->
+
+### [2026-05-13] — iter 63 — _conditional_fall_offset regime tests (hard throttle hardening)
+
+Branch: `iter/conditional-fall-offset-tests`
+Throttle: HARD (12 iterations since last human direction 2026-05-12)
+Gate: Gate 1 — Vertical Slice prep (hardening pass)
+
+**Primary: `_conditional_fall_offset` regime unit tests (18 assertions, 743 → 761).**
+
+`camera_rig.gd::_conditional_fall_offset` was the last major camera function without
+pure-math coverage. It gates fall-pull into only the two "tracking" regimes (player above
+apex band / below reference floor) and suppresses it in the held band, so normal jumps
+don't re-introduce the vertical camera motion the ratchet removes. New helper `_cfo_mirror`
+(6 lines) mirrors the formula; `_test_conditional_fall_offset_regimes` (18 assertions)
+covers: `_vertical_pull_offset` sanity (zero/rising → 0, falling → negative, concrete
+magnitude), `apex_h==0` bypass path, above-apex tracking regime, below-floor tracking
+regime, held-band suppression, both boundary cases (strictly-greater / strictly-less rules),
+and linearity (scales with vertical_pull and fall speed).
+
+**Side quest: `_test_hint_distance_blend` (8 assertions, 761 → 769).**
+
+First coverage of the exponential lerp in `_update_hint_distance` (rate 3/sec). Tests:
+no-hint → zero stays zero; first-frame at 60 fps concrete value (`target × w1`);
+1-second 60 fps run >95% converged; monotone convergence and no-overshoot across 120 frames;
+rate 3/sec documented as slower than reference_floor_smoothing's 6/sec (hints breathe, tier
+changes snap).
+
+Perf: no change (tests only). Draw calls: no change.
+New dev-menu controls: none.
+Assets acquired: none.
+Research added: none.
 
 ### [2026-05-13] — iter 62 — camera_rig _process refactor (hard throttle hardening)
 
