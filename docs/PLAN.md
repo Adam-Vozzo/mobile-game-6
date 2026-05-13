@@ -16,9 +16,9 @@ authored with it in mind.
 
 ## Active iteration
 
-- _No iteration currently in flight._ Iter 60 (`_build_level_section` refactor) landed 2026-05-13 — see
+- _No iteration currently in flight._ Iter 61 (RotatingHazard + CameraHint tests) landed 2026-05-13 — see
   Recently completed.
-- **HARD THROTTLE** (9 iterations since last human direction session 2026-05-12). New feature work
+- **HARD THROTTLE** (10 iterations since last human direction session 2026-05-12). New feature work
   stopped. Human direction required. See README "Open questions waiting on you" for 5 concrete options.
 
 ## Queue (ranked, top is next)
@@ -171,6 +171,17 @@ These mirror "Open questions waiting on you" in the README.
   drive the next tuning iteration.
 
 ## Recently completed (last 5)
+
+- 2026-05-13 — Iteration 61. **RotatingHazard + CameraHint unit tests (hard throttle hardening).**
+  Two new test groups in `tests/test_controller_kinematics.gd` (718 → 735 assertions):
+  `_test_rotating_hazard_math` (12 assertions): pure-math mirrors of `angle = fmod(_elapsed /
+  period_seconds, 1.0) * TAU` — tests angle at t=0/half/full/1.25 periods, periodicity (t and
+  t+7×period agree), angle always in [0, TAU), axis normalization (UP + diagonal), default period
+  4.0 s within export range, Basis column-length invariant at angle=0 and TAU.
+  `_test_camera_hint_defaults` (5 assertions): `CameraHint.new()` — `pull_back_amount` defaults
+  0.0, `blend_time` defaults 0.5 s, both non-negative/positive guards, `"camera_hints"` StringName
+  contract matching `camera_rig.gd::_get_active_hint_extra()` group query.
+  New const: `CH := preload("res://scripts/levels/camera_hint.gd")`. Throttle: HARD (10).
 
 - 2026-05-13 — Iteration 60. **`_build_level_section` refactor (hard throttle hardening).**
   `dev_menu_overlay.gd`: extracted `_build_feel_lab_teleports` (20 lines) and
