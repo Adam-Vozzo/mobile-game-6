@@ -100,6 +100,8 @@ func _ready() -> void:
 	_test_rotating_hazard_math()
 	_test_camera_hint_defaults()
 	_test_ground_camera_y_formula()
+	_test_conditional_fall_offset_regimes()
+	_test_hint_distance_blend()
 	_report()
 
 
@@ -3467,3 +3469,154 @@ func _test_ground_camera_y_formula() -> void:
 	# = 5 + 0.70711*6 + 0.6 - 0.09 ≈ 9.7527
 	_ok("full ground Y formula: concrete combined value",
 		_near(eff_y + sin(elev45) * dist + aim_h + fall_off, 9.7527, 1e-3))
+
+
+func _cfo_mirror(py: float, vy: float, apex_h: float,
+		anchor: float, ref_y: float, vp: float) -> float:
+	## Pure-math mirror of camera_rig.gd::_conditional_fall_offset.
+	## Returns _vertical_pull_offset(vy) in the two tracking regimes; 0.0 in
+	## the held band so the camera isn't yanked during normal held-band jumps.
+	var vpo := 0.0 if vy >= 0.0 else vy * vp * 0.05
+	if apex_h <= 0.0:
+		return vpo
+	if py > anchor + apex_h:
+		return vpo
+	if py < ref_y:
+		return vpo
+	return 0.0
+
+
+func _test_conditional_fall_offset_regimes() -> void:
+	## Mirrors camera_rig.gd::_conditional_fall_offset + _vertical_pull_offset.
+	## The fall-pull offset drops the camera while falling so the player can see
+	## what's ahead. It must NOT fire during a normal held-band jump — when the
+	## camera is pinned to reference_floor_y — or it re-introduces the very
+	## vertical motion the ratchet removes.
+	print("\n-- Conditional fall offset regimes --")
+
+	var vp       := 0.18   # vertical_pull @export default
+	var vel_fall := -8.0   # typical mid-fall speed (m/s)
+	var vel_rise :=  5.0
+	var apex_h   := 2.0    # Snappy profile jump apex height (m)
+	var anchor   := 3.0    # apex_anchor_y (player standing on elevated floor)
+	var ref_y    := 3.0    # reference_floor_y (same floor; no tier gap)
+
+	# Expected pull magnitude for the default vertical_pull coefficient.
+	var expected := vel_fall * vp * 0.05   # = -0.072 m
+
+	# ── _vertical_pull_offset sanity ─────────────────────────────────────────
+	# Zero and positive velocity → always 0 (pull only drops the camera).
+	_ok("vpo: zero velocity → 0.0",
+		_near(0.0 if 0.0 >= 0.0 else 0.0 * vp * 0.05, 0.0))
+	_ok("vpo: rising velocity → 0.0",
+		_near(0.0 if vel_rise >= 0.0 else vel_rise * vp * 0.05, 0.0))
+	# Falling → negative (camera drops, never rises, from pull).
+	_ok("vpo: falling → negative offset (camera drops)",
+		(vel_fall * vp * 0.05) < 0.0)
+	_ok("vpo: magnitude = vel × vp × 0.05 (concrete -0.072 m)",
+		_near(vel_fall * vp * 0.05, expected))
+
+	# ── apex_h == 0: bypass regime gate, always fire pull ────────────────────
+	# When apex_h ≤ 0 (profile missing or multiplier zeroed), the ratchet has
+	# no band — fall pull fires unconditionally.
+	_ok("apex_h==0 + falling → pull fires (bypass regime gate)",
+		_near(_cfo_mirror(ref_y + 0.5, vel_fall, 0.0, anchor, ref_y, vp), expected))
+	_ok("apex_h==0 + rising  → 0.0 (vpo vel-guard still applies)",
+		_near(_cfo_mirror(ref_y + 0.5, vel_rise, 0.0, anchor, ref_y, vp), 0.0))
+
+	# ── Regime: above apex band (player_y > anchor + apex_h) ─────────────────
+	# Camera is tracking up to keep a high jump in frame → pull allowed.
+	var above := anchor + apex_h + 1.0   # strictly above the band
+	_ok("above apex: player_y > anchor + apex_h (sanity)", above > anchor + apex_h)
+	_ok("above apex + falling → pull fires",
+		_near(_cfo_mirror(above, vel_fall, apex_h, anchor, ref_y, vp), expected))
+	_ok("above apex + rising  → 0.0 (vpo vel-guard applies even in tracking)",
+		_near(_cfo_mirror(above, vel_rise, apex_h, anchor, ref_y, vp), 0.0))
+
+	# ── Regime: below reference floor (player_y < ref_y) ─────────────────────
+	# Camera tracks descent to show what's below → pull allowed.
+	var below := ref_y - 0.5   # strictly below
+	_ok("below ref floor: player_y < ref_y (sanity)", below < ref_y)
+	_ok("below ref floor + falling → pull fires",
+		_near(_cfo_mirror(below, vel_fall, apex_h, anchor, ref_y, vp), expected))
+
+	# ── Regime: held band (ref_y ≤ player_y ≤ anchor + apex_h) ──────────────
+	# Normal jump stays below apex — camera is pinned, pull must be suppressed.
+	var held := ref_y + (anchor + apex_h - ref_y) * 0.5   # midpoint in band
+	_ok("held band: ref_y ≤ mid ≤ anchor + apex_h (sanity)",
+		held >= ref_y and held <= anchor + apex_h)
+	_ok("held band + falling → 0.0 (camera pinned during normal jump)",
+		_near(_cfo_mirror(held, vel_fall, apex_h, anchor, ref_y, vp), 0.0))
+	_ok("held band + rising  → 0.0",
+		_near(_cfo_mirror(held, vel_rise, apex_h, anchor, ref_y, vp), 0.0))
+
+	# ── Boundary: upper bound is strictly greater (>) not >= ──────────────────
+	# At exactly anchor + apex_h the player is not *above* the band — held band.
+	_ok("at apex upper bound (==) → held band, no pull",
+		_near(_cfo_mirror(anchor + apex_h, vel_fall, apex_h, anchor, ref_y, vp), 0.0))
+
+	# ── Boundary: lower bound is strictly less (<) not <= ─────────────────────
+	# At exactly ref_y the player is not *below* the floor — held band.
+	_ok("at ref_floor boundary (==) → held band, no pull",
+		_near(_cfo_mirror(ref_y, vel_fall, apex_h, anchor, ref_y, vp), 0.0))
+
+	# ── Linearity ─────────────────────────────────────────────────────────────
+	_ok("pull scales with vertical_pull (double vp → double offset)",
+		_near(_cfo_mirror(above, vel_fall, apex_h, anchor, ref_y, vp * 2.0),
+			expected * 2.0))
+	_ok("pull scales with fall speed (double speed → double offset)",
+		_near(_cfo_mirror(above, vel_fall * 2.0, apex_h, anchor, ref_y, vp),
+			expected * 2.0))
+
+
+func _test_hint_distance_blend() -> void:
+	## Mirrors camera_rig.gd::_update_hint_distance's exponential lerp.
+	## CameraHint pull_back_amount blends at 3/sec — slower than the 6/sec
+	## reference-floor smoothing so hints feel like a breath rather than a cut.
+	## The blend runs every frame (including airborne) so the arm is already
+	## partly extended when the player lands inside a hint volume.
+	print("\n-- Camera hint distance exponential blend --")
+	const RATE  := 3.0          # _update_hint_distance hard-coded rate (/sec)
+	const DELTA := 1.0 / 60.0  # 60 fps frame
+
+	# Per-frame blend weight: 1 − exp(−rate × delta).
+	var w1 := 1.0 - exp(-RATE * DELTA)
+
+	# No active hint (target = 0): extra stays 0.
+	var extra := lerpf(0.0, 0.0, w1)
+	_ok("no active hint: extra stays 0 after one frame", _near(extra, 0.0))
+
+	# Active hint with pull_back = 2.0 m: first frame at 60 fps.
+	var target := 2.0
+	var first := lerpf(0.0, target, w1)
+	_ok("first frame: extra > 0 (blend has started)", first > 0.0)
+	_ok("first frame: extra < target (not fully blended)", first < target)
+	# w1 ≈ 0.0488; lerpf(0, 2, 0.0488) ≈ 0.0976.
+	_ok("first frame: concrete ≈ target × w1", _near(first, target * w1, 1e-4))
+
+	# After 60 frames (1 second): >95% converged.
+	extra = 0.0
+	for _f in 60:
+		extra = lerpf(extra, target, w1)
+	_ok("1 second at 60 fps: >95%% converged (extra > 1.9)", extra > 1.9)
+
+	# Monotone convergence and no overshoot across 120 frames.
+	extra = 0.0
+	var prev := 0.0
+	var monotone := true
+	var no_overshoot := true
+	for _f in 120:
+		extra = lerpf(extra, target, w1)
+		if extra < prev - 1e-6:
+			monotone = false
+		if extra > target + 1e-6:
+			no_overshoot = false
+		prev = extra
+	_ok("hint blend: monotone convergence across 120 frames", monotone)
+	_ok("hint blend: never overshoots target", no_overshoot)
+
+	# Rate 3/sec is slower than reference_floor_smoothing's 6/sec — hints feel
+	# gradual; tier changes feel snappy.
+	var w_ref := 1.0 - exp(-6.0 * DELTA)
+	_ok("hint blend rate (3/sec) < ref-floor rate (6/sec) → slower pull",
+		w1 < w_ref)

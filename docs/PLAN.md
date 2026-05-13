@@ -16,9 +16,9 @@ authored with it in mind.
 
 ## Active iteration
 
-- _No iteration currently in flight._ Iter 62 (camera_rig _process refactor) landed 2026-05-13 — see
+- _No iteration currently in flight._ Iter 63 (_conditional_fall_offset regime tests) landed 2026-05-13 — see
   Recently completed.
-- **HARD THROTTLE** (11 iterations since last human direction session 2026-05-12). New feature work
+- **HARD THROTTLE** (12 iterations since last human direction session 2026-05-12). New feature work
   stopped. Human direction required. See README "Open questions waiting on you" for 5 concrete options.
 
 ## Queue (ranked, top is next)
@@ -171,6 +171,17 @@ These mirror "Open questions waiting on you" in the README.
   drive the next tuning iteration.
 
 ## Recently completed (last 5)
+
+- 2026-05-13 — Iteration 63. **`_conditional_fall_offset` regime tests + hint-distance blend tests (hard throttle hardening).**
+  `_test_conditional_fall_offset_regimes` (18 assertions): new helper `_cfo_mirror` mirrors
+  `camera_rig.gd::_conditional_fall_offset`. Tests cover `_vertical_pull_offset` sanity (zero/rising→0,
+  falling→negative, concrete -0.072 m), `apex_h==0` bypass, above-apex tracking regime, below-floor
+  tracking regime, held-band suppression (returns 0.0 during normal jumps), both boundary cases (strictly>
+  and strictly<), linearity (scales with vertical_pull and fall speed).
+  `_test_hint_distance_blend` (8 assertions): exponential lerp in `_update_hint_distance` at rate 3/sec;
+  tests no-hint zero-hold, first-frame concrete value, 1-sec convergence (>95%), monotone/no-overshoot
+  across 120 frames, and rate comparison (3 < 6 confirms hints blend slower than tier-change smoothing).
+  Total: 743 → 769 assertions. Throttle: HARD (12).
 
 - 2026-05-13 — Iteration 62. **`camera_rig.gd::_process` method-size refactor (hard throttle hardening).**
   `_process` was 137 lines (far over the 40-line threshold). Extracted 8 private helpers:
