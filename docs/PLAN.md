@@ -16,9 +16,9 @@ authored with it in mind.
 
 ## Active iteration
 
-- _No iteration currently in flight._ Iter 61 (RotatingHazard + CameraHint tests) landed 2026-05-13 — see
+- _No iteration currently in flight._ Iter 62 (camera_rig _process refactor) landed 2026-05-13 — see
   Recently completed.
-- **HARD THROTTLE** (10 iterations since last human direction session 2026-05-12). New feature work
+- **HARD THROTTLE** (11 iterations since last human direction session 2026-05-12). New feature work
   stopped. Human direction required. See README "Open questions waiting on you" for 5 concrete options.
 
 ## Queue (ranked, top is next)
@@ -171,6 +171,18 @@ These mirror "Open questions waiting on you" in the README.
   drive the next tuning iteration.
 
 ## Recently completed (last 5)
+
+- 2026-05-13 — Iteration 62. **`camera_rig.gd::_process` method-size refactor (hard throttle hardening).**
+  `_process` was 137 lines (far over the 40-line threshold). Extracted 8 private helpers:
+  `_update_hint_distance` (returns effective_distance), `_build_effective_target` (Vector3 with ratchet Y),
+  `_try_initialize` (one-time camera setup), `_update_ground_camera` (3-line pipeline dispatcher),
+  `_compute_ground_camera_pos` (XZ distance + Y + fall offset → Vector3), `_occlude_and_latch`
+  (probe + hysteresis latch → desired pos), `_apply_position_smooth` (asymmetric lerp),
+  `_publish_camera_yaw` (yaw broadcast to player). Also split `_occlude` (50 lines) into `_occlude`
+  (10 lines, result packaging) + `_probe_hit_dist` (27 lines, sphere/ray dispatch). All 23 functions
+  in camera_rig.gd are now under 40 lines. Pure structural refactor — no behaviour change.
+  Side quest: `_test_ground_camera_y_formula` (8 assertions, 735 → 743) — pure-math mirror of
+  `_compute_ground_camera_pos` Y formula. Throttle: HARD (11).
 
 - 2026-05-13 — Iteration 61. **RotatingHazard + CameraHint unit tests (hard throttle hardening).**
   Two new test groups in `tests/test_controller_kinematics.gd` (718 → 735 assertions):
@@ -902,6 +914,8 @@ These mirror "Open questions waiting on you" in the README.
 - `player.gd::_run_reboot_effect` is 44 lines (just over threshold). The
   sequential `await` beats make sub-method extraction awkward in GDScript
   without coroutine indirection. Leave as-is; revisit if it grows further.
+- ~~**`camera_rig.gd::_process` over 40 lines.**~~ Done (iter 62). Extracted 8 private helpers;
+  `_process` now 31 lines. Also split `_occlude` → `_occlude` + `_probe_hit_dist`. All methods ≤ 40.
 - ~~**Camera pitch manual override V-turn.**~~ Fixed (iter 22). Clamp upper
   bound → 0.0; `absf(_pitch)` → `-_pitch` in `_desired_camera_position`.
   DECISIONS.md entry logged.
