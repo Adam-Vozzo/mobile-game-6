@@ -16,10 +16,10 @@ authored with it in mind.
 
 ## Active iteration
 
-- _No iteration currently in flight._ Iter 58 (Gate 1 script tests + machinery hazard research) landed 2026-05-13 — see
+- _No iteration currently in flight._ Iter 59 (industrial press implementation) landed 2026-05-13 — see
   Recently completed.
 - Next iteration should pull from the top of the P0 queue below.
-  Throttle: **7** (7 iterations since last human direction session 2026-05-12).
+  Throttle: **8** (8 iterations since last human direction session 2026-05-12).
 
 ## Queue (ranked, top is next)
 
@@ -68,13 +68,17 @@ The next iteration should pull from the top of this list. Items marked
    (checkpoint.gd, camera_hint.gd, hazard_body.gd, win_state.gd, rotating_hazard.gd,
    threshold.gd). On-device pending; industrial press atmospheric-only (Gate 1 pass
    item). See DECISIONS.md 2026-05-12 ADR.
-8. **Threshold polish / Gate 1 pass.** After on-device greybox playtest: move industrial
-   press into critical path, wire ambient lighting volumes, texture pass (concrete kit).
+8. **Threshold polish / Gate 1 pass.** After on-device greybox playtest: ~~move industrial
+   press into critical path~~ _(iter 59: press script + emissive + KillZone wired; par-route
+   routing still blocked on device feel — press kills but player can walk around it)._
+   Wire ambient lighting volumes, texture pass (concrete kit).
    ~~CameraHint wired (iter 56).~~ ~~Win-state flow + results panel wired (iter 56).~~
    ~~Data shard collectible (iter 57) — ShardLedge at (7,−6.25,82) + DataShard at
    (7,−4.0,82); SurfaceTool octahedron gem, cyan OmniLight, collection pulse, respawn
    API, dev-menu "Respawn shard" + "Shard ledge" teleport, 7 placement unit tests.~~
-   Remaining items blocked on on-device feel from item 7.
+   ~~Industrial press functional (iter 59) — IndustrialPress.gd four-beat cycle, amber
+   emissive strip, KillZone HazardBody child; 5 dev-menu sliders; 13 unit tests.~~
+   Remaining items (ambient volumes, texture pass, par-route routing) blocked on device feel.
    _(Promoted over Assisted Phase 2 — level is the Gate 1 critical path; assist mechanics
    are supporting.)_
 9. **Assisted profile Phase 2.** Phase 1 (sticky landing) shipped iter 27.
@@ -167,6 +171,23 @@ These mirror "Open questions waiting on you" in the README.
   drive the next tuning iteration.
 
 ## Recently completed (last 5)
+
+- 2026-05-13 — Iteration 59. **Industrial press implementation.** `scripts/levels/industrial_press.gd`
+  (new): extends AnimatableBody3D, class IndustrialPress. Four-beat cycle (dormant/windup/stroke/rebound)
+  via `_phase`/`_phase_t` state machine in `_physics_process`. Exports: `stroke_depth` 2.5 m,
+  `dormant_time` 1.5 s, `windup_time` 0.8 s, `stroke_time` 0.18 s, `rebound_time` 0.5 s.
+  Emissive amber strip (`Color(1.0, 0.72, 0.12)`) animates energy 0.3→2.5→0.3 through cycle.
+  `DevMenu.press_param_changed` signal + `_on_press_param_changed` live-tunes all params.
+  `threshold.tscn`: IndustrialPress now uses `id=15_ip` (was `7_movp`); adds EmissiveStrip
+  MeshInstance3D at local (0,−2.1,0) with `Mesh_PressStrip` (14×0.2×5 m); adds KillZone Area3D
+  at (0,−2.25,0) with `HazardBody` script + KillShape BoxShape3D (13.7×0.5×4.7 m, inset 0.15 m).
+  `dev_menu.gd`: new `press_param_changed` signal. `dev_menu_overlay.gd`: `_build_press_section()`
+  (extracted helper, 5 sliders); `_build_level_section()` gains "↺ Reload level" button and
+  "→ Press zone" teleport at (8,−10,93). 13 unit tests in `_test_industrial_press_timing`
+  (705 → 718 assertions). JUICE.md: new "Hazard juice" section, press emissive → prototype.
+  DECISIONS.md: IndustrialPress vs moving_platform ADR. On-device pending. Par-route routing
+  (force player through press) blocked on device feel — press kills but is bypassable until
+  the level geometry is tuned on device. Throttle: 8 (soft).
 
 - 2026-05-13 — Iteration 58. **Gate 1 script unit tests + machinery hazard research.**
   Three new test groups in `tests/test_controller_kinematics.gd` (679 → 705 assertions):
@@ -859,6 +880,9 @@ These mirror "Open questions waiting on you" in the README.
   until after first on-device feel of current Momentum approximation.
 - Camera occlusion upgrade to ShapeCast3D if point-ray poke-through
   observed in Gate 1 geometry.
+- `_build_level_section` in `dev_menu_overlay.gd` is ~52 lines (pre-existing, grew with
+  level-specific additions). Extract `_build_feel_lab_teleports` + `_build_threshold_teleports`
+  helpers to bring it under 40 lines.
 - `player.gd::_run_reboot_effect` is 44 lines (just over threshold). The
   sequential `await` beats make sub-method extraction awkward in GDScript
   without coroutine indirection. Leave as-is; revisit if it grows further.

@@ -100,6 +100,12 @@ Status legend:
 | Shard collect pulse | prototype | On `_collect()`: energy spikes 1.4 → 7.0 over 0.05 s, fades 7.0 → 0.0 over 0.30 s via Tween; mesh hidden immediately; light fades independently so the pulse reads even on low-refresh displays |
 | Shard slow spin | prototype | `rotate_y(delta * 1.15)` in `_process` — ~66 deg/s, readable at camera distance |
 
+## Hazard juice — no global toggle (individual hazard owns its signal)
+
+| element | status | notes |
+|---------|--------|-------|
+| Industrial press emissive strip | prototype | Amber strip (14 × 0.2 × 5 m) on underside of press body; `StandardMaterial3D` emission_energy_multiplier animated through four-beat cycle: dormant=0.3 (dim), windup ramps 0.3→2.5, stroke holds 2.5 (bright), rebound ramps 2.5→0.3; color `Color(1.0, 0.72, 0.12)` (sodium-vapour amber — not red, not cyan); 1 material, 0 extra draw calls; `_emissive_mat` cached in `_ready()` |
+
 ## UI juice — currently no toggle
 
 | element | status | notes |

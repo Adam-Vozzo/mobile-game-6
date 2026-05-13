@@ -5,10 +5,10 @@ A mobile 3D platformer. Brutalist megastructure inspired by *BLAME!*. Controller
 ## Status
 
 Current gate: **Gate 0 — Feel Lab** (closing out; Gate 1 prep in flight)
-Last activity: 2026-05-13 — iter 58: Gate 1 script tests (679 → 705 assertions) + machinery hazard research
+Last activity: 2026-05-13 — iter 59: industrial press implementation (IndustrialPress.gd, 718 unit tests)
 Test device build: ✅ verified 2026-05-12 — runs in Godot 4.6 on PC and on Nothing Phone 4(a) Pro
 Performance: 144 fps / 6.9 ms in editor at 1920×1080 (Feel Lab); on-device frametimes TBD
-Throttle level: **7** (7 iterations since last human direction 2026-05-12). Next: Threshold remaining polish (concrete texture / industrial press into critical path) — blocked on on-device feel.
+Throttle level: **8** (soft — 8 iterations since last human direction 2026-05-12). Next: hard throttle triggers at 9. Remaining unblocked work is minor refactors or research.
 
 If you only read one section, read **Open questions waiting on you** below.
 
@@ -83,6 +83,52 @@ Goal: store-ready build.
 The full iteration log lives here, newest first. Every iteration appends an entry. Skim the dates to find where you last left off.
 
 <!-- ITERATION ENTRIES BELOW — DO NOT REMOVE OLDER ENTRIES -->
+
+### [2026-05-13] — iter 59 — Industrial press implementation
+
+Branch: `claude/gifted-shannon-cM0SO`
+Throttle: 8 (soft)
+Gate: Gate 1 — Vertical Slice prep (Threshold Zone 3 polish, unblocked sub-item)
+
+**Primary: IndustrialPress hazard script + Threshold wiring (705 → 718 assertions).**
+
+New `scripts/levels/industrial_press.gd` (class IndustrialPress, extends AnimatableBody3D):
+- Four-beat state machine: dormant / windup / stroke / rebound. `_phase_t` advances each
+  `_physics_process`; overflows advance `_phase` and carry remainder.
+- `position.y` set directly each tick — matches `rotating_hazard.gd` precedent, no move_and_collide.
+- Default cycle: 1.5 s dormant / 0.8 s windup / 0.18 s stroke / 0.5 s rebound = 2.98 s total.
+  Dormant window (1.5 s) ≥ 1.5 × crossing_time (5 m / 6 m/s = 0.83 s) — mobile safety met.
+- Emissive amber strip (`Color(1.0, 0.72, 0.12)`): dim 0.3 → ramp 0.3→2.5 → hold 2.5 → ramp back.
+- `DevMenu.press_param_changed` connection for live-tuning all 5 exports.
+
+`scenes/levels/threshold.tscn` changes:
+- IndustrialPress node: script swapped from `7_movp` (moving_platform) → `15_ip` (industrial_press).
+- Old `travel` / `period_seconds` props replaced with new exports.
+- New child `EmissiveStrip` (MeshInstance3D, 14×0.2×5 m at local y=−2.1).
+- New child `KillZone` (HazardBody Area3D at local y=−2.25) + `KillShape` (BoxShape3D 13.7×0.5×4.7 m,
+  inset 0.15 m from visual mesh — mobile hitbox generosity).
+
+`scripts/autoload/dev_menu.gd`: `press_param_changed(param, value)` signal added.
+
+`tools/dev_menu/dev_menu_overlay.gd`: new `_build_press_section()` helper (5 sliders: stroke depth,
+dormant, windup, stroke, rebound). `_build_level_section` gains "↺ Reload level" button and
+"→ Press zone" teleport at (8,−10,93).
+
+**Side quest: "Reload level" button in dev menu Level section.**
+Calls `get_tree().reload_current_scene()`. Useful for on-device iteration without restarting.
+
+**Unit tests: `_test_industrial_press_timing()` — 13 assertions**
+Cycle time, mobile safety rule, windup>stroke invariant, target_y at all phase boundaries,
+emissive energy at key points, KillZone inset rule (≥ 0.10 m per side).
+
+**Perf:** no regression expected — press uses 1 `position.y` write + 1 float assignment per
+physics tick; EmissiveStrip is 1 material with no shadow cast; 0 new draw calls.
+
+**Dev-menu controls added:** Stroke depth m, Dormant s, Windup s, Stroke s, Rebound s; ↺ Reload level; → Press zone teleport.
+
+**Needs attention:** par-route routing (forcing player *through* the press rather than around it)
+is still blocked on on-device feel from the Zone 3 greybox. The press kills but is currently
+bypassable. PLAN.md item 8 still pending for this last sub-item + ambient volumes + texture pass.
 
 ### [2026-05-13] — iter 58 — Gate 1 script tests + machinery hazard research
 
