@@ -175,6 +175,77 @@ gaps achievable. Double jump is available as a safety net.
    geometry transition is present (Zone 1 floor ends at z=36, Zone 2 starts at z=37 with a
    5 m Y-drop) but no hatch prop is placed — Gate 1 art pass item.
 
+## Spyro-style redesign (2026-05-14, human direction session)
+
+After on-device feedback ("just holding forward and mashing jump", "low-roof tunnels — camera feels unintuitive", "more like a PS1 Spyro level"), the level was substantially restructured. The three-zone parti and narrative arc remain; the geometry inside each zone is rewritten for open exploration over linear corridor.
+
+### Zone 1 — Habitation Plaza (rewritten)
+
+Open 24 m × 36 m plaza at floor y=0 (Floor surface), no walls, no ceiling. Three intentional routes:
+
+| Feature | Position (x, y_top, z) | Mesh size | Role |
+|---|---|---|---|
+| Floor | center (0, −0.5, 18) | 24 × 1 × 36 | The walkable plaza |
+| RubbleA | (4, 0.5, 7) | 3 × 0.5 × 3 | First easy step |
+| PillarLowA | (−6, 1.5, 10) | 2 × 1.5 × 2 | Mid-height stepping stone (single-jump) |
+| RubbleB | (7, 0.5, 14) | 3 × 0.5 × 3 | Right-side path |
+| PillarTall | (0, 3.0, 18) | 2 × 3 × 2 | Central landmark — double-jump from floor |
+| ShelfA | (−8, 3.0, 15) | 6 × 0.3 × 3 | High-route entry, accessed from PillarLowA |
+| ShelfB | (8, 3.5, 22) | 6 × 0.3 × 3 | High-route continuation |
+| Lookout | (8, 4.5, 28) | 5 × 0.5 × 5 | Reward area at the top of the climb |
+| DataShard #1 | (8, 5.8, 28) | n/a | 1.3 m above the Lookout — small jump to grab |
+| ExitPlatform | (0, 0.5, 33) | 3 × 0.5 × 3 | Drops off into Zone 2 |
+
+Routes: (a) floor walk, (b) rubble hop, (c) PillarLowA → ShelfA → ShelfB → Lookout (uses double-jump).
+
+### Zone 2 — Maintenance Yard (widened + perimeter route added)
+
+Floor widened 2 m → 16 m (still 31 m long, z=37–68). Walls removed, ceiling already removed. The original maintenance hazards (MaintLedge1/2/2b, ServiceCart, MaintArm1) remain in their original positions; the wider floor surrounds them with empty space they didn't have before.
+
+New features:
+
+| Feature | Position (x, y_top, z) | Mesh size | Role |
+|---|---|---|---|
+| Z2StepLeft | (−4, −3.5, 42) | 2 × 1.5 × 2 | Stepping-stone up to perimeter ledge |
+| Z2LedgeLeft | (−6, −3.5, 45) | 6 × 0.3 × 3 | Perimeter ledge alternate route (left) |
+| Z2StepRight | (4, −3.5, 49) | 2 × 1.5 × 2 | Stepping-stone up to perimeter ledge |
+| Z2LedgeRight | (6, −3.5, 52) | 6 × 0.3 × 3 | Perimeter ledge alternate route (right) |
+| DataShard #2 | (0, −3.0, 57) | n/a | Hovers over the main path, 2 m above floor — double-jump from floor or jump from perimeter ledge |
+
+Player choice: stay low through the cart/arm hazards, or take the staggered perimeter route at y=−3.5.
+
+### Zone 3 — Industrial Hall (lateral platforms added)
+
+Gantry sequence G1–G4 unchanged. Two new lateral platforms expand the gantry descent from a single line into a branching tree.
+
+| Feature | Position (x, y_top, z) | Mesh size | Role |
+|---|---|---|---|
+| Z3SidePlatA | (−10, −9.0, 87) | 5 × 0.5 × 5 | Lateral landing off G2 (left) |
+| Z3SidePlatB | (10, −13.0, 95) | 5 × 0.5 × 5 | Lateral landing off G3 (right) |
+| ShardLedge | (7, −6.0, 82) | 3 × 0.5 × 3 | Existing — off the entry gantry |
+| DataShard #3 | (7, −4.7, 82) | n/a | Existing — on the ShardLedge, 1.3 m above |
+
+### Beat 4 — Ketsu (lateral shard added)
+
+K1–K3 + Terminal platforms unchanged.
+
+| Feature | Position (x, y_top, z) | Role |
+|---|---|---|
+| DataShard #4 | (−5, −18.5, 119) | Off the left of K2 — committed side-jump to grab |
+
+### Total shards
+
+4 across the level, each off the par route in a way that rewards exploration over speed. `Game.shards_total` auto-counts via the `data_shard` group.
+
+### Deviations from original spec (updated)
+
+1. **Zone 1 is no longer a corridor.** Spec called for "wide, crumbling pedestrian corridors at human scale (~3 m ceilings, ~4 m wide)." Redesigned as an open plaza per direction. The narrative reading (human scale, warm) is preserved through atmosphere, not geometry.
+2. **Zone 2 is no longer tight.** Spec called for "1.8 m ceilings, ~1.8 m wide" buffer to feel oppressive. Removed per direction — the camera couldn't lift in the tight space. Oppressive feel deferred to lighting / texture / audio pass.
+3. **Industrial press still atmospheric-only.** Press at (8, −12, 99) still offset from path. Awaiting on-device feel of the new lateral-platform layout before committing to critical-path placement.
+4. **CameraHint stubs partially wired.** camera_rig.gd `_hint_distance_extra` now blends in based on active hints (iter 56). Three hints still placed (pull_back 2/3/5).
+5. **No industrial conveyor belt.** Spec item. Deferred.
+6. **No service hatch prop.** Spec item. Deferred.
+
 ## Notes for greybox
 
 - Habitation zone: 3 m ceilings, 4 m wide corridors. Keep it feeling "meant for people" — slightly generous dimensions for a precision platformer.

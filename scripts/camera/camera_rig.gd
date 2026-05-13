@@ -76,7 +76,7 @@ class_name CameraRig
 ## Maximum elevation the player can drag the camera to, in degrees above horizontal.
 ## The lower bound (camera at horizontal) is hardcoded 0.0 — the tripod model
 ## always keeps the camera above the player.
-@export_range(0.0, 89.0, 1.0) var pitch_max_degrees: float = 55.0
+@export_range(0.0, 89.0, 1.0) var pitch_max_degrees: float = 70.0
 
 @export_category("Occlusion")
 @export_range(0.1, 1.0, 0.05) var occlusion_margin: float = 0.3
@@ -183,7 +183,7 @@ func _process(delta: float) -> void:
 	# works; look_at is a near no-op (offset vector unchanged) unless drag ran.
 	if not on_floor:
 		_camera.global_position = effective_target + _air_offset
-	_apply_drag_input(effective_target)
+	_apply_drag_input(effective_target, effective_distance)
 	if on_floor:
 		_update_ground_camera(target_pos, effective_target, effective_distance, aim_point, delta)
 	_camera.look_at(aim_point, Vector3.UP)
@@ -386,38 +386,42 @@ func _conditional_fall_offset(player_y: float, vel_y: float) -> float:
 	return 0.0
 
 
-# Drag rotates the camera around the effective target. Yaw orbits in the
-# XZ plane; pitch tilts the camera up/down while preserving the horizontal
-# radius. We re-derive theta/phi from the current camera position each call
-# so the camera's geometric drift along the look axis stays consistent with
-# drag. `pivot` is the effective target (raw player X/Z + ratchet-held Y),
-# matching the rest of the camera's Y-handling so drag rotates around the
-# same point the camera is tracking.
-func _apply_drag_input(pivot: Vector3) -> void:
+# Drag rotates the camera around the effective target. Yaw is re-derived
+# from the camera position each call (the tripod model lets the player walk
+# around the camera, so the camera-relative theta drifts and must be read
+# off the geometry). Pitch reads from `_pitch_rad` directly — it is the
+# authoritative state, mutated only by drag and the dev menu. The previous
+# implementation re-derived phi as `asin(to_cam.y / radius)`, which folded
+# the additive `aim_height` offset into the spherical Y; combined with
+# `_compute_ground_camera_pos`'s `sin(elev)*dist + aim_height` formula and
+# the asymmetric position smoother, that mismatch quietly auto-raised the
+# camera on slow downward swipes. Reading `_pitch_rad` directly and writing
+# the new position with the same `sin(elev)*dist + aim_height` decomposition
+# keeps the two in lockstep.
+func _apply_drag_input(pivot: Vector3, effective_distance: float) -> void:
 	var drag := TouchInput.consume_camera_drag_delta()
 	if drag.length_squared() == 0.0:
 		return
 	var to_cam := _camera.global_position - pivot
-	var radius := to_cam.length()
-	if radius < 0.001:
+	if Vector2(to_cam.x, to_cam.z).length_squared() < 0.000001:
 		return
-	var theta := atan2(to_cam.x, to_cam.z)
-	var phi := asin(clampf(to_cam.y / radius, -1.0, 1.0))
-	theta -= drag.x * yaw_drag_sens
-	# Upper bound clamped to pitch_max (camera at horizontal); lower bound is
-	# 0 so the camera never drops below the player. _pitch_rad therefore stays
-	# ≤ 0, which is what the V-turn fix relies on.
-	phi = clampf(
-		phi - drag.y * pitch_drag_sens,
+	var theta := atan2(to_cam.x, to_cam.z) - drag.x * yaw_drag_sens
+	# `+` (was `-`) inverts the vertical axis: swipe down on screen now raises
+	# the camera (so the view tilts down at the player's feet), matching the
+	# FPS look convention. Lower bound 0 keeps the camera at or above
+	# horizontal; upper bound caps how high the player can lift it. _pitch_rad
+	# stays ≤ 0 — the V-turn fix downstream still relies on that.
+	var elev := clampf(
+		-_pitch_rad + drag.y * pitch_drag_sens,
 		0.0,
 		deg_to_rad(pitch_max_degrees),
 	)
-	_pitch_rad = -phi
-	var cos_phi := cos(phi)
+	_pitch_rad = -elev
+	var cos_e := cos(elev)
 	_camera.global_position = pivot + Vector3(
-		radius * cos_phi * sin(theta),
-		radius * sin(phi),
-		radius * cos_phi * cos(theta),
+		effective_distance * cos_e * sin(theta),
+		effective_distance * sin(elev) + aim_height,
+		effective_distance * cos_e * cos(theta),
 	)
 
 

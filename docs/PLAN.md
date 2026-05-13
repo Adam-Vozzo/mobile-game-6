@@ -16,10 +16,16 @@ authored with it in mind.
 
 ## Active iteration
 
-- _No iteration currently in flight._ Iter 66 (data shard gem geometry + light parameter tests) landed 2026-05-13 — see
-  Recently completed.
-- **HARD THROTTLE** (15 iterations since last human direction session 2026-05-12). New feature work
-  stopped. Human direction required. See README "Open questions waiting on you" for 5 concrete options.
+- _No iteration currently in flight._
+- **🟢 THROTTLE RESET 2026-05-14.** Human direction session landed a multi-PR pass:
+  Snappy tuning (max_speed 5.0, jump_velocity 12.0, ground_decel 40, air_jumps=1,
+  air_jump_velocity_multiplier 0.9, gravity_after_apex 65, fall_kill_y −35), Threshold
+  Spyro-style redesign (Zone 1 plaza, Zone 2 maintenance yard with perimeter route,
+  Zone 3 lateral platforms, 4 shards), camera pitch fixes (loosened 55→70°, inverted
+  axis, auto-raise bug fixed), air-dash UX rework (dedicated button → hold-jump+swipe
+  gesture, direction from stick), dev menu Load Level section + touch-scroll fix, shard
+  collection bug fix (`collision_mask=2`), IndustrialPress Phase enum cast bug fix.
+  Next: on-device verification of the redesign + tuning.
 
 ## Queue (ranked, top is next)
 
@@ -27,6 +33,14 @@ The next iteration should pull from the top of this list. Items marked
 "P0" advance Gate 0 directly; "P1" is supporting; "P2" is opportunistic.
 
 ### P0 — Gate 0 close-out + Gate 1 prep
+
+0. **On-device verification of 2026-05-14 redesign.** Top priority. Test the Spyro-style
+   Threshold on device — Zone 1 plaza traversal feel, Zone 2 perimeter-route discoverability,
+   Zone 3 lateral platform reachability, Beat 4 K2-side shard jump. Verify the hold-jump+swipe
+   air-dash gesture is comfortable (or whether the camera-whip on swipe is bad enough to need
+   the buffer-and-discard variant). Verify camera pitch_max 70° feels right (or whether to go
+   higher / lower). Verify Snappy at max_speed 5.0 + jump_velocity 12.0 + air_jumps=1 feels
+   right at the new platform spacings. Outcomes feed back into the next tuning iteration.
 
 1. ~~**On-device smoke test.**~~ Done 2026-05-12. Project runs in Godot 4.6 on PC
    and deploys to Nothing Phone 4(a) Pro. Feel Lab reports 144 fps / 6.9 ms in
@@ -79,6 +93,12 @@ The next iteration should pull from the top of this list. Items marked
    ~~Industrial press functional (iter 59) — IndustrialPress.gd four-beat cycle, amber
    emissive strip, KillZone HazardBody child; 5 dev-menu sliders; 13 unit tests.~~
    Remaining items (ambient volumes, texture pass, par-route routing) blocked on device feel.
+   ~~**Spyro-style redesign 2026-05-14.**~~ Done. Zone 1 corridor → open plaza (24×36 floor,
+   3 routes: floor walk / rubble hop / vertical climb to Lookout shard). Zone 2 corridor →
+   maintenance yard (16 m floor, perimeter ledge alternate route via Z2Step/Z2Ledge × 2).
+   Zone 3 gantries gained Z3SidePlatA/B (lateral platforms off G2/G3). 4 shards total
+   across the level (Zone 1 Lookout, Zone 2 mid-air, Zone 3 ShardLedge, Beat 4 K2 side).
+   Ceilings + corridor walls removed. Shard collection bug fixed (collision_mask=2).
    _(Promoted over Assisted Phase 2 — level is the Gate 1 critical path; assist mechanics
    are supporting.)_
 9. **Assisted profile Phase 2.** Phase 1 (sticky landing) shipped iter 27.
@@ -171,6 +191,23 @@ These mirror "Open questions waiting on you" in the README.
   drive the next tuning iteration.
 
 ## Recently completed (last 5)
+
+- 2026-05-14 — Human direction session. **Threshold Spyro-style redesign + Snappy tuning pass + air-dash UX rework + camera/dev-menu/level-bug fixes.**
+  Snappy profile retuned: `max_speed` 6.0→5.0, `ground_deceleration` 90→40, `jump_velocity` 11.5→12.0,
+  `air_jumps` 0→1, `air_jump_velocity_multiplier` 0.9 (explicit), `gravity_after_apex` 75→65, `fall_kill_y` already −35.
+  Threshold redesigned: Zone 1 corridor → open plaza (24×36 floor, RubbleA/B + PillarLowA/Tall + ShelfA/B +
+  Lookout, three routes), Zone 2 corridor → maintenance yard (floor 2 m→16 m wide, Z2StepLeft/Right + Z2LedgeLeft/Right
+  perimeter route), Zone 3 lateral platforms (Z3SidePlatA off G2, Z3SidePlatB off G3). 4 shards now scattered
+  (Zone 1 Lookout, Zone 2 mid-air, Zone 3 ShardLedge, Beat 4 K2 side). Ceilings + corridor walls removed.
+  Camera: `pitch_max_degrees` 55°→70°, pitch axis inverted (FPS convention), `_apply_drag_input` rewritten
+  to use stored `_pitch_rad` + match `_compute_ground_camera_pos`'s `sin(elev)*dist + aim_height` decomposition
+  (fixes slow-swipe auto-raise that was the asin-from-position derivation mismatch).
+  Air-dash UX: dedicated dash button removed, gesture is hold-jump-then-swipe in right zone (arm lazily on
+  first frame jump_held is true; direction = TouchInput.move_vector; window slides forward on expiry; one-shot
+  per touch). Dev menu: new "Load Level" section with Threshold/Feel Lab buttons (`change_scene_to_file`);
+  scroll-on-buttons fixed (`MOUSE_FILTER_PASS` on `_make_button`/`_make_toggle`). Bugs: shard collection
+  (`collision_mask=2` matches player layer); IndustrialPress `Phase((_phase + 1) % 4)` → `((_phase + 1) % 4) as Phase`
+  (Godot 4 doesn't call enums as functions). Threshold set as `run/main_scene`.
 
 - 2026-05-13 — Iteration 66. **Data shard gem geometry + light parameter tests (hard throttle hardening).**
   `_test_data_shard_gem_vertices` (13 assertions, 807 → 820): mirrors the vertex array of

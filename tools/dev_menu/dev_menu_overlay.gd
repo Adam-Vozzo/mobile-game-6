@@ -226,7 +226,7 @@ func _build_camera_section(vbox: VBoxContainer) -> void:
 
 	vbox.add_child(_make_label("Camera — Tuning", SECTION_FONT_SIZE, true))
 	_make_cam_slider(vbox, "Aim height",      &"aim_height",          0.0,   3.0,  0.05,  0.6)
-	_make_cam_slider(vbox, "Pitch max deg",   &"pitch_max_degrees",   0.0,  89.0,  1.0,   55.0)
+	_make_cam_slider(vbox, "Pitch max deg",   &"pitch_max_degrees",   0.0,  89.0,  1.0,   70.0)
 	# Vertical-follow ratchet: multiplier on the active profile's default
 	# jump apex. Camera holds Y while player is within this band above the
 	# reference floor; above the band the camera tracks Y. 0 reverts to
@@ -252,11 +252,25 @@ func _build_level_section(vbox: VBoxContainer) -> void:
 			Engine.time_scale = v
 			DevMenu.time_scale_changed.emit(v),
 		1.0)
+	_build_level_select(vbox)
 	_build_feel_lab_teleports(vbox)
 	_build_threshold_teleports(vbox)
 	_make_button(vbox, "↺ Reload level", func() -> void:
 		get_tree().reload_current_scene())
 	_build_press_section(vbox)
+
+
+func _build_level_select(vbox: VBoxContainer) -> void:
+	vbox.add_child(_make_label("Load Level", SECTION_FONT_SIZE, false))
+	var levels: Array[Dictionary] = [
+		{"label": "Threshold (Gate 1)", "path": "res://scenes/levels/threshold.tscn"},
+		{"label": "Feel Lab",           "path": "res://scenes/levels/feel_lab.tscn"},
+	]
+	for entry: Dictionary in levels:
+		var lbl: String = entry["label"]
+		var path: String = entry["path"]
+		_make_button(vbox, "▶ " + lbl, func() -> void:
+			get_tree().change_scene_to_file(path))
 
 
 func _build_feel_lab_teleports(vbox: VBoxContainer) -> void:
@@ -283,9 +297,10 @@ func _build_threshold_teleports(vbox: VBoxContainer) -> void:
 	vbox.add_child(_make_label("Teleport — Threshold", SECTION_FONT_SIZE, false))
 	var zones: Array[Dictionary] = [
 		{"label": "Spawn",           "pos": Vector3(0, 1, 0)},
-		{"label": "Hab corridor",    "pos": Vector3(0, 0.5, 6)},
-		{"label": "Hab shelves",     "pos": Vector3(0, 2.0, 23)},
-		{"label": "Hab exit",        "pos": Vector3(0, 0.5, 33)},
+		{"label": "Plaza floor",     "pos": Vector3(4, 1, 10)},
+		{"label": "High shelves",    "pos": Vector3(-8, 3.5, 15)},
+		{"label": "Lookout shard",   "pos": Vector3(8, 5.0, 28)},
+		{"label": "Plaza exit",      "pos": Vector3(0, 1, 33)},
 		{"label": "Maint. entry",    "pos": Vector3(0, -4.5, 43)},
 		{"label": "Service cart",    "pos": Vector3(0, -4.5, 49)},
 		{"label": "Maint. arm",      "pos": Vector3(0, -4.5, 57)},
@@ -462,6 +477,12 @@ func _make_button(parent: Node, label_text: String, callback: Callable) -> Butto
 	var btn := Button.new()
 	btn.text = label_text
 	btn.custom_minimum_size = Vector2(0, 64)
+	# MOUSE_FILTER_PASS lets touch-drag events propagate up to the parent
+	# ScrollContainer so the menu still scrolls when the user starts the
+	# drag on a button. With the default MOUSE_FILTER_STOP, dense sections
+	# (e.g., the Threshold teleport list) became a complete scroll-block
+	# because every touch landed on a button.
+	btn.mouse_filter = Control.MOUSE_FILTER_PASS
 	btn.pressed.connect(callback)
 	parent.add_child(btn)
 	return btn
@@ -571,6 +592,8 @@ func _make_toggle(parent: Node, label_text: String, initial_pressed: bool,
 	btn.alignment = HORIZONTAL_ALIGNMENT_LEFT
 	btn.size_flags_horizontal = Control.SIZE_EXPAND_FILL
 	btn.custom_minimum_size = Vector2(0, 64)
+	# Same scroll-propagation fix as _make_button — see comment there.
+	btn.mouse_filter = Control.MOUSE_FILTER_PASS
 	btn.button_pressed = initial_pressed
 	_refresh_toggle(btn, label_text)
 	btn.toggled.connect(func(pressed: bool) -> void:

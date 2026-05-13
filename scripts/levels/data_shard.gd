@@ -21,6 +21,11 @@ var _light: OmniLight3D
 
 func _ready() -> void:
 	add_to_group(&"data_shard")
+	# Player is on collision_layer = 2 (see player.tscn). The Area3D's default
+	# mask of 1 doesn't overlap, so body_entered never fired before this — the
+	# player walked through the shard with no effect. Mask = 2 catches the
+	# player specifically.
+	collision_mask = 2
 	body_entered.connect(_on_body_entered)
 	_build_visual()
 

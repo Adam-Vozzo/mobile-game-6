@@ -57,7 +57,7 @@ func _physics_process(delta: float) -> void:
 	var dur := _phase_duration()
 	if _phase_t >= dur:
 		_phase_t -= dur
-		_phase = Phase((_phase + 1) % 4)
+		_phase = ((_phase + 1) % 4) as Phase
 	position.y = _target_y()
 	_update_emissive()
 

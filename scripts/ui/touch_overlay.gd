@@ -17,10 +17,14 @@ class_name TouchOverlay
 @export_range(0.3, 0.7, 0.01) var stick_zone_ratio: float = 0.5
 
 @export_category("Dash gesture")
-## Minimum swipe distance (px) to classify a right-zone touch as an air dash,
-## not a camera drag. Exposed for dev-menu tuning.
+## Air dash is a chord: hold the jump button, then perform a quick swipe
+## anywhere in the right (camera-drag) zone. Swipe direction is ignored —
+## the player dashes in their current stick direction (move_vector), or
+## falls back to current velocity / visual forward if the stick is neutral.
+## A swipe must clear `dash_px_threshold` within `dash_time_threshold`
+## seconds of the touch landing to qualify. Below threshold, the touch
+## reverts to normal camera drag.
 @export_range(20.0, 120.0, 5.0) var dash_px_threshold: float = 40.0
-## Maximum elapsed time (seconds) for a swipe to still qualify as a dash.
 @export_range(0.05, 0.5, 0.01) var dash_time_threshold: float = 0.20
 
 @export_category("Jump button")
@@ -43,9 +47,14 @@ var _touches: Dictionary = {}    # index → KIND_*
 var _stick_origin: Vector2 = Vector2.ZERO
 var _stick_knob:   Vector2 = Vector2.ZERO
 var _drag_last:    Dictionary = {}    # index → Vector2
-# Gesture recognition: track the start position + timestamp of each KIND_DRAG
-# touch so we can detect a quick swipe (dash) vs a slow drag (camera).
+# Gesture state for the hold-jump-and-swipe air dash. Armed lazily in
+# _handle_drag on the first frame where TouchInput.jump_held is true for an
+# in-progress KIND_DRAG touch — touches that began before jump still count.
+# The swipe window slides forward on expiry so "slow pan, then swipe" with
+# jump held still fires. _dash_done is the one-shot guard: once a touch
+# fires a dash, that finger is locked out until released and re-touched.
 var _dash_start:   Dictionary = {}    # index → {pos: Vector2, time: float}
+var _dash_done:    Dictionary = {}    # index → true (post-fire lockout)
 
 # --- reposition mode ---
 var _reposition_mode: bool = false
@@ -135,10 +144,9 @@ func _handle_touch(event: InputEventScreenTouch) -> void:
 				TouchInput.set_jump_held(true)
 			KIND_DRAG:
 				_drag_last[event.index] = event.position
-				_dash_start[event.index] = {
-					"pos":  event.position,
-					"time": Time.get_ticks_msec() / 1000.0,
-				}
+				# Gesture is armed lazily in _handle_drag, not here — a
+				# touch that begins before jump press can still become a
+				# dash once jump is held.
 	else:
 		var kind: int = _touches.get(event.index, KIND_NONE)
 		match kind:
@@ -151,6 +159,7 @@ func _handle_touch(event: InputEventScreenTouch) -> void:
 			KIND_DRAG:
 				_drag_last.erase(event.index)
 				_dash_start.erase(event.index)
+				_dash_done.erase(event.index)
 		_touches.erase(event.index)
 	queue_redraw()
 
@@ -169,24 +178,48 @@ func _handle_drag(event: InputEventScreenDrag) -> void:
 			TouchInput.set_move_vector(v)
 			queue_redraw()
 		KIND_DRAG:
-			# Check for a quick swipe (dash gesture) before treating as camera drag.
-			var start: Dictionary = _dash_start.get(event.index, {})
-			if not start.is_empty():
-				var elapsed := Time.get_ticks_msec() / 1000.0 - float(start.get("time", 0.0))
-				if elapsed < dash_time_threshold:
-					var total: Vector2 = event.position - (start.get("pos", event.position) as Vector2)
-					if total.length() >= dash_px_threshold:
-						TouchInput.air_dash_triggered.emit(total.normalized())
-						# Reset anchor so follow-up movement goes to camera drag
+			var pos := event.position
+			# Arm the dash gesture lazily: on the first drag event where
+			# jump becomes held for this touch, start a swipe-detection
+			# window. _dash_done locks the touch out post-fire so the user
+			# has to release and re-touch to dash again.
+			if (
+				TouchInput.jump_held
+				and not _dash_start.has(event.index)
+				and not _dash_done.has(event.index)
+			):
+				_dash_start[event.index] = {
+					"pos":  pos,
+					"time": Time.get_ticks_msec() / 1000.0,
+				}
+			if _dash_start.has(event.index):
+				if not TouchInput.jump_held:
+					_dash_start.erase(event.index)
+				else:
+					var start: Dictionary = _dash_start[event.index]
+					var elapsed := Time.get_ticks_msec() / 1000.0 - float(start["time"])
+					if elapsed >= dash_time_threshold:
+						# Window expired without a swipe — slide forward,
+						# don't lock the touch out. "Pan, then swipe"
+						# still fires.
 						_dash_start[event.index] = {
-							"pos":  event.position,
+							"pos":  pos,
 							"time": Time.get_ticks_msec() / 1000.0,
 						}
-						_drag_last[event.index] = event.position
-						return
-			var last: Vector2 = _drag_last.get(event.index, event.position)
-			TouchInput.add_camera_drag_delta(event.position - last)
-			_drag_last[event.index] = event.position
+					elif (pos - (start["pos"] as Vector2)).length() >= dash_px_threshold:
+						# Direction comes from the stick, not the swipe.
+						# Player falls back to current velocity / visual
+						# forward if the stick is neutral.
+						TouchInput.air_dash_triggered.emit(TouchInput.move_vector)
+						_dash_start.erase(event.index)
+						_dash_done[event.index] = true
+			# Camera drag is never suppressed — a dash-firing swipe also
+			# pans the camera. If that whip feels wrong on-device, the
+			# fix is to buffer the drag delta during the gesture window
+			# and discard it on fire.
+			var last: Vector2 = _drag_last.get(event.index, pos)
+			TouchInput.add_camera_drag_delta(pos - last)
+			_drag_last[event.index] = pos
 
 
 func _classify(pos: Vector2) -> int:
