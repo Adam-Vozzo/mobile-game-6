@@ -350,9 +350,15 @@ func _build_touch_section(vbox: VBoxContainer) -> void:
 	var jump_radius := 95.0
 	var stick_zone  := 0.5
 	var touch_nodes := get_tree().get_nodes_in_group(&"touch_overlay")
+	var dash_px  := 40.0
+	var dash_t   := 0.20
+	var buf_cam  := false
 	if not touch_nodes.is_empty():
 		jump_radius = float(touch_nodes[0].get(&"jump_button_radius"))
 		stick_zone  = float(touch_nodes[0].get(&"stick_zone_ratio"))
+		dash_px     = float(touch_nodes[0].get(&"dash_px_threshold"))
+		dash_t      = float(touch_nodes[0].get(&"dash_time_threshold"))
+		buf_cam     = bool(touch_nodes[0].get(&"dash_buffer_camera"))
 	_make_slider(vbox, "Jump radius",
 		40.0, 200.0, 1.0,
 		func(v: float) -> void: DevMenu.touch_param_changed.emit(&"jump_radius", v),
@@ -361,6 +367,23 @@ func _build_touch_section(vbox: VBoxContainer) -> void:
 		0.30, 0.70, 0.01,
 		func(v: float) -> void: DevMenu.touch_param_changed.emit(&"stick_zone_ratio", v),
 		stick_zone)
+	_build_dash_gesture_controls(vbox, dash_px, dash_t, buf_cam)
+
+
+func _build_dash_gesture_controls(vbox: VBoxContainer,
+		dash_px: float, dash_t: float, buf_cam: bool) -> void:
+	vbox.add_child(_make_label("Dash gesture", SECTION_FONT_SIZE, false))
+	_make_slider(vbox, "Dash px threshold",
+		20.0, 120.0, 5.0,
+		func(v: float) -> void: DevMenu.touch_param_changed.emit(&"dash_px_threshold", v),
+		dash_px)
+	_make_slider(vbox, "Dash window (s)",
+		0.05, 0.50, 0.01,
+		func(v: float) -> void: DevMenu.touch_param_changed.emit(&"dash_time_threshold", v),
+		dash_t)
+	_make_toggle(vbox, "Buffer dash cam",
+		buf_cam,
+		func(v: bool) -> void: DevMenu.touch_param_changed.emit(&"dash_buffer_camera", v))
 
 
 func _build_juice_section(vbox: VBoxContainer) -> void:

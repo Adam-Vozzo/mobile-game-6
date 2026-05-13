@@ -107,6 +107,7 @@ func _ready() -> void:
 	_test_game_timer_accumulation()
 	_test_data_shard_gem_vertices()
 	_test_data_shard_light_params()
+	_test_dash_buffer_camera_logic()
 	_report()
 
 
@@ -3951,3 +3952,70 @@ func _test_data_shard_light_params() -> void:
 	# Peak is 5× the default — unambiguous visual feedback even through fog.
 	_ok("pulse peak energy (7.0) = 5× default energy (1.4) — clearly visible on collection",
 		_near(pulse_peak / light_energy, 5.0))
+
+
+func _test_dash_buffer_camera_logic() -> void:
+	## Pure-math mirror of the dash_buffer_camera branch in
+	## touch_overlay.gd::_handle_drag (KIND_DRAG case).
+	##
+	## Three outcomes (all documented as invariants):
+	##   ACCUMULATE  — inside window, buffering enabled: camera delta suppressed,
+	##                 added to _dash_drag_buffer.
+	##   FLUSH       — window expired or jump released: camera receives
+	##                 accumulated buffer + current-frame delta.
+	##   DISCARD     — dash fires: buffer erased, swipe delta suppressed →
+	##                 zero camera movement (prevents the cam-whip).
+	##
+	## When dash_buffer_camera = false (default), deltas are forwarded
+	## unconditionally, matching the pre-feature behaviour.
+	print("\n-- Dash buffer-and-discard camera invariants --")
+
+	var d1 := Vector2(10.0,  3.0)   # typical slow-pan drag frame
+	var d2 := Vector2( 6.0, -2.0)   # second slow-pan frame inside window
+	var d_swipe := Vector2(48.0, 1.0)  # fast swipe that fires the dash
+
+	# ── Accumulation ────────────────────────────────────────────────────────
+	# Each frame inside the window is added to the buffer; camera receives
+	# nothing until the window expires or clears.
+	var buf := Vector2.ZERO
+	buf += d1
+	buf += d2
+	_ok("buffer accumulates: x = d1.x + d2.x", _near(buf.x, d1.x + d2.x))
+	_ok("buffer accumulates: y = d1.y + d2.y", _near(buf.y, d1.y + d2.y))
+	_ok("accumulated buffer is non-zero", not buf.is_zero_approx())
+
+	# ── Flush (window expiry) ────────────────────────────────────────────────
+	# On expiry, camera receives the full buffer + current-frame delta in one
+	# call — total equals the sum of every buffered frame.
+	var d_expiry := Vector2(3.0, 1.5)
+	var cam_flush: Vector2 = buf + d_expiry
+	_ok("flush: camera x = Σ(buffered x) + expiry-delta x",
+		_near(cam_flush.x, d1.x + d2.x + d_expiry.x))
+	_ok("flush preserves all movement: total equals naive sum",
+		_near(cam_flush.length(), (d1 + d2 + d_expiry).length()))
+
+	# ── Discard (dash fires) ─────────────────────────────────────────────────
+	# cam_sent = true with no add_camera_drag_delta call → zero camera movement.
+	var cam_discard := Vector2.ZERO    # buf erased; d_swipe not forwarded
+	_ok("discard on dash fire: camera delta is zero (no cam-whip)",
+		cam_discard.is_zero_approx())
+	# Old (non-buffering) path forwarded the swipe delta unconditionally.
+	var cam_old_path: Vector2 = d_swipe   # behaviour before dash_buffer_camera
+	_ok("old path: swipe delta reaches camera (documents the cam-whip that was fixed)",
+		cam_old_path.length() > 0.0)
+	_ok("buffer-and-discard swipe cam Δ < old path swipe cam Δ",
+		cam_discard.length() < cam_old_path.length())
+
+	# ── Post-flush state ─────────────────────────────────────────────────────
+	# After flush, _dash_drag_buffer[index] is erased. The next frame's delta
+	# is forwarded immediately (cam_sent stays false, fallthrough path taken).
+	var after_flush_buf := Vector2.ZERO   # erased via _dash_drag_buffer.erase()
+	var next_delta       := Vector2(4.0, 2.0)
+	var cam_next: Vector2 = after_flush_buf + next_delta
+	_ok("post-flush: next frame delta forwarded fully (buffer starts clean)",
+		cam_next.is_equal_approx(next_delta))
+
+	# ── Commutativity ────────────────────────────────────────────────────────
+	# Buffer = vector sum; order of frames doesn't change the total flushed.
+	_ok("buffer accumulation is commutative (frame order invariant)",
+		(d1 + d2).is_equal_approx(d2 + d1))

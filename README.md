@@ -20,7 +20,7 @@ Things Claude can't decide alone, or where it's stalled and needs direction.
 
 > **What's waiting for your read:**
 > 1. **Spyro-style Threshold on device.** New Zone 1 plaza (3 routes), Zone 2 maintenance yard (perimeter ledges), Zone 3 lateral platforms. 4 shards scattered. Is the feel right? Are platforms reachable with the new Snappy values?
-> 2. **Hold-jump+swipe air dash.** Test the gesture: does it fire reliably while panning the camera with jump held? Is the camera-whip on the firing swipe acceptable, or do we need the buffer-and-discard variant?
+> 2. **Hold-jump+swipe air dash — two modes to compare.** (iter 67) Dev menu Touch section now has "Buffer dash cam" toggle. Try both: off = current (swipe also pans camera); on = camera suppressed during gesture window, flushed on expiry, discarded on fire (no whip). Pick whichever feels right — or say "always buffer" / "drop the option" and we'll clean it up.
 > 3. **Camera pitch 70°.** Was the previous 55° "too tight" complaint solved by the raise, or does pitch_min (hard-clamped at 0) need to go negative too (look up at structures from below)?
 > 4. **Industrial press.** Still at x=8 (decorative). After on-device feel of the new gantry layout, decide: move to critical path, or leave it as atmosphere?
 > 5. **Start Gate 1 art direction** — surface the asset options doc (Stray mesh / ambient audio / concrete kit) so autonomous asset acquisition can resume.
@@ -91,6 +91,28 @@ Goal: store-ready build.
 The full iteration log lives here, newest first. Every iteration appends an entry. Skim the dates to find where you last left off.
 
 <!-- ITERATION ENTRIES BELOW — DO NOT REMOVE OLDER ENTRIES -->
+
+### [2026-05-13] — iter 67 — air-dash buffer-and-discard camera variant
+
+Branch: `claude/gifted-shannon-RrbLW`
+Throttle: 🟢 NORMAL (0 iterations since 2026-05-14 direction session)
+Gate: Gate 1 — Vertical Slice prep
+
+**Primary: `dash_buffer_camera` — toggleable buffer-and-discard for the air-dash gesture.**
+The direction session asked to verify "whether the camera-whip on swipe is bad enough to need the buffer-and-discard variant." Rather than wait for device feedback to decide, this iteration implements the variant as a dev menu toggle (off by default = existing behaviour). The human can now compare both modes on device in one session.
+
+How it works: when `dash_buffer_camera = true`, camera drag deltas are buffered in `_dash_drag_buffer` during the active gesture window instead of being forwarded immediately. On dash fire, the buffer is discarded — the firing swipe produces zero camera movement. On window expiry or jump release, the buffer is flushed (forwarded as one call) — a slow camera pan still reaches the camera with at most `dash_time_threshold` (0.20 s) latency. When `false` (default), all deltas are forwarded unconditionally as before.
+
+**Dev menu addition.** The Touch Controls section now exposes three gesture tunables that were only `@export`s before: "Dash px threshold" slider (20–120 px, step 5), "Dash window (s)" slider (0.05–0.50 s, step 0.01), "Buffer dash cam" toggle. Initial values are read from the live TouchOverlay node, not hardcoded.
+
+**Refactor.** `_handle_drag`'s KIND_DRAG case was growing — extracted `_tick_dash_gesture(index, pos, delta) → bool` (36 lines, gesture state machine) and `_flush_dash_buffer(index, delta) → bool` (9 lines, flush/discard helper). `_handle_drag` itself is now 31 lines. `_build_touch_section` was heading toward 43 lines — extracted `_build_dash_gesture_controls(vbox, px, t, buf_cam)` (15 lines). All methods under 40.
+
+**Tests.** `_test_dash_buffer_camera_logic` (10 assertions, 826 → 836): documents accumulate / flush / discard / non-buffering-path invariants as pure-math mirrors.
+
+**Files touched.** `scripts/ui/touch_overlay.gd`, `tools/dev_menu/dev_menu_overlay.gd`, `tests/test_controller_kinematics.gd`, `docs/PLAN.md`, `docs/DECISIONS.md`, `README.md`.
+
+**Perf.** No change — one bool check per drag frame is negligible.
+**On-device pending.** Both modes need device comparison before deciding which to keep (or whether to drop the option and always buffer).
 
 ### [2026-05-14] — human direction session — Threshold Spyro-style redesign + Snappy tuning + air-dash UX + camera/dev-menu/bug fixes
 
