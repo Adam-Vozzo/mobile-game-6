@@ -15,6 +15,37 @@ Append, don't rewrite. Supersession adds a new entry referencing the old.
 
 ---
 
+## 2026-05-13 — Threshold zone atmosphere: single WorldEnvironment swap via Area3D zone triggers
+
+Status: accepted (on-device pending for feel tuning)
+Context: Threshold's three zones (Habitation/Maintenance/Industrial) needed distinct
+atmosphere — warm/cold/amber — but Godot 4 Mobile renderer has no FogVolume. The
+`zone_atmosphere.md` research (iter 68 side quest) identified WorldEnvironment resource
+swapping as the zero-cost technique.
+Decision: One WorldEnvironment node (`WorldEnv`), three `Environment` sub_resources
+(`Env_Z1` warm sodium, `Env_Z2` cold blue-white, `Env_Z3` amber). Three large
+`Area3D` zone triggers (Zone1/2/3Trigger, collision_mask=2) call
+`_on_zone_body_entered(body, zone_id)` in `threshold.gd`, which swaps
+`$WorldEnv.environment` to the matching resource. Zone 1 gains three sodium-yellow
+`OmniLight3D` (Z1Light1/2/3) previously absent. Toggle exposed in dev menu
+("Zone Atmosphere → Zone atmo" checkbox) via `DevMenu.atmosphere_param_changed`
+signal for on-device A/B comparison.
+Alternatives considered:
+- FogVolume: Forward+ only, not available on Mobile renderer.
+- AnimationPlayer-driven WorldEnvironment blend: adds latency at zone boundary,
+  no real-time blend possible with one WorldEnvironment anyway.
+- SubViewport per zone: extreme overhead for a sequential linear level.
+- AnimatableBody3D zone transitions: irrelevant to WorldEnvironment.
+- Multiple sibling WorldEnvironment nodes (enable/disable): Godot 4 doesn't have a
+  reliable `current` property on WorldEnvironment; single-node resource swap is
+  simpler and guaranteed to work.
+Consequences: Light budget: 3 (Z1) + 2 (Z2) + 3 (Z3) + 1 (Checkpoint WarmLight) = 9
+static OmniLights + up to 4 DataShard dynamic OmniLights = 13 — 1 over the 12-light
+recommendation in zone_atmosphere.md. DataShard lights are shadow-disabled and short-
+range (4.5 m); they're effectively cosmetic. Baked-lighting pass (Gate 1+) will drop
+static counts significantly. Fog density/ambient-color tuning deferred to on-device
+session.
+
 ## 2026-05-13 — Air-dash gesture: buffer-and-discard camera variant as toggleable option
 
 Status: accepted (pending on-device verdict)

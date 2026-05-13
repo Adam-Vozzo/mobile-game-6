@@ -5,7 +5,7 @@ A mobile 3D platformer. Brutalist megastructure inspired by *BLAME!*. Controller
 ## Status
 
 Current gate: **Gate 0 — Feel Lab** (closing out; Gate 1 prep in flight)
-Last activity: 2026-05-14 — human direction session: Threshold Spyro-style redesign + Snappy tuning + air-dash UX + camera/dev-menu/bug fixes
+Last activity: 2026-05-13 — iter 69: Threshold zone atmosphere (WorldEnvironment per-zone swap, Zone 1 OmniLights, dev menu toggle)
 Test device build: ✅ verified 2026-05-12 — runs in Godot 4.6 on PC and on Nothing Phone 4(a) Pro
 Performance: 144 fps / 6.9 ms in editor at 1920×1080 (Feel Lab); on-device frametimes TBD
 Throttle level: **🟢 RESET** by 2026-05-14 direction session. Next step: on-device verification of the redesign.
@@ -91,6 +91,28 @@ Goal: store-ready build.
 The full iteration log lives here, newest first. Every iteration appends an entry. Skim the dates to find where you last left off.
 
 <!-- ITERATION ENTRIES BELOW — DO NOT REMOVE OLDER ENTRIES -->
+
+### [2026-05-13] — iter 69 — Threshold zone atmosphere
+
+Branch: `claude/gifted-shannon-gsKU0`
+Throttle: 🟢 NORMAL (3 iterations since 2026-05-14 direction session)
+Gate: Gate 1 — Vertical Slice prep
+
+**Primary: Threshold zone atmosphere — per-zone WorldEnvironment swap via Area3D triggers.**
+
+Three zone-specific `Environment` sub_resources added to `threshold.tscn`: `Env_Z1` (Zone 1 Habitation — warm sodium-yellow ambient `Color(0.35, 0.30, 0.22)`, fog density 0.012), `Env_Z2` (Zone 2 Maintenance — cold blue-white ambient `Color(0.22, 0.26, 0.38)`, fog density 0.015), `Env_Z3` (Zone 3 Industrial — amber ambient `Color(0.30, 0.22, 0.14)`, fog density 0.008). The single `WorldEnv` node's `.environment` property is swapped when the player enters each zone's `Area3D` trigger volume (Zone1/2/3Trigger, collision_mask=2, three large BoxShape3D).
+
+Zone 1 previously had zero local OmniLights. Added Z1Light1/2/3 (sodium-yellow `Color(1.0, 0.85, 0.55)`, shadow=off, energy 1.0–1.5, range 10–14 m, at y=5–6.5 m above the plaza floor). Zone 2 and Zone 3 already had coloured OmniLights from earlier iterations.
+
+Light budget: 3 (Z1) + 2 (Z2) + 3 (Z3) + 1 (Checkpoint WarmLight) = 9 static + up to 4 DataShard dynamic = 13 total. 1 over the research note's 12-light ceiling but DataShard lights are shadow-disabled and short-range (cosmetic). Baked-lighting pass (Gate 1+) drops static count.
+
+**Side quest: Dev menu "Zone Atmosphere" toggle.**
+`DevMenu.atmosphere_param_changed` signal added. `dev_menu_overlay.gd` gets `_build_atmosphere_section` — a sub-section in the Level panel with a "Zone atmo" checkbox. When off, `threshold.gd` freezes on `zone1_env` regardless of triggers, for on-device A/B comparison of flat vs zone-differentiated atmosphere.
+
+**Tests.** `_test_zone_atmosphere_logic` (8 assertions, 846 → 854): Z1 ambient R>G>B warmth hierarchy; Z2 B>R cold dominance; Z3 R>G>B amber hierarchy; fog density ordering Z3<Z1<Z2; zone trigger coverage of spawn (z=0), Zone2 floor (z=52.5), G1+Terminal (z=81, z=135).
+
+**Perf.** WorldEnvironment swap on zone entry = one property assignment per zone transition. No per-frame cost. Zone 1 lights add ~3 OmniLight contributions to the scene — negligible GPU cost on Mobile renderer at these ranges.
+**On-device pending.** Fog density and ambient energy values need feel tuning on device. Zone trigger extents may need adjustment based on actual navigation paths.
 
 ### [2026-05-13] — iter 68 — Momentum profile speed ramp
 

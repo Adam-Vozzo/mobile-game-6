@@ -262,6 +262,7 @@ func _build_level_section(vbox: VBoxContainer) -> void:
 	_make_button(vbox, "↺ Reload level", func() -> void:
 		get_tree().reload_current_scene())
 	_build_press_section(vbox)
+	_build_atmosphere_section(vbox)
 
 
 func _build_level_select(vbox: VBoxContainer) -> void:
@@ -338,6 +339,12 @@ func _build_press_section(vbox: VBoxContainer) -> void:
 			sp["min"], sp["max"], sp["step"],
 			func(v: float) -> void: DevMenu.press_param_changed.emit(prop, v),
 			sp["default"])
+
+
+func _build_atmosphere_section(vbox: VBoxContainer) -> void:
+	vbox.add_child(_make_label("Zone Atmosphere", SECTION_FONT_SIZE, false))
+	_make_toggle(vbox, "Zone atmo", true,
+		func(v: bool) -> void: DevMenu.atmosphere_param_changed.emit(&"zone_atmo_enabled", v))
 
 
 func _build_touch_section(vbox: VBoxContainer) -> void:

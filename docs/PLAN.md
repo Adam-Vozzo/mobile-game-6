@@ -17,6 +17,7 @@ authored with it in mind.
 ## Active iteration
 
 - _No iteration currently in flight._
+- **🟢 Iter 69 complete.** Threshold zone atmosphere implemented. Three zone-specific `Environment` sub_resources (Env_Z1 warm sodium / Env_Z2 cold blue-white / Env_Z3 amber) added to `threshold.tscn`. Three `Area3D` zone trigger volumes (Zone1/2/3Trigger, collision_mask=2) fire `_on_zone_body_entered` in `threshold.gd`, swapping `$WorldEnv.environment`. Zone 1 gains 3 sodium-yellow `OmniLight3D` (Z1Light1/2/3) — previously no local lights. Dev menu: "Zone Atmosphere" toggle in Level section via `DevMenu.atmosphere_param_changed`. 8 unit tests (846 → 854). On-device pending for fog/ambient tuning.
 - **🟢 Iter 68 complete.** Momentum profile speed ramp implemented. `ControllerProfile` gains `speed_ramp_rate` (0 = disabled) + `ramp_max_speed`. `player.gd` `_apply_horizontal` ramps `_ramp_speed` toward `ramp_max_speed` with sustained input and decays back to `max_speed` when input is absent. `momentum.tres` now has `speed_ramp_rate = 4.0`, `ramp_max_speed = 18.0`. Dev menu "Ramp rate" + "Ramp top speed" sliders added. 10 unit tests (836 → 846). Side quest: `docs/research/zone_atmosphere.md` — zone-distinct lighting on Mobile renderer, unblocks Threshold ambient volumes item.
 - **🟢 Iter 67 complete.** Air-dash buffer-and-discard camera variant (`dash_buffer_camera` toggle) implemented in `touch_overlay.gd`. Both modes (whip-on-fire vs buffer-and-discard) now available from dev menu Touch section for on-device comparison. See DECISIONS.md 2026-05-13.
 - **🟢 THROTTLE RESET 2026-05-14.** Human direction session landed a multi-PR pass:
@@ -88,14 +89,17 @@ The next iteration should pull from the top of this list. Items marked
 8. **Threshold polish / Gate 1 pass.** After on-device greybox playtest: ~~move industrial
    press into critical path~~ _(iter 59: press script + emissive + KillZone wired; par-route
    routing still blocked on device feel — press kills but player can walk around it)._
-   Wire ambient lighting volumes, texture pass (concrete kit).
+   ~~Wire ambient lighting volumes~~ _(iter 69: three zone-distinct Environment resources +
+   Area3D triggers swap WorldEnv per zone; Zone 1 gains 3 sodium-yellow OmniLights; dev menu
+   "Zone atmo" toggle for A/B; 8 unit tests. On-device pending for fog/ambient tuning.)_
+   Texture pass (concrete kit), emissive surfaces on Zone 2 props.
    ~~CameraHint wired (iter 56).~~ ~~Win-state flow + results panel wired (iter 56).~~
    ~~Data shard collectible (iter 57) — ShardLedge at (7,−6.25,82) + DataShard at
    (7,−4.0,82); SurfaceTool octahedron gem, cyan OmniLight, collection pulse, respawn
    API, dev-menu "Respawn shard" + "Shard ledge" teleport, 7 placement unit tests.~~
    ~~Industrial press functional (iter 59) — IndustrialPress.gd four-beat cycle, amber
    emissive strip, KillZone HazardBody child; 5 dev-menu sliders; 13 unit tests.~~
-   Remaining items (ambient volumes, texture pass, par-route routing) blocked on device feel.
+   Remaining items (texture pass, emissive surface pass, par-route routing) blocked on device feel.
    ~~**Spyro-style redesign 2026-05-14.**~~ Done. Zone 1 corridor → open plaza (24×36 floor,
    3 routes: floor walk / rubble hop / vertical climb to Lookout shard). Zone 2 corridor →
    maintenance yard (16 m floor, perimeter ledge alternate route via Z2Step/Z2Ledge × 2).
@@ -191,6 +195,25 @@ These mirror "Open questions waiting on you" in the README.
   drive the next tuning iteration.
 
 ## Recently completed (last 5)
+
+- 2026-05-13 — Iteration 69. **Threshold zone atmosphere.**
+  `threshold.tscn`: six new sub_resources — `Env_Z1` (ambient warm grey 0.35/0.30/0.22,
+  fog_density 0.012), `Env_Z2` (cold blue 0.22/0.26/0.38, fog_density 0.015), `Env_Z3`
+  (amber 0.30/0.22/0.14, fog_density 0.008); `Shape_Zone1/2/3Trig` BoxShape3D. Three
+  `Area3D` Zone1/2/3Trigger nodes (collision_mask=2, monitorable=false) added. Three
+  Zone 1 sodium-yellow OmniLights (Z1Light1/2/3, Color(1.0,0.85,0.55), shadow=off,
+  y=5–6.5 m). Root node exports `zone1/2/3_env` assigned from sub_resources.
+  `threshold.gd`: `zone1/2/3_env: Environment` exports; `_world_env` onready; `_active_zone`
+  state; `_connect_zone_triggers` wires `body_entered.bind(id)` for each trigger;
+  `_apply_zone_env` swaps `_world_env.environment`; `DevMenu.atmosphere_param_changed`
+  handler for `zone_atmo_enabled` toggle.
+  `dev_menu.gd`: `atmosphere_param_changed` signal added.
+  `dev_menu_overlay.gd`: `_build_atmosphere_section` — "Zone Atmosphere" sub-section
+  with "Zone atmo" toggle in the Level panel.
+  Unit tests: `_test_zone_atmosphere_logic` (8 assertions, 846 → 854): Z1 ambient R>G>B
+  warmth; Z2 B>R cold dominance; Z3 R>G>B amber; fog density Z3<Z1<Z2; trigger coverage
+  for spawn / Zone2 floor / G1+Terminal.
+  On-device pending — fog density and ambient energy need feel tuning on device.
 
 - 2026-05-13 — Iteration 68. **Momentum profile speed ramp.**
   `controller_profile.gd`: two new `@export_range` properties in the Movement category —

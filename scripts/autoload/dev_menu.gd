@@ -34,6 +34,8 @@ signal blob_shadow_param_changed(param: StringName, value: float)
 signal squash_stretch_param_changed(param: StringName, value: float)
 @warning_ignore("unused_signal")
 signal press_param_changed(param: StringName, value: float)
+@warning_ignore("unused_signal")
+signal atmosphere_param_changed(param: StringName, value: Variant)
 
 var is_open: bool = false
 var juice_state: Dictionary[StringName, bool] = {
