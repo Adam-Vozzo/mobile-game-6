@@ -1,4 +1,4 @@
-[gd_scene load_steps=79 format=3]
+[gd_scene load_steps=80 format=3]
 
 [ext_resource type="Script" path="res://scripts/levels/threshold.gd" id="1_thresh"]
 [ext_resource type="Script" path="res://scripts/levels/rotating_hazard.gd" id="2_roth"]
@@ -15,6 +15,7 @@
 [ext_resource type="Script" path="res://tools/debug/player_debug_draw.gd" id="13_dbg"]
 [ext_resource type="PackedScene" path="res://scenes/levels/data_shard.tscn" id="14_shard"]
 [ext_resource type="Script" path="res://scripts/levels/industrial_press.gd" id="15_ip"]
+[ext_resource type="Script" path="res://scripts/levels/ghost_trail_renderer.gd" id="16_ghost"]
 
 [sub_resource type="Environment" id="Env_Threshold"]
 background_mode = 1
@@ -894,3 +895,6 @@ transform = Transform3D(1, 0, 0, 0, 1, 0, 0, 0, 1, 0, -3.0, 57)
 
 [node name="DataShard" parent="Beat4_Ketsu" instance=ExtResource("14_shard")]
 transform = Transform3D(1, 0, 0, 0, 1, 0, 0, 0, 1, -5, -18.5, 119)
+
+[node name="GhostTrailRenderer" type="Node3D" parent="."]
+script = ExtResource("16_ghost")

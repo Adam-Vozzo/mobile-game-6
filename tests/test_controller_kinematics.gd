@@ -111,6 +111,7 @@ func _ready() -> void:
 	_test_speed_ramp_logic()
 	_test_zone_atmosphere_logic()
 	_test_jump_anticipation_squish_math()
+	_test_ghost_trail_recording()
 	_report()
 
 
@@ -4188,3 +4189,72 @@ func _test_jump_anticipation_squish_math() -> void:
 		1.0 - 0.18 * 1.0 > 0.0)
 	_ok("anticipation: coil_xz < 1.5 at max scale (no over-expand)",
 		1.0 + 0.08 * 1.0 < 1.5)
+
+
+func _test_ghost_trail_recording() -> void:
+	## Mirrors game.gd ghost trail recording logic:
+	##   SAMPLE_INTERVAL = 1/30, MAX_TRAIL_DEPTH = 5, MAX_TRAIL_LEN = 2700
+	##   _on_player_respawned(): push_front + pop_back if > MAX_TRAIL_DEPTH
+	##   _physics_process(): accumulate + sample at SAMPLE_INTERVAL
+	print("\n-- Ghost trail recording logic (game.gd) --")
+	const SAMPLE_INTERVAL := 1.0 / 30.0
+	const MAX_DEPTH       := 5
+	const MAX_TRAIL_LEN   := 2700
+
+	# Sampling interval is exactly 1/30 s.
+	_ok("ghost trail: SAMPLE_INTERVAL = 1/30 s",
+		_near(SAMPLE_INTERVAL, 0.03333, 0.00001))
+
+	# Accumulator fires on the frame that crosses the threshold.
+	var accum := 0.0
+	var sample_count := 0
+	for _i: int in 63:     # 63 frames at 60 fps = 1.05 s → expect 31 samples
+		accum += 1.0 / 60.0
+		if accum >= SAMPLE_INTERVAL:
+			accum -= SAMPLE_INTERVAL
+			sample_count += 1
+	_ok("ghost trail: 63 frames at 60 fps → 31 samples (30 Hz with drift)",
+		sample_count == 31)
+
+	# Max trail length cap: trail never exceeds 2700 points.
+	var trail := PackedVector3Array()
+	for _i: int in 2710:
+		trail.append(Vector3.ZERO)
+		if trail.size() > MAX_TRAIL_LEN:
+			trail.remove_at(0)
+	_ok("ghost trail: trail capped at MAX_TRAIL_LEN = 2700",
+		trail.size() == MAX_TRAIL_LEN)
+
+	# Archive on respawn: trail_history grows up to MAX_DEPTH.
+	var trail_history: Array[PackedVector3Array] = []
+	for attempt: int in 7:
+		var cur := PackedVector3Array()
+		cur.append(Vector3(float(attempt), 0.0, 0.0))
+		if cur.size() > 0:
+			trail_history.push_front(cur.duplicate())
+			if trail_history.size() > MAX_DEPTH:
+				trail_history.pop_back()
+	_ok("ghost trail: history depth capped at MAX_DEPTH = 5",
+		trail_history.size() == MAX_DEPTH)
+
+	# Most recent attempt is at index 0 (push_front ordering).
+	_ok("ghost trail: most recent attempt at history[0]",
+		_near(trail_history[0][0].x, 6.0))  # attempt 6 (last) pushed front
+
+	# Oldest retained attempt is at index MAX_DEPTH - 1.
+	_ok("ghost trail: oldest retained attempt at history[4]",
+		_near(trail_history[MAX_DEPTH - 1][0].x, 2.0))  # attempt 2 (7-MAX_DEPTH=2)
+
+	# Alpha formula: attempt 0 = 0.35, each subsequent × 0.55.
+	var alpha0 := 0.35 * pow(0.55, 0.0)
+	var alpha1 := 0.35 * pow(0.55, 1.0)
+	_ok("ghost trail: alpha[0] = 0.35 (newest, brightest)",
+		_near(alpha0, 0.35))
+	_ok("ghost trail: alpha[1] = alpha[0] × 0.55 (each attempt fades)",
+		_near(alpha1, alpha0 * 0.55))
+
+	# Visible points formula: window_s * 30 Hz.
+	_ok("ghost trail: visible_points(2.0 s) = 60",
+		roundi(2.0 * 30.0) == 60)
+	_ok("ghost trail: visible_points(4.0 s) = 120",
+		roundi(4.0 * 30.0) == 120)

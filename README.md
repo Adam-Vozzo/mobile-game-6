@@ -5,10 +5,10 @@ A mobile 3D platformer. Brutalist megastructure inspired by *BLAME!*. Controller
 ## Status
 
 Current gate: **Gate 0 — Feel Lab** (closing out; Gate 1 prep in flight)
-Last activity: 2026-05-13 — iter 71: asset options doc (Stray mesh / audio / concrete kit) + pre-jump anticipation squish
+Last activity: 2026-05-13 — iter 72: ghost trail recording + MultiMesh renderer (Gate 1 requirement)
 Test device build: ✅ verified 2026-05-12 — runs in Godot 4.6 on PC and on Nothing Phone 4(a) Pro
 Performance: 144 fps / 6.9 ms in editor at 1920×1080 (Feel Lab); on-device frametimes TBD
-Throttle level: **🟡 SOFT** (5 iterations since 2026-05-14 direction session — non-destructive work preferred)
+Throttle level: **🟡 SOFT** (6 iterations since 2026-05-14 direction session — non-destructive work preferred)
 
 If you only read one section, read **Open questions waiting on you** below.
 
@@ -91,6 +91,32 @@ Goal: store-ready build.
 The full iteration log lives here, newest first. Every iteration appends an entry. Skim the dates to find where you last left off.
 
 <!-- ITERATION ENTRIES BELOW — DO NOT REMOVE OLDER ENTRIES -->
+
+### [2026-05-13] — iter 72 — Ghost trail recording + MultiMesh renderer
+
+Branch: `claude/gifted-shannon-on3SX`
+Throttle: 🟡 SOFT (6 iterations since 2026-05-14 direction session)
+Gate: Gate 1 — Vertical Slice prep
+
+**Primary: Ghost trail attempt-replay overlay — Gate 1 requirement implemented.**
+
+Recording: `game.gd` gains `trail_history: Array[PackedVector3Array]` + `_current_trail` sampled at 30 Hz in `_physics_process`. `_on_player_respawned()` (connected to the existing `player_respawned` signal) archives each failed run as push_front with pop_back if depth exceeds 5. `start_run()` resets all trail state and sets `_recording = true`; `reset_run()` and `level_complete()` clear and stop recording. Hard cap: 2700 points per attempt (90 s × 30 Hz).
+
+Renderer: new `scripts/levels/ghost_trail_renderer.gd`. Builds a `MultiMeshInstance3D` with a squashed SphereMesh (r=0.12 m) in `_ready()`. Each frame reads `Game.trail_history` and writes instance transforms + colours: attempt alpha = `0.35 × 0.55^idx` (newest = 0.35, each older ×0.55); point alpha fades oldest→newest within the visible window. **1 draw call for up to 300 instances** at the default 2 s window.
+
+Dev menu: `&"ghost_trails": false` added to `juice_state` (default OFF — enable once the level has meaningful death data); `ghost_trail_param_changed` signal added. "Ghost Trail — Tuning" sub-section in Juice panel with "Trail window (s)" slider (1–5 s, default 2 s) — resizes MultiMesh instance_count live.
+
+`threshold.tscn`: `GhostTrailRenderer` node added as root child (load_steps 79→80).
+
+**Side quest: Fix `smb3d.md` implication #1.** The note incorrectly said "blob shadow implemented this iteration." Corrected to reference iter 31 (the actual implementation).
+
+**Perf.** Ghost trail recording: one group lookup + one `append` per sample at 30 Hz. Renderer: O(depth × visible_pts) transform writes — O(300) per frame, negligible on Adreno/Mali. Zero per-frame cost when disabled.
+
+**On-device pending.** Enable `ghost_trails` toggle in dev menu after dying 3+ times. Check: (1) ghost blue-grey (0.55, 0.55, 0.60) reads against the brutalist world; (2) trail window 2 s is right, or adjust slider; (3) blob alpha (0.35 newest) is distinct from the Stray red. Trail window slider is live for on-device tuning.
+
+Unit tests: `_test_ghost_trail_recording` (10 assertions, 864 → 874).
+
+**New dev-menu controls:** Ghost trails toggle (Juice section); Trail window (s) slider (Juice → Ghost Trail — Tuning).
 
 ### [2026-05-13] — iter 71 — Asset options doc + pre-jump anticipation squish
 

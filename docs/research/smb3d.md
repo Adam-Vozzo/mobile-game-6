@@ -86,7 +86,7 @@ Mixed-to-favorable (PC/Xbox generally favorable; Switch 2/PS5 mixed/average). Cr
 
 ## Implications for Project Void
 
-1. **Blob shadow is mandatory before the first on-device feel test.** SMB 3D launched with this and still gets depth-perception criticism. Without it, the human's first feel verdict will be polluted by spatial disorientation, not controller feel. Blob shadow implemented this iteration in `scripts/player/blob_shadow.gd`.
+1. **Blob shadow is mandatory before the first on-device feel test.** SMB 3D launched with this and still gets depth-perception criticism. Without it, the human's first feel verdict will be polluted by spatial disorientation, not controller feel. Blob shadow implemented in `scripts/player/blob_shadow.gd` (iter 31); dev menu tunables in Juice → Blob Shadow — Tuning.
 
 2. **Camera stability beats camera dynamism for precision platforming.** SMB 3D chose fixed-per-level cameras explicitly because a dynamic camera "couldn't keep up with the pace." Void's tripod model (no lateral translation) is already aligned with this principle. The airborne rigid-translate (locking the camera frame from takeoff to landing) is Void's equivalent of the "consistent depth axis per level" design.
 
