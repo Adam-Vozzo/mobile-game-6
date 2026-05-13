@@ -5,10 +5,10 @@ A mobile 3D platformer. Brutalist megastructure inspired by *BLAME!*. Controller
 ## Status
 
 Current gate: **Gate 0 — Feel Lab** (closing out; Gate 1 prep in flight)
-Last activity: 2026-05-13 — iter 69: Threshold zone atmosphere (WorldEnvironment per-zone swap, Zone 1 OmniLights, dev menu toggle)
+Last activity: 2026-05-13 — iter 70: Zone 2 emissive surfaces (HazardStripe, CartLight, ConduitLeft/Right) + orphaned sub-resource cleanup
 Test device build: ✅ verified 2026-05-12 — runs in Godot 4.6 on PC and on Nothing Phone 4(a) Pro
 Performance: 144 fps / 6.9 ms in editor at 1920×1080 (Feel Lab); on-device frametimes TBD
-Throttle level: **🟢 RESET** by 2026-05-14 direction session. Next step: on-device verification of the redesign.
+Throttle level: **🟢 NORMAL** (4 iterations since 2026-05-14 direction session)
 
 If you only read one section, read **Open questions waiting on you** below.
 
@@ -91,6 +91,28 @@ Goal: store-ready build.
 The full iteration log lives here, newest first. Every iteration appends an entry. Skim the dates to find where you last left off.
 
 <!-- ITERATION ENTRIES BELOW — DO NOT REMOVE OLDER ENTRIES -->
+
+### [2026-05-13] — iter 70 — Zone 2 emissive surfaces + orphaned sub-resource cleanup
+
+Branch: `claude/gifted-shannon-YOMAH`
+Throttle: 🟢 NORMAL (4 iterations since 2026-05-14 direction session)
+Gate: Gate 1 — Vertical Slice prep
+
+**Primary: Zone 2 (Maintenance Yard) emissive surfaces.**
+Three emissive elements added to `threshold.tscn`, reinforcing Zone 2's cold blue-white identity per the "emissive surfaces carry more zone identity than light count" principle from `zone_atmosphere.md`.
+
+- `HazardStripe` — amber danger stripe (Color(0.9, 0.55, 0.1), energy 1.8) on the underside of `MaintArm1` (the rotating kill-zone arm). The glowing amber signals "this will kill you" independent of proximity to the OmniLights. Position: (0, -0.22, 0) relative to arm, BoxMesh 2.38×0.04×0.38 — spans arm width, thin in Y.
+- `CartLight` — small cold blue-white indicator (Color(0.4, 0.55, 0.9), energy 1.2) on top of `ServiceCart` (the moving platform). Signals active/powered status; distinguishes the moving platform from static ledges in the same material.
+- `ConduitLeft` / `ConduitRight` — thin blue-white emissive strips (BoxMesh 0.06×0.06×20 m) running the length of Zone 2 along both floor edges at y=-4.85 m, ±7.7 m from centre. Suggest active power conduits, give the maintenance yard a "this zone is alive" identity without adding light count.
+
+Two new `StandardMaterial3D` sub-resources (`Mat_Emissive_Danger`, `Mat_Emissive_Cold`) and three new `BoxMesh` sub-resources embedded in `threshold.tscn`. No new scripts, no new logic — purely static visual geometry.
+
+**Side quest: Orphaned sub-resource cleanup.**
+Removed 8 sub-resources left over from the pre-Spyro-redesign corridor layout (Zone 1 and Zone 2 wall/ceiling meshes and shapes that were defined but no longer referenced by any node). `load_steps` updated 82 → 79 (net: −8 orphans + 5 new = −3).
+
+**Perf.** Five additional MeshInstance3D nodes in Zone 2; the emissive materials use `emission_enabled = true` with no shadow — negligible GPU cost on Mobile renderer. No per-frame logic added.
+
+**On-device pending.** Emissive intensities (1.8 / 1.2) are estimates; tune on device. ConduitStrip width (0.06 m) may be invisible at gameplay distance — widen if needed.
 
 ### [2026-05-13] — iter 69 — Threshold zone atmosphere
 

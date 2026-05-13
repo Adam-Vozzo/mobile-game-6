@@ -15,6 +15,28 @@ Append, don't rewrite. Supersession adds a new entry referencing the old.
 
 ---
 
+## 2026-05-13 — Zone 2 emissive surfaces: static geometry over additional OmniLights
+
+Status: accepted (on-device pending for intensity tuning)
+Context: Zone 2 (Maintenance Yard) had two OmniLights for cold blue-white identity but no emissive
+surfaces. The `zone_atmosphere.md` research (INSIDE principle) established that emissive surfaces
+define zone identity more cost-effectively than light count.
+Decision: Three static emissive `MeshInstance3D` nodes added to Zone 2, no new lights, no new scripts:
+(1) `HazardStripe` (amber, energy 1.8) on the underside of `MaintArm1` — communicates danger via
+colour-coded warning stripe that persists regardless of viewing angle or light proximity;
+(2) `CartLight` (cold blue-white, energy 1.2) on top of `ServiceCart` — distinguishes the moving
+platform from static ledges by adding an "active/powered" indicator;
+(3) `ConduitLeft`/`ConduitRight` (cold blue-white, energy 1.2, 0.06×0.06×20 m) — thin floor-edge
+strips running the zone's length, suggesting active power infrastructure without adding draw-call cost.
+Two embedded `StandardMaterial3D` sub-resources and three `BoxMesh` sub-resources suffice — no
+standalone .tres files needed for scene-specific emissives.
+Alternatives considered:
+- Additional OmniLights: increases light budget already at 9 static + 4 dynamic; not needed.
+- Script-animated emissives (like IndustrialPress): adds complexity without benefit for static surfaces.
+- Standalone .tres material files: correct for reusable materials; overkill for zone-specific emissives.
+Consequences: Light budget unchanged. Five additional MeshInstance3D nodes — negligible on Mobile
+renderer. Emissive intensities (1.8 / 1.2) and conduit strip width (0.06 m) need on-device tuning.
+
 ## 2026-05-13 — Threshold zone atmosphere: single WorldEnvironment swap via Area3D zone triggers
 
 Status: accepted (on-device pending for feel tuning)
