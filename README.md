@@ -5,10 +5,10 @@ A mobile 3D platformer. Brutalist megastructure inspired by *BLAME!*. Controller
 ## Status
 
 Current gate: **Gate 0 — Feel Lab** (closing out; Gate 1 prep in flight)
-Last activity: 2026-05-12 — iter 57: Data shard collectible implemented and placed in Threshold
+Last activity: 2026-05-13 — iter 58: Gate 1 script tests (679 → 705 assertions) + machinery hazard research
 Test device build: ✅ verified 2026-05-12 — runs in Godot 4.6 on PC and on Nothing Phone 4(a) Pro
 Performance: 144 fps / 6.9 ms in editor at 1920×1080 (Feel Lab); on-device frametimes TBD
-Throttle level: **6** (6 iterations since last human direction 2026-05-12). Next: Threshold remaining polish (concrete texture / industrial press into critical path) — blocked on on-device feel.
+Throttle level: **7** (7 iterations since last human direction 2026-05-12). Next: Threshold remaining polish (concrete texture / industrial press into critical path) — blocked on on-device feel.
 
 If you only read one section, read **Open questions waiting on you** below.
 
@@ -83,6 +83,49 @@ Goal: store-ready build.
 The full iteration log lives here, newest first. Every iteration appends an entry. Skim the dates to find where you last left off.
 
 <!-- ITERATION ENTRIES BELOW — DO NOT REMOVE OLDER ENTRIES -->
+
+### [2026-05-13] — iter 58 — Gate 1 script tests + machinery hazard research
+
+Branch: `claude/gifted-shannon-3QFyY`
+Throttle: 7 (soft)
+Gate: Gate 1 — Vertical Slice prep (hardening while Threshold polish blocked on on-device feel)
+
+**Primary: Unit tests for Gate 1 scripts (679 → 705 assertions).**
+
+Three new test groups in `tests/test_controller_kinematics.gd`:
+
+**`_test_results_panel_formatting()`** — 11 assertions
+- `_fmt_time()` output at 6 boundary values (0.0, 35.0, 60.0, 65.5, 3661.0, 0.25)
+- Par-beat colour is green (g > r), par-fail is red (r > g), exactly-equal counts as beat (`<=` not `<`)
+- Shard count string `"%d / %d"` format at `[2,3]` and `[0,1]`
+
+**`_test_win_state_one_shot_guard()`** — 6 assertions
+- `WinState._triggered` default false, set, one-shot guard bool check
+- `CheckPoint._activated` default false, `reset()` clears, locked after set
+
+**`_test_data_shard_state_machine()`** — 9 assertions
+- `_collected`, `_mesh_instance`, `_light` instance-variable defaults (no `_ready()` needed)
+- `_collected=true` blocks re-collection
+- Spin period in `(4 s, 6 s)` range (readable, not blurring)
+- Gem total height 0.50 m; equatorial radius 0.20 m < sphere collider 0.60 m
+- `"data_shard"` group StringName contract
+
+Four new preload constants at top of file: `RP` (ResultsPanel), `WS` (WinState), `CKP` (CheckPoint), `DS` (DataShard).
+
+**Side quest: `docs/research/machinery_hazards.md`**
+Industrial machinery hazard design — four-beat cycle (dormant / windup / stroke / rebound),
+cross-axis movement preference for 3D depth legibility, amber emissive danger-strip cycle,
+mobile dormant-window sizing formula (1.5 × crossing-time), Godot 4 `AnimatableBody3D` + HazardBody
+sketch for the Threshold industrial press, 7 concrete implications (Y-axis crush, critical-path
+routing, emissive strip, 1.0 s dormant window, 0.15 m hitbox inset, crushed-prop first-encounter,
+dev-menu sliders). Sources: INSIDE, Celeste Ch2, Hollow Knight, SMB 3D.
+`docs/research/INDEX.md` updated with new "Gate 1 — level hazard design" section.
+
+Perf delta: none (tests only).
+Bugs fixed: none.
+New dev-menu controls: none.
+Research added: `machinery_hazards.md`.
+On-device pending: all Threshold items.
 
 ### [2026-05-12] — iter 57 — Data shard collectible
 

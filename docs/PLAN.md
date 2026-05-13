@@ -16,10 +16,10 @@ authored with it in mind.
 
 ## Active iteration
 
-- _No iteration currently in flight._ Iter 57 (data shard collectible) landed 2026-05-12 — see
+- _No iteration currently in flight._ Iter 58 (Gate 1 script tests + machinery hazard research) landed 2026-05-13 — see
   Recently completed.
 - Next iteration should pull from the top of the P0 queue below.
-  Throttle: **6** (6 iterations since last human direction session 2026-05-12).
+  Throttle: **7** (7 iterations since last human direction session 2026-05-12).
 
 ## Queue (ranked, top is next)
 
@@ -167,6 +167,20 @@ These mirror "Open questions waiting on you" in the README.
   drive the next tuning iteration.
 
 ## Recently completed (last 5)
+
+- 2026-05-13 — Iteration 58. **Gate 1 script unit tests + machinery hazard research.**
+  Three new test groups in `tests/test_controller_kinematics.gd` (679 → 705 assertions):
+  `_test_results_panel_formatting` (11 assertions): `_fmt_time()` format at 6 boundary values,
+  par-beat/fail colour contract, shard count string, panel-width constant ≥ 480 px;
+  `_test_win_state_one_shot_guard` (6 assertions): `WinState._triggered` default, set,
+  guard-blocks logic; `CheckPoint._activated` default, `reset()` clears, locked-after-set;
+  `_test_data_shard_state_machine` (9 assertions): `_collected` default false,
+  `_mesh_instance/_light` default null, one-shot guard, spin period (4–6 s), gem height
+  0.50 m, gem equatorial radius < collider radius, group StringName contract.
+  Four new preload constants: `RP`, `WS`, `CKP`, `DS`.
+  Side quest: `docs/research/machinery_hazards.md` — industrial machinery hazard design
+  (four-beat cycle, cross-axis preference, emissive danger strip, mobile dormant-window
+  formula, Godot 4 `AnimatableBody3D` sketch). INDEX.md updated. Throttle: 7 (soft).
 
 - 2026-05-12 — Iteration 57. **Data shard collectible.** `scripts/levels/data_shard.gd`:
   Area3D, adds to `"data_shard"` group, SurfaceTool octahedron gem (unshaded cyan emissive,

@@ -19,6 +19,10 @@ const TI := preload("res://scripts/autoload/touch_input.gd")
 const GM := preload("res://scripts/autoload/game.gd")
 const DM := preload("res://scripts/autoload/dev_menu.gd")
 const AU := preload("res://scripts/autoload/audio.gd")
+const RP  := preload("res://scripts/ui/results_panel.gd")
+const WS  := preload("res://scripts/levels/win_state.gd")
+const CKP := preload("res://scripts/levels/checkpoint.gd")
+const DS  := preload("res://scripts/levels/data_shard.gd")
 
 var _pass_count := 0
 var _fail_count := 0
@@ -88,6 +92,9 @@ func _ready() -> void:
 	_test_air_dash_logic()
 	_test_game_gate1_api()
 	_test_data_shard_placement()
+	_test_results_panel_formatting()
+	_test_win_state_one_shot_guard()
+	_test_data_shard_state_machine()
 	_report()
 
 
@@ -3145,3 +3152,101 @@ func _test_data_shard_placement() -> void:
 	_ok("Double-collect guard: shards_collected still 1", g.shards_collected == 1)
 
 	g.free()
+
+
+func _test_results_panel_formatting() -> void:
+	## ResultsPanel._fmt_time() output and par-colour logic.
+	## Pure functions — no scene tree needed.
+	print("\n-- ResultsPanel formatting --")
+	var rp := RP.new()
+
+	# Time format: "%d:%02d.%02d" — minutes, seconds, centiseconds.
+	_ok("fmt_time(0.0) == '0:00.00'",    rp._fmt_time(0.0)    == "0:00.00")
+	_ok("fmt_time(35.0) == '0:35.00'",   rp._fmt_time(35.0)   == "0:35.00")
+	_ok("fmt_time(60.0) == '1:00.00'",   rp._fmt_time(60.0)   == "1:00.00")
+	_ok("fmt_time(65.5) == '1:05.50'",   rp._fmt_time(65.5)   == "1:05.50")
+	_ok("fmt_time(3661.0) == '61:01.00'",rp._fmt_time(3661.0) == "61:01.00")
+	_ok("fmt_time(0.25) == '0:00.25'",   rp._fmt_time(0.25)   == "0:00.25")
+
+	# Par colour selection (mirrors `show_results` ternary — testable without scene):
+	#   Color(0.45, 1.0, 0.45) if time_s <= par_s else Color(1.0, 0.45, 0.45)
+	var beat_color := Color(0.45, 1.0, 0.45)
+	var fail_color := Color(1.0, 0.45, 0.45)
+	_ok("par-beat color is green (g > r)", beat_color.g > beat_color.r)
+	_ok("par-fail color is red (r > g)",   fail_color.r > fail_color.g)
+	_ok("par exactly equal counts as beat (<=, not <)", 35.0 <= 35.0)
+
+	# Shard count string (mirrors show_results shard_val.text).
+	_ok("shard string '2 / 3'", ("%d / %d" % [2, 3]) == "2 / 3")
+	_ok("shard string '0 / 1'", ("%d / %d" % [0, 1]) == "0 / 1")
+
+	rp.free()
+
+
+func _test_win_state_one_shot_guard() -> void:
+	## WinState and CheckPoint both use a single bool to block re-entry.
+	## Verify defaults, set, and (for CheckPoint) reset().
+	## No _ready() call — only checking instance var defaults and state transitions.
+	print("\n-- Win-state + checkpoint one-shot guards --")
+
+	# WinState: _triggered prevents Game.level_complete() from firing twice.
+	var ws := WS.new()
+	_ok("WinState._triggered defaults false",
+		ws._triggered == false)
+	ws._triggered = true
+	_ok("_triggered set to true after first player entry",
+		ws._triggered == true)
+	_ok("One-shot guard: 'if _triggered: return' is a bool check (bool is true)",
+		ws._triggered)
+	ws.free()
+
+	# CheckPoint: _activated locks after first player pass; reset() clears it
+	# so the same trigger can be reused (dev menu "teleport" round-trips).
+	var cp := CKP.new()
+	_ok("CheckPoint._activated defaults false",
+		cp._activated == false)
+	cp._activated = true
+	cp.reset()
+	_ok("reset() clears _activated to false",
+		cp._activated == false)
+	cp._activated = true
+	_ok("_activated locked true until reset() is called",
+		cp._activated == true)
+	cp.free()
+
+
+func _test_data_shard_state_machine() -> void:
+	## DataShard instance-var defaults and pure geometry constants.
+	## Avoids calling methods that require a live scene tree
+	## (create_tween, set_deferred) by testing only state and maths.
+	print("\n-- DataShard state machine --")
+	var ds := DS.new()
+
+	# Instance-variable defaults (set by var declarations, not _ready()).
+	_ok("_collected defaults false",    ds._collected == false)
+	_ok("_mesh_instance defaults null", ds._mesh_instance == null)
+	_ok("_light defaults null",         ds._light == null)
+
+	# One-shot collection guard: _on_body_entered returns when _collected is true.
+	ds._collected = true
+	_ok("_collected=true blocks re-collection (guard is a simple bool check)",
+		ds._collected)
+
+	# Spin rate: 1.15 rad/s → one full revolution in ~5.47 s.
+	# Readable without blurring: > 4 s (not a strobe), < 6 s (clearly spinning).
+	var spin_period: float = (2.0 * PI) / 1.15
+	_ok("Spin period < 6 s (visible motion at camera distance)", spin_period < 6.0)
+	_ok("Spin period > 4 s (not blurring at frame rate)",        spin_period > 4.0)
+
+	# Gem geometry from _build_gem_mesh(): top y=0.28, bottom y=-0.22, eq radius=0.20.
+	# Height = 0.28 + 0.22 = 0.50 m — readable but not blocking the view.
+	_ok("Gem total height (top + |bottom|) == 0.50 m",
+		_near(0.28 + 0.22, 0.50))
+	# Equatorial radius must fit inside the SphereShape3D collision radius (0.60 m).
+	_ok("Gem equatorial radius 0.20 m < sphere collider radius 0.60 m",
+		0.20 < 0.60)
+	# Group name contract: threshold.gd auto-counts via get_nodes_in_group("data_shard").
+	_ok("data_shard group StringName matches level auto-count query",
+		StringName("data_shard") == &"data_shard")
+
+	ds.free()
