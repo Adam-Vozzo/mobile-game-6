@@ -26,6 +26,12 @@ class_name TouchOverlay
 ## reverts to normal camera drag.
 @export_range(20.0, 120.0, 5.0) var dash_px_threshold: float = 40.0
 @export_range(0.05, 0.5, 0.01) var dash_time_threshold: float = 0.20
+## When true: camera deltas are buffered during the dash gesture window and
+## discarded on dash fire, preventing the camera from whipping in the swipe
+## direction. On window expiry the buffer is flushed (≤ dash_time_threshold
+## latency). When false (default): existing behaviour — camera and dash both
+## forward the same drag delta simultaneously.
+@export var dash_buffer_camera: bool = false
 
 @export_category("Jump button")
 ## Centre of the jump button in viewport pixels. By default this is computed
@@ -53,8 +59,12 @@ var _drag_last:    Dictionary = {}    # index → Vector2
 # The swipe window slides forward on expiry so "slow pan, then swipe" with
 # jump held still fires. _dash_done is the one-shot guard: once a touch
 # fires a dash, that finger is locked out until released and re-touched.
-var _dash_start:   Dictionary = {}    # index → {pos: Vector2, time: float}
-var _dash_done:    Dictionary = {}    # index → true (post-fire lockout)
+var _dash_start:      Dictionary = {}    # index → {pos: Vector2, time: float}
+var _dash_done:       Dictionary = {}    # index → true (post-fire lockout)
+# Accumulated camera drag deltas held during an active gesture window when
+# dash_buffer_camera is true. Flushed to TouchInput on expiry or jump-release;
+# discarded on dash fire.
+var _dash_drag_buffer: Dictionary = {}   # index → Vector2
 
 # --- reposition mode ---
 var _reposition_mode: bool = false
@@ -160,6 +170,11 @@ func _handle_touch(event: InputEventScreenTouch) -> void:
 				_drag_last.erase(event.index)
 				_dash_start.erase(event.index)
 				_dash_done.erase(event.index)
+				# Flush any buffered camera drag accumulated during the window.
+				if _dash_drag_buffer.has(event.index):
+					TouchInput.add_camera_drag_delta(
+						_dash_drag_buffer[event.index] as Vector2)
+					_dash_drag_buffer.erase(event.index)
 		_touches.erase(event.index)
 	queue_redraw()
 
@@ -178,48 +193,71 @@ func _handle_drag(event: InputEventScreenDrag) -> void:
 			TouchInput.set_move_vector(v)
 			queue_redraw()
 		KIND_DRAG:
-			var pos := event.position
-			# Arm the dash gesture lazily: on the first drag event where
-			# jump becomes held for this touch, start a swipe-detection
-			# window. _dash_done locks the touch out post-fire so the user
-			# has to release and re-touch to dash again.
-			if (
-				TouchInput.jump_held
-				and not _dash_start.has(event.index)
-				and not _dash_done.has(event.index)
-			):
-				_dash_start[event.index] = {
-					"pos":  pos,
-					"time": Time.get_ticks_msec() / 1000.0,
-				}
-			if _dash_start.has(event.index):
-				if not TouchInput.jump_held:
-					_dash_start.erase(event.index)
-				else:
-					var start: Dictionary = _dash_start[event.index]
-					var elapsed := Time.get_ticks_msec() / 1000.0 - float(start["time"])
-					if elapsed >= dash_time_threshold:
-						# Window expired without a swipe — slide forward,
-						# don't lock the touch out. "Pan, then swipe"
-						# still fires.
-						_dash_start[event.index] = {
-							"pos":  pos,
-							"time": Time.get_ticks_msec() / 1000.0,
-						}
-					elif (pos - (start["pos"] as Vector2)).length() >= dash_px_threshold:
-						# Direction comes from the stick, not the swipe.
-						# Player falls back to current velocity / visual
-						# forward if the stick is neutral.
-						TouchInput.air_dash_triggered.emit(TouchInput.move_vector)
-						_dash_start.erase(event.index)
-						_dash_done[event.index] = true
-			# Camera drag is never suppressed — a dash-firing swipe also
-			# pans the camera. If that whip feels wrong on-device, the
-			# fix is to buffer the drag delta during the gesture window
-			# and discard it on fire.
-			var last: Vector2 = _drag_last.get(event.index, pos)
-			TouchInput.add_camera_drag_delta(pos - last)
+			var pos   := event.position
+			var delta := pos - _drag_last.get(event.index, pos) as Vector2
+			if not _tick_dash_gesture(event.index, pos, delta):
+				TouchInput.add_camera_drag_delta(delta)
 			_drag_last[event.index] = pos
+
+
+# Advances the hold-jump-and-swipe air-dash gesture state machine for one drag
+# frame. Returns true if the camera delta has already been handled (or
+# suppressed), false if the caller should forward `delta` to TouchInput.
+#
+# Outcomes:
+#   arm       — window opens; delta forwarded (caller path).
+#   accumulate — inside window, dash_buffer_camera on; delta buffered.
+#   flush     — window expired or jump released; buffer + delta forwarded here.
+#   discard   — dash fired, dash_buffer_camera on; buffer + delta suppressed.
+#   fire      — dash fired, dash_buffer_camera off; delta forwarded (caller).
+func _tick_dash_gesture(index: int, pos: Vector2, delta: Vector2) -> bool:
+	# Arm lazily on the first frame where jump becomes held for this touch.
+	if (
+		TouchInput.jump_held
+		and not _dash_start.has(index)
+		and not _dash_done.has(index)
+	):
+		_dash_start[index] = {"pos": pos, "time": Time.get_ticks_msec() / 1000.0}
+	if not _dash_start.has(index):
+		return false  # no active window — caller forwards delta
+	if not TouchInput.jump_held:
+		# Jump released mid-window: exit, flush buffer.
+		_dash_start.erase(index)
+		return _flush_dash_buffer(index, delta)
+	var start: Dictionary = _dash_start[index]
+	var elapsed := Time.get_ticks_msec() / 1000.0 - float(start["time"])
+	if elapsed >= dash_time_threshold:
+		# Window expired: flush buffer, then slide window forward.
+		var handled := _flush_dash_buffer(index, delta)
+		_dash_start[index] = {"pos": pos, "time": Time.get_ticks_msec() / 1000.0}
+		return handled
+	if (pos - (start["pos"] as Vector2)).length() >= dash_px_threshold:
+		# Dash fires. Direction from stick; falls back to velocity/visual-forward.
+		TouchInput.air_dash_triggered.emit(TouchInput.move_vector)
+		_dash_start.erase(index)
+		_dash_done[index] = true
+		if dash_buffer_camera:
+			_dash_drag_buffer.erase(index)  # discard buffer + swipe delta
+			return true
+		return false  # old path: caller forwards swipe delta to camera
+	if dash_buffer_camera:
+		# Still inside window, buffering on: accumulate, suppress this frame.
+		_dash_drag_buffer[index] = (
+			_dash_drag_buffer.get(index, Vector2.ZERO) as Vector2) + delta
+		return true
+	return false  # buffering off: caller forwards delta
+
+
+# Flushes accumulated camera drag buffer for `index`, forwarding buffer + delta
+# together. Returns true (caller should NOT also forward delta).
+# No-op when dash_buffer_camera is false — returns false so caller handles it.
+func _flush_dash_buffer(index: int, delta: Vector2) -> bool:
+	if not dash_buffer_camera:
+		return false
+	var buf: Vector2 = _dash_drag_buffer.get(index, Vector2.ZERO)
+	_dash_drag_buffer.erase(index)
+	TouchInput.add_camera_drag_delta(buf + delta)
+	return true
 
 
 func _classify(pos: Vector2) -> int:
@@ -488,3 +526,9 @@ func _on_touch_param(param: StringName, value: Variant) -> void:
 		&"stick_zone_ratio":
 			stick_zone_ratio = float(value)
 			queue_redraw()
+		&"dash_px_threshold":
+			dash_px_threshold = float(value)
+		&"dash_time_threshold":
+			dash_time_threshold = float(value)
+		&"dash_buffer_camera":
+			dash_buffer_camera = bool(value)

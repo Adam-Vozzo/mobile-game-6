@@ -15,6 +15,35 @@ Append, don't rewrite. Supersession adds a new entry referencing the old.
 
 ---
 
+## 2026-05-13 — Air-dash gesture: buffer-and-discard camera variant as toggleable option
+
+Status: accepted (pending on-device verdict)
+Context: The 2026-05-14 direction session shipped the hold-jump+swipe air-dash gesture and
+left an open question: "Is the camera-whip on the firing swipe bad enough to need the
+buffer-and-discard variant?" A comment in `touch_overlay.gd::_handle_drag` already documented
+the fix: "buffer the drag delta during the gesture window and discard it on fire." The human
+needs to compare both behaviours on device before deciding.
+Decision: Implement buffer-and-discard as `dash_buffer_camera: bool = false` on TouchOverlay
+(default off = existing behaviour). When true: camera deltas are held in `_dash_drag_buffer`
+(per-touch accumulator) during the active gesture window; discarded on dash fire; flushed to
+TouchInput on window expiry or jump release (max latency = `dash_time_threshold`, 0.20 s
+default). When false: deltas are forwarded unconditionally each frame (previous behaviour —
+swipe pans camera AND fires dash simultaneously). Both modes exposed in dev menu (Touch →
+"Buffer dash cam" toggle) so the human can compare in one device session.
+Alternatives considered:
+- Always buffer (no toggle): removes the option to observe the old behaviour; premature
+  until the human has confirmed the whip is actually a problem on device.
+- Always forward (no buffer): keeps existing code; leaves the open question unanswered.
+- Buffer but don't discard (flush on fire instead): camera still pans, just delayed — does
+  not actually prevent the whip, only shifts it. Rejected.
+- Discard only on fire, no buffer: camera doesn't move during the window AND doesn't receive
+  any accumulated pan. This is what "discard" means here — accepted.
+Consequences: `_tick_dash_gesture` encapsulates the full gesture state machine; `_flush_dash_buffer`
+centralises flush/discard logic. `touch_param_changed` now handles `dash_px_threshold`,
+`dash_time_threshold`, and `dash_buffer_camera`. The human can clean up by: (a) deleting the
+`dash_buffer_camera` export and always buffering, (b) removing it and always forwarding, or
+(c) keeping the toggle for per-profile experimentation. Gate-locked on device feel.
+
 ## 2026-05-13 — Industrial press: new IndustrialPress script replaces moving_platform for Threshold Zone 3
 
 Status: accepted

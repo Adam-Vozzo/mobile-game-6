@@ -17,6 +17,7 @@ authored with it in mind.
 ## Active iteration
 
 - _No iteration currently in flight._
+- **🟢 Iter 67 complete.** Air-dash buffer-and-discard camera variant (`dash_buffer_camera` toggle) implemented in `touch_overlay.gd`. Both modes (whip-on-fire vs buffer-and-discard) now available from dev menu Touch section for on-device comparison. See DECISIONS.md 2026-05-13.
 - **🟢 THROTTLE RESET 2026-05-14.** Human direction session landed a multi-PR pass:
   Snappy tuning (max_speed 5.0, jump_velocity 12.0, ground_decel 40, air_jumps=1,
   air_jump_velocity_multiplier 0.9, gravity_after_apex 65, fall_kill_y −35), Threshold
@@ -36,11 +37,12 @@ The next iteration should pull from the top of this list. Items marked
 
 0. **On-device verification of 2026-05-14 redesign.** Top priority. Test the Spyro-style
    Threshold on device — Zone 1 plaza traversal feel, Zone 2 perimeter-route discoverability,
-   Zone 3 lateral platform reachability, Beat 4 K2-side shard jump. Verify the hold-jump+swipe
-   air-dash gesture is comfortable (or whether the camera-whip on swipe is bad enough to need
-   the buffer-and-discard variant). Verify camera pitch_max 70° feels right (or whether to go
-   higher / lower). Verify Snappy at max_speed 5.0 + jump_velocity 12.0 + air_jumps=1 feels
-   right at the new platform spacings. Outcomes feed back into the next tuning iteration.
+   Zone 3 lateral platform reachability, Beat 4 K2-side shard jump. Verify air-dash gesture
+   in both modes (dev menu Touch → "Buffer dash cam" toggle — iter 67): does either mode
+   feel right, or is the feature not worth the complexity? Verify camera pitch_max 70° feels
+   right (or whether to go higher / lower). Verify Snappy at max_speed 5.0 + jump_velocity
+   12.0 + air_jumps=1 feels right at the new platform spacings. Outcomes feed back into the
+   next tuning iteration.
 
 1. ~~**On-device smoke test.**~~ Done 2026-05-12. Project runs in Godot 4.6 on PC
    and deploys to Nothing Phone 4(a) Pro. Feel Lab reports 144 fps / 6.9 ms in
@@ -191,6 +193,17 @@ These mirror "Open questions waiting on you" in the README.
   drive the next tuning iteration.
 
 ## Recently completed (last 5)
+
+- 2026-05-13 — Iteration 67. **Air-dash buffer-and-discard camera variant.**
+  `touch_overlay.gd`: `dash_buffer_camera` export bool (default false); `_dash_drag_buffer`
+  per-touch accumulator; `_tick_dash_gesture(index, pos, delta) → bool` (36 lines, gesture
+  state machine); `_flush_dash_buffer(index, delta) → bool` (9 lines, flush/discard helper).
+  `_handle_drag` KIND_DRAG case extracted into these helpers (now 31 lines). `_on_touch_param`
+  gains three new arms: `dash_px_threshold`, `dash_time_threshold`, `dash_buffer_camera`.
+  `dev_menu_overlay.gd::_build_touch_section` grows → extracted `_build_dash_gesture_controls`
+  (15 lines); Touch section exposes "Dash px threshold" / "Dash window (s)" / "Buffer dash
+  cam" toggle. Tests: `_test_dash_buffer_camera_logic` (10 assertions, 826 → 836).
+  DECISIONS.md: new ADR. On-device pending — both modes ready to compare in one device session.
 
 - 2026-05-14 — Human direction session. **Threshold Spyro-style redesign + Snappy tuning pass + air-dash UX rework + camera/dev-menu/level-bug fixes.**
   Snappy profile retuned: `max_speed` 6.0→5.0, `ground_deceleration` 90→40, `jump_velocity` 11.5→12.0,
