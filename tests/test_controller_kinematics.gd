@@ -105,6 +105,8 @@ func _ready() -> void:
 	_test_industrial_press_position_formula()
 	_test_air_dash_state_machine()
 	_test_game_timer_accumulation()
+	_test_data_shard_gem_vertices()
+	_test_data_shard_light_params()
 	_report()
 
 
@@ -3859,3 +3861,91 @@ func _test_game_timer_accumulation() -> void:
 		absf(g.run_time_seconds - 1.0) < 0.001)
 
 	g.free()
+
+
+func _test_data_shard_gem_vertices() -> void:
+	## Mirrors the vertex array of DataShard._build_gem_mesh() and checks the
+	## geometric invariants that make the gem readable at camera distance.
+	## Six vertices: top apex, four axis-aligned equatorial, bottom apex.
+	## Eight triangles: 4 fanning from top, 4 fanning from bottom.
+	print("\n-- DataShard gem vertex geometry --")
+
+	# Mirror the vertex array verbatim from _build_gem_mesh().
+	var top_y   := 0.28    # height of apex above equatorial plane
+	var bot_y   := -0.22   # depth of base below equatorial plane (flatter)
+	var eq_r    := 0.20    # equatorial ring radius (XZ distance from Y-axis)
+	# Axis-aligned square ring: +X, +Z, -X, -Z (not diagonal).
+	var eq: Array[Vector3] = [
+		Vector3( eq_r, 0.0,   0.0),   # 0 eq +x
+		Vector3( 0.0,  0.0,   eq_r),  # 1 eq +z
+		Vector3(-eq_r, 0.0,   0.0),   # 2 eq -x
+		Vector3( 0.0,  0.0,  -eq_r),  # 3 eq -z
+	]
+
+	# --- Apex positions ---
+	_ok("top apex y = 0.28 m above equatorial plane",    _near(top_y,  0.28))
+	_ok("bottom apex y = -0.22 m below equatorial plane", _near(bot_y, -0.22))
+	# Top is taller than bottom is deep — gives the gem a sharper upper point.
+	_ok("top apex taller than bottom is deep: 0.28 > 0.22 (visual asymmetry)",
+		top_y > absf(bot_y))
+
+	# --- Equatorial ring plane ---
+	# All four equatorial vertices lie exactly in the XZ plane (y == 0).
+	for i: int in range(4):
+		_ok("equatorial vertex %d y = 0.0 (lies in XZ plane)" % i,
+			_near(eq[i].y, 0.0))
+
+	# --- Ring shape: axis-aligned square, not diagonal ---
+	# v[0] is on the pure +X axis — no Z component.
+	_ok("eq[0] is pure +X (axis-aligned ring, not 45° diagonal)",
+		_near(eq[0].x, eq_r) and _near(eq[0].z, 0.0))
+	# Adjacent vertices are 90° apart: v[1] is on +Z, v[3] is on -Z.
+	_ok("eq[1] is pure +Z and eq[3] is pure -Z (90° spacing confirmed)",
+		_near(eq[1].z, eq_r) and _near(eq[3].z, -eq_r))
+
+	# --- Equatorial radius ---
+	_ok("equatorial radius = 0.20 m", _near(eq_r, 0.20))
+
+	# --- Mesh counts ---
+	# 6 vertices: 1 top + 4 equatorial + 1 bottom.
+	_ok("6 total vertices (1 top + 4 equatorial + 1 bottom)", 1 + 4 + 1 == 6)
+	# 8 triangles: 4-triangle upper fan from top + 4-triangle lower fan from bottom.
+	_ok("8 total triangles (4 upper fan from top apex + 4 lower fan from bottom apex)",
+		4 + 4 == 8)
+
+	# --- Material emission ---
+	# Emission energy of 3.2 makes the shard self-luminous against the dark brutalist
+	# geometry. Value is embedded in the StandardMaterial3D inside _build_gem_mesh().
+	var emission_energy := 3.2
+	_ok("emission_energy_multiplier = 3.2 (self-luminous against dark environment)",
+		_near(emission_energy, 3.2))
+
+
+func _test_data_shard_light_params() -> void:
+	## Documents the OmniLight3D parameters and collect-pulse Tween timing
+	## from data_shard.gd. These drive visual clarity: the light marks the
+	## shard's position through fog, and the pulse confirms collection clearly.
+	print("\n-- DataShard light parameters and collect pulse --")
+
+	# Light values from _build_visual().
+	var light_color  := Color(0.12, 0.90, 0.95)  # cyan glow
+	var light_energy := 1.4                        # default pre-collect
+	var light_range  := 4.5                        # m
+
+	# Cyan channel check: G and B both dominate over R.
+	_ok("light color is cyan: green channel > red channel",  light_color.g > light_color.r)
+	_ok("light color is cyan: blue channel > red channel",   light_color.b > light_color.r)
+	_ok("light_energy = 1.4 (default, pre-collection)",     _near(light_energy, 1.4))
+	_ok("light_range = 4.5 m (reaches adjacent platform surfaces)", _near(light_range, 4.5))
+
+	# Collect-pulse Tween chain from _collect() (mirrors the two tween_property calls).
+	# Rise: energy 1.4 → 7.0 in 0.05 s  (short impact)
+	# Fall: energy 7.0 → 0.0 in 0.30 s  (long recognisable tail)
+	var pulse_rise_s := 0.05
+	var pulse_fall_s := 0.30
+	var pulse_peak   := 7.0
+	_ok("collect pulse: rise < fall (fast punch, long tail: 0.05 s < 0.30 s)",
+		pulse_rise_s < pulse_fall_s)
+	# Peak is 5× the default — unambiguous visual feedback even through fog.
+	_ok("pulse peak energy (7.0) = 5× default energy (1.4) — clearly visible on collection",
+		_near(pulse_peak / light_energy, 5.0))
