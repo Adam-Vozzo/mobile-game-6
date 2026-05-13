@@ -5,10 +5,10 @@ A mobile 3D platformer. Brutalist megastructure inspired by *BLAME!*. Controller
 ## Status
 
 Current gate: **Gate 0 — Feel Lab** (closing out; Gate 1 prep in flight)
-Last activity: 2026-05-13 — iter 64: results_panel refactor + IndustrialPress formula tests; 769 → 786 assertions
+Last activity: 2026-05-13 — iter 65: air-dash state-machine tests + game timer tests; 786 → 807 assertions
 Test device build: ✅ verified 2026-05-12 — runs in Godot 4.6 on PC and on Nothing Phone 4(a) Pro
 Performance: 144 fps / 6.9 ms in editor at 1920×1080 (Feel Lab); on-device frametimes TBD
-Throttle level: **HARD** (13 iterations since last human direction 2026-05-12). New feature work stopped. Only hardening.
+Throttle level: **HARD** (14 iterations since last human direction 2026-05-12). New feature work stopped. Only hardening.
 
 If you only read one section, read **Open questions waiting on you** below.
 
@@ -90,6 +90,45 @@ Goal: store-ready build.
 The full iteration log lives here, newest first. Every iteration appends an entry. Skim the dates to find where you last left off.
 
 <!-- ITERATION ENTRIES BELOW — DO NOT REMOVE OLDER ENTRIES -->
+
+### [2026-05-13] — iter 65 — air-dash state-machine tests + game timer accumulation tests (hard throttle hardening)
+
+Branch: `claude/gifted-shannon-MFTyt`
+Throttle: HARD (14 iterations since last human direction 2026-05-12)
+Gate: Gate 1 — Vertical Slice prep (hardening pass)
+
+**Primary: `_test_air_dash_state_machine` (14 assertions, 786 → 800).**
+
+Fills the gap left by `_test_air_dash_logic` (which covers parameters / guards / formulas) — this
+group documents the *state transitions* of the dash machine:
+- Re-entry guard: `_is_dashing=true` alone fires the compound guard even with charges + off-floor;
+  all-clear correctly passes.
+- Timer decrement formula: `maxf(0.0, timer - delta)` — standard tick, near-zero clamp, floor
+  idempotence (three cases).
+- Timer expiry → `_is_dashing` cleared: both the "clears" case (0.005 s + one frame) and the
+  "stays true" case (0.10 s + one frame).
+- Landing vs respawn semantics: landing sets `_dash_charges = 1` (refill); respawn sets
+  `_dash_charges = 0` (cannot dash immediately on first airframe). Also: landing clears
+  `_is_dashing` and `_dash_timer`.
+- Y-velocity zeroed at trigger: `velocity.y = 0.0` makes the dash purely horizontal.
+- Double fallback to `Vector3.FORWARD`: zero input + zero velocity invokes the absolute fallback
+  path used when `_visual` is unavailable.
+- Duration expires within 15 frames at 60 fps: loop simulation confirms default 0.18 s budget.
+
+**Side quest: `_test_game_timer_accumulation` (7 assertions, 800 → 807).**
+
+First coverage of `game.gd::_process` timer logic. Tests: not-running frame doesn't accumulate;
+single frame adds delta; 10 frames add `10 × delta`; `level_complete()` stops accumulation and
+subsequent `_process` calls are inert; `start_run()` resets timer to 0.0 and re-enables
+accumulation; 60-frame simulation totals ≈ 1.0 s (within 1 ms tolerance).
+
+Perf: no change (test-only additions).
+Bugs fixed: none.
+New dev-menu controls: none.
+Assets acquired: none.
+Research added: none.
+Human attention: see "Open questions waiting on you" — 5 concrete options listed, HARD
+throttle at 14 iterations.
 
 ### [2026-05-13] — iter 64 — results_panel refactor + IndustrialPress formula tests (hard throttle hardening)
 

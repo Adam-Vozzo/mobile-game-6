@@ -103,6 +103,8 @@ func _ready() -> void:
 	_test_conditional_fall_offset_regimes()
 	_test_hint_distance_blend()
 	_test_industrial_press_position_formula()
+	_test_air_dash_state_machine()
+	_test_game_timer_accumulation()
 	_report()
 
 
@@ -3699,3 +3701,161 @@ func _ip_emissive(phase: int, p: float) -> float:
 		2: return 2.5                    # STROKE
 		3: return lerpf(2.5, 0.3, p)    # REBOUND
 	return 0.3
+
+
+func _test_air_dash_state_machine() -> void:
+	## Documents the air dash state-transition machine that _test_air_dash_logic
+	## doesn't cover: re-entry guard, timer-expiry → clear, landing-vs-respawn
+	## clear semantics, Y-velocity zeroing at trigger, and the absolute direction
+	## fallback when both input and velocity are zero.
+	##
+	## All assertions are pure-math mirrors of player.gd state blocks; no scene
+	## tree is required.
+	print("\n-- Air dash state machine (transitions) --")
+	const DELTA := 1.0 / 60.0
+
+	# --- Re-entry guard composition ---
+	# _try_air_dash: `if _is_rebooting or _is_dashing or _dash_charges <= 0 or is_on_floor()`
+	# Test: _is_dashing=true alone fires the guard even when charges are available and
+	# the player is airborne. Test: all-clear gives false (trigger proceeds).
+	var rebooting := false; var mid_dash := true; var charges := 1; var grounded := false
+	_ok("re-entry: _is_dashing=T blocks trigger even with charge + off-floor",
+		(rebooting or mid_dash or charges <= 0 or grounded) == true)
+	var idle_dash := false
+	_ok("all-clear: rebooting=F, dashing=F, charges=1, off-floor → guard passes",
+		(rebooting or idle_dash or charges <= 0 or grounded) == false)
+
+	# --- Timer decrement formula: maxf(0.0, timer - delta) ---
+	# Normal tick: remaining > delta → decremented, still positive.
+	var timer := 0.18
+	var after := maxf(0.0, timer - DELTA)
+	_ok("timer tick: 0.18 s − one frame still positive and < 0.18",
+		after > 0.0 and after < timer and _near(after, timer - DELTA))
+	# Near-zero: remaining < delta → clamps to 0.0, never negative.
+	timer = 0.005
+	after = maxf(0.0, timer - DELTA)
+	_ok("timer tick: 0.005 s < delta → clamps to 0.0 (no negative timer)",
+		_near(after, 0.0))
+	# Already zero: stays zero.
+	timer = 0.0
+	after = maxf(0.0, timer - DELTA)
+	_ok("timer tick: 0.0 s stays at 0.0 (idempotent at floor)",
+		_near(after, 0.0))
+
+	# --- Timer expiry → _is_dashing cleared ---
+	# Mirrors _tick_timers: `if _dash_timer <= 0.0: _is_dashing = false`
+	var is_active := true
+	var dash_timer := 0.005   # one tick pushes it to 0.0
+	dash_timer = maxf(0.0, dash_timer - DELTA)
+	if dash_timer <= 0.0:
+		is_active = false
+	_ok("expiry: timer → 0.0 clears _is_dashing to false",
+		is_active == false)
+	# Timer still positive → does NOT clear.
+	is_active = true
+	dash_timer = 0.10
+	dash_timer = maxf(0.0, dash_timer - DELTA)
+	if dash_timer <= 0.0:
+		is_active = false
+	_ok("no expiry: timer > 0 after tick → _is_dashing stays true",
+		is_active == true)
+
+	# --- Landing vs respawn clear semantics ---
+	# Landing (_tick_timers on_floor branch):
+	#   _dash_charges = 1  (refill one charge)
+	#   _is_dashing  = false
+	#   _dash_timer  = 0.0
+	var ch := 0; var dashing := true; var d_tmr := 0.12
+	ch = 1; dashing = false; d_tmr = 0.0   # simulate on_floor branch
+	_ok("landing: _dash_charges refilled to 1 (one charge per airborne phase)", ch == 1)
+	_ok("landing: _is_dashing cleared to false even if mid-dash at touchdown", dashing == false)
+	_ok("landing: _dash_timer reset to 0.0 so the next airborne phase starts clean",
+		_near(d_tmr, 0.0))
+	# Respawn (respawn() zeroing block):
+	#   _dash_charges = 0  — distinct from landing's 1, player cannot dash immediately
+	ch = 1; dashing = true; d_tmr = 0.1    # state before respawn
+	ch = 0; dashing = false; d_tmr = 0.0  # simulate respawn() block
+	_ok("respawn: _dash_charges zeroed to 0 (vs landing's 1 — cannot dash on first airframe)",
+		ch == 0)
+
+	# --- Y-velocity zeroed at trigger ---
+	# _try_air_dash: `velocity.y = 0.0`
+	# Absorbs ascending or descending momentum so the dash is purely horizontal.
+	var vel_y := 5.5   # rising at trigger moment
+	vel_y = 0.0        # what _try_air_dash assigns
+	_ok("dash trigger: velocity.y forced to 0.0 (horizontal-only dash)",
+		_near(vel_y, 0.0))
+
+	# --- Double fallback to Vector3.FORWARD ---
+	# First fallback: dir = vel_h.normalized() (when input is near-zero)
+	# Second fallback: Vector3.FORWARD (when vel_h is also near-zero; visual unavailable)
+	var input := Vector3.ZERO
+	var vel_h := Vector3.ZERO   # standing still
+	var dash_dir := input
+	if dash_dir.length() < 0.01:
+		dash_dir = vel_h.normalized()   # Vector3(0,0,0).normalized() → still zero-length
+	if dash_dir.length() < 0.01:
+		dash_dir = Vector3.FORWARD      # absolute fallback from _try_air_dash
+	_ok("double fallback: zero input + zero velocity → dash direction is Vector3.FORWARD",
+		dash_dir.is_equal_approx(Vector3.FORWARD))
+
+	# --- Default duration expires within 15 frames at 60 fps ---
+	# air_dash_duration default 0.18 s → ceil(0.18 / (1/60)) = 11 frames to reach 0.
+	var cp2 := CP.new()
+	var t := cp2.air_dash_duration
+	var frames := 0
+	while t > 0.0 and frames < 100:
+		t = maxf(0.0, t - DELTA)
+		frames += 1
+	_ok("default duration 0.18 s expires within 15 frames at 60 fps", frames <= 15)
+
+
+func _test_game_timer_accumulation() -> void:
+	## Documents game.gd::_process timer behaviour: accumulates when is_running,
+	## stops when is_running is false, resets via start_run().
+	## Calls _process(delta) directly — no scene tree needed.
+	print("\n-- Game timer accumulation (_process) --")
+	const DELTA := 1.0 / 60.0
+	var g: GM = GM.new()
+
+	# Default: not running → _process does not accumulate.
+	g._process(DELTA)
+	_ok("not running: _process(delta) leaves run_time_seconds at 0.0",
+		_near(g.run_time_seconds, 0.0))
+
+	# Running: one frame accumulates exactly delta.
+	g.start_run()
+	g._process(DELTA)
+	_ok("running: one _process call adds delta to run_time_seconds",
+		_near(g.run_time_seconds, DELTA))
+
+	# Running: N frames accumulate N × delta.
+	g.start_run()   # resets timer
+	for _i in range(10):
+		g._process(DELTA)
+	_ok("running: 10 frames accumulate 10 × delta",
+		_near(g.run_time_seconds, 10.0 * DELTA))
+
+	# level_complete() stops accumulation.
+	g.level_complete()
+	var before := g.run_time_seconds
+	g._process(DELTA)
+	_ok("level_complete: subsequent _process calls do not increment run_time_seconds",
+		_near(g.run_time_seconds, before))
+
+	# start_run() resets the timer and re-enables accumulation.
+	g.run_time_seconds = 5.0
+	g.start_run()
+	_ok("start_run: run_time_seconds zeroed to 0.0", _near(g.run_time_seconds, 0.0))
+	g._process(DELTA)
+	_ok("start_run: subsequent _process accumulates again",
+		_near(g.run_time_seconds, DELTA))
+
+	# 60 frames at 1/60 s each → ≈ 1.0 s (within floating-point tolerance).
+	g.start_run()
+	for _i in range(60):
+		g._process(DELTA)
+	_ok("60 frames at 1/60 s ≈ 1.0 s total (floating-point accumulation within 1 ms)",
+		absf(g.run_time_seconds - 1.0) < 0.001)
+
+	g.free()

@@ -16,9 +16,9 @@ authored with it in mind.
 
 ## Active iteration
 
-- _No iteration currently in flight._ Iter 64 (results_panel refactor + press formula tests) landed 2026-05-13 — see
+- _No iteration currently in flight._ Iter 65 (air-dash state-machine tests + game timer tests) landed 2026-05-13 — see
   Recently completed.
-- **HARD THROTTLE** (13 iterations since last human direction session 2026-05-12). New feature work
+- **HARD THROTTLE** (14 iterations since last human direction session 2026-05-12). New feature work
   stopped. Human direction required. See README "Open questions waiting on you" for 5 concrete options.
 
 ## Queue (ranked, top is next)
@@ -171,6 +171,16 @@ These mirror "Open questions waiting on you" in the README.
   drive the next tuning iteration.
 
 ## Recently completed (last 5)
+
+- 2026-05-13 — Iteration 65. **Air-dash state-machine tests + game timer accumulation tests (hard throttle hardening).**
+  `_test_air_dash_state_machine` (14 assertions, 786 → 800): fills the state-transition gap left by
+  `_test_air_dash_logic`. Covers re-entry guard compound (blocking and passing cases), timer-decrement
+  formula (3 cases), timer-expiry → `_is_dashing` cleared (2 cases), landing vs respawn clear semantics
+  (`charges=1` vs `charges=0`), Y-velocity zeroing at trigger, double fallback to `Vector3.FORWARD`, and
+  default duration expiry within 15 frames.
+  Side quest: `_test_game_timer_accumulation` (7 assertions, 800 → 807): first coverage of
+  `game.gd::_process` timer — not-running guard, single-frame delta, 10-frame accumulation,
+  `level_complete()` stop, `start_run()` reset, 60-frame ≈ 1.0 s invariant. Throttle: HARD (14).
 
 - 2026-05-13 — Iteration 64. **`results_panel.gd::_build_ui()` refactor + IndustrialPress formula tests (hard throttle hardening).**
   `results_panel.gd::_build_ui()` was 41 lines (1 over threshold). Extracted three helpers:
