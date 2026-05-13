@@ -1,4 +1,4 @@
-[gd_scene load_steps=82 format=3]
+[gd_scene load_steps=79 format=3]
 
 [ext_resource type="Script" path="res://scripts/levels/threshold.gd" id="1_thresh"]
 [ext_resource type="Script" path="res://scripts/levels/rotating_hazard.gd" id="2_roth"]
@@ -88,19 +88,6 @@ size = Vector3(24, 1, 36)
 [sub_resource type="BoxShape3D" id="Shape_Z1Floor"]
 size = Vector3(24, 1, 36)
 
-[sub_resource type="BoxMesh" id="Mesh_Z1Wall"]
-material = ExtResource("12_matCd")
-size = Vector3(0.5, 4, 36)
-
-[sub_resource type="BoxShape3D" id="Shape_Z1Wall"]
-size = Vector3(0.5, 4, 36)
-
-[sub_resource type="BoxMesh" id="Mesh_Z1Ceiling"]
-material = ExtResource("12_matCd")
-size = Vector3(4, 0.3, 36)
-
-[sub_resource type="BoxShape3D" id="Shape_Z1Ceiling"]
-size = Vector3(4, 0.3, 36)
 
 [sub_resource type="BoxMesh" id="Mesh_HabP1"]
 material = ExtResource("11_matC")
@@ -179,19 +166,6 @@ size = Vector3(16, 1, 31)
 [sub_resource type="BoxShape3D" id="Shape_Z2Floor"]
 size = Vector3(16, 1, 31)
 
-[sub_resource type="BoxMesh" id="Mesh_Z2Ceiling"]
-material = ExtResource("12_matCd")
-size = Vector3(2, 0.3, 31)
-
-[sub_resource type="BoxShape3D" id="Shape_Z2Ceiling"]
-size = Vector3(2, 0.3, 31)
-
-[sub_resource type="BoxMesh" id="Mesh_Z2Wall"]
-material = ExtResource("12_matCd")
-size = Vector3(0.5, 3, 31)
-
-[sub_resource type="BoxShape3D" id="Shape_Z2Wall"]
-size = Vector3(0.5, 3, 31)
 
 [sub_resource type="BoxMesh" id="Mesh_MaintLedge"]
 material = ExtResource("11_matC")
@@ -315,6 +289,32 @@ size = Vector3(14, 0.2, 5)
 
 [sub_resource type="BoxShape3D" id="Shape_KillZone"]
 size = Vector3(13.7, 0.5, 4.7)
+
+[sub_resource type="StandardMaterial3D" id="Mat_Emissive_Danger"]
+albedo_color = Color(0.12, 0.06, 0.01, 1)
+roughness = 1.0
+emission_enabled = true
+emission = Color(0.9, 0.55, 0.1, 1)
+emission_energy_multiplier = 1.8
+
+[sub_resource type="StandardMaterial3D" id="Mat_Emissive_Cold"]
+albedo_color = Color(0.05, 0.07, 0.15, 1)
+roughness = 1.0
+emission_enabled = true
+emission = Color(0.4, 0.55, 0.9, 1)
+emission_energy_multiplier = 1.2
+
+[sub_resource type="BoxMesh" id="Mesh_ArmStripe"]
+material = SubResource("Mat_Emissive_Danger")
+size = Vector3(2.38, 0.04, 0.38)
+
+[sub_resource type="BoxMesh" id="Mesh_ConduitStrip"]
+material = SubResource("Mat_Emissive_Cold")
+size = Vector3(0.06, 0.06, 20.0)
+
+[sub_resource type="BoxMesh" id="Mesh_CartIndicator"]
+material = SubResource("Mat_Emissive_Cold")
+size = Vector3(0.3, 0.06, 0.3)
 
 [node name="Threshold" type="Node3D"]
 script = ExtResource("1_thresh")
@@ -528,6 +528,10 @@ mesh = SubResource("Mesh_ServiceCart")
 [node name="Collider" type="CollisionShape3D" parent="Zone2_Maintenance/ServiceCart"]
 shape = SubResource("Shape_ServiceCart")
 
+[node name="CartLight" type="MeshInstance3D" parent="Zone2_Maintenance/ServiceCart"]
+transform = Transform3D(1, 0, 0, 0, 1, 0, 0, 0, 1, 0, 0.18, 0)
+mesh = SubResource("Mesh_CartIndicator")
+
 [node name="MaintLedge2" type="StaticBody3D" parent="Zone2_Maintenance"]
 transform = Transform3D(1, 0, 0, 0, 1, 0, 0, 0, 1, 0.1, -4.65, 54)
 
@@ -563,6 +567,10 @@ script = ExtResource("5_hazard")
 
 [node name="HazardShape" type="CollisionShape3D" parent="Zone2_Maintenance/MaintArm1/HazardZone"]
 shape = SubResource("Shape_HazardArm")
+
+[node name="HazardStripe" type="MeshInstance3D" parent="Zone2_Maintenance/MaintArm1"]
+transform = Transform3D(1, 0, 0, 0, 1, 0, 0, 0, 1, 0, -0.22, 0)
+mesh = SubResource("Mesh_ArmStripe")
 
 [node name="MaintExit" type="StaticBody3D" parent="Zone2_Maintenance"]
 transform = Transform3D(1, 0, 0, 0, 1, 0, 0, 0, 1, 0, -4.8, 63.5)
@@ -620,6 +628,14 @@ mesh = SubResource("Mesh_PlazaPillarLow")
 
 [node name="Collider" type="CollisionShape3D" parent="Zone2_Maintenance/Z2StepRight"]
 shape = SubResource("Shape_PlazaPillarLow")
+
+[node name="ConduitLeft" type="MeshInstance3D" parent="Zone2_Maintenance"]
+transform = Transform3D(1, 0, 0, 0, 1, 0, 0, 0, 1, -7.7, -4.85, 52.5)
+mesh = SubResource("Mesh_ConduitStrip")
+
+[node name="ConduitRight" type="MeshInstance3D" parent="Zone2_Maintenance"]
+transform = Transform3D(1, 0, 0, 0, 1, 0, 0, 0, 1, 7.7, -4.85, 52.5)
+mesh = SubResource("Mesh_ConduitStrip")
 
 [node name="Alcove_Checkpoint" type="Node3D" parent="."]
 
