@@ -5,10 +5,10 @@ A mobile 3D platformer. Brutalist megastructure inspired by *BLAME!*. Controller
 ## Status
 
 Current gate: **Gate 0 — Feel Lab** (closing out; Gate 1 prep in flight)
-Last activity: 2026-05-13 — iter 66: data shard gem geometry + light parameter tests; 807 → 826 assertions
+Last activity: 2026-05-14 — human direction session: Threshold Spyro-style redesign + Snappy tuning + air-dash UX + camera/dev-menu/bug fixes
 Test device build: ✅ verified 2026-05-12 — runs in Godot 4.6 on PC and on Nothing Phone 4(a) Pro
 Performance: 144 fps / 6.9 ms in editor at 1920×1080 (Feel Lab); on-device frametimes TBD
-Throttle level: **HARD** (15 iterations since last human direction 2026-05-12). New feature work stopped. Only hardening.
+Throttle level: **🟢 RESET** by 2026-05-14 direction session. Next step: on-device verification of the redesign.
 
 If you only read one section, read **Open questions waiting on you** below.
 
@@ -16,14 +16,15 @@ If you only read one section, read **Open questions waiting on you** below.
 
 Things Claude can't decide alone, or where it's stalled and needs direction.
 
-> **🟢 Throttle reset 2026-05-12.** Human direction session unblocked the P0 queue. Camera vertical-follow rewrite + Snappy speed nudge + double-jump implementation now in flight. See `docs/PLAN.md` for current iteration target.
+> **🟢 Throttle reset 2026-05-14.** Human direction session landed a major redesign pass. The autonomous queue is unblocked on a single concrete next step: **on-device verification of the redesign.** See `docs/PLAN.md` item P0-0.
 
-> **🔴 HARD THROTTLE — iter 60 (9 since last direction).** New feature work is stopped. Only hardening is in flight. The autonomous queue is exhausted for non-device-dependent items. **Claude needs human direction before continuing.** Suggested options — pick any of these:
-> 1. **Do an on-device playtest of Threshold** and give feel notes ("press timing too fast", "gantry gap too wide", "par route feels right"). This unblocks Zone 3 routing and ambient lighting items.
-> 2. **Approve (or redirect) the Threshold par-route layout** — currently the industrial press is bypassable. Should the press be forced on the critical path, or is a skill-route bypass valid?
-> 3. **Give a Snappy feel verdict on Threshold's jumps** — any jump that felt sticky, floaty, or mistimed is a concrete tuning note.
-> 4. **Start Gate 1 art direction** — surface the asset options doc (Stray mesh / ambient audio / concrete kit) so autonomous asset acquisition can resume.
-> 5. **Approve Assisted Phase 2** (ledge magnetism + arc assist) for Feel Lab testing; or defer to after Threshold on-device.
+> **What's waiting for your read:**
+> 1. **Spyro-style Threshold on device.** New Zone 1 plaza (3 routes), Zone 2 maintenance yard (perimeter ledges), Zone 3 lateral platforms. 4 shards scattered. Is the feel right? Are platforms reachable with the new Snappy values?
+> 2. **Hold-jump+swipe air dash.** Test the gesture: does it fire reliably while panning the camera with jump held? Is the camera-whip on the firing swipe acceptable, or do we need the buffer-and-discard variant?
+> 3. **Camera pitch 70°.** Was the previous 55° "too tight" complaint solved by the raise, or does pitch_min (hard-clamped at 0) need to go negative too (look up at structures from below)?
+> 4. **Industrial press.** Still at x=8 (decorative). After on-device feel of the new gantry layout, decide: move to critical path, or leave it as atmosphere?
+> 5. **Start Gate 1 art direction** — surface the asset options doc (Stray mesh / ambient audio / concrete kit) so autonomous asset acquisition can resume.
+> 6. **Assisted Phase 2** (ledge magnetism + arc assist) — still queued behind level work.
 
 - [x] **Open the project in Godot 4.6 and run the on-device first-run checklist in `docs/ANDROID.md`.** Done 2026-05-12 — runs in editor and deploys to Nothing Phone 4(a) Pro. Remaining ANDROID.md items: headless CI signing via env vars, release Play Store build (both gate-locked to ship).
 - [x] **First feel verdict — Snappy vs Floaty vs Momentum.** Snappy feel approved as good overall; tune-down (max_speed 6.5 → 6.0) queued. Floaty and Momentum verdicts to come as level design forces switching between them.
@@ -90,6 +91,37 @@ Goal: store-ready build.
 The full iteration log lives here, newest first. Every iteration appends an entry. Skim the dates to find where you last left off.
 
 <!-- ITERATION ENTRIES BELOW — DO NOT REMOVE OLDER ENTRIES -->
+
+### [2026-05-14] — human direction session — Threshold Spyro-style redesign + Snappy tuning + air-dash UX + camera/dev-menu/bug fixes
+
+Branch: `feat/threshold-spyro-redesign`
+Throttle: 🟢 RESET by direction session
+Gate: Gate 1 — Vertical Slice prep
+
+**Headline:** Threshold restructured from a linear corridor sequence into Spyro-style open hubs after the user reported "just holding forward and mashing jump" + "low-roof tunnels — camera feels unintuitive." Zone 1 is now a 24×36 m plaza with scattered rubble, pillars, and shelves leading to a high lookout; Zone 2 is a widened maintenance yard with a perimeter ledge alternate route; Zone 3 gained two lateral side platforms off the gantry sequence. 4 shards now scattered across the level (Zone 1 Lookout, Zone 2 mid-air, Zone 3 ShardLedge, Beat 4 K2 side). Ceilings + corridor walls removed.
+
+**Snappy tuning pass.** `max_speed` 6.0→5.0, `ground_deceleration` 90→40, `jump_velocity` 11.5→12.0, `air_jumps` 0→1, `air_jump_velocity_multiplier` 0.9 (explicit), `gravity_after_apex` 75→65. Double-jump is now default-on for Snappy. Platforming math: single-jump reach ~1.89 m, double-jump reach ~3.42 m above takeoff.
+
+**Camera fixes.**
+- `pitch_max_degrees` 55°→70° (user reported the previous cap felt too tight on Threshold's vertical spans).
+- Vertical pitch axis inverted (FPS convention: swipe down → camera rises → view tilts down at player's feet).
+- `_apply_drag_input` rewritten to read the authoritative `_pitch_rad` state instead of re-deriving phi from the camera position. The old `asin(to_cam.y / radius)` derivation conflated the additive `aim_height` offset with the spherical radius, yielding a phi the next frame's `_compute_ground_camera_pos` formula disagreed with — the position smoother then walked the camera back up on slow downward swipes. Fix: read `_pitch_rad` directly and write the new position with the same `sin(elev)*dist + aim_height` decomposition the ground formula uses. Now drag and ground-pose stay in lockstep.
+- `_apply_drag_input` signature gained `effective_distance` so the drag formula uses the same radius as `_compute_ground_camera_pos` (relevant when a CameraHint is pulling the camera back).
+
+**Air-dash UX rework.** Removed the dedicated dash button and its `KIND_DASH` classification, controller-profile signal handlers, `_dash_available` gating. New interaction: hold the jump button, then a quick swipe (≥40 px in <0.20 s) anywhere in the right (camera-drag) zone fires `air_dash_triggered.emit(TouchInput.move_vector)`. Swipe direction is ignored — dash direction comes from the stick (with the player's existing velocity/visual-forward fallback). Gesture arms lazily on the first drag event where `jump_held` is true (so a touch that began before jump press still qualifies); the 200 ms window slides forward on expiry so "pan slowly with jump held, then swipe" still fires; `_dash_done` per-touch lockout caps each finger at one dash.
+
+**Dev menu.** New "Load Level" section under the existing Level group, with buttons that call `get_tree().change_scene_to_file(...)` for Threshold and Feel Lab. Threshold teleport list updated to match the new Zone 1 layout (Spawn / Plaza floor / High shelves / Lookout shard / Plaza exit). Touch-scroll on buttons fixed by setting `mouse_filter = MOUSE_FILTER_PASS` on `_make_button` and `_make_toggle` — with the default `STOP`, every touch on a dense teleport-button block was claimed by the button and never reached the parent `ScrollContainer`.
+
+**Bug fixes.**
+- Shard collection: `Area3D.collision_mask` defaults to 1, but the player is on `collision_layer = 2`. `body_entered` never fired. Fix: set `collision_mask = 2` in `DataShard._ready()`. Player now collects all 4 shards.
+- IndustrialPress: `_phase = Phase((_phase + 1) % 4)` was a parse error in Godot 4 (enums aren't callable as constructors). Fix: `((_phase + 1) % 4) as Phase`. Modulo guarantees the int stays valid.
+- Threshold scene: orphaned `transform = ...(7, -4.0, 82)` line left over from the original DataShard placement was attaching itself to the Beat 4 shard. Removed.
+
+**Other.** Threshold set as `run/main_scene` so device deploys boot straight into Gate 1's level. Camera-pitch project memory deleted (was an open tuning item; superseded by the 55→70° change — git log preserves the rationale if 70° is still wrong on device).
+
+**Files touched.** `resources/profiles/snappy.tres`, `scripts/camera/camera_rig.gd`, `scripts/levels/data_shard.gd`, `scripts/levels/industrial_press.gd`, `scripts/ui/touch_overlay.gd`, `tools/dev_menu/dev_menu_overlay.gd`, `tests/test_controller_kinematics.gd`, `scenes/levels/threshold.tscn`, `project.godot`, `docs/levels/threshold.md`, `docs/PLAN.md`, `README.md`.
+
+**On-device pending.** Plaza traversal feel, perimeter-route discoverability, lateral platform reachability, hold-jump+swipe gesture comfort, camera pitch 70° comfort.
 
 ### [2026-05-13] — iter 66 — data shard gem geometry + light parameter tests (hard throttle hardening)
 

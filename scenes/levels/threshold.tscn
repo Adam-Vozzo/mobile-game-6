@@ -32,10 +32,10 @@ fog_sky_affect = 0.0
 
 [sub_resource type="BoxMesh" id="Mesh_Z1Floor"]
 material = ExtResource("12_matCd")
-size = Vector3(4, 1, 36)
+size = Vector3(24, 1, 36)
 
 [sub_resource type="BoxShape3D" id="Shape_Z1Floor"]
-size = Vector3(4, 1, 36)
+size = Vector3(24, 1, 36)
 
 [sub_resource type="BoxMesh" id="Mesh_Z1Wall"]
 material = ExtResource("12_matCd")
@@ -86,12 +86,47 @@ size = Vector3(3, 0.5, 3)
 [sub_resource type="BoxShape3D" id="Shape_HabExit"]
 size = Vector3(3, 0.5, 3)
 
+[sub_resource type="BoxMesh" id="Mesh_PlazaRubble"]
+material = ExtResource("11_matC")
+size = Vector3(3, 0.5, 3)
+
+[sub_resource type="BoxShape3D" id="Shape_PlazaRubble"]
+size = Vector3(3, 0.5, 3)
+
+[sub_resource type="BoxMesh" id="Mesh_PlazaPillarLow"]
+material = ExtResource("11_matC")
+size = Vector3(2, 1.5, 2)
+
+[sub_resource type="BoxShape3D" id="Shape_PlazaPillarLow"]
+size = Vector3(2, 1.5, 2)
+
+[sub_resource type="BoxMesh" id="Mesh_PlazaPillarTall"]
+material = ExtResource("11_matC")
+size = Vector3(2, 3.0, 2)
+
+[sub_resource type="BoxShape3D" id="Shape_PlazaPillarTall"]
+size = Vector3(2, 3.0, 2)
+
+[sub_resource type="BoxMesh" id="Mesh_PlazaShelf"]
+material = ExtResource("11_matC")
+size = Vector3(6, 0.3, 3)
+
+[sub_resource type="BoxShape3D" id="Shape_PlazaShelf"]
+size = Vector3(6, 0.3, 3)
+
+[sub_resource type="BoxMesh" id="Mesh_PlazaLookout"]
+material = ExtResource("11_matC")
+size = Vector3(5, 0.5, 5)
+
+[sub_resource type="BoxShape3D" id="Shape_PlazaLookout"]
+size = Vector3(5, 0.5, 5)
+
 [sub_resource type="BoxMesh" id="Mesh_Z2Floor"]
 material = ExtResource("12_matCd")
-size = Vector3(2, 1, 31)
+size = Vector3(16, 1, 31)
 
 [sub_resource type="BoxShape3D" id="Shape_Z2Floor"]
-size = Vector3(2, 1, 31)
+size = Vector3(16, 1, 31)
 
 [sub_resource type="BoxMesh" id="Mesh_Z2Ceiling"]
 material = ExtResource("12_matCd")
@@ -273,87 +308,79 @@ mesh = SubResource("Mesh_Z1Floor")
 [node name="Collider" type="CollisionShape3D" parent="Zone1_Habitation/Floor"]
 shape = SubResource("Shape_Z1Floor")
 
-[node name="WallLeft" type="StaticBody3D" parent="Zone1_Habitation"]
-transform = Transform3D(1, 0, 0, 0, 1, 0, 0, 0, 1, -2.25, 1.5, 18)
-collision_layer = 65
+[node name="RubbleA" type="StaticBody3D" parent="Zone1_Habitation"]
+transform = Transform3D(1, 0, 0, 0, 1, 0, 0, 0, 1, 4, 0.25, 7)
 
-[node name="Mesh" type="MeshInstance3D" parent="Zone1_Habitation/WallLeft"]
-mesh = SubResource("Mesh_Z1Wall")
+[node name="Mesh" type="MeshInstance3D" parent="Zone1_Habitation/RubbleA"]
+mesh = SubResource("Mesh_PlazaRubble")
 
-[node name="Collider" type="CollisionShape3D" parent="Zone1_Habitation/WallLeft"]
-shape = SubResource("Shape_Z1Wall")
+[node name="Collider" type="CollisionShape3D" parent="Zone1_Habitation/RubbleA"]
+shape = SubResource("Shape_PlazaRubble")
 
-[node name="WallRight" type="StaticBody3D" parent="Zone1_Habitation"]
-transform = Transform3D(1, 0, 0, 0, 1, 0, 0, 0, 1, 2.25, 1.5, 18)
-collision_layer = 65
+[node name="PillarLowA" type="StaticBody3D" parent="Zone1_Habitation"]
+transform = Transform3D(1, 0, 0, 0, 1, 0, 0, 0, 1, -6, 0.75, 10)
 
-[node name="Mesh" type="MeshInstance3D" parent="Zone1_Habitation/WallRight"]
-mesh = SubResource("Mesh_Z1Wall")
+[node name="Mesh" type="MeshInstance3D" parent="Zone1_Habitation/PillarLowA"]
+mesh = SubResource("Mesh_PlazaPillarLow")
 
-[node name="Collider" type="CollisionShape3D" parent="Zone1_Habitation/WallRight"]
-shape = SubResource("Shape_Z1Wall")
+[node name="Collider" type="CollisionShape3D" parent="Zone1_Habitation/PillarLowA"]
+shape = SubResource("Shape_PlazaPillarLow")
 
-[node name="Ceiling" type="StaticBody3D" parent="Zone1_Habitation"]
-transform = Transform3D(1, 0, 0, 0, 1, 0, 0, 0, 1, 0, 3.15, 18)
+[node name="RubbleB" type="StaticBody3D" parent="Zone1_Habitation"]
+transform = Transform3D(1, 0, 0, 0, 1, 0, 0, 0, 1, 7, 0.25, 14)
 
-[node name="Mesh" type="MeshInstance3D" parent="Zone1_Habitation/Ceiling"]
-mesh = SubResource("Mesh_Z1Ceiling")
+[node name="Mesh" type="MeshInstance3D" parent="Zone1_Habitation/RubbleB"]
+mesh = SubResource("Mesh_PlazaRubble")
 
-[node name="Collider" type="CollisionShape3D" parent="Zone1_Habitation/Ceiling"]
-shape = SubResource("Shape_Z1Ceiling")
+[node name="Collider" type="CollisionShape3D" parent="Zone1_Habitation/RubbleB"]
+shape = SubResource("Shape_PlazaRubble")
 
-[node name="HabP1" type="StaticBody3D" parent="Zone1_Habitation"]
-transform = Transform3D(1, 0, 0, 0, 1, 0, 0, 0, 1, 0, 0.25, 8)
+[node name="PillarTall" type="StaticBody3D" parent="Zone1_Habitation"]
+transform = Transform3D(1, 0, 0, 0, 1, 0, 0, 0, 1, 0, 1.5, 18)
 
-[node name="Mesh" type="MeshInstance3D" parent="Zone1_Habitation/HabP1"]
-mesh = SubResource("Mesh_HabP1")
+[node name="Mesh" type="MeshInstance3D" parent="Zone1_Habitation/PillarTall"]
+mesh = SubResource("Mesh_PlazaPillarTall")
 
-[node name="Collider" type="CollisionShape3D" parent="Zone1_Habitation/HabP1"]
-shape = SubResource("Shape_HabP1")
+[node name="Collider" type="CollisionShape3D" parent="Zone1_Habitation/PillarTall"]
+shape = SubResource("Shape_PlazaPillarTall")
 
-[node name="HabP2" type="StaticBody3D" parent="Zone1_Habitation"]
-transform = Transform3D(1, 0, 0, 0, 1, 0, 0, 0, 1, 0.5, 0.25, 13)
+[node name="ShelfA" type="StaticBody3D" parent="Zone1_Habitation"]
+transform = Transform3D(1, 0, 0, 0, 1, 0, 0, 0, 1, -8, 2.85, 15)
 
-[node name="Mesh" type="MeshInstance3D" parent="Zone1_Habitation/HabP2"]
-mesh = SubResource("Mesh_HabP2")
+[node name="Mesh" type="MeshInstance3D" parent="Zone1_Habitation/ShelfA"]
+mesh = SubResource("Mesh_PlazaShelf")
 
-[node name="Collider" type="CollisionShape3D" parent="Zone1_Habitation/HabP2"]
-shape = SubResource("Shape_HabP2")
+[node name="Collider" type="CollisionShape3D" parent="Zone1_Habitation/ShelfA"]
+shape = SubResource("Shape_PlazaShelf")
 
-[node name="HabShelf1" type="StaticBody3D" parent="Zone1_Habitation"]
-transform = Transform3D(1, 0, 0, 0, 1, 0, 0, 0, 1, 0, 1.275, 18)
+[node name="ShelfB" type="StaticBody3D" parent="Zone1_Habitation"]
+transform = Transform3D(1, 0, 0, 0, 1, 0, 0, 0, 1, 8, 3.35, 22)
 
-[node name="Mesh" type="MeshInstance3D" parent="Zone1_Habitation/HabShelf1"]
-mesh = SubResource("Mesh_HabShelf")
+[node name="Mesh" type="MeshInstance3D" parent="Zone1_Habitation/ShelfB"]
+mesh = SubResource("Mesh_PlazaShelf")
 
-[node name="Collider" type="CollisionShape3D" parent="Zone1_Habitation/HabShelf1"]
-shape = SubResource("Shape_HabShelf")
+[node name="Collider" type="CollisionShape3D" parent="Zone1_Habitation/ShelfB"]
+shape = SubResource("Shape_PlazaShelf")
 
-[node name="HabShelf2" type="StaticBody3D" parent="Zone1_Habitation"]
-transform = Transform3D(1, 0, 0, 0, 1, 0, 0, 0, 1, -0.2, 1.525, 23)
+[node name="Lookout" type="StaticBody3D" parent="Zone1_Habitation"]
+transform = Transform3D(1, 0, 0, 0, 1, 0, 0, 0, 1, 8, 4.25, 28)
 
-[node name="Mesh" type="MeshInstance3D" parent="Zone1_Habitation/HabShelf2"]
-mesh = SubResource("Mesh_HabShelf2")
+[node name="Mesh" type="MeshInstance3D" parent="Zone1_Habitation/Lookout"]
+mesh = SubResource("Mesh_PlazaLookout")
 
-[node name="Collider" type="CollisionShape3D" parent="Zone1_Habitation/HabShelf2"]
-shape = SubResource("Shape_HabShelf2")
+[node name="Collider" type="CollisionShape3D" parent="Zone1_Habitation/Lookout"]
+shape = SubResource("Shape_PlazaLookout")
 
-[node name="HabShelf3" type="StaticBody3D" parent="Zone1_Habitation"]
-transform = Transform3D(1, 0, 0, 0, 1, 0, 0, 0, 1, 0.2, 1.275, 28)
+[node name="DataShard" parent="Zone1_Habitation" instance=ExtResource("14_shard")]
+transform = Transform3D(1, 0, 0, 0, 1, 0, 0, 0, 1, 8, 5.8, 28)
 
-[node name="Mesh" type="MeshInstance3D" parent="Zone1_Habitation/HabShelf3"]
-mesh = SubResource("Mesh_HabShelf2")
-
-[node name="Collider" type="CollisionShape3D" parent="Zone1_Habitation/HabShelf3"]
-shape = SubResource("Shape_HabShelf2")
-
-[node name="HabExit" type="StaticBody3D" parent="Zone1_Habitation"]
+[node name="ExitPlatform" type="StaticBody3D" parent="Zone1_Habitation"]
 transform = Transform3D(1, 0, 0, 0, 1, 0, 0, 0, 1, 0, 0.25, 33)
 
-[node name="Mesh" type="MeshInstance3D" parent="Zone1_Habitation/HabExit"]
+[node name="Mesh" type="MeshInstance3D" parent="Zone1_Habitation/ExitPlatform"]
 mesh = SubResource("Mesh_HabExit")
 
-[node name="Collider" type="CollisionShape3D" parent="Zone1_Habitation/HabExit"]
+[node name="Collider" type="CollisionShape3D" parent="Zone1_Habitation/ExitPlatform"]
 shape = SubResource("Shape_HabExit")
 
 [node name="CameraHint1" type="Area3D" parent="Zone1_Habitation"]
@@ -374,35 +401,6 @@ mesh = SubResource("Mesh_Z2Floor")
 
 [node name="Collider" type="CollisionShape3D" parent="Zone2_Maintenance/Floor"]
 shape = SubResource("Shape_Z2Floor")
-
-[node name="Ceiling" type="StaticBody3D" parent="Zone2_Maintenance"]
-transform = Transform3D(1, 0, 0, 0, 1, 0, 0, 0, 1, 0, -3.15, 52.5)
-
-[node name="Mesh" type="MeshInstance3D" parent="Zone2_Maintenance/Ceiling"]
-mesh = SubResource("Mesh_Z2Ceiling")
-
-[node name="Collider" type="CollisionShape3D" parent="Zone2_Maintenance/Ceiling"]
-shape = SubResource("Shape_Z2Ceiling")
-
-[node name="WallLeft" type="StaticBody3D" parent="Zone2_Maintenance"]
-transform = Transform3D(1, 0, 0, 0, 1, 0, 0, 0, 1, -1.25, -4, 52.5)
-collision_layer = 65
-
-[node name="Mesh" type="MeshInstance3D" parent="Zone2_Maintenance/WallLeft"]
-mesh = SubResource("Mesh_Z2Wall")
-
-[node name="Collider" type="CollisionShape3D" parent="Zone2_Maintenance/WallLeft"]
-shape = SubResource("Shape_Z2Wall")
-
-[node name="WallRight" type="StaticBody3D" parent="Zone2_Maintenance"]
-transform = Transform3D(1, 0, 0, 0, 1, 0, 0, 0, 1, 1.25, -4, 52.5)
-collision_layer = 65
-
-[node name="Mesh" type="MeshInstance3D" parent="Zone2_Maintenance/WallRight"]
-mesh = SubResource("Mesh_Z2Wall")
-
-[node name="Collider" type="CollisionShape3D" parent="Zone2_Maintenance/WallRight"]
-shape = SubResource("Shape_Z2Wall")
 
 [node name="MaintLedge1" type="StaticBody3D" parent="Zone2_Maintenance"]
 transform = Transform3D(1, 0, 0, 0, 1, 0, 0, 0, 1, 0, -4.65, 43)
@@ -481,6 +479,42 @@ transform = Transform3D(1, 0, 0, 0, 1, 0, 0, 0, 1, 0, -4, 61)
 light_color = Color(0.70, 0.80, 1.0, 1)
 light_energy = 2.5
 omni_range = 12.0
+
+[node name="Z2LedgeLeft" type="StaticBody3D" parent="Zone2_Maintenance"]
+transform = Transform3D(1, 0, 0, 0, 1, 0, 0, 0, 1, -6, -3.65, 45)
+
+[node name="Mesh" type="MeshInstance3D" parent="Zone2_Maintenance/Z2LedgeLeft"]
+mesh = SubResource("Mesh_PlazaShelf")
+
+[node name="Collider" type="CollisionShape3D" parent="Zone2_Maintenance/Z2LedgeLeft"]
+shape = SubResource("Shape_PlazaShelf")
+
+[node name="Z2LedgeRight" type="StaticBody3D" parent="Zone2_Maintenance"]
+transform = Transform3D(1, 0, 0, 0, 1, 0, 0, 0, 1, 6, -3.65, 52)
+
+[node name="Mesh" type="MeshInstance3D" parent="Zone2_Maintenance/Z2LedgeRight"]
+mesh = SubResource("Mesh_PlazaShelf")
+
+[node name="Collider" type="CollisionShape3D" parent="Zone2_Maintenance/Z2LedgeRight"]
+shape = SubResource("Shape_PlazaShelf")
+
+[node name="Z2StepLeft" type="StaticBody3D" parent="Zone2_Maintenance"]
+transform = Transform3D(1, 0, 0, 0, 1, 0, 0, 0, 1, -4, -4.25, 42)
+
+[node name="Mesh" type="MeshInstance3D" parent="Zone2_Maintenance/Z2StepLeft"]
+mesh = SubResource("Mesh_PlazaPillarLow")
+
+[node name="Collider" type="CollisionShape3D" parent="Zone2_Maintenance/Z2StepLeft"]
+shape = SubResource("Shape_PlazaPillarLow")
+
+[node name="Z2StepRight" type="StaticBody3D" parent="Zone2_Maintenance"]
+transform = Transform3D(1, 0, 0, 0, 1, 0, 0, 0, 1, 4, -4.25, 49)
+
+[node name="Mesh" type="MeshInstance3D" parent="Zone2_Maintenance/Z2StepRight"]
+mesh = SubResource("Mesh_PlazaPillarLow")
+
+[node name="Collider" type="CollisionShape3D" parent="Zone2_Maintenance/Z2StepRight"]
+shape = SubResource("Shape_PlazaPillarLow")
 
 [node name="Alcove_Checkpoint" type="Node3D" parent="."]
 
@@ -651,6 +685,24 @@ light_color = Color(1.0, 0.60, 0.20, 1)
 light_energy = 4.0
 omni_range = 30.0
 
+[node name="Z3SidePlatA" type="StaticBody3D" parent="Zone3_Industrial"]
+transform = Transform3D(1, 0, 0, 0, 1, 0, 0, 0, 1, -10, -9.25, 87)
+
+[node name="Mesh" type="MeshInstance3D" parent="Zone3_Industrial/Z3SidePlatA"]
+mesh = SubResource("Mesh_PlazaLookout")
+
+[node name="Collider" type="CollisionShape3D" parent="Zone3_Industrial/Z3SidePlatA"]
+shape = SubResource("Shape_PlazaLookout")
+
+[node name="Z3SidePlatB" type="StaticBody3D" parent="Zone3_Industrial"]
+transform = Transform3D(1, 0, 0, 0, 1, 0, 0, 0, 1, 10, -13.25, 95)
+
+[node name="Mesh" type="MeshInstance3D" parent="Zone3_Industrial/Z3SidePlatB"]
+mesh = SubResource("Mesh_PlazaLookout")
+
+[node name="Collider" type="CollisionShape3D" parent="Zone3_Industrial/Z3SidePlatB"]
+shape = SubResource("Shape_PlazaLookout")
+
 [node name="Beat4_Ketsu" type="Node3D" parent="."]
 
 [node name="K1" type="StaticBody3D" parent="Beat4_Ketsu"]
@@ -714,4 +766,10 @@ mesh = SubResource("Mesh_ShardLedge")
 shape = SubResource("Shape_ShardLedge")
 
 [node name="DataShard" parent="Zone3_Industrial" instance=ExtResource("14_shard")]
-transform = Transform3D(1, 0, 0, 0, 1, 0, 0, 0, 1, 7, -4.0, 82)
+transform = Transform3D(1, 0, 0, 0, 1, 0, 0, 0, 1, 7, -4.7, 82)
+
+[node name="DataShard" parent="Zone2_Maintenance" instance=ExtResource("14_shard")]
+transform = Transform3D(1, 0, 0, 0, 1, 0, 0, 0, 1, 0, -3.0, 57)
+
+[node name="DataShard" parent="Beat4_Ketsu" instance=ExtResource("14_shard")]
+transform = Transform3D(1, 0, 0, 0, 1, 0, 0, 0, 1, -5, -18.5, 119)

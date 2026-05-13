@@ -698,17 +698,19 @@ func _test_tripod_drag_orbit() -> void:
 	_ok("pure yaw drag preserves elevation (y component unchanged)",
 		_near(yawed_pos.y, cam.y, 1e-4))
 
-	# Lower clamp: huge downward drag (drag.y > 0 reduces phi toward 0).
-	# phi must stay ≥ 0 — camera never goes below horizontal.
-	var phi_clamped_down := clampf(phi - 1000.0 * PITCH_SENS,
+	# Inverted axis: drag.y > 0 (swipe down) drives phi UP toward pitch_max;
+	# drag.y < 0 (swipe up) drives phi DOWN toward 0. _pitch_rad stays ≤ 0.
+
+	# Lower clamp: huge upward drag (drag.y < 0) drives phi toward 0.
+	var phi_clamped_down := clampf(phi + (-1000.0) * PITCH_SENS,
 		0.0, deg_to_rad(PITCH_MAX_DEG))
-	_ok("downward drag: phi clamped to ≥ 0 (camera never below horizontal)",
+	_ok("upward drag: phi clamped to ≥ 0 (camera never below horizontal)",
 		phi_clamped_down >= 0.0)
 
-	# Upper clamp: huge upward drag (drag.y < 0 increases phi toward max).
-	var phi_clamped_up := clampf(phi - (-1000.0) * PITCH_SENS,
+	# Upper clamp: huge downward drag (drag.y > 0) drives phi toward pitch_max.
+	var phi_clamped_up := clampf(phi + 1000.0 * PITCH_SENS,
 		0.0, deg_to_rad(PITCH_MAX_DEG))
-	_ok("upward drag: phi clamped to ≤ pitch_max_degrees",
+	_ok("downward drag: phi clamped to ≤ pitch_max_degrees",
 		phi_clamped_up <= deg_to_rad(PITCH_MAX_DEG) + 1e-6)
 
 	# _pitch_rad = -phi → always ≤ 0 (used by the elevation formula downstream)
