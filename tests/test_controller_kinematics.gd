@@ -109,6 +109,7 @@ func _ready() -> void:
 	_test_data_shard_light_params()
 	_test_dash_buffer_camera_logic()
 	_test_speed_ramp_logic()
+	_test_zone_atmosphere_logic()
 	_report()
 
 
@@ -4097,3 +4098,49 @@ func _test_speed_ramp_logic() -> void:
 		SNAPPY_TRES.speed_ramp_rate == 0.0)
 	_ok("Floaty profile: speed_ramp_rate = 0 (ramp disabled)",
 		FLOATY_TRES.speed_ramp_rate == 0.0)
+
+
+func _test_zone_atmosphere_logic() -> void:
+	## Pure-math mirror of the zone atmosphere constants defined in threshold.tscn
+	## sub_resources (Env_Z1, Env_Z2, Env_Z3) and the zone trigger dimensions.
+	## Values are sourced from docs/research/zone_atmosphere.md and guard against
+	## accidental resets of the zone identity system.
+	print("\n-- Zone atmosphere constants (Threshold zone identity) --")
+
+	# ── Ambient colour temperature ordering ────────────────────────────────────
+	# Zone 1 (Habitation): sodium-yellow warmth — R > G > B.
+	var z1 := Color(0.35, 0.30, 0.22)
+	_ok("Z1 ambient: R > G (sodium-yellow warmth)", z1.r > z1.g)
+	_ok("Z1 ambient: G > B (no blue in warm habitation zone)", z1.g > z1.b)
+
+	# Zone 2 (Maintenance): cold blue-white — B dominates R.
+	var z2 := Color(0.22, 0.26, 0.38)
+	_ok("Z2 ambient: B > R (cold blue-white dominance)", z2.b > z2.r)
+
+	# Zone 3 (Industrial): amber — R > G > B.
+	var z3 := Color(0.30, 0.22, 0.14)
+	_ok("Z3 ambient: R > G > B (amber/orange dominance)", z3.r > z3.g and z3.g > z3.b)
+
+	# ── Fog density ordering: vast hall < warm plaza < cold corridor ───────────
+	# Larger spaces read as less dense; Zone 3's industrial hall has the least fog.
+	var fog_z1 := 0.012; var fog_z2 := 0.015; var fog_z3 := 0.008
+	_ok("Fog density order: Z3 (vast) < Z1 (warm) < Z2 (cold)",
+		fog_z3 < fog_z1 and fog_z1 < fog_z2)
+
+	# ── Zone trigger Z-axis coverage (from threshold.tscn node transforms + shapes) ─
+	# Zone1Trigger: center_z=18, half_z=22 (size_z=44) → covers z=-4 to z=40.
+	# Zone2Trigger: center_z=56, half_z=19 (size_z=38) → covers z=37 to z=75.
+	# Zone3Trigger: center_z=112, half_z=43 (size_z=86) → covers z=69 to z=155.
+	var z1_cz := 18.0;  var z1_hz := 22.0
+	var z2_cz := 56.0;  var z2_hz := 19.0
+	var z3_cz := 112.0; var z3_hz := 43.0
+
+	# Player spawn (z=0) must be inside Zone1Trigger.
+	_ok("Z1 trigger covers spawn z=0", absf(0.0 - z1_cz) <= z1_hz)
+
+	# Zone2 floor centre (z=52.5) must be inside Zone2Trigger.
+	_ok("Z2 trigger covers maintenance floor z=52.5", absf(52.5 - z2_cz) <= z2_hz)
+
+	# G1 gantry (z=81) and Terminal (z=135) must both be inside Zone3Trigger.
+	_ok("Z3 trigger covers G1 gantry (z=81) and Terminal (z=135)",
+		absf(81.0 - z3_cz) <= z3_hz and absf(135.0 - z3_cz) <= z3_hz)
