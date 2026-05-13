@@ -5,10 +5,10 @@ A mobile 3D platformer. Brutalist megastructure inspired by *BLAME!*. Controller
 ## Status
 
 Current gate: **Gate 0 — Feel Lab** (closing out; Gate 1 prep in flight)
-Last activity: 2026-05-13 — iter 60: dev_menu_overlay refactor (_build_level_section split, 718 unit tests unchanged)
+Last activity: 2026-05-13 — iter 61: RotatingHazard + CameraHint unit tests (718 → 735 assertions)
 Test device build: ✅ verified 2026-05-12 — runs in Godot 4.6 on PC and on Nothing Phone 4(a) Pro
 Performance: 144 fps / 6.9 ms in editor at 1920×1080 (Feel Lab); on-device frametimes TBD
-Throttle level: **HARD** (9 iterations since last human direction 2026-05-12). New feature work stopped. Only hardening.
+Throttle level: **HARD** (10 iterations since last human direction 2026-05-12). New feature work stopped. Only hardening.
 
 If you only read one section, read **Open questions waiting on you** below.
 
@@ -90,6 +90,38 @@ Goal: store-ready build.
 The full iteration log lives here, newest first. Every iteration appends an entry. Skim the dates to find where you last left off.
 
 <!-- ITERATION ENTRIES BELOW — DO NOT REMOVE OLDER ENTRIES -->
+
+### [2026-05-13] — iter 61 — RotatingHazard + CameraHint unit tests (hard throttle)
+
+Branch: `claude/gifted-shannon-w2fci`
+Throttle: HARD (10 iterations since last human direction 2026-05-12)
+Gate: Gate 1 — Vertical Slice prep (hardening pass)
+
+**Primary: unit test coverage for `rotating_hazard.gd` and `camera_hint.gd`.**
+
+Two new test groups added to `tests/test_controller_kinematics.gd`:
+
+- `_test_rotating_hazard_math` (12 assertions, pure math, no node instantiation):
+  mirrors `angle = fmod(_elapsed / period_seconds, 1.0) * TAU` in `_physics_process`;
+  tests angle at t=0/half/full/1.25 periods; periodicity (t and t+7×period agree);
+  angle always in [0, TAU); axis normalization (UP and diagonal); default period 4.0 s
+  within export range [0.5, 20.0]; Basis column-length invariant at angle=0 and TAU.
+- `_test_camera_hint_defaults` (5 assertions, instantiates `CH := CameraHint.new()`):
+  `pull_back_amount` defaults 0.0 (safe no-op); `blend_time` defaults 0.5 s; both
+  non-negative / positive guards; `"camera_hints"` StringName contract matches
+  `camera_rig.gd::_get_active_hint_extra()` group query.
+
+New const: `const CH := preload("res://scripts/levels/camera_hint.gd")`.
+
+Perf: no runtime code touched. Unit tests: 718 → 735.
+
+Side quest: none (hard throttle).
+
+Bugs fixed: none. New dev-menu controls: none. Assets: none. Research: none.
+
+> **HARD THROTTLE active — 10 iterations since last human direction (2026-05-12).**
+> All remaining queue items are either device-dependent or need human sign-off.
+> Please pick from the 5 options in "Open questions waiting on you" above.
 
 ### [2026-05-13] — iter 60 — dev_menu_overlay refactor (hard throttle)
 

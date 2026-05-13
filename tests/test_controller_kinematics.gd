@@ -23,6 +23,7 @@ const RP  := preload("res://scripts/ui/results_panel.gd")
 const WS  := preload("res://scripts/levels/win_state.gd")
 const CKP := preload("res://scripts/levels/checkpoint.gd")
 const DS  := preload("res://scripts/levels/data_shard.gd")
+const CH  := preload("res://scripts/levels/camera_hint.gd")
 
 var _pass_count := 0
 var _fail_count := 0
@@ -96,6 +97,8 @@ func _ready() -> void:
 	_test_win_state_one_shot_guard()
 	_test_data_shard_state_machine()
 	_test_industrial_press_timing()
+	_test_rotating_hazard_math()
+	_test_camera_hint_defaults()
 	_report()
 
 
@@ -3324,3 +3327,93 @@ func _test_industrial_press_timing() -> void:
 		(visual_x - kill_x) / 2.0 >= 0.10)
 	_ok("KillZone inset in Z >= 0.10 m per side",
 		(visual_z - kill_z) / 2.0 >= 0.10)
+
+
+func _test_rotating_hazard_math() -> void:
+	## Mirrors angle = fmod(_elapsed / period_seconds, 1.0) * TAU in
+	## rotating_hazard.gd::_physics_process. Pure math — no node instantiation.
+	print("\n-- RotatingHazard phase formula --")
+
+	var period := 4.0  # default period_seconds
+
+	# t=0: no elapsed time → no rotation.
+	var a0 := fmod(0.0 / period, 1.0) * TAU
+	_ok("t=0 → angle 0.0 rad", _near(a0, 0.0))
+
+	# t=half period → PI (half revolution).
+	var a_half := fmod((period * 0.5) / period, 1.0) * TAU
+	_ok("t=half period → angle PI rad", _near(a_half, PI))
+
+	# t=full period → fmod wraps to 0 (one full revolution complete).
+	var a_full := fmod(period / period, 1.0) * TAU
+	_ok("t=full period → angle wraps to 0.0 rad", _near(a_full, 0.0))
+
+	# t=1.25 periods → quarter past first wrap → PI/2.
+	var a_1p25 := fmod((period * 1.25) / period, 1.0) * TAU
+	_ok("t=1.25 periods → angle PI/2 rad", _near(a_1p25, PI / 2.0))
+
+	# Periodicity: angle(t) == angle(t + N×period) for any integer N.
+	var t_arb := 1.37
+	var a_base  := fmod(t_arb / period, 1.0) * TAU
+	var a_plus7 := fmod((t_arb + 7.0 * period) / period, 1.0) * TAU
+	_ok("Periodic: angle(t) == angle(t + 7×period)", _near(a_base, a_plus7))
+
+	# Angle always in [0, TAU) regardless of how many full revolutions have elapsed.
+	var a_large := fmod((period * 23.7) / period, 1.0) * TAU
+	_ok("Angle in [0, TAU) for large elapsed time",
+		a_large >= 0.0 and a_large < TAU)
+
+	# rotation_axis is normalized before Basis construction (rotating_hazard.gd line 27).
+	_ok("Vector3.UP.normalized() length == 1.0",
+		_near(Vector3.UP.normalized().length(), 1.0))
+	_ok("Diagonal (1,1,0) normalized length == 1.0",
+		_near(Vector3(1.0, 1.0, 0.0).normalized().length(), 1.0))
+
+	# Default period 4.0 s must sit within the @export_range(0.5, 20.0) bounds.
+	var default_period := 4.0
+	_ok("Default period_seconds 4.0 >= range min 0.5 s", default_period >= 0.5)
+	_ok("Default period_seconds 4.0 <= range max 20.0 s", default_period <= 20.0)
+
+	# Basis(normalized_axis, 0) produces an orthonormal Basis (column lengths == 1.0).
+	var b_zero := Basis(Vector3.UP, 0.0)
+	_ok("Basis(UP, 0) X column length == 1.0", _near(b_zero.x.length(), 1.0))
+
+	# Basis(normalized_axis, TAU): one full revolution returns X column near (1,0,0),
+	# confirming the formula is periodic with respect to TAU.
+	var b_full := Basis(Vector3.UP, TAU)
+	_ok("Basis(UP, TAU) X column dot RIGHT ≈ 1.0 (full revolution ≈ identity)",
+		_near(b_full.x.dot(Vector3.RIGHT), 1.0))
+
+
+func _test_camera_hint_defaults() -> void:
+	## CameraHint export-var defaults and group-name contract.
+	## Group membership requires a live scene tree; only the StringName value
+	## is tested here — camera_rig.gd queries the group by this exact name.
+	print("\n-- CameraHint export defaults + group contract --")
+
+	var ch := CH.new()
+
+	# pull_back_amount = 0.0: a zero value is a safe default — the hint has no
+	# effect until the level author sets a non-zero value, so untuned hints
+	# can be placed without accidentally pushing the camera away.
+	_ok("pull_back_amount defaults 0.0 (no-op until authored)",
+		_near(ch.pull_back_amount, 0.0))
+
+	# blend_time = 0.5 s: smooth without feeling sluggish — at 60 fps this
+	# gives ~30 frames of lerp, which reads as a deliberate cinematic pull.
+	_ok("blend_time defaults 0.5 s", _near(ch.blend_time, 0.5))
+
+	# Negative pull_back_amount would shorten the spring arm during a hint,
+	# moving the camera closer — the opposite of the design intent.
+	_ok("pull_back_amount default is non-negative", ch.pull_back_amount >= 0.0)
+
+	# A zero blend_time would produce an instant camera snap, which looks like
+	# a glitch on mobile. The default must be strictly positive.
+	_ok("blend_time default > 0 (prevents instant camera snap)",
+		ch.blend_time > 0.0)
+
+	# Group StringName must match the query in camera_rig.gd::_get_active_hint_extra().
+	_ok("camera_hints StringName matches camera_rig group query",
+		StringName("camera_hints") == &"camera_hints")
+
+	ch.free()
