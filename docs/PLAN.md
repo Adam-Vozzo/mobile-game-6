@@ -16,9 +16,9 @@ authored with it in mind.
 
 ## Active iteration
 
-- _No iteration currently in flight._ Iter 65 (air-dash state-machine tests + game timer tests) landed 2026-05-13 — see
+- _No iteration currently in flight._ Iter 66 (data shard gem geometry + light parameter tests) landed 2026-05-13 — see
   Recently completed.
-- **HARD THROTTLE** (14 iterations since last human direction session 2026-05-12). New feature work
+- **HARD THROTTLE** (15 iterations since last human direction session 2026-05-12). New feature work
   stopped. Human direction required. See README "Open questions waiting on you" for 5 concrete options.
 
 ## Queue (ranked, top is next)
@@ -171,6 +171,15 @@ These mirror "Open questions waiting on you" in the README.
   drive the next tuning iteration.
 
 ## Recently completed (last 5)
+
+- 2026-05-13 — Iteration 66. **Data shard gem geometry + light parameter tests (hard throttle hardening).**
+  `_test_data_shard_gem_vertices` (13 assertions, 807 → 820): mirrors the vertex array of
+  `DataShard._build_gem_mesh()` — top apex y 0.28, bottom y -0.22, intentional top>bottom asymmetry,
+  all four equatorial vertices y=0 (tested per-vertex), axis-aligned square ring (not diagonal),
+  equatorial radius 0.20 m, 6 vertices, 8 triangles, emission_energy_multiplier 3.2.
+  Side quest: `_test_data_shard_light_params` (6 assertions, 820 → 826): OmniLight3D cyan channel
+  checks (G>R, B>R), light_energy 1.4, omni_range 4.5 m, collect-pulse rise < fall (0.05 s < 0.30 s),
+  peak pulse 5× default. Throttle: HARD (15).
 
 - 2026-05-13 — Iteration 65. **Air-dash state-machine tests + game timer accumulation tests (hard throttle hardening).**
   `_test_air_dash_state_machine` (14 assertions, 786 → 800): fills the state-transition gap left by

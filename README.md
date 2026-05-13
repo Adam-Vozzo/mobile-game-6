@@ -5,10 +5,10 @@ A mobile 3D platformer. Brutalist megastructure inspired by *BLAME!*. Controller
 ## Status
 
 Current gate: **Gate 0 — Feel Lab** (closing out; Gate 1 prep in flight)
-Last activity: 2026-05-13 — iter 65: air-dash state-machine tests + game timer tests; 786 → 807 assertions
+Last activity: 2026-05-13 — iter 66: data shard gem geometry + light parameter tests; 807 → 826 assertions
 Test device build: ✅ verified 2026-05-12 — runs in Godot 4.6 on PC and on Nothing Phone 4(a) Pro
 Performance: 144 fps / 6.9 ms in editor at 1920×1080 (Feel Lab); on-device frametimes TBD
-Throttle level: **HARD** (14 iterations since last human direction 2026-05-12). New feature work stopped. Only hardening.
+Throttle level: **HARD** (15 iterations since last human direction 2026-05-12). New feature work stopped. Only hardening.
 
 If you only read one section, read **Open questions waiting on you** below.
 
@@ -90,6 +90,43 @@ Goal: store-ready build.
 The full iteration log lives here, newest first. Every iteration appends an entry. Skim the dates to find where you last left off.
 
 <!-- ITERATION ENTRIES BELOW — DO NOT REMOVE OLDER ENTRIES -->
+
+### [2026-05-13] — iter 66 — data shard gem geometry + light parameter tests (hard throttle hardening)
+
+Branch: `claude/gifted-shannon-beMAc`
+Throttle: HARD (15 iterations since last human direction 2026-05-12)
+Gate: Gate 1 — Vertical Slice prep (hardening pass)
+
+**Primary: `_test_data_shard_gem_vertices` (13 assertions, 807 → 820).**
+
+Documents and protects the exact vertex geometry of `DataShard._build_gem_mesh()` — the
+pure-math magic numbers that define the collectible gem's visual design:
+- Top apex y = 0.28 m above equatorial plane.
+- Bottom apex y = -0.22 m below equatorial plane (intentionally flatter bottom — sharper top).
+- Top taller than bottom is deep: 0.28 > 0.22 (visual asymmetry confirmed).
+- All four equatorial vertices lie in the XZ plane (y = 0), tested per-vertex.
+- Ring is axis-aligned, not diagonal: eq[0] is pure +X; eq[1] is pure +Z; eq[3] is pure -Z (90° spacing).
+- Equatorial radius = 0.20 m.
+- 6 total vertices (1 top + 4 equatorial + 1 bottom).
+- 8 total triangles (4 upper fan from top apex + 4 lower fan from bottom apex).
+- `emission_energy_multiplier` = 3.2 (self-luminous against dark brutalist environment).
+
+**Side quest: `_test_data_shard_light_params` (6 assertions, 820 → 826).**
+
+Documents the `OmniLight3D` parameters and collect-pulse Tween timing in `data_shard.gd`:
+- Light is cyan: G > R and B > R.
+- `light_energy` = 1.4 (default, pre-collection).
+- `omni_range` = 4.5 m (reaches adjacent platform surfaces through fog).
+- Collect pulse: rise (0.05 s) < fall (0.30 s) — fast punch, long recognisable tail.
+- Peak pulse energy (7.0) = 5× the default (1.4) — unambiguous visual confirmation.
+
+Perf: no change (test-only additions).
+Bugs fixed: none.
+New dev-menu controls: none.
+Assets acquired: none.
+Research added: none.
+Human attention: see "Open questions waiting on you" — 5 concrete options listed, HARD
+throttle at 15 iterations.
 
 ### [2026-05-13] — iter 65 — air-dash state-machine tests + game timer accumulation tests (hard throttle hardening)
 
