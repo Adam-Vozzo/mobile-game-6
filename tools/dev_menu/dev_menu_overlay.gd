@@ -427,6 +427,7 @@ func _build_juice_section(vbox: VBoxContainer) -> void:
 	_build_blob_shadow_tuning(vbox)
 	_build_squash_stretch_tuning(vbox)
 	_build_ghost_trail_tuning(vbox)
+	_build_screen_shake_tuning(vbox)
 
 
 func _build_blob_shadow_tuning(vbox: VBoxContainer) -> void:
@@ -632,6 +633,14 @@ func _make_ghost_trail_slider(parent: Node, label_text: String, param: StringNam
 	_make_slider(parent, label_text, mn, mx, step,
 		func(v: float) -> void: DevMenu.ghost_trail_param_changed.emit(param, v),
 		default_val)
+
+
+func _build_screen_shake_tuning(vbox: VBoxContainer) -> void:
+	vbox.add_child(_make_label("Screen Shake — Tuning", SECTION_FONT_SIZE, false))
+	_make_slider(vbox, "Intensity ×",
+		0.0, 3.0, 0.05,
+		func(v: float) -> void: DevMenu.camera_param_changed.emit(&"shake_intensity", v),
+		1.0)
 
 
 func _make_viz_checkbox(parent: Node, label_text: String, key: StringName) -> void:

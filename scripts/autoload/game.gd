@@ -8,6 +8,10 @@ signal player_respawned
 signal checkpoint_reached(checkpoint_id: StringName)
 @warning_ignore("unused_signal")
 signal level_completed
+## Emitted by player/hazards when a game event warrants a camera shake.
+## magnitude: peak rotation offset in radians; duration: seconds; freq: Hz.
+@warning_ignore("unused_signal")
+signal screen_shake_requested(magnitude: float, duration: float, freq: float)
 
 ## Ghost trail recording — 30 samples/s, up to 5 attempts, up to 90 s each.
 const SAMPLE_INTERVAL := 1.0 / 30.0

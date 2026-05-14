@@ -177,6 +177,9 @@ func _tick_timers(delta: float, on_floor: bool) -> void:
 			_play_land_squash(impact)
 		if has_node("/root/Audio"):
 			Audio.on_land(impact)
+		# Heavy landing only (same threshold as audio heavy/light split).
+		if has_node("/root/Game") and impact >= Audio.LAND_HEAVY_THRESHOLD:
+			Game.screen_shake_requested.emit(0.011 * impact, 0.13, 20.0)
 	_was_on_floor_last_frame = on_floor
 
 
@@ -447,6 +450,7 @@ func respawn() -> void:
 	if has_node("/root/Game"):
 		Game.register_attempt()
 		Game.player_respawned.emit()
+		Game.screen_shake_requested.emit(0.022, 0.20, 26.0)
 	if has_node("/root/Audio"):
 		Audio.on_respawn_start()
 	_run_reboot_effect()

@@ -5,7 +5,7 @@ A mobile 3D platformer. Brutalist megastructure inspired by *BLAME!*. Controller
 ## Status
 
 Current gate: **Gate 0 — Feel Lab** (closing out; Gate 1 prep in flight)
-Last activity: 2026-05-14 — iter 80: audio skeleton (bus setup, sound_layers wiring, dispatch stubs) + wall normal debug viz
+Last activity: 2026-05-14 — iter 81: screen shake system (land + death, dev-menu intensity slider)
 Test device build: ✅ verified 2026-05-12 — runs in Godot 4.6 on PC and on Nothing Phone 4(a) Pro
 Performance: 144 fps / 6.9 ms in editor at 1920×1080 (Feel Lab); on-device frametimes TBD
 Throttle level: **🟢 RESET** (2026-05-14 direction session: A confirmed, B+D actioned, C+E deferred)
@@ -100,6 +100,51 @@ Goal: store-ready build.
 The full iteration log lives here, newest first. Every iteration appends an entry. Skim the dates to find where you last left off.
 
 <!-- ITERATION ENTRIES BELOW — DO NOT REMOVE OLDER ENTRIES -->
+
+### [2026-05-14] — iter 81 — Screen shake system
+
+Branch: `claude/gifted-shannon-PzaTm`
+Throttle: 🟢 normal (4 iterations since 2026-05-14 direction session)
+Gate: Gate 1 — Vertical Slice prep
+
+**Primary: Screen shake** — promoted JUICE.md "Hard land" and "Death/respawn" from idea → prototype.
+
+`scripts/autoload/game.gd`:
+- `screen_shake_requested(magnitude: float, duration: float, freq: float)` signal added.
+
+`scripts/camera/camera_rig.gd`:
+- `shake_intensity_scale: float = 1.0` export — global multiplier, "Intensity ×" slider in dev menu.
+- `_shake_remaining / _shake_decay / _shake_freq` state — current peak (radians), decay rate, frequency.
+- `_on_screen_shake_requested(magnitude, duration, freq)` — connects to `Game.screen_shake_requested`
+  in `_ready()`. Only the strongest in-flight shake wins (weaker arrivals discarded).
+- `_apply_shake(delta)` — called **after** `_camera.look_at()` and `_publish_camera_yaw()` so
+  movement direction is unaffected. Applies two sinusoidal offsets (yaw + 0.6× pitch at 1.27× freq)
+  via `rotate_object_local`; `look_at` overwrites the rotation next frame → no accumulation.
+
+`scripts/player/player.gd`:
+- Land shake: `impact ≥ 0.25` (Audio heavy-land threshold) → `0.011 × impact rad, 0.13 s, 20 Hz`
+  emitted in `_tick_timers()` just_landed block. Light landings produce no shake.
+- Death shake: `0.022 rad, 0.20 s, 26 Hz` emitted in `respawn()` alongside `Game.player_respawned`.
+
+Dev menu: "Screen Shake — Tuning" sub-section appended to Juice section (Intensity × slider 0–3).
+
+**Directional hazard-hit shake deferred** — death shake covers all kills as non-directional substitute.
+Direction-biased version requires hazard world-pos at hit time; logged in JUICE.md.
+
+**Tests:** 8 new assertions (`_test_screen_shake_system`): CameraRig defaults (`shake_intensity_scale`=1.0,
+`_shake_remaining`=0, `_shake_decay`=0), Game signal exists, land < death magnitude, both < 0.05 rad,
+land threshold in [0.20, 0.35], decay formula round-trip. 963 → 971 assertions.
+
+**Perf:** `_apply_shake` exits immediately when `_shake_remaining <= 0.0` (no-op cost when idle).
+When active: 1 `Time.get_ticks_msec()` call + 2 `rotate_object_local()` calls — negligible vs
+the rest of `_process`.
+**Bugs fixed:** none.
+**New dev-menu controls:** "Screen Shake — Tuning → Intensity ×" slider in Juice section.
+**Assets acquired:** none.
+**Research added:** none.
+**On-device pending:** shake magnitudes (0.011 land / 0.022 death) and intensity scale tuning.
+
+---
 
 ### [2026-05-14] — iter 80 — Audio skeleton upgrade + wall normal debug viz
 

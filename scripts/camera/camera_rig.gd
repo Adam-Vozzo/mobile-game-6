@@ -161,6 +161,15 @@ var _apex_anchor_y: float = 0.0
 # hints at 3 /sec (→ 95% blend in ~1 s). Zero when no hints are active.
 var _hint_distance_extra: float = 0.0
 
+# Screen shake state. `_shake_remaining` IS the current peak magnitude (radians)
+# and decays to 0 at `_shake_decay` radians/sec. Both reset to 0 when a new shake
+# wins only if it is stronger than what is currently playing.
+var _shake_remaining: float = 0.0
+var _shake_decay: float = 0.0
+var _shake_freq: float = 22.0
+## Global intensity multiplier — exposed in dev menu Juice → Screen Shake tuning.
+@export_range(0.0, 3.0, 0.05) var shake_intensity_scale: float = 1.0
+
 @onready var _camera: Camera3D = $Camera
 
 
@@ -170,6 +179,8 @@ func _ready() -> void:
 	if has_node("/root/DevMenu"):
 		DevMenu.camera_param_changed.connect(_on_camera_param_changed)
 		DevMenu.debug_viz_changed.connect(_on_debug_viz_changed)
+	if has_node("/root/Game"):
+		Game.screen_shake_requested.connect(_on_screen_shake_requested)
 
 
 func _process(delta: float) -> void:
@@ -202,6 +213,8 @@ func _process(delta: float) -> void:
 		_update_ground_camera(target_pos, effective_target, effective_distance, aim_point, delta)
 	_camera.look_at(aim_point, Vector3.UP)
 	_publish_camera_yaw(target_pos)
+	# Shake is applied after yaw is published so movement direction is unaffected.
+	_apply_shake(delta)
 	# Refresh air offset every frame so takeoff captures the current pose and
 	# mid-air drag propagates. Stored relative to effective_target (not raw
 	# target_pos) so below-apex vertical motion doesn't leak into the offset.
@@ -581,6 +594,34 @@ func _unhandled_input(event: InputEvent) -> void:
 		)
 
 
+## Applies one frame of sinusoidal camera wobble if a shake is active.
+## Called after look_at() so the effect is purely visual and does not bleed
+## into _publish_camera_yaw() (player movement direction stays correct).
+## Rotation is local to the camera node; look_at() overwrites it next frame,
+## so there is no per-frame accumulation.
+func _apply_shake(delta: float) -> void:
+	if _shake_remaining <= 0.0:
+		return
+	var t_s := Time.get_ticks_msec() * 0.001
+	var eff := _shake_remaining * shake_intensity_scale
+	var yaw_off   := sin(t_s * _shake_freq * TAU) * eff
+	var pitch_off := sin(t_s * _shake_freq * TAU * 1.27 + 1.3) * eff * 0.6
+	_camera.rotate_object_local(Vector3.UP, yaw_off)
+	_camera.rotate_object_local(Vector3.RIGHT, pitch_off)
+	_shake_remaining = maxf(0.0, _shake_remaining - _shake_decay * delta)
+
+
+## Receives Game.screen_shake_requested; only the strongest in-flight shake wins.
+func _on_screen_shake_requested(magnitude: float, duration: float, freq: float) -> void:
+	if not has_node("/root/DevMenu") or not DevMenu.is_juice_on(&"screen_shake"):
+		return
+	if magnitude <= _shake_remaining:
+		return
+	_shake_remaining = magnitude
+	_shake_decay = magnitude / maxf(0.001, duration)
+	_shake_freq = freq
+
+
 func _on_camera_param_changed(param_name: StringName, value: float) -> void:
 	match param_name:
 		&"distance":
@@ -614,6 +655,8 @@ func _on_camera_param_changed(param_name: StringName, value: float) -> void:
 			ease_out_smoothing = value
 		&"occlusion_release_delay":
 			occlusion_release_delay = value
+		&"shake_intensity":
+			shake_intensity_scale = value
 		# Lookahead and auto-recenter sliders are no-ops in the tripod model.
 		_:
 			pass
