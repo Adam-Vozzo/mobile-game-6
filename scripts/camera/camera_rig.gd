@@ -78,6 +78,10 @@ class_name CameraRig
 ## always keeps the camera above the player.
 @export_range(0.0, 89.0, 1.0) var pitch_max_degrees: float = 70.0
 
+@export_category("Free cam")
+## Flight speed (m/s) when free-camera mode is active. Hold Shift for 3×.
+@export_range(1.0, 40.0, 0.5) var free_cam_speed: float = 10.0
+
 @export_category("Occlusion")
 @export_range(0.1, 1.0, 0.05) var occlusion_margin: float = 0.3
 @export_range(0.3, 3.0, 0.05) var occlusion_min_distance: float = 0.8
@@ -111,6 +115,12 @@ class_name CameraRig
 
 var _target: Node3D
 var _initialized: bool = false
+# Free-camera mode: when true, player tracking is suspended and the camera
+# flies freely under keyboard + mouse-look input. Enabled via dev menu
+# Level section → "Free cam" toggle (debug_viz_state key &"free_cam").
+var _free_cam: bool = false
+var _free_cam_yaw: float = 0.0    # world-Y rotation, radians
+var _free_cam_pitch: float = 0.0  # camera-local-X rotation, radians
 # Working pitch in radians, always ≤ 0 (0 = horizontal, negative = camera
 # above player). Negated to get the elevation angle. Initialised from
 # `pitch_degrees`; updated by manual drag. Kept ≤ 0 to avoid the V-shape
@@ -159,9 +169,13 @@ func _ready() -> void:
 	_target = get_node_or_null(target_path) as Node3D
 	if has_node("/root/DevMenu"):
 		DevMenu.camera_param_changed.connect(_on_camera_param_changed)
+		DevMenu.debug_viz_changed.connect(_on_debug_viz_changed)
 
 
 func _process(delta: float) -> void:
+	if _free_cam:
+		_process_free_cam(delta)
+		return
 	if _target == null:
 		return
 	var target_pos := _target.global_position
@@ -514,6 +528,57 @@ func _get_active_hint_extra() -> float:
 		if hint is CameraHint and (hint as CameraHint).is_player_inside():
 			max_extra = maxf(max_extra, (hint as CameraHint).pull_back_amount)
 	return max_extra
+
+
+func _on_debug_viz_changed(key: StringName, enabled: bool) -> void:
+	if key != &"free_cam":
+		return
+	_free_cam = enabled
+	if enabled:
+		# Seed yaw/pitch directly from the camera's current orientation so the
+		# view direction matches the moment of entry — no sudden jump.
+		var euler := _camera.global_basis.get_euler(EULER_ORDER_YXZ)
+		_free_cam_yaw   = euler.y
+		_free_cam_pitch = euler.x
+	else:
+		# Drop _initialized so the ground ratchet rebuilds from the player's
+		# current position on the next tracking frame — no jump-cut.
+		_initialized = false
+
+
+## Free-camera flight. WASD + Q/E to move; hold Shift for 3× speed.
+## RMB + drag (mouse) to look. Touch drag (TouchInput) is drained each frame
+## so it doesn't accumulate during the mode and cause a jump on exit.
+func _process_free_cam(delta: float) -> void:
+	var move := Vector3.ZERO
+	if Input.is_key_pressed(KEY_W): move.z -= 1.0
+	if Input.is_key_pressed(KEY_S): move.z += 1.0
+	if Input.is_key_pressed(KEY_A): move.x -= 1.0
+	if Input.is_key_pressed(KEY_D): move.x += 1.0
+	if Input.is_key_pressed(KEY_Q): move.y -= 1.0
+	if Input.is_key_pressed(KEY_E): move.y += 1.0
+	var speed_mult := 3.0 if Input.is_key_pressed(KEY_SHIFT) else 1.0
+	if move.length_squared() > 0.0:
+		move = move.normalized()
+	# YXZ Euler: yaw applied first in world space, pitch then around camera-local X.
+	# Basis.from_euler default order is EULER_ORDER_YXZ, which matches this intent.
+	var cam_basis := Basis.from_euler(Vector3(_free_cam_pitch, _free_cam_yaw, 0.0))
+	_camera.global_position += cam_basis * move * free_cam_speed * speed_mult * delta
+	_camera.global_basis = cam_basis
+	TouchInput.consume_camera_drag_delta()
+
+
+func _unhandled_input(event: InputEvent) -> void:
+	if not _free_cam:
+		return
+	if event is InputEventMouseMotion \
+			and Input.is_mouse_button_pressed(MOUSE_BUTTON_RIGHT):
+		_free_cam_yaw -= (event as InputEventMouseMotion).relative.x * yaw_drag_sens
+		_free_cam_pitch = clampf(
+			_free_cam_pitch - (event as InputEventMouseMotion).relative.y * pitch_drag_sens,
+			-PI * 0.45,
+			PI * 0.45,
+		)
 
 
 func _on_camera_param_changed(param_name: StringName, value: float) -> void:

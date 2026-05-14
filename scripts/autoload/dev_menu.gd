@@ -57,6 +57,7 @@ var debug_viz_state: Dictionary[StringName, bool] = {
 	&"velocity_arrow": false,
 	&"ground_normal": false,
 	&"jump_arc": false,
+	&"free_cam": false,
 }
 
 var _overlay: CanvasLayer
