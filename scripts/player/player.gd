@@ -410,6 +410,30 @@ func _play_dash_stretch() -> void:
 	_squash_tween.tween_property(_visual, "scale", Vector3.ONE, 0.15)
 
 
+func _play_death_squish(duration: float) -> void:
+	if _visual == null or not DevMenu.is_juice_on(&"squash_stretch"):
+		return
+	if _squash_tween:
+		_squash_tween.kill()
+	_squash_tween = create_tween()
+	_squash_tween.tween_property(_visual, "scale", Vector3(1.25, 0.25, 1.25), duration)
+
+
+func _play_reboot_grow(duration: float) -> void:
+	# When juice is off, just ensure the scale is correct at spawn.
+	if _visual == null:
+		return
+	if not DevMenu.is_juice_on(&"squash_stretch"):
+		_visual.scale = Vector3.ONE
+		return
+	_visual.scale = Vector3(0.05, 0.05, 0.05)
+	if _squash_tween:
+		_squash_tween.kill()
+	_squash_tween = create_tween()
+	_squash_tween.set_ease(Tween.EASE_OUT).set_trans(Tween.TRANS_BACK)
+	_squash_tween.tween_property(_visual, "scale", Vector3.ONE, duration)
+
+
 func _run_reboot_effect() -> void:
 	var dur := profile.reboot_duration
 	var death_centre := global_position + Vector3(0.0, 0.45, 0.0)
@@ -417,10 +441,7 @@ func _run_reboot_effect() -> void:
 	# 1. Death beat: sparks burst + squish crush
 	_spawn_sparks(death_centre)
 	_set_emission(Color(1.0, 0.18, 0.1), 5.0)
-	if _visual and DevMenu.is_juice_on(&"squash_stretch"):
-		var squish := create_tween()
-		squish.tween_property(_visual, "scale",
-				Vector3(1.25, 0.25, 1.25), dur * 0.08)
+	_play_death_squish(dur * 0.08)
 	await get_tree().create_timer(dur * 0.12).timeout
 
 	# 2. Dark frame: hide visual, reset scale, teleport
@@ -432,16 +453,10 @@ func _run_reboot_effect() -> void:
 	velocity = Vector3.ZERO
 	await get_tree().create_timer(dur * 0.35).timeout
 
-	# 3. Power-on: scale up from near-zero with overshoot (upright beat)
+	# 3. Power-on: show visual, scale up from near-zero with overshoot
 	if _visual:
 		_visual.visible = true
-		if DevMenu.is_juice_on(&"squash_stretch"):
-			_visual.scale = Vector3(0.05, 0.05, 0.05)
-			var grow := create_tween()
-			grow.set_ease(Tween.EASE_OUT).set_trans(Tween.TRANS_BACK)
-			grow.tween_property(_visual, "scale", Vector3.ONE, dur * 0.28)
-		else:
-			_visual.scale = Vector3.ONE
+	_play_reboot_grow(dur * 0.28)
 	_set_emission(Color(1.0, 0.55, 0.15), 2.5)
 	await get_tree().create_timer(dur * 0.35).timeout
 

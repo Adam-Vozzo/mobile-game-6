@@ -57,7 +57,7 @@ Status legend:
 | Apex hold | idea | brief stretch at jump apex — needs apex-state signal, deferred |
 | Land squish | prototype | `_play_land_squash(impact)` on `just_landed` frame; impact = `clamp(-last_fall_speed / terminal, 0, 1)`; squash_y = 1 − impact×0.45×scale, squash_xz = 1 + impact×0.20×scale; TRANS_SPRING recovery in 0.25 s; tunable via "Impact scale" dev-menu slider (0–1, default 0.5); zero draw-call cost |
 | Jump stretch | prototype | `_play_jump_stretch()` on takeoff (inside `_try_jump`); stretch_y = 1 + 0.30×scale, stretch_xz = 1 − 0.15×scale; TRANS_QUAD out + TRANS_SINE in settle over 0.23 s; tunable via "Stretch scale" dev-menu slider (0–1, default 0.5); zero draw-call cost |
-| Death squish | prototype | scale(1.25, 0.25, 1.25) crush on death; scale-up with TRANS_BACK overshoot on spawn; gated behind `squash_stretch` toggle |
+| Death squish | prototype | `_play_death_squish(dur*0.08)` on reboot beat 1: scale(1.25, 0.25, 1.25) crush tracked via `_squash_tween`; `_play_reboot_grow(dur*0.28)` on beat 3: scale-up from (0.05) with TRANS_BACK overshoot; both gated behind `squash_stretch` toggle |
 | Dash stretch | prototype | `_play_dash_stretch()` on air dash trigger; XZ stretch + Y squish (1.25, 0.75, 1.25) via TRANS_QUAD out over 0.05 s, settles back to (1,1,1) over 0.15 s; gated behind `squash_stretch` toggle; zero draw-call cost |
 
 ## Blob shadow — toggle key `blob_shadow`
