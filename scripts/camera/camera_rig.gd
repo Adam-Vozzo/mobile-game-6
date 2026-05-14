@@ -390,14 +390,20 @@ func _conditional_fall_offset(player_y: float, vel_y: float) -> float:
 # from the camera position each call (the tripod model lets the player walk
 # around the camera, so the camera-relative theta drifts and must be read
 # off the geometry). Pitch reads from `_pitch_rad` directly — it is the
-# authoritative state, mutated only by drag and the dev menu. The previous
-# implementation re-derived phi as `asin(to_cam.y / radius)`, which folded
-# the additive `aim_height` offset into the spherical Y; combined with
-# `_compute_ground_camera_pos`'s `sin(elev)*dist + aim_height` formula and
-# the asymmetric position smoother, that mismatch quietly auto-raised the
-# camera on slow downward swipes. Reading `_pitch_rad` directly and writing
-# the new position with the same `sin(elev)*dist + aim_height` decomposition
-# keeps the two in lockstep.
+# authoritative state, mutated only by drag and the dev menu.
+#
+# Parametrization matches `_compute_ground_camera_pos` exactly: XZ at full
+# `effective_distance` from the pivot (cylindrical, not spherical) and
+# Y = aim_height + sin(elev)*effective_distance above the pivot. A previous
+# implementation re-derived phi via `asin(to_cam.y / radius)` and combined
+# that with the additive `aim_height`, which quietly auto-raised the camera
+# on slow downward swipes. A spherical write here (with a `cos(elev)` factor
+# on XZ) introduced a different mismatch: at high pitch the drag put XZ at
+# `effective_distance * cos(elev)`, then the ground branch eased the camera
+# back out to full XZ distance over ~0.5 s — visible as an "auto-correction
+# fight" after pitching up. Writing the new position with the same
+# cylindrical formula `_compute_ground_camera_pos` enforces keeps the two
+# in lockstep at every pitch.
 func _apply_drag_input(pivot: Vector3, effective_distance: float) -> void:
 	var drag := TouchInput.consume_camera_drag_delta()
 	if drag.length_squared() == 0.0:
@@ -417,11 +423,10 @@ func _apply_drag_input(pivot: Vector3, effective_distance: float) -> void:
 		deg_to_rad(pitch_max_degrees),
 	)
 	_pitch_rad = -elev
-	var cos_e := cos(elev)
 	_camera.global_position = pivot + Vector3(
-		effective_distance * cos_e * sin(theta),
+		effective_distance * sin(theta),
 		effective_distance * sin(elev) + aim_height,
-		effective_distance * cos_e * cos(theta),
+		effective_distance * cos(theta),
 	)
 
 

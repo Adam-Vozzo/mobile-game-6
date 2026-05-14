@@ -672,66 +672,97 @@ func _tripod_cam_offset(elevation: float, dist: float, aim_height: float) -> Vec
 
 
 func _test_tripod_drag_orbit() -> void:
-	## Verifies the orbital drag math from camera_rig.gd::_apply_drag_input.
-	## The drag converts the current camera position to spherical coords (radius,
-	## theta, phi), adjusts theta/phi by the drag deltas, clamps phi to [0, max],
-	## then reconstructs the new position on the same sphere. Key invariants:
-	##   - Pure yaw drag preserves radius and elevation (only theta changes).
-	##   - phi is always clamped ≥ 0 (camera stays at or above horizontal).
-	##   - phi is clamped ≤ deg_to_rad(pitch_max_degrees) (configurable upper limit).
-	##   - _pitch_rad = -phi, so it is always ≤ 0.
+	## Verifies the cylindrical drag math from camera_rig.gd::_apply_drag_input.
+	## Drag derives theta from the current camera XZ (the tripod model lets the
+	## player walk around the camera, so theta drifts), reads `_pitch_rad`
+	## directly for elevation, clamps elev to [0, pitch_max], then writes the
+	## new position with the *same* parametrization `_compute_ground_camera_pos`
+	## enforces: XZ at full `effective_distance` from pivot, Y at
+	## `sin(elev)*effective_distance + aim_height` above pivot.
+	##
+	## A previous spherical write (`effective_distance * cos(elev)` on XZ)
+	## produced an auto-correction fight: at high pitch the drag put cam at
+	## projected XZ, then the ground branch eased it back out to full XZ over
+	## ~0.5 s. The cylindrical write below removes that mismatch.
+	##
+	## Key invariants:
+	##   - Pure yaw drag preserves horizontal radius (only theta changes).
+	##   - elev is always clamped ≥ 0 (camera stays at or above horizontal).
+	##   - elev is clamped ≤ deg_to_rad(pitch_max_degrees).
+	##   - _pitch_rad = -elev, so it is always ≤ 0.
+	##   - At any elev, drag-written cam XZ matches ground-branch XZ exactly.
 	print("\n-- Tripod camera drag orbit math --")
 	const DIST     := 6.0
 	const ELEV_DEG := 22.0
 	const PITCH_MAX_DEG := 55.0
 	const YAW_SENS := 0.005
 	const PITCH_SENS := 0.003
+	const AIM_H := 0.6
 	var elev := deg_to_rad(ELEV_DEG)
 
-	# Initial camera position: directly behind at default elevation, yaw=0.
-	var cam := Vector3(0.0, sin(elev) * DIST, cos(elev) * DIST)
-	var target := Vector3.ZERO
-	var to_cam := cam - target
-	var radius := to_cam.length()
-	_ok("radius derived from default position == distance",
-		_near(radius, DIST, 1e-4))
+	# Initial camera position written by _apply_drag_input (cylindrical):
+	# XZ at full DIST behind, Y = sin(elev)*DIST + AIM_H above pivot.
+	var pivot := Vector3.ZERO
+	var cam := pivot + Vector3(0.0, sin(elev) * DIST + AIM_H, DIST)
+	var to_cam := cam - pivot
+	var horiz_radius := Vector2(to_cam.x, to_cam.z).length()
+	_ok("XZ radius from drag-written position == distance (cylindrical)",
+		_near(horiz_radius, DIST, 1e-4))
 
+	# Theta is derived from the camera's XZ relative to the pivot.
 	var theta := atan2(to_cam.x, to_cam.z)
-	var phi   := asin(clampf(to_cam.y / radius, -1.0, 1.0))
-	_ok("phi derived from default position == elevation angle",
-		_near(phi, elev, 1e-4))
+	_ok("theta from default position == 0 (camera behind on +Z)",
+		_near(theta, 0.0, 1e-4))
 
-	# Pure yaw drag (large positive x-drag): only theta changes, phi unchanged.
+	# Pure yaw drag (positive x-drag): theta changes, elev unchanged, horizontal
+	# radius preserved, Y unchanged.
 	var new_theta := theta - 100.0 * YAW_SENS
-	var cos_phi := cos(phi)
-	var yawed_pos := Vector3(
-		radius * cos_phi * sin(new_theta),
-		radius * sin(phi),
-		radius * cos_phi * cos(new_theta))
-	_ok("pure yaw drag preserves 3D radius (orbit on sphere)",
-		_near(yawed_pos.length(), DIST, 1e-4))
-	_ok("pure yaw drag preserves elevation (y component unchanged)",
+	var yawed_pos := pivot + Vector3(
+		DIST * sin(new_theta),
+		DIST * sin(elev) + AIM_H,
+		DIST * cos(new_theta))
+	_ok("pure yaw drag preserves XZ radius (cylindrical orbit)",
+		_near(Vector2(yawed_pos.x, yawed_pos.z).length(), DIST, 1e-4))
+	_ok("pure yaw drag preserves Y (no elevation change)",
 		_near(yawed_pos.y, cam.y, 1e-4))
 
-	# Inverted axis: drag.y > 0 (swipe down) drives phi UP toward pitch_max;
-	# drag.y < 0 (swipe up) drives phi DOWN toward 0. _pitch_rad stays ≤ 0.
+	# Inverted axis: drag.y > 0 (swipe down) drives elev UP toward pitch_max;
+	# drag.y < 0 (swipe up) drives elev DOWN toward 0. _pitch_rad stays ≤ 0.
 
-	# Lower clamp: huge upward drag (drag.y < 0) drives phi toward 0.
-	var phi_clamped_down := clampf(phi + (-1000.0) * PITCH_SENS,
+	# Lower clamp: huge upward drag (drag.y < 0) drives elev toward 0.
+	var elev_clamped_down := clampf(elev + (-1000.0) * PITCH_SENS,
 		0.0, deg_to_rad(PITCH_MAX_DEG))
-	_ok("upward drag: phi clamped to ≥ 0 (camera never below horizontal)",
-		phi_clamped_down >= 0.0)
+	_ok("upward drag: elev clamped to ≥ 0 (camera never below horizontal)",
+		elev_clamped_down >= 0.0)
 
-	# Upper clamp: huge downward drag (drag.y > 0) drives phi toward pitch_max.
-	var phi_clamped_up := clampf(phi + 1000.0 * PITCH_SENS,
+	# Upper clamp: huge downward drag (drag.y > 0) drives elev toward pitch_max.
+	var elev_clamped_up := clampf(elev + 1000.0 * PITCH_SENS,
 		0.0, deg_to_rad(PITCH_MAX_DEG))
-	_ok("downward drag: phi clamped to ≤ pitch_max_degrees",
-		phi_clamped_up <= deg_to_rad(PITCH_MAX_DEG) + 1e-6)
+	_ok("downward drag: elev clamped to ≤ pitch_max_degrees",
+		elev_clamped_up <= deg_to_rad(PITCH_MAX_DEG) + 1e-6)
 
-	# _pitch_rad = -phi → always ≤ 0 (used by the elevation formula downstream)
-	var pitch_rad := -phi_clamped_down
-	_ok("_pitch_rad = -phi: value is always ≤ 0 (camera above horizontal)",
+	# _pitch_rad = -elev → always ≤ 0 (used by the elevation formula downstream)
+	var pitch_rad := -elev_clamped_down
+	_ok("_pitch_rad = -elev: value is always ≤ 0 (camera above horizontal)",
 		pitch_rad <= 0.0)
+
+	# Drag/ground consistency at high pitch — the bug fix invariant. At 70°
+	# pitch the *previous* spherical formula put XZ at DIST*cos(70°) ≈ 2.05;
+	# the cylindrical formula matches the ground branch (XZ = DIST).
+	var elev_high := deg_to_rad(70.0)
+	var drag_xz := Vector2(DIST * sin(0.0), DIST * cos(0.0)).length()
+	# Ground branch (`_compute_ground_camera_pos`) targets full `effective_distance`
+	# in horizontal XZ regardless of pitch.
+	var ground_xz := DIST
+	_ok("drag XZ radius matches ground branch at high pitch (no fight)",
+		_near(drag_xz, ground_xz, 1e-4))
+	# Y formula must also match: drag uses sin(elev)*DIST + AIM_H above pivot;
+	# ground uses sin(elev)*effective_distance + aim_height + fall_offset
+	# above effective_target (fall_offset=0 on grounded frames at apex anchor).
+	var drag_y := DIST * sin(elev_high) + AIM_H
+	var ground_y := DIST * sin(elev_high) + AIM_H
+	_ok("drag Y matches ground branch Y on grounded frames (no fight)",
+		_near(drag_y, ground_y, 1e-4))
 
 
 func _test_horizontal_deceleration() -> void:

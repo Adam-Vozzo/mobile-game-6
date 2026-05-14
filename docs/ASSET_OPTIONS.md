@@ -84,10 +84,53 @@ needs at minimum: idle, run, jump, land, death/reboot animations.
   Best used if A1/A2 fail the device-feel pass and a custom silhouette is
   needed. Leave this as a fallback.
 
+#### A5 — Kenney Mini Characters
+- **Source:** <https://kenney.nl/assets/mini-characters>
+- **Author:** Kenney (kenney.nl)
+- **Licence:** CC0
+- **Format:** FBX / GLTF / OBJ, pre-rigged + animated on Kenney's "1.1 Character" rig
+- **Animations:** Shared rig set — idle / walk / run / jump / sit etc.
+- **Style / fidelity:**
+  Chibi proportions match the Stray and the shared rig gives a clean animation
+  set for free. Catch: the pack is humanoid civilians, no robot variant. To
+  use as the Stray you would have to swap the mesh and reuse the rig, or
+  re-skin one civilian model concrete-grey with a red accent. Animation
+  quality is good (Kenney's animation pipeline is reliable).
+- **Fidelity risk:** Medium — rig is reusable but no robot mesh; either rig
+  retarget or custom mesh work needed before this beats A1.
+
+#### A6 — Kenney Mini Arena
+- **Source:** <https://kenney.nl/assets/mini-arena>
+- **Author:** Kenney
+- **Licence:** CC0
+- **Format:** Same Mini-series rig as A5 (FBX / GLTF)
+- **Animations:** Compatible with A5 — shared Mini character rig
+- **Style / fidelity:**
+  20 gladiator/Roman-themed chibi characters on the same rig as A5. Theme is
+  irrelevant; only value is as a rig donor with extra animation variations.
+  Only listed as a fallback if A5 turns out to be unavailable or insufficient.
+- **Fidelity risk:** Medium — rig donor only, no usable Stray mesh.
+
+#### A7 — Kenney Blocky Characters
+- **Source:** <https://kenney.nl/assets/blocky-characters>
+- **Author:** Kenney
+- **Licence:** CC0
+- **Format:** FBX / GLTF, rigged + animated (v2.0 remake)
+- **Animations:** Shared character animation set
+- **Style / fidelity:**
+  Blocky/cubic silhouettes (think Minecraft toy aesthetic). Reads "voxel
+  playful" and will visually fight the brutalist concrete megastructure —
+  the cubic look undercuts the cold/austere tone of Project Void. Listed
+  only for completeness; lower fit than A1 / A5.
+- **Fidelity risk:** High — stylistic clash with the brutalist mood.
+
 ### Recommendation
 **A1 (Quaternius LowPoly Robot)** — best fidelity-to-effort ratio, CC0 confirmed,
 animations cover all Gate 1 requirements, FBX imports cleanly into Godot 4.
-If the style feels too "cute" after device review, A2 is the backup.
+If the style feels too "cute" after device review, A2 is the backup. The Kenney
+options (A5–A7) all require a custom robot mesh or visual rework before they
+beat A1; they're listed because the human asked for Kenney coverage but none
+of them ship a CC0 chibi robot the way A1 does.
 
 ---
 
@@ -149,12 +192,34 @@ oppressive.
   library; select 2–3 tracks for A/B testing.
 - **Use:** Secondary sourcing if B1/B2/B3 don't satisfy on device.
 
+#### B5 — Kenney Sci-Fi Sounds
+- **Source:** <https://kenney.nl/assets/sci-fi-sounds>
+- **Author:** Kenney
+- **Licence:** CC0
+- **Format:** ~70 audio files (Kenney standard: OGG + WAV)
+- **Sound:** Sci-fi SFX one-shots — engine stings, lasers, computer blips,
+  UI bleeps. Short clips, not long-form ambient loops.
+- **Fidelity:** Low for the *ambient bed* role — Kenney does not ship long
+  seamlessly-loopable ambient audio packs. High as a complementary SFX
+  source: punchy sci-fi/mechanical clanks and engine stings that sit
+  cleanly over the B1+B2 bed. Treat as additive, not substitutive.
+- **Use:** Optional supplementary layer for one-shot accents (terminal
+  activation, hazard windup stings, ambient mechanical "groans"). Acquire
+  alongside B1/B2, not instead of.
+
+> **Kenney ambient-bed gap.** Kenney has no dedicated atmospheric/room-tone
+> pack — their audio catalogue is SFX-focused (Interface, Impact, Sci-Fi,
+> UI Audio are all short clips). For the always-playing ambient layer the
+> recommendation stays on B1/B2 (freesound CC0). B5 is the most useful
+> Kenney audio for Project Void but it's a complement, not a replacement.
+
 ### Recommendation
 **B1 as global bed + B2 as Zone 2 layer.** B1's deep hum nails "vast machine-built
 world"; B2 adds specificity in the maintenance yard. Both CC0. If B1 proves too
 featureless after device testing, swap in B3 (CC-BY) for the longer natural
-variation. All three can be acquired now and compared on device; they're small
-file sizes.
+variation. Layer B5 (Kenney Sci-Fi Sounds) over the bed for one-shot mechanical
+SFX punctuation. All four can be acquired now and compared on device; they're
+small file sizes.
 
 ---
 
@@ -228,23 +293,74 @@ gameplay-camera distances. 4K is wasteful on mobile.
 - **Fidelity:** Same as C4 — geometry layer, not texture layer. Zone 2/3
   contextual props.
 
+#### C6 — Kenney Prototype Textures
+- **Source:** <https://kenney.nl/assets/prototype-textures>
+- **Licence:** CC0
+- **Count:** 75 tiling textures, PNG
+- **Maps:** Diffuse-only / tiling (no PBR normal/roughness/AO maps).
+- **Fidelity:** Useful as a greyboxing/blockout layer while the C1/C2 PBR
+  pipeline is being set up — muted grid greys read fine as placeholder
+  concrete under fog. Not a final-quality option: the lack of normal maps
+  means lighting on these surfaces is flat, which kills the dramatic
+  sodium-yellow / cold-blue / amber zone lighting. Acquire if you want a
+  fast first-pass material upgrade without the PBR setup; replace with
+  C1/C2 during the art pass.
+- **Use:** Greybox upgrade layer, swap-out target.
+
+#### C7 — Kenney Modular Space Kit
+- **Source:** <https://kenney.nl/assets/modular-space-kit>
+- **Licence:** CC0
+- **Count:** 40 modular meshes (FBX / GLTF / OBJ)
+- **Fidelity:** Closest Kenney has to a modular megastructure-interior kit.
+  Clean snap-grid geometry — useful for laying out internal corridors and
+  rooms. Caveat: silhouettes read "sci-fi space station" (panelled walls,
+  rounded greebles, vent grates), not "raw poured-concrete brutalism." With
+  C2 Poly Haven concrete materials applied the surface fits the palette, but
+  the underlying topology will still feel more "ship interior" than
+  "monolithic concrete slab." Worth holding for Zone 2 maintenance-yard
+  blockouts rather than primary Zone 1/3 architecture.
+- **Fidelity risk:** Medium-high — geometry feel is sci-fi; needs material
+  override to read concrete, and even then the panelling will telegraph.
+
+#### C8 — Kenney Factory Kit
+- **Source:** <https://kenney.nl/assets/factory-kit>
+- **Licence:** CC0
+- **Count:** 140 modular industrial pieces (pipes, conveyors, machinery,
+  structural), multiple formats, with animation + colour variations
+- **Fidelity:** Best Kenney source for *set-dressing* inside brutalist halls
+  — pipes, vents, catwalks, dormant machinery to scatter through Zone 2/3.
+  Not a primary wall/floor kit; pairs with C2 Poly Haven concrete for the
+  surrounding architecture. The "playful Kenney" silhouettes are softer
+  than ideal but read fine at distance under heavy fog and amber rim-light.
+  Strongest Kenney-slot pick if you want to fill out Zone 2 maintenance
+  yard / Zone 3 industrial hall with machinery clutter quickly.
+- **Fidelity risk:** Medium — set-dressing only, not primary architecture.
+
 ### Recommendation
 **C1 (ambientCG) or C2 (Poly Haven)** for the texture maps — both are best-in-class
 CC0 PBR. C2 + the Poly Haven Godot add-on is the fastest path to import. Acquire
 3 sets from either source (one per zone tone: light/neutral, cold/stained,
 rough/industrial) and apply over the existing `mat_concrete.tres` material.
-C4/C5 (Kenney geometry kits) are worth a look for Zone 2/3 prop blocking —
-no art direction needed, just layout.
+
+Kenney additions for prop / blockout coverage:
+- **C8 (Factory Kit)** is the highest-value Kenney addition — 140 industrial
+  dressing pieces for Zone 2/3 without further art-direction work.
+- **C4 (Modular Buildings)** and **C5 (City Kit Industrial)** stay as Zone 2/3
+  block-shapes when paired with C1/C2 materials.
+- **C7 (Modular Space Kit)** as a fallback if Zone 2 needs more enclosed
+  corridor pieces than C4 supplies.
+- **C6 (Prototype Textures)** only if you want a fast no-PBR placeholder pass
+  before the C1/C2 import is wired up — otherwise skip and go straight to PBR.
 
 ---
 
 ## Decision table
 
-| Slot | Recommended pick | Fallback | Licence | Est. import time |
-|------|-----------------|---------|---------|-----------------|
-| A — Stray mesh | A1 Quaternius LowPoly Robot | A2 Godot Asset #1467 | CC0 | 30–60 min |
-| B — Ambient audio | B1 AlaskaRobotics hum + B2 fans layer | B3 InspectorJ (CC-BY) | CC0 | 10 min |
-| C — Concrete kit | C2 Poly Haven + Godot add-on | C1 ambientCG | CC0 | 20 min |
+| Slot | Recommended pick | Fallback | Kenney coverage | Licence | Est. import time |
+|------|-----------------|---------|-----------------|---------|-----------------|
+| A — Stray mesh | A1 Quaternius LowPoly Robot | A2 Godot Asset #1467 | A5–A7 listed; none ship a CC0 chibi robot → A1 still wins | CC0 | 30–60 min |
+| B — Ambient audio | B1 AlaskaRobotics hum + B2 fans layer | B3 InspectorJ (CC-BY) | B5 Sci-Fi Sounds as SFX complement only; no Kenney ambient bed exists | CC0 | 10 min |
+| C — Concrete kit | C2 Poly Haven + Godot add-on | C1 ambientCG | C8 Factory Kit for set-dressing; C4/C5 for blockout shapes; C7 corridor fallback | CC0 | 20 min |
 
 Once you approve the picks above (or redirect to alternates), autonomous asset
 acquisition resumes. Each acquired asset will get an `assets/ASSETS.md` entry
