@@ -5,10 +5,10 @@ A mobile 3D platformer. Brutalist megastructure inspired by *BLAME!*. Controller
 ## Status
 
 Current gate: **Gate 0 — Feel Lab** (closing out; Gate 1 prep in flight)
-Last activity: 2026-05-14 — iter 75: hardening unit tests (zone env + ramp lifecycle, 887 → 904)
+Last activity: 2026-05-14 — iter 76: hardening unit tests (ghost trail fix semantics + respawn clearing, 904 → 920)
 Test device build: ✅ verified 2026-05-12 — runs in Godot 4.6 on PC and on Nothing Phone 4(a) Pro
 Performance: 144 fps / 6.9 ms in editor at 1920×1080 (Feel Lab); on-device frametimes TBD
-Throttle level: **🔴 HARD** (9 iterations since 2026-05-14 direction session — new feature work halted)
+Throttle level: **🔴 HARD** (10 iterations since 2026-05-14 direction session — new feature work halted)
 
 If you only read one section, read **Open questions waiting on you** below.
 
@@ -103,6 +103,47 @@ Goal: store-ready build.
 The full iteration log lives here, newest first. Every iteration appends an entry. Skim the dates to find where you last left off.
 
 <!-- ITERATION ENTRIES BELOW — DO NOT REMOVE OLDER ENTRIES -->
+
+### [2026-05-14] — iter 76 — Hardening unit tests: ghost trail fix semantics + respawn timer clearing
+
+Branch: `claude/gifted-shannon-UfHNv`
+Throttle: 🔴 HARD (10 iterations since 2026-05-14 direction session)
+Gate: Gate 1 — Vertical Slice prep
+
+**Primary: 16 new unit tests — ghost trail iter-73 behavioral fixes + respawn input-timer contract (904 → 920).**
+
+Two test groups added to `tests/test_controller_kinematics.gd`:
+
+**`_test_ghost_trail_disable_and_resize_semantics` (8 assertions)** — Documents and guards two
+fixes shipped in iter 73:
+- *Fix 1 — blank-after-resize*: blanking BEFORE `instance_count` resize leaves new slots
+  `[old_count..new_count)` at Godot's default colour (opaque white), causing a one-frame flash
+  on window enlargement. Fixed path sets `instance_count` first, then blanks all slots.
+  Quantified: 2 s → 5 s window enlargement would leave 450 slots unzeroed under the buggy path.
+- *Fix 2 — disabled-path efficiency*: per-frame `_blank_from(0)` cost = 300 instances × 60 fps
+  = 18,000 GPU buffer writes/sec while ghost trails are off. `_mmesh.visible = false` = 60
+  writes/sec (O(1)). `_on_juice_changed` still calls `_blank_from(0)` once on the disable event
+  to clear stale data before the node is hidden.
+
+**`_test_respawn_input_timer_clearing` (8 assertions)** — Mirrors the clearing block in
+`player.gd::respawn()`: `_buffer_timer`, `_coyote_timer`, `_air_jumps_remaining`,
+`_dash_charges`, `_dash_timer`, and `_is_dashing` are all zeroed at death so nothing from
+the fatal frame carries into the next attempt. Double-respawn guard documented: `_is_rebooting`
+blocks re-entry into `respawn()` and causes `_physics_process` to early-return for the full
+reboot animation duration.
+
+Perf: unchanged (no runtime changes — tests only).
+Side quest: none.
+New dev-menu controls: none.
+Assets: none.
+Research: none.
+
+**Refactor backlog additions:**
+- `player.gd::_run_reboot_effect` (45 lines, barely over 40): coherent async sequence with
+  well-commented beats — splitting into sub-methods adds indirection without clarity gain.
+  Low priority; note for future cleanup if the function grows further.
+- `dev_menu_overlay.gd::_build_ui` (~41 lines) and `_make_slider` (~43 lines): marginal
+  overruns. Both are builder methods with no hidden complexity. Defer.
 
 ### [2026-05-14] — iter 75 — Hardening unit tests: zone env bounds + ramp lifecycle
 

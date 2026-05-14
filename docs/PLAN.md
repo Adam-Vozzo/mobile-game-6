@@ -17,6 +17,7 @@ authored with it in mind.
 ## Active iteration
 
 - _No iteration currently in flight._
+- **🔴 HARD THROTTLE — Iter 76 complete.** 10 iterations since 2026-05-14 direction session. New feature work halted. Hardening only: 16 new unit tests — `_test_ghost_trail_disable_and_resize_semantics` (8 assertions: blank-after-resize fix semantics, disabled-path 300× cost reduction, one-time disable blank) + `_test_respawn_input_timer_clearing` (8 assertions: buffer/coyote/air-jumps/dash clearing, double-respawn guard, physics block). 904 → 920 assertions. Refactor backlog notes added for `_run_reboot_effect` (45 lines), `_build_ui` (~41 lines), `_make_slider` (~43 lines) — all marginal, defer.
 - **🔴 HARD THROTTLE — Iter 75 complete.** 9 iterations since 2026-05-14 direction session. New feature work halted. See README "Open questions waiting on you" for 5 suggested next directions. Hardening only: 17 new unit tests in `test_controller_kinematics.gd` — `_test_zone_env_bounds_and_disabled` (10 assertions: null-sentinel at envs[0], zone_id=4 OOB safety, disabled-mode fallback, enabled-path slot routing) + `_test_respawn_ramp_speed_reset` (7 assertions: initial = max_speed, 2 s ramp-up lifts speed, respawn resets, decay floor, landing alone does not reset). 887 → 904 assertions.
 - **🟢 Iter 74 complete.** Camera occlusion tunables exposed in dev menu: 4 missing `camera_rig.gd` sphere-cast params (`occlusion_probe_radius`, `pull_in_smoothing`, `ease_out_smoothing`, `occlusion_release_delay`) now have dev-menu sliders under "Camera — Occlusion" sub-section. `_on_camera_param_changed` gained 4 match arms. Duplicate `_occlude()` docstring removed. 8 unit tests (879 → 887). Side quest: `docs/research/tbdr_mobile_gpu.md` — TBDR pipeline, alpha-blending cost, no manual depth pre-pass needed, Adreno LRZ/Mali FPK notes, SubViewport cost, CSG migration benefits. Resolves last open INDEX.md research suggestion.
 - **🟢 Iter 73 complete.** Baked lighting research (`docs/research/baked_lighting.md`): LightmapGI on Mobile renderer, critical zone-atmosphere/baking conflict documented (Option A/C recommended), CSG→MeshInstance blocker surfaced, atlas sizing for Threshold. Side quest: `ghost_trail_renderer.gd` two bugs fixed — (1) blank-after-resize so new MultiMesh instances above old count are zeroed immediately (was blank-before, leaving new instances white for one frame); (2) replace per-frame `_blank_from(0)` when disabled with `_mmesh.visible = false` (eliminates 300 set_instance_color writes per frame at 60 fps when ghost trails are off). 5 new unit tests (874 → 879). INDEX.md + PLAN.md updated with bake prereqs.
@@ -212,6 +213,15 @@ These mirror "Open questions waiting on you" in the README.
   drive the next tuning iteration.
 
 ## Recently completed (last 5)
+
+- 2026-05-14 — Iteration 76. **Hardening unit tests: ghost trail fix semantics + respawn timer clearing. HARD throttle.**
+  `tests/test_controller_kinematics.gd`: two new test functions — `_test_ghost_trail_disable_and_resize_semantics`
+  (8 assertions: blank-before-resize leaves 450 slots unzeroed, blank-after covers all, shrink discards old
+  slots cleanly, disabled-path per-frame cost 18,000 vs 60 writes/sec, one-time disable blank for hygiene) +
+  `_test_respawn_input_timer_clearing` (8 assertions: buffer/coyote/air-jumps/dash-charges/dash-timer/is-dashing
+  all cleared on death, double-respawn guard blocks re-entry, _physics_process blocked during reboot animation).
+  16 new assertions (904 → 920). Refactor backlog: `_run_reboot_effect` 45 lines, `_build_ui` ~41 lines,
+  `_make_slider` ~43 lines — all marginal overruns, defer.
 
 - 2026-05-14 — Iteration 75. **Hardening unit tests: zone env bounds + ramp lifecycle. HARD throttle.**
   `tests/test_controller_kinematics.gd`: two new test functions — `_test_zone_env_bounds_and_disabled`
@@ -1123,9 +1133,11 @@ These mirror "Open questions waiting on you" in the README.
   observed in Gate 1 geometry.
 - ~~**`_build_level_section` over 40 lines.**~~ Done (iter 60). Extracted
   `_build_feel_lab_teleports` + `_build_threshold_teleports`; dispatcher now 16 lines. No behaviour change.
-- `player.gd::_run_reboot_effect` is 44 lines (just over threshold). The
+- `player.gd::_run_reboot_effect` is 45 lines (just over threshold). The
   sequential `await` beats make sub-method extraction awkward in GDScript
   without coroutine indirection. Leave as-is; revisit if it grows further.
+- `dev_menu_overlay.gd::_build_ui` (~41 lines) and `_make_slider` (~43 lines):
+  marginal overruns, no hidden complexity. Leave as-is; extract only if further growth warrants it.
 - ~~**`camera_rig.gd::_process` over 40 lines.**~~ Done (iter 62). Extracted 8 private helpers;
   `_process` now 31 lines. Also split `_occlude` → `_occlude` + `_probe_hit_dist`. All methods ≤ 40.
 - ~~**Camera pitch manual override V-turn.**~~ Fixed (iter 22). Clamp upper
