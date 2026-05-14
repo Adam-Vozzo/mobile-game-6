@@ -452,12 +452,6 @@ func _is_target_on_floor() -> bool:
 ## `desired`. When `hit` is true, `pos` is the safe camera position (the
 ## impact point minus the occlusion margin, floored at occlusion_min_distance).
 ## When `hit` is false, `pos == desired`. Sphere cast (rather than a thin ray)
-## tames the frame-to-frame flicker at wall edges; the boolean lets the
-## caller apply a release-delay latch on top.
-## Returns `{hit: bool, pos: Vector3}` for the line of sight from `aim` to
-## `desired`. When `hit` is true, `pos` is the safe camera position (the
-## impact point minus the occlusion margin, floored at occlusion_min_distance).
-## When `hit` is false, `pos == desired`. Sphere cast (rather than a thin ray)
 ## tames frame-to-frame flicker at wall edges; the boolean lets the caller
 ## apply a release-delay latch on top.
 func _occlude(aim: Vector3, desired: Vector3) -> Dictionary:
@@ -542,6 +536,14 @@ func _on_camera_param_changed(param_name: StringName, value: float) -> void:
 			reference_floor_smoothing = value
 		&"reference_floor_snap_threshold":
 			reference_floor_snap_threshold = value
+		&"occlusion_probe_radius":
+			occlusion_probe_radius = value
+		&"pull_in_smoothing":
+			pull_in_smoothing = value
+		&"ease_out_smoothing":
+			ease_out_smoothing = value
+		&"occlusion_release_delay":
+			occlusion_release_delay = value
 		# Lookahead and auto-recenter sliders are no-ops in the tripod model.
 		_:
 			pass

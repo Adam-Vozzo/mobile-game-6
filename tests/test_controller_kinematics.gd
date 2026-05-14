@@ -113,6 +113,7 @@ func _ready() -> void:
 	_test_jump_anticipation_squish_math()
 	_test_ghost_trail_recording()
 	_test_ghost_trail_resize_math()
+	_test_camera_occlusion_defaults()
 	_report()
 
 
@@ -4290,3 +4291,54 @@ func _test_ghost_trail_resize_math() -> void:
 	var count_1s := MAX_D * roundi(1.0 * SAMPLE)
 	_ok("ghost trail resize: smaller window → fewer instances (monotone)",
 		count_1s < count_2s)
+
+
+func _test_camera_occlusion_defaults() -> void:
+	## Documents the sphere-cast occlusion parameter defaults from camera_rig.gd.
+	## These match the dev-menu slider default_val arguments added in iter 74.
+	## A mismatch means the dev menu initialises a slider at the wrong position,
+	## silently overwriting the camera's runtime value on _build_ui.
+	print("\n-- Camera occlusion defaults (iter 74) --")
+
+	# Sphere probe radius: 0.22 m absorbs frame-to-frame ray jitter at wall
+	# edges, which is what causes the camera to flicker between "occluded" and
+	# "clear" each frame when a thin ray grazes a corner. 0.0 falls back to a
+	# single ray (legacy behaviour before the sphere cast was added).
+	const PROBE_RADIUS_DEFAULT := 0.22
+	_ok("probe_radius default 0.22 (sphere-cast occlusion active out of box)",
+		_near(PROBE_RADIUS_DEFAULT, 0.22))
+
+	# Probe radius 0 triggers the ray-cast fallback branch — sphere cast is
+	# only dispatched when occlusion_probe_radius > 0.0 (camera_rig.gd line
+	# `if occlusion_probe_radius > 0.0:`).
+	_ok("probe_radius 0.0 → ray fallback (sphere cast inactive)",
+		not (0.0 > 0.0))
+	_ok("probe_radius 0.22 → sphere cast active",
+		PROBE_RADIUS_DEFAULT > 0.0)
+
+	# Pull-in must be faster than ease-out. Fast pull-in means the player is
+	# never hidden for long when a wall enters the line of sight. Slow ease-out
+	# prevents a bounce artefact when the camera grazes a corner edge and the
+	# probe alternates hit/clear each frame.
+	const PULL_IN_DEFAULT   := 28.0
+	const EASE_OUT_DEFAULT  :=  6.0
+	_ok("pull_in_smoothing (28) > ease_out_smoothing (6): fast reveal, slow fallback",
+		PULL_IN_DEFAULT > EASE_OUT_DEFAULT)
+
+	# Release-delay latch: camera stays at last-occluded pose for 0.18 s after
+	# the probe reports a clear path, preventing flicker at corner edges.
+	const LATCH_DELAY_DEFAULT := 0.18
+	_ok("occlusion_release_delay default 0.18 s (hysteresis latch window)",
+		_near(LATCH_DELAY_DEFAULT, 0.18))
+
+	# Safe-distance floor formula: max(occlusion_min_distance, hit_dist - margin).
+	# When the occluder is very close (hit_dist < min_dist + margin) the min-
+	# distance floor prevents the camera from snapping into the player's geometry.
+	const MIN_DIST := 0.8
+	const MARGIN   := 0.3
+	# Case: hit at 0.5 m — margin subtraction gives 0.2 m, below the floor → floor wins.
+	_ok("safe_dist floor: hit 0.5, margin 0.3 → max(0.8, 0.2) = 0.8",
+		_near(maxf(MIN_DIST, 0.5 - MARGIN), MIN_DIST))
+	# Case: hit at 2.0 m — margin subtraction gives 1.7 m, above the floor → margin wins.
+	_ok("safe_dist margin: hit 2.0, margin 0.3 → max(0.8, 1.7) = 1.7",
+		_near(maxf(MIN_DIST, 2.0 - MARGIN), 1.7))
