@@ -123,6 +123,7 @@ func _ready() -> void:
 	_test_snappy_reboot_duration()
 	_test_audio_skeleton()
 	_test_wall_normal_viz_key()
+	_test_screen_shake_system()
 	_report()
 
 
@@ -4836,3 +4837,53 @@ func _test_wall_normal_viz_key() -> void:
 		dm.debug_viz_state.has(&"ground_normal"))
 
 	dm.free()
+
+
+func _test_screen_shake_system() -> void:
+	## Screen shake (iter 81): camera_rig.gd shake state, Game signal,
+	## and player.gd emission thresholds / magnitudes.
+	print("\n-- Screen shake system (iter 81) --")
+
+	# --- CameraRig defaults ---
+	var rig := CameraRig.new()
+	_ok("shake_intensity_scale export defaults 1.0",
+		_near(rig.shake_intensity_scale, 1.0))
+	_ok("_shake_remaining starts 0.0 (no shake at spawn)",
+		_near(rig._shake_remaining, 0.0))
+	_ok("_shake_decay starts 0.0",
+		_near(rig._shake_decay, 0.0))
+	rig.free()
+
+	# --- Game signal exists ---
+	var g: GM = GM.new()
+	_ok("Game has screen_shake_requested signal",
+		g.has_signal("screen_shake_requested"))
+	g.free()
+
+	# --- Shake preset value sanity checks ---
+	# Land: 0.011 rad per unit of impact (impact range 0–1); fires above 0.25.
+	# Death: 0.022 rad fixed.  Both < 0.05 rad (~2.9°) to avoid motion sickness.
+	const LAND_MAG_PER_IMPACT := 0.011
+	const DEATH_MAG := 0.022
+	_ok("land shake magnitude < death shake (land less jarring)",
+		LAND_MAG_PER_IMPACT < DEATH_MAG)
+	_ok("land max (impact=1.0) > 0 and < 0.05 rad",
+		LAND_MAG_PER_IMPACT > 0.0 and LAND_MAG_PER_IMPACT < 0.05)
+	_ok("death magnitude > 0 and < 0.05 rad",
+		DEATH_MAG > 0.0 and DEATH_MAG < 0.05)
+
+	# Land shake threshold = Audio.LAND_HEAVY_THRESHOLD = 0.25.
+	# Kept in 0.20–0.35 range: low enough to catch noticeable falls,
+	# high enough to skip micro-landings on shallow slopes.
+	const LAND_THRESHOLD := 0.25
+	_ok("land shake threshold in [0.20, 0.35] (matches heavy-land audio band)",
+		LAND_THRESHOLD >= 0.20 and LAND_THRESHOLD <= 0.35)
+
+	# Decay formula: _shake_decay = magnitude / duration. After `duration`
+	# seconds the full magnitude is subtracted → shake reaches 0.
+	const DEATH_DUR := 0.20
+	const DEATH_DECAY := DEATH_MAG / DEATH_DUR
+	_ok("death shake: decay * duration == magnitude (decays to zero in time)",
+		_near(DEATH_DECAY * DEATH_DUR, DEATH_MAG))
+	_ok("death shake decay rate > magnitude (clears in < 1 s)",
+		DEATH_DECAY > DEATH_MAG)

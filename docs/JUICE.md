@@ -19,11 +19,17 @@ Status legend:
 
 ## Screen shake — toggle key `screen_shake`
 
+Toggle is live (iter 81): `camera_rig.gd._on_screen_shake_requested` mutes all shakes when
+off. Intensity multiplier tunable in dev menu Juice → Screen Shake — Tuning ("Intensity ×").
+Signal path: emitters call `Game.screen_shake_requested.emit(mag, dur, freq)`;
+`camera_rig.gd` connects in `_ready()` and applies after `look_at()` so movement direction
+is not affected. Only the strongest in-flight shake wins (weaker arrivals are discarded).
+
 | element | status | notes |
 |---------|--------|-------|
-| Hard land | idea | small vertical shake on landing after a >2 m fall |
-| Death/respawn | idea | quick high-frequency burst before reboot animation |
-| Hazard hit | idea | direction-biased toward the hazard source |
+| Hard land | prototype | impact ≥ 0.25 (Audio heavy-land threshold): 0.011×impact rad, 0.13 s, 20 Hz; fired in player.gd `_tick_timers()` just_landed block. Light landings produce no shake. |
+| Death/respawn | prototype | 0.022 rad, 0.20 s, 26 Hz; fired in player.gd `respawn()` alongside `Game.player_respawned`. |
+| Hazard hit (directional) | idea | direction-biased toward the hazard source — deferred; requires knowing hazard world-pos at hit time. Death shake fires on all kills as a non-directional substitute. |
 
 ## Hitstop — toggle key `hitstop`
 
