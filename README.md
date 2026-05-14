@@ -5,10 +5,10 @@ A mobile 3D platformer. Brutalist megastructure inspired by *BLAME!*. Controller
 ## Status
 
 Current gate: **Gate 0 — Feel Lab** (closing out; Gate 1 prep in flight)
-Last activity: 2026-05-14 — iter 83: run-timer semantics research + par-time calibration (993 → 1002)
+Last activity: 2026-05-14 — iter 84: footstep dust + land impact particles (1002 → 1020)
 Test device build: ✅ verified 2026-05-12 — runs in Godot 4.6 on PC and on Nothing Phone 4(a) Pro
 Performance: 144 fps / 6.9 ms in editor at 1920×1080 (Feel Lab); on-device frametimes TBD
-Throttle level: **🟢 RESET** (2026-05-14 direction session: A confirmed, B+D actioned, C+E deferred)
+Throttle level: **🟡 soft** (8 iterations since 2026-05-14 direction session)
 
 If you only read one section, read **Open questions waiting on you** below.
 
@@ -101,6 +101,47 @@ Goal: store-ready build.
 The full iteration log lives here, newest first. Every iteration appends an entry. Skim the dates to find where you last left off.
 
 <!-- ITERATION ENTRIES BELOW — DO NOT REMOVE OLDER ENTRIES -->
+
+### [2026-05-14] — iter 84 — Footstep dust + land impact particles
+
+Branch: `iter/footstep-land-impact-particles`
+Throttle: 🟡 soft (8 iterations since 2026-05-14 direction session)
+Gate: Gate 1 — Vertical Slice prep
+
+**Primary: Footstep dust + land impact particles** — promotes two "idea" entries in JUICE.md to "prototype."
+
+`scripts/player/player.gd`:
+- `_footstep_dust_timer: float` + `_footstep_dust_interval: float = 0.15` state vars.
+  Timer counts down in `_tick_timers`; resets to interval after each spawn; footstep dust
+  skips the landing frame so land impact burst has its own frame.
+- `_LAND_IMPACT_THRESHOLD = 0.15` const — lower than `Audio.LAND_HEAVY_THRESHOLD (0.25)`
+  so even moderate landings produce a small dust burst.
+- `_apply_landing_effects(impact)` extracted from `_tick_timers` to keep it ≤ 40 lines.
+  Dispatches squash-stretch, audio, screen shake, and land impact particles.
+- `_spawn_footstep_dust()` + `_build_footstep_mesh()`: 4 ImmediateMesh lines at TAU/4
+  increments, warm grey (0.80/0.77/0.72, α=0.50), slight upward kick (y=0.06), 0.10 s fade.
+- `_spawn_land_impact(impact)` + `_build_impact_mesh(impact)`: 6 lines at TAU/6 increments,
+  length = 0.08 + impact×0.22, upward kick = impact×0.12; 0.03 s hold then 0.18 s fade.
+- `_on_particles_param()` handler wired to `DevMenu.particles_param_changed`.
+- Gate: `DevMenu.is_juice_on(&"particles")` (existing toggle, no new top-level toggle).
+
+`scripts/autoload/dev_menu.gd`: `particles_param_changed` signal added.
+
+`tools/dev_menu/dev_menu_overlay.gd`: "Particles — Tuning" subsection added at the end of
+the Juice section; "Footstep interval (s)" slider (0.05–0.40, default 0.15).
+
+**Side quest: Unit tests** — `_test_footstep_and_land_impact_math` (18 new assertions):
+timer throttle mechanics, speed gate, footstep 4-line geometry (cos²+sin²=1), land threshold
+comparisons, line-length formula at threshold (≈0.113) and at max (0.30). 1002 → 1020.
+
+**Perf:** no change (particles add ≤1 MeshInstance3D per landing, max ~7/s footstep at 60 fps).
+**Bugs fixed:** `_tick_timers` was 41 lines → extracted `_apply_landing_effects` brings it to 40.
+**New dev-menu controls:** "Particles — Tuning → Footstep interval (s)".
+**Assets acquired:** none.
+**Research added:** none.
+**On-device pending:** footstep interval, land impact threshold, alpha values need device tuning.
+
+---
 
 ### [2026-05-14] — iter 83 — Run-timer semantics research + par-time calibration
 
