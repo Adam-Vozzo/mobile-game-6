@@ -17,6 +17,8 @@ authored with it in mind.
 ## Active iteration
 
 - _No iteration currently in flight._
+- **🟢 Iter 73 complete.** Baked lighting research (`docs/research/baked_lighting.md`): LightmapGI on Mobile renderer, critical zone-atmosphere/baking conflict documented (Option A/C recommended), CSG→MeshInstance blocker surfaced, atlas sizing for Threshold. Side quest: `ghost_trail_renderer.gd` two bugs fixed — (1) blank-after-resize so new MultiMesh instances above old count are zeroed immediately (was blank-before, leaving new instances white for one frame); (2) replace per-frame `_blank_from(0)` when disabled with `_mmesh.visible = false` (eliminates 300 set_instance_color writes per frame at 60 fps when ghost trails are off). 5 new unit tests (874 → 879). INDEX.md + PLAN.md updated with bake prereqs.
+- **🟢 Iter 72 complete.** Ghost trail recording + MultiMesh renderer. See README iter 72 entry.
 - **🟢 Iter 71 complete.** Asset options document written (`docs/ASSET_OPTIONS.md`): 4 Stray-mesh candidates (A1 Quaternius LowPoly Robot recommended), 4 ambient-audio candidates (B1 AlaskaRobotics hum + B2 IanStarGem fans recommended), 5 concrete-kit candidates (C2 Poly Haven + Godot add-on recommended). All CC0 or CC-BY confirmed; fidelity check vs brutalist palette included. Side quest: pre-jump anticipation squish (`_play_jump_stretch` gains coil_y=1−0.18×scale, coil_xz=1+0.08×scale, 0.04 s EASE_IN prepend; 10 unit tests 854 → 864); JUICE.md updated.
 - **🟢 Iter 70 complete.** Zone 2 emissive surfaces (iter 70): `HazardStripe` amber danger stripe on `MaintArm1` underside (Color(0.9,0.55,0.1), energy 1.8); `CartLight` cold blue-white indicator on `ServiceCart` top (Color(0.4,0.55,0.9), energy 1.2); `ConduitLeft`/`ConduitRight` thin blue-white floor-edge strips running Zone 2 length (BoxMesh 0.06×0.06×20 m, ±7.7 m from centre at y=−4.85). Side quest: 8 orphaned pre-redesign sub-resources removed (Z1/Z2 wall/ceiling meshes+shapes), load_steps 82→79. On-device pending — emissive intensities and conduit strip width need feel tuning.
 - **🟢 Iter 69 complete.** Threshold zone atmosphere implemented. Three zone-specific `Environment` sub_resources (Env_Z1 warm sodium / Env_Z2 cold blue-white / Env_Z3 amber) added to `threshold.tscn`. Three `Area3D` zone trigger volumes (Zone1/2/3Trigger, collision_mask=2) fire `_on_zone_body_entered` in `threshold.gd`, swapping `$WorldEnv.environment`. Zone 1 gains 3 sodium-yellow `OmniLight3D` (Z1Light1/2/3) — previously no local lights. Dev menu: "Zone Atmosphere" toggle in Level section via `DevMenu.atmosphere_param_changed`. 8 unit tests (846 → 854). On-device pending for fog/ambient tuning.
@@ -103,7 +105,13 @@ The next iteration should pull from the top of this list. Items marked
    API, dev-menu "Respawn shard" + "Shard ledge" teleport, 7 placement unit tests.~~
    ~~Industrial press functional (iter 59) — IndustrialPress.gd four-beat cycle, amber
    emissive strip, KillZone HazardBody child; 5 dev-menu sliders; 13 unit tests.~~
-   Remaining items (texture pass, emissive surface pass, par-route routing) blocked on device feel.
+   Remaining items (texture pass, par-route routing) blocked on device feel.
+   **Baked lighting prereq (from iter 73 research):** All Threshold geometry is CSGBox3D — CSG
+   cannot be baked. CSG → MeshInstance3D conversion is required before any LightmapGI bake pass,
+   and pairs naturally with the concrete-kit texture pass (both happen together). Defer to after
+   on-device design finalization. When baking, use Option C (LightmapGI Environment Mode = Disabled):
+   zone OmniLights stay Dynamic; emissive surfaces contribute to the atlas; no per-zone bake needed.
+   See `docs/research/baked_lighting.md`.
    ~~**Spyro-style redesign 2026-05-14.**~~ Done. Zone 1 corridor → open plaza (24×36 floor,
    3 routes: floor walk / rubble hop / vertical climb to Lookout shard). Zone 2 corridor →
    maintenance yard (16 m floor, perimeter ledge alternate route via Z2Step/Z2Ledge × 2).
@@ -199,6 +207,21 @@ These mirror "Open questions waiting on you" in the README.
   drive the next tuning iteration.
 
 ## Recently completed (last 5)
+
+- 2026-05-14 — Iteration 73. **Baked lighting research + ghost trail renderer bug fixes.**
+  `docs/research/baked_lighting.md`: Godot 4 LightmapGI for Mobile renderer — setup workflow,
+  settings table, Mobile VRAM budget (2048×2048 ASTC ~1.1 MB), critical zone-atmosphere conflict
+  (WorldEnvironment swap incompatible with naive single bake; Option A = real-time only at Gate 1;
+  Option C = Env Disabled bake for Gate 1+), CSG geometry blocker (all Threshold geometry is
+  CSGBox3D — must convert to MeshInstance3D before any bake, pairs with concrete-kit art pass),
+  moving-object exclusion table, performance delta estimate, 7-item implementation checklist.
+  `docs/research/INDEX.md`: entry added under Performance & rendering.
+  `scripts/levels/ghost_trail_renderer.gd`: two bug fixes — (1) `_on_ghost_trail_param` now
+  blanks AFTER resize (was before; new instances above old count initialised to non-transparent
+  default — one-frame white-sphere flash on window enlargement); (2) `_process` disabled path
+  uses `_mmesh.visible = false` instead of `_blank_from(0)` per frame (eliminates 300
+  set_instance_color writes × 60 fps = 18,000 GPU buffer writes/sec while ghost trails are off).
+  Unit tests: `_test_ghost_trail_resize_math` (5 assertions, 874 → 879).
 
 - 2026-05-13 — Iteration 72. **Ghost trail recording + MultiMesh renderer.**
   `game.gd`: `trail_history: Array[PackedVector3Array]` + `_current_trail` sampled at 30 Hz

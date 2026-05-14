@@ -158,8 +158,11 @@ Suggested (still open):
 
 - [`compatibility_renderer.md`](compatibility_renderer.md) — Feature comparison: Mobile (Vulkan) vs Compatibility (GLES3) for every feature Void uses. Key finding: all current Void features are present in Compatibility; visual delta is minimal given the brutalist-fog-darkness aesthetic. Performance: Compatibility is faster on Adreno 506-era hardware (20–40%), comparable or slower on modern Adreno 710 (test device). Recommendation: keep Mobile as primary; a secondary Compatibility export preset is viable at Gate 2+ for low-end Android market expansion, zero code changes required, just a second export preset.
 
+- [`baked_lighting.md`](baked_lighting.md) — Godot 4 LightmapGI for the Mobile renderer (Gate 1+ prerequisite). Key findings: (1) LightmapGI works on Mobile unlike VoxelGI/FogVolume; (2) **critical architectural conflict**: Threshold's WorldEnvironment zone-swap is incompatible with a naive single bake — use Option A (real-time only at Gate 1) or Option C (Env Disabled, OmniLights stay dynamic) when baking; (3) **CSG geometry cannot be baked** — all CSGBox3D/CSGMesh3D must be converted to MeshInstance3D before any bake pass (pairs naturally with the concrete-kit art pass); (4) atlas target 2048×2048 ASTC ~1.1 MB; Texel Density 8–12 for Threshold's large floors; (5) Zone OmniLights must stay Dynamic (Bake Mode); (6) emissive surfaces (Zone 2 conduits, HazardStripe) contribute to Option C bake — free zone identity. Concrete checklist included.
+
 Suggested:
 - ~~Godot's Compatibility renderer fallback for very-low-end devices.~~ Done (iter 23, `compatibility_renderer.md`).
+- ~~Godot 4 LightmapGI baked lighting for Mobile renderer.~~ Done (iter 73, `baked_lighting.md`).
 - Tile-based deferred mobile GPU costs (PowerVR/Mali/Adreno).
 
 ## Gate 1 — zone atmosphere and lighting

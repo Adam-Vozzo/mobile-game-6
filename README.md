@@ -5,10 +5,10 @@ A mobile 3D platformer. Brutalist megastructure inspired by *BLAME!*. Controller
 ## Status
 
 Current gate: **Gate 0 — Feel Lab** (closing out; Gate 1 prep in flight)
-Last activity: 2026-05-13 — iter 72: ghost trail recording + MultiMesh renderer (Gate 1 requirement)
+Last activity: 2026-05-14 — iter 73: baked lighting research + ghost trail renderer bug fixes
 Test device build: ✅ verified 2026-05-12 — runs in Godot 4.6 on PC and on Nothing Phone 4(a) Pro
 Performance: 144 fps / 6.9 ms in editor at 1920×1080 (Feel Lab); on-device frametimes TBD
-Throttle level: **🟡 SOFT** (6 iterations since 2026-05-14 direction session — non-destructive work preferred)
+Throttle level: **🟡 SOFT** (7 iterations since 2026-05-14 direction session — non-destructive work preferred)
 
 If you only read one section, read **Open questions waiting on you** below.
 
@@ -91,6 +91,60 @@ Goal: store-ready build.
 The full iteration log lives here, newest first. Every iteration appends an entry. Skim the dates to find where you last left off.
 
 <!-- ITERATION ENTRIES BELOW — DO NOT REMOVE OLDER ENTRIES -->
+
+### [2026-05-14] — iter 73 — Baked lighting research + ghost trail renderer fixes
+
+Branch: `iter/baked-lighting-research`
+Throttle: 🟡 SOFT (7 iterations since 2026-05-14 direction session)
+Gate: Gate 1 — Vertical Slice prep
+
+**Primary: `docs/research/baked_lighting.md` — Godot 4 LightmapGI for Mobile renderer.**
+
+Surfaces two critical architectural findings before any Gate 1+ bake attempt:
+
+1. **Zone-atmosphere/bake conflict.** Threshold's WorldEnvironment zone-swap is incompatible
+   with a naive single LightmapGI bake — the atlas bakes against one zone's ambient and the
+   other zones receive wrong colours. Plan: Option A (real-time OmniLights only at Gate 1);
+   Option C (`Environment Mode = Disabled`) when baking at Gate 1+ — zone OmniLights stay
+   Dynamic, emissive surfaces contribute to the atlas for free zone identity.
+
+2. **CSG → MeshInstance3D is a prerequisite blocker.** All Threshold geometry is currently
+   `CSGBox3D` — CSG cannot be baked in Godot 4 (no UV2 generation). Must convert to
+   `MeshInstance3D` + `StaticBody3D` pairs before any bake pass. This conversion pairs
+   naturally with the concrete-kit texture pass (both happen when the art assets land).
+
+Research also covers: LightmapGI settings table (Quality, Bounces, Directional, Max Texture
+Size 2048, Texel Density 8–12, Env Mode), Mobile VRAM budget (2048×2048 ASTC ~1.1 MB),
+per-object GI Mode table (ServiceCart/IndustrialPress/MaintArm1 → Disabled; Zone OmniLights
+→ Dynamic Bake Mode; emissive surfaces → Static), on-device profiling advice (measure
+frametime before committing to the bake effort), and a 9-item implementation checklist.
+
+**Side quest: Ghost trail renderer — two bug fixes.**
+
+Bug 1 (`_on_ghost_trail_param`): instance buffer was blanked BEFORE resizing `instance_count`.
+New instances above the old count are initialised by Godot to non-transparent default — on any
+window enlargement (slider from 2 s → 5 s) they appeared as white spheres at origin for one
+frame. Fix: blank AFTER resize so all instances, including new ones, are zeroed.
+
+Bug 2 (`_process` disabled path): `_blank_from(0)` was called every frame when ghost trails
+are off — 300 `set_instance_color` writes × 60 fps = 18,000 GPU buffer writes/sec for a
+disabled feature. Fix: `_mmesh.visible = false` hides the MultiMeshInstance3D entirely;
+the GPU skips it with zero writes. `_on_juice_changed` still calls `_blank_from(0)` once
+on disable for clean state when re-enabled.
+
+Unit tests: `_test_ghost_trail_resize_math` (5 assertions, 874 → 879): instance_count at
+1 s / 2 s / 5 s windows, monotone-increase, monotone-decrease invariants.
+
+**Perf.** Baked lighting research: no code changes beyond renderer. Ghost trail fix: eliminates
+18,000 GPU buffer writes/sec while disabled (was: 300 per frame at 60 fps). When enabled,
+performance unchanged.
+
+**On-device pending.** Ghost trail renderer bugs were dormant until the slider was used or
+trails toggled. No new on-device items from this iteration.
+
+**New dev-menu controls:** None.
+**Assets acquired:** None.
+**Research added:** `docs/research/baked_lighting.md`.
 
 ### [2026-05-13] — iter 72 — Ghost trail recording + MultiMesh renderer
 

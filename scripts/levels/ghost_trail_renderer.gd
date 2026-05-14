@@ -59,8 +59,11 @@ func _process(_delta: float) -> void:
 	if _mmesh == null:
 		return
 	if not _enabled or not has_node("/root/Game"):
-		_blank_from(0)
+		# Hide the node — GPU skips it entirely. _on_juice_changed already
+		# blanks instances on disable so no stale data appears on re-show.
+		_mmesh.visible = false
 		return
+	_mmesh.visible = true
 
 	var visible_pts := _visible_points()
 	var inst := 0
@@ -104,5 +107,7 @@ func _on_ghost_trail_param(param: StringName, value: float) -> void:
 	if _mmesh == null:
 		return
 	# Resize the MultiMesh instance buffer for the new window size.
-	_blank_from(0)
+	# Blank AFTER resize so new instances above the old count (which Godot
+	# initialises to default colour, not transparent) are zeroed immediately.
 	_mmesh.multimesh.instance_count = MAX_DEPTH * _visible_points()
+	_blank_from(0)
