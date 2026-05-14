@@ -14,19 +14,19 @@ Brutalist megastructure. Vast inhuman scale, exposed concrete, geometric repetit
 
 ### Palette
 
-Concrete greys, charcoal, rust orange, sodium-vapour yellow. Biolume cyan as rare accent in deeper layers. Deep blacks (OLED-friendly). The protagonist's red is the constant focal point — the only bright warm thing in the world. Use red sparingly elsewhere; if everything is red, nothing is.
+Concrete greys, charcoal, rust orange, sodium-vapour amber. Biolume cyan as rare accent in deeper layers. Deep blacks (OLED-friendly). The protagonist's bright lemon yellow is the constant focal point — the only saturated warm thing in the world. The world's sodium lighting reads more amber/muted than the chick's lemon-yellow to keep tonal separation. Use saturated yellow sparingly elsewhere; if everything is yellow, nothing is.
 
 ### Protagonist — the Stray
 
-A small stray robot. Chibi proportions, readable silhouette. Single bright red accent — power core, single visor lens, antenna light, or chest indicator (decide during art direction). Mechanical movement language: servo whirs on motion, soft clanks on landing, brief electrical flicker on damage, reboot animation on respawn (sparks → dark frame → power-on hum → upright). The Stray is a fragment of the world that has wandered off and become its own thing. The world was not built for them, and that is the whole point.
+A small stray bird — a yellow chick (Kenney Cube Pets). Chibi cube-pet proportions, readable silhouette, bright lemon yellow against the cold concrete. Movement language: light footfalls, soft chirps, brief feather-burst on damage, respawn animation (feather-poof → settle → small chirp + flap → upright). Double jump is a literal flap. The Stray is a small living thing that wandered into the megastructure and made a home of it. The world was not built for them, and that is the whole point.
 
 ### Tone
 
-Oppressive scale tempered by the protagonist's small bright presence. Loneliness and awe over jump-scares. Levels are environmental storytelling — see `docs/LEVEL_DESIGN.md` — not jokes. Light moments emerge from physical comedy of small robot in big world, not text or character voice. Likely zero dialogue.
+Oppressive scale tempered by the protagonist's small bright presence. Loneliness and awe over jump-scares. Levels are environmental storytelling — see `docs/LEVEL_DESIGN.md` — not jokes. Light moments emerge from physical comedy of a small chick in a vast machine-built world, not text or character voice. Likely zero dialogue.
 
 ### Audio
 
-Echoing footsteps and servo whirs, sparse industrial ambience, hum of distant machinery, occasional far-off mechanical groan. Punchy player-action SFX (anticipation + impact + tail) that read clearly against the quiet world. Music: minimal, atmospheric, building from drone toward sparse melody at moments of vista or arrival.
+Light footfalls and soft chirps from the Stray, sparse industrial ambience, hum of distant machinery, occasional far-off mechanical groan. Wing-flap on double jump. Punchy player-action SFX (anticipation + impact + tail) that read clearly against the quiet world. Music: minimal, atmospheric, building from drone toward sparse melody at moments of vista or arrival.
 
 Placeholder primitives are fine until a style guide is approved. See `docs/ART_PIPELINE.md` when promoting any primitive to real art.
 
