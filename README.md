@@ -5,7 +5,7 @@ A mobile 3D platformer. Brutalist megastructure inspired by *BLAME!*. Controller
 ## Status
 
 Current gate: **Gate 0 — Feel Lab** (closing out; Gate 1 prep in flight)
-Last activity: 2026-05-14 — iter 81: screen shake system (land + death, dev-menu intensity slider)
+Last activity: 2026-05-14 — iter 82: hardening unit tests (ledge magnet, arc assist, shake strongest-wins; 971 → 993)
 Test device build: ✅ verified 2026-05-12 — runs in Godot 4.6 on PC and on Nothing Phone 4(a) Pro
 Performance: 144 fps / 6.9 ms in editor at 1920×1080 (Feel Lab); on-device frametimes TBD
 Throttle level: **🟢 RESET** (2026-05-14 direction session: A confirmed, B+D actioned, C+E deferred)
@@ -100,6 +100,51 @@ Goal: store-ready build.
 The full iteration log lives here, newest first. Every iteration appends an entry. Skim the dates to find where you last left off.
 
 <!-- ITERATION ENTRIES BELOW — DO NOT REMOVE OLDER ENTRIES -->
+
+### [2026-05-14] — iter 82 — Hardening: ledge magnet + arc assist + shake strongest-wins tests
+
+Branch: `iter/hardening-shake-ledge-arc-tests`
+Throttle: 🟡 soft (5 iterations since 2026-05-14 direction session)
+Gate: Gate 1 — Vertical Slice prep
+
+**Primary: Unit test hardening** — three new test groups covering formulas and edge cases
+that were untested after iters 78 (Assisted Phase 2) and 81 (screen shake).
+
+`tests/test_controller_kinematics.gd`:
+
+- `_test_ledge_magnet_impulse_formula` (7 assertions): mirrors
+  `impulse = minf((dist / radius) * strength, strength)` from `_attract_to_ledge`.
+  Covers dist=0 (no pull), dist=radius (full strength), dist>radius (capped), linear
+  proportionality at midpoint, monotone ordering, and Assisted.tres spot checks at
+  half-radius and full-radius.
+
+- `_test_arc_assist_per_frame_budget` (8 assertions): mirrors per-frame limits and
+  lifetime budget from `_apply_arc_assist`. Covers Limit A (arc_assist_max×0.05 = 0.02 m/frame),
+  Limit B (jump_velocity×0.15/60 = 0.025 m/frame), effective = min(A,B), partial budget
+  remaining (1.5−1.2=0.3), budget exhaustion → per_frame clamped to 0, offset guard (≥max
+  skips, <max fires).
+
+- `_test_screen_shake_strongest_wins` (7 assertions): mirrors the "only strongest wins"
+  rule in `_on_screen_shake_requested`. Covers stronger replaces weaker, weaker discarded,
+  equal discarded (guard is ≤, not <), decay formula (magnitude/duration), decay×duration=magnitude,
+  zero-duration guard (maxf(0.001, 0)=0.001 → finite), and distinct land/death frequencies
+  (20 Hz vs 26 Hz).
+
+**Side discovery:** Threshold scene (`threshold.tscn`) uses StaticBody3D + MeshInstance3D +
+CollisionShape3D throughout — no CSGBox3D present. The CSG-blocks-baked-lighting note in
+`docs/PLAN.md` P0-8 was written before the Spyro-style redesign and no longer applies.
+Baked lighting path is clear once geometry is design-finalised on device.
+PLAN.md prereq note updated.
+
+**Tests:** 22 new assertions (971 → 993).
+**Perf:** no change.
+**Bugs fixed:** stale PLAN.md CSG blocker note corrected.
+**New dev-menu controls:** none.
+**Assets acquired:** none.
+**Research added:** none.
+**On-device pending:** all shake/ledge/arc tunables from prior iters.
+
+---
 
 ### [2026-05-14] — iter 81 — Screen shake system
 

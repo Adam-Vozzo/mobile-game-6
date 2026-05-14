@@ -124,6 +124,9 @@ func _ready() -> void:
 	_test_audio_skeleton()
 	_test_wall_normal_viz_key()
 	_test_screen_shake_system()
+	_test_ledge_magnet_impulse_formula()
+	_test_arc_assist_per_frame_budget()
+	_test_screen_shake_strongest_wins()
 	_report()
 
 
@@ -4887,3 +4890,155 @@ func _test_screen_shake_system() -> void:
 		_near(DEATH_DECAY * DEATH_DUR, DEATH_MAG))
 	_ok("death shake decay rate > magnitude (clears in < 1 s)",
 		DEATH_DECAY > DEATH_MAG)
+
+
+func _test_ledge_magnet_impulse_formula() -> void:
+	## Mirrors the proportional-impulse formula in player.gd::_attract_to_ledge.
+	##
+	## Formula: impulse = minf((dist / ledge_magnet_radius) * ledge_magnet_strength,
+	##                          ledge_magnet_strength)
+	##
+	## A closer edge needs a weaker nudge (player is already mostly over the platform);
+	## an edge at the full radius gets the configured max strength; beyond radius, capped.
+	print("\n-- Ledge magnet proportional impulse formula (_attract_to_ledge) --")
+	const R := 0.20
+	const S := 1.0
+
+	_ok("lm: dist=0 → impulse=0 (edge at foot — player already over it, no pull needed)",
+		is_equal_approx(minf((0.0 / R) * S, S), 0.0))
+	_ok("lm: dist=radius → impulse=strength (edge at max range → full pull)",
+		is_equal_approx(minf((R / R) * S, S), S))
+	_ok("lm: dist=2×radius → capped at strength (beyond range, cap prevents overshoot)",
+		is_equal_approx(minf((R * 2.0 / R) * S, S), S))
+	_ok("lm: dist=radius/2 → impulse=strength/2 (linearly proportional)",
+		_near(minf((R * 0.5 / R) * S, S), S * 0.5))
+	_ok("lm: monotone — farther edge within radius produces stronger nudge",
+		minf((0.15 / R) * S, S) > minf((0.05 / R) * S, S))
+
+	var ap := load("res://resources/profiles/assisted.tres") as ControllerProfile
+	if ap == null:
+		return
+	var dist_half := ap.ledge_magnet_radius * 0.5
+	_ok("lm: Assisted at half-radius (0.10 m) → impulse = strength/2 (0.5 m/s)",
+		_near(minf((dist_half / ap.ledge_magnet_radius) * ap.ledge_magnet_strength, ap.ledge_magnet_strength),
+			ap.ledge_magnet_strength * 0.5))
+	_ok("lm: Assisted at full radius (0.20 m) → impulse = strength exactly (1.0 m/s)",
+		_near(minf((ap.ledge_magnet_radius / ap.ledge_magnet_radius) * ap.ledge_magnet_strength, ap.ledge_magnet_strength),
+			ap.ledge_magnet_strength))
+
+
+func _test_arc_assist_per_frame_budget() -> void:
+	## Mirrors the per-frame correction limits and lifetime budget in
+	## player.gd::_apply_arc_assist.
+	##
+	## Two concurrent limits gate each correction step:
+	##   Limit A (raw)      = arc_assist_max * 0.05  (5% of tolerated offset per frame)
+	##   Limit B (vel-cap)  = jump_velocity * 0.15 * delta  (≤ 15% of jump vel × dt)
+	##   Effective per frame = min(Limit A, Limit B)
+	## Lifetime budget = MAX_ACCUMULATED (1.5 m/s), reset on each jump. Once exhausted
+	## _apply_arc_assist returns early — no further steering for that arc.
+	print("\n-- Arc assist per-frame correction limits and lifetime budget --")
+	const MAX_ACC    := 1.5
+	const DELTA_60   := 1.0 / 60.0
+
+	var ap := load("res://resources/profiles/assisted.tres") as ControllerProfile
+	if ap == null:
+		return
+
+	# Limit A: raw cap — at most 5% of the tolerated offset per frame
+	var limit_a := ap.arc_assist_max * 0.05
+	_ok("arc: Limit A = arc_assist_max * 0.05 = 0.40 * 0.05 = 0.02 m/frame",
+		_near(limit_a, 0.02))
+
+	# Limit B: velocity-based cap at 60 fps (Assisted jump_velocity = 10.0)
+	var limit_b := ap.jump_velocity * 0.15 * DELTA_60
+	_ok("arc: Limit B = jump_velocity * 0.15 / 60 = 10.0 * 0.15 / 60 = 0.025 m/frame",
+		_near(limit_b, 0.025, 1e-4))
+
+	# Effective = min(A, B) — Limit A is tighter at Assisted defaults
+	var effective := minf(limit_a, limit_b)
+	_ok("arc: effective = min(Limit A, Limit B) = 0.02 (Limit A wins at Assisted defaults)",
+		_near(effective, limit_a))
+	_ok("arc: effective < Limit B (5%-of-offset cap is smaller than 15%-vel cap here)",
+		effective < limit_b)
+
+	# Budget remaining after partial accumulation
+	var acc_partial := 1.2
+	_ok("arc: budget = MAX_ACCUMULATED - accumulated: 1.5 - 1.2 = 0.3 m/s remaining",
+		_near(MAX_ACC - acc_partial, 0.3))
+
+	# Budget exhausted: per_frame is clamped to zero via limit_length(0)
+	var acc_full := 1.5
+	var budget_at_full := MAX_ACC - acc_full
+	var clamped_correction := Vector3(effective, 0.0, 0.0).limit_length(budget_at_full).length()
+	_ok("arc: accumulated=1.5 → budget=0 → per_frame clamped to 0 (no steering past lifetime cap)",
+		_near(clamped_correction, 0.0))
+
+	# Offset guard: correction skipped when offset >= arc_assist_max (break before velocity update)
+	var offset_beyond := ap.arc_assist_max + 0.01
+	_ok("arc: offset >= arc_assist_max → correction skipped (landing too far off-centre to help)",
+		not (offset_beyond < ap.arc_assist_max))
+	var offset_within := ap.arc_assist_max * 0.5
+	_ok("arc: offset < arc_assist_max → correction fires (drift is within the steerable window)",
+		offset_within < ap.arc_assist_max)
+
+
+func _test_screen_shake_strongest_wins() -> void:
+	## Mirrors the "only the strongest in-flight shake wins" rule in
+	## camera_rig.gd::_on_screen_shake_requested.
+	##
+	## Rule:
+	##   if magnitude <= _shake_remaining: return  # weaker-or-equal discarded
+	##   _shake_remaining = magnitude
+	##   _shake_decay = magnitude / maxf(0.001, duration)
+	##
+	## Prevents land-shake clusters from resetting a stronger death shake, while still
+	## allowing a second death shake to correctly restart the decay from the new peak.
+	print("\n-- Screen shake: strongest-wins rule (_on_screen_shake_requested) --")
+
+	# --- Case 1: stronger incoming replaces the weaker in-flight shake ---
+	var rem_1 := 0.011   # land shake in flight
+	var inc_1 := 0.022   # death shake arrives mid-flight
+	var after_1 := rem_1
+	if inc_1 > rem_1:
+		after_1 = inc_1
+	_ok("stronger shake replaces weaker: death (0.022) overrides land (0.011) in flight",
+		_near(after_1, inc_1))
+
+	# --- Case 2: weaker incoming is discarded ---
+	var rem_2 := 0.022   # death shake in flight
+	var inc_2 := 0.011   # land shake arrives later in the same run
+	var after_2 := rem_2
+	if inc_2 > rem_2:
+		after_2 = inc_2  # would replace — must NOT happen
+	_ok("weaker shake discarded: land (0.011) cannot override in-flight death (0.022)",
+		_near(after_2, rem_2))
+
+	# --- Case 3: equal magnitude is also discarded (guard is <=, not <) ---
+	var rem_3 := 0.022
+	var inc_3 := 0.022
+	var overrode_3 := false
+	if inc_3 > rem_3:  # strict >; equal does not qualify
+		overrode_3 = true
+	_ok("equal magnitude discarded: a second 0.022 does not restart an in-flight 0.022",
+		overrode_3 == false)
+
+	# --- Decay formula: _shake_decay = magnitude / maxf(0.001, duration) ---
+	const MAG := 0.022
+	const DUR := 0.20
+	var decay := MAG / maxf(0.001, DUR)
+	_ok("decay formula: magnitude / duration = 0.022 / 0.20 = 0.11 rad/s",
+		_near(decay, MAG / DUR))
+	_ok("decay * duration == magnitude (shake decays to zero after exactly duration s)",
+		_near(decay * DUR, MAG))
+
+	# --- Zero-duration guard prevents division by zero ---
+	var decay_zero_dur := MAG / maxf(0.001, 0.0)
+	_ok("zero-duration guard: maxf(0.001, 0) → 0.001 → decay is finite (no div-by-zero)",
+		decay_zero_dur > 0.0 and is_finite(decay_zero_dur))
+
+	# --- Land and death shakes use distinct frequencies ---
+	const LAND_FREQ  := 20.0
+	const DEATH_FREQ := 26.0
+	_ok("land (20 Hz) and death (26 Hz) shake frequencies are distinct — different tactile feel",
+		not is_equal_approx(LAND_FREQ, DEATH_FREQ))

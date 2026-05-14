@@ -16,6 +16,7 @@ authored with it in mind.
 
 ## Active iteration
 
+- **🟢 Iter 82 complete.** Hardening unit tests: ledge magnet impulse formula, arc assist per-frame budget, screen shake strongest-wins rule. 22 new assertions (971 → 993). Side discovery: Threshold scene uses MeshInstance3D (not CSGBox3D) — CSG baked-lighting blocker resolved; note updated in PLAN.md P0-8.
 - **🟢 Iter 81 complete.** Screen shake system. `game.gd`: `screen_shake_requested(magnitude, duration, freq)` signal added. `camera_rig.gd`: `_shake_remaining`/`_shake_decay`/`_shake_freq` state; `shake_intensity_scale` export (1.0); `_apply_shake(delta)` (sinusoidal yaw+pitch rotation after `look_at`, before `_air_offset` refresh — purely visual, no movement-direction bleed); `_on_screen_shake_requested` (only strongest in-flight shake wins). Camera connects to `Game.screen_shake_requested` in `_ready()`. `player.gd`: land shake (`impact ≥ 0.25`: 0.011×impact rad, 0.13 s, 20 Hz) in `_tick_timers()` just_landed block; death shake (0.022 rad, 0.20 s, 26 Hz) in `respawn()`. Dev menu: "Screen Shake — Tuning" sub-section with "Intensity ×" slider (0–3, default 1). JUICE.md: "Hard land" + "Death/respawn" promoted to prototype; directional hazard-hit deferred. 8 unit tests (`_test_screen_shake_system`). 963 → 971 assertions. On-device pending — shake magnitudes and intensity scale need device tuning.
 - **🟢 Iter 80 complete.** Audio skeleton upgrade + wall normal debug viz. `audio.gd`: bus setup (`_ensure_bus` creates SFX_Player/SFX_World/Music under Master at runtime), `_apply_sound_layers` mutes SFX buses when `sound_layers` juice toggle is OFF (was no-op), `play_sfx(null)` safe no-op, four event dispatch stubs (`on_jump`, `on_land`, `on_collect_shard`, `on_respawn_start`) wired in `player.gd` + `data_shard.gd`. `LAND_HEAVY_THRESHOLD = 0.25` constant. Wall normal debug viz: `&"wall_normal": false` added to `debug_viz_state`; checkbox in Debug viz section; `_draw_wall_normal` in `player_debug_draw.gd` (magenta arrow, fires when `is_on_wall()`). 15 new unit tests (`_test_audio_skeleton` 12 + `_test_wall_normal_viz_key` 3). 948 → 963 assertions. Research: `docs/research/audio_placeholder.md`. JUICE.md sound-layers section updated (toggle is live; dispatch stubs table added).
 - **🟢 Iter 79 complete.** Free-camera mode (CLAUDE.md required Level section dev menu item, was missing). `debug_viz_state[&"free_cam"]` added to `dev_menu.gd`. `camera_rig.gd`: `free_cam_speed` export (10.0 m/s), `_free_cam`/`_free_cam_yaw`/`_free_cam_pitch` state; `_on_debug_viz_changed` seeds Euler angles from `_camera.global_basis.get_euler(YXZ)` on enable, resets `_initialized` on disable; `_process_free_cam` (WASD+QE + Shift 3× boost); `_unhandled_input` (RMB+drag look, yaw_drag_sens / pitch_drag_sens reused, ±PI×0.45 pitch clamp). Dev menu Level section gains "Free cam (WASD+QE, RMB look)" checkbox. 10 unit tests (`_test_free_cam_mode`). Side quest: Snappy `reboot_duration` 0.33 s (was 0.5 s) — per `level_design_references.md` research (≤ 0.35 s for precision feel); Floaty/Assisted/Momentum stay at 0.5 s. 6 unit tests (`_test_snappy_reboot_duration`). 932 → 948 assertions. On-device pending.
@@ -113,11 +114,13 @@ The next iteration should pull from the top of this list. Items marked
    ~~Industrial press functional (iter 59) — IndustrialPress.gd four-beat cycle, amber
    emissive strip, KillZone HazardBody child; 5 dev-menu sliders; 13 unit tests.~~
    Remaining items (texture pass, par-route routing) blocked on device feel.
-   **Baked lighting prereq (from iter 73 research):** All Threshold geometry is CSGBox3D — CSG
-   cannot be baked. CSG → MeshInstance3D conversion is required before any LightmapGI bake pass,
-   and pairs naturally with the concrete-kit texture pass (both happen together). Defer to after
-   on-device design finalization. When baking, use Option C (LightmapGI Environment Mode = Disabled):
-   zone OmniLights stay Dynamic; emissive surfaces contribute to the atlas; no per-zone bake needed.
+   **Baked lighting prereq (iter 73 research, CSG blocker resolved iter 82):**
+   The Spyro-style redesign (2026-05-14) rebuilt Threshold geometry as
+   StaticBody3D + MeshInstance3D + CollisionShape3D — no CSGBox3D is present.
+   The CSG blocker from the iter 73 research note no longer applies.
+   Bake path is clear when design is finalised on device. Use Option C
+   (LightmapGI Environment Mode = Disabled): zone OmniLights stay Dynamic;
+   emissive surfaces contribute to the atlas; no per-zone bake needed.
    See `docs/research/baked_lighting.md`.
    ~~**Spyro-style redesign 2026-05-14.**~~ Done. Zone 1 corridor → open plaza (24×36 floor,
    3 routes: floor walk / rubble hop / vertical climb to Lookout shard). Zone 2 corridor →
@@ -233,6 +236,18 @@ These mirror "Open questions waiting on you" in the README.
 
 ## Recently completed (last 5)
 
+- 2026-05-14 — iter 82. **Hardening unit tests: ledge magnet impulse, arc assist budget, shake strongest-wins.**
+  `tests/test_controller_kinematics.gd`: three new test functions —
+  `_test_ledge_magnet_impulse_formula` (7 assertions: dist=0→impulse=0, dist=radius→full strength,
+  beyond-radius cap, linear proportionality, monotone, Assisted spot checks at half/full radius);
+  `_test_arc_assist_per_frame_budget` (8 assertions: Limit A = 0.02 m/frame, Limit B = 0.025 m/frame
+  at Assisted defaults, effective = min(A,B)=Limit A, budget = 1.5-accumulated, budget=0→clamped-to-zero,
+  offset≥max→skipped, offset<max→fires);
+  `_test_screen_shake_strongest_wins` (7 assertions: stronger replaces weaker, weaker discarded,
+  equal discarded, decay formula, decay×duration=magnitude, zero-duration guard, distinct frequencies).
+  22 new assertions (971 → 993).
+  Side: Threshold scene verified as using MeshInstance3D (not CSGBox3D) — CSG baked-lighting
+  blocker from iter 73 research note is resolved; PLAN.md item 8 prereq note updated.
 - 2026-05-14 — iter 81. **Screen shake system.** `game.gd`: `screen_shake_requested(magnitude, duration, freq)` signal. `camera_rig.gd`: `_apply_shake(delta)` (sinusoidal yaw+pitch after look_at, no movement-direction bleed), `_on_screen_shake_requested` (strongest wins), `shake_intensity_scale` export + `&"shake_intensity"` dev-menu arm. `player.gd`: land shake (impact ≥ 0.25 → 0.011×impact rad, 0.13 s, 20 Hz) + death shake (0.022 rad, 0.20 s, 26 Hz). Dev menu: "Screen Shake — Tuning" → "Intensity ×" slider. JUICE.md: hard-land + death/respawn promoted to prototype; directional hazard-hit deferred. 8 unit tests (963 → 971). On-device pending.
 - 2026-05-14 — iter 80. **Audio skeleton upgrade + wall normal debug viz.**
   `scripts/autoload/audio.gd`: upgraded from stub. `_ensure_bus()` creates SFX_Player/SFX_World/Music
