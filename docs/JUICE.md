@@ -42,9 +42,9 @@ is not affected. Only the strongest in-flight shake wins (weaker arrivals are di
 
 | element | status | notes |
 |---------|--------|-------|
-| Footstep dust | idea | mobile-budget particle (4 quads) on grounded run |
+| Footstep dust | prototype | `_spawn_footstep_dust()` throttled by `_footstep_dust_interval` (default 0.15 s); fires when `on_floor`, h_speed > 0.5 m/s, not on landing frame; 4 ImmediateMesh lines at TAU/4 increments, warm grey (0.80/0.77/0.72, α=0.50), slight upward kick, 0.10 s fade; dev menu "Footstep interval (s)" slider (Particles — Tuning, 0.05–0.40). On-device pending — interval and alpha need feel tuning. |
 | Jump puff | prototype | `_spawn_jump_puff()` on jump fire (inside `_try_jump`); 8 ImmediateMesh lines radiating horizontally from takeoff point, warm grey (0.80/0.77/0.72), slight upward kick per line; 0.04 s hold then 0.16 s fade; ~14 verts; gated behind `particles` toggle |
-| Land impact | idea | scaled by fall velocity |
+| Land impact | prototype | `_spawn_land_impact(impact)` in just_landed block; suppressed below `_LAND_IMPACT_THRESHOLD = 0.15`; 6 ImmediateMesh lines radially outward, length = 0.08 + impact×0.22, upward kick = impact×0.12 (heavier landings spray higher); warm grey, 0.03 s hold then 0.18 s fade; gated behind `particles` toggle. On-device pending — threshold and length formula need feel tuning. |
 | Reboot sparks | prototype | 12 ImmediateMesh lines at death position, warm orange-yellow, fade 0.45 s; ~14 verts; gated behind `particles` toggle |
 | Wall slide trail | idea | only if wall mechanic survives Snappy tuning |
 

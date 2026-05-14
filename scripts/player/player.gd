@@ -62,6 +62,17 @@ var _is_dashing: bool = false
 # per-frame 0.05-factor from compounding into a runaway steering force over a long
 # arc. Capped at 1.5 m/s total — enough to land a platform 0.4 m off-centre.
 var _arc_assist_accumulated: float = 0.0
+# Footstep dust: time since last footstep puff; reset to _footstep_dust_interval
+# after each spawn so the effect is throttled regardless of frame rate.
+var _footstep_dust_timer: float = 0.0
+# Interval between footstep dust puffs (seconds). Tunable via dev menu
+# Particles — Tuning → "Footstep interval (s)".
+var _footstep_dust_interval: float = 0.15
+
+# Impact factor below which land impact particles are suppressed.
+# Lower than Audio.LAND_HEAVY_THRESHOLD (0.25) so even gentle landings
+# produce a small dust burst.
+const _LAND_IMPACT_THRESHOLD := 0.15
 
 @onready var _visual: Node3D = $Visual
 @onready var _body_mesh: MeshInstance3D = $Visual/Body
@@ -75,6 +86,7 @@ func _ready() -> void:
 	if Engine.has_singleton("DevMenu") or has_node("/root/DevMenu"):
 		DevMenu.controller_profile_changed.connect(_on_dev_profile_changed)
 		DevMenu.squash_stretch_param_changed.connect(_on_squash_stretch_param)
+		DevMenu.particles_param_changed.connect(_on_particles_param)
 	if has_node("/root/TouchInput"):
 		TouchInput.jump_pressed.connect(_on_jump_pressed)
 		TouchInput.air_dash_triggered.connect(_on_air_dash_triggered)
@@ -154,7 +166,6 @@ func _tick_timers(delta: float, on_floor: bool) -> void:
 		# Capture falling speed while airborne. On the just_landed frame, on_floor
 		# is true so this branch is skipped, preserving the pre-landing value.
 		_last_fall_speed = velocity.y
-		# Tick down active dash
 		if _is_dashing:
 			_dash_timer = maxf(0.0, _dash_timer - delta)
 			if _dash_timer <= 0.0:
@@ -173,14 +184,16 @@ func _tick_timers(delta: float, on_floor: bool) -> void:
 			_sticky_frames_remaining = 0  # took off before window expired
 	if just_landed and not _is_rebooting:
 		var impact := clampf(-_last_fall_speed / profile.terminal_velocity, 0.0, 1.0)
-		if DevMenu.is_juice_on(&"squash_stretch"):
-			_play_land_squash(impact)
-		if has_node("/root/Audio"):
-			Audio.on_land(impact)
-		# Heavy landing only (same threshold as audio heavy/light split).
-		if has_node("/root/Game") and impact >= Audio.LAND_HEAVY_THRESHOLD:
-			Game.screen_shake_requested.emit(0.011 * impact, 0.13, 20.0)
+		_apply_landing_effects(impact)
 	_was_on_floor_last_frame = on_floor
+	# Footstep dust: throttled, skips the landing frame so the land impact
+	# burst isn't masked by simultaneous footstep geometry.
+	_footstep_dust_timer = maxf(0.0, _footstep_dust_timer - delta)
+	if on_floor and not just_landed and DevMenu.is_juice_on(&"particles"):
+		var h_speed := Vector3(velocity.x, 0.0, velocity.z).length()
+		if h_speed > 0.5 and _footstep_dust_timer <= 0.0:
+			_spawn_footstep_dust()
+			_footstep_dust_timer = _footstep_dust_interval
 
 
 func _collect_jump_input() -> bool:
@@ -677,6 +690,93 @@ func _fade_and_free_puff(mi: MeshInstance3D, mat: StandardMaterial3D) -> void:
 	tween.tween_interval(0.04)
 	tween.tween_property(mat, "albedo_color:a", 0.0, 0.16)
 	tween.tween_callback(mi.queue_free)
+
+
+# Dispatches all landing-frame feedback: squash-stretch, audio, screen shake,
+# and land impact particles. Extracted from _tick_timers to keep it under 40 lines.
+func _apply_landing_effects(impact: float) -> void:
+	if DevMenu.is_juice_on(&"squash_stretch"):
+		_play_land_squash(impact)
+	if has_node("/root/Audio"):
+		Audio.on_land(impact)
+	# Heavy landing only (same threshold as audio heavy/light split).
+	if has_node("/root/Game") and impact >= Audio.LAND_HEAVY_THRESHOLD:
+		Game.screen_shake_requested.emit(0.011 * impact, 0.13, 20.0)
+	if DevMenu.is_juice_on(&"particles") and impact >= _LAND_IMPACT_THRESHOLD:
+		_spawn_land_impact(impact)
+
+
+# Gated behind "particles" toggle. 4 short lines at foot level; fades in 0.10 s.
+# Throttled by _footstep_dust_timer so it fires at most every _footstep_dust_interval.
+func _spawn_footstep_dust() -> void:
+	var mat := StandardMaterial3D.new()
+	mat.shading_mode = BaseMaterial3D.SHADING_MODE_UNSHADED
+	mat.albedo_color = Color(0.80, 0.77, 0.72, 0.50)
+	mat.transparency = BaseMaterial3D.TRANSPARENCY_ALPHA
+	mat.no_depth_test = true
+	mat.cull_mode = BaseMaterial3D.CULL_DISABLED
+	var mi := MeshInstance3D.new()
+	mi.mesh = _build_footstep_mesh()
+	mi.material_override = mat
+	mi.cast_shadow = GeometryInstance3D.SHADOW_CASTING_SETTING_OFF
+	get_tree().root.add_child(mi)
+	mi.global_position = global_position + Vector3(0.0, 0.04, 0.0)
+	var tween := mi.create_tween()
+	tween.tween_property(mat, "albedo_color:a", 0.0, 0.10)
+	tween.tween_callback(mi.queue_free)
+
+
+func _build_footstep_mesh() -> ImmediateMesh:
+	var mesh := ImmediateMesh.new()
+	mesh.surface_begin(Mesh.PRIMITIVE_LINES)
+	for i in 4:
+		var angle := float(i) * TAU / 4.0
+		# Small upward kick so the dust reads as lifting off the floor.
+		var dir := Vector3(cos(angle), 0.06, sin(angle)).normalized()
+		mesh.surface_add_vertex(dir * 0.03)
+		mesh.surface_add_vertex(dir * 0.09)
+	mesh.surface_end()
+	return mesh
+
+
+# Gated behind "particles" toggle. Radial burst scaled by landing impact;
+# suppressed below _LAND_IMPACT_THRESHOLD. Fades in 0.18 s after a 0.03 s hold.
+func _spawn_land_impact(impact: float) -> void:
+	var mat := StandardMaterial3D.new()
+	mat.shading_mode = BaseMaterial3D.SHADING_MODE_UNSHADED
+	mat.albedo_color = Color(0.80, 0.77, 0.72, 0.85)
+	mat.transparency = BaseMaterial3D.TRANSPARENCY_ALPHA
+	mat.no_depth_test = true
+	mat.cull_mode = BaseMaterial3D.CULL_DISABLED
+	var mi := MeshInstance3D.new()
+	mi.mesh = _build_impact_mesh(impact)
+	mi.material_override = mat
+	mi.cast_shadow = GeometryInstance3D.SHADOW_CASTING_SETTING_OFF
+	get_tree().root.add_child(mi)
+	mi.global_position = global_position + Vector3(0.0, 0.04, 0.0)
+	var tween := mi.create_tween()
+	tween.tween_interval(0.03)
+	tween.tween_property(mat, "albedo_color:a", 0.0, 0.18)
+	tween.tween_callback(mi.queue_free)
+
+
+func _build_impact_mesh(impact: float) -> ImmediateMesh:
+	var mesh := ImmediateMesh.new()
+	mesh.surface_begin(Mesh.PRIMITIVE_LINES)
+	for i in 6:
+		var angle := float(i) * TAU / 6.0
+		var length := 0.08 + impact * 0.22
+		# Upward kick scales with impact so heavy landings spray higher.
+		var dir := Vector3(cos(angle), impact * 0.12, sin(angle)).normalized()
+		mesh.surface_add_vertex(dir * 0.05)
+		mesh.surface_add_vertex(dir * (0.05 + length))
+	mesh.surface_end()
+	return mesh
+
+
+func _on_particles_param(param: StringName, value: float) -> void:
+	match param:
+		&"footstep_interval": _footstep_dust_interval = value
 
 
 func _set_emission(color: Color, energy: float) -> void:

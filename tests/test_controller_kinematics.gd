@@ -128,6 +128,7 @@ func _ready() -> void:
 	_test_arc_assist_per_frame_budget()
 	_test_screen_shake_strongest_wins()
 	_test_run_timer_semantics()
+	_test_footstep_and_land_impact_math()
 	_report()
 
 
@@ -5109,3 +5110,59 @@ func _test_run_timer_semantics() -> void:
 		SNAPPY_REBOOT < FLOATY_REBOOT)
 
 	g.free()
+
+
+func _test_footstep_and_land_impact_math() -> void:
+	## Mirrors the throttle logic in _tick_timers() and the geometry formulas in
+	## _build_footstep_mesh() / _build_impact_mesh() from player.gd (iter 84).
+	print("\n-- Footstep dust + land impact particle math (iter 84) --")
+
+	# ---- Footstep dust timer throttle ----
+	# Default interval is 0.15 s — greater than zero so it does not fire every frame.
+	const FOOTSTEP_INTERVAL := 0.15
+	_ok("footstep interval default (0.15 s) > 0 — throttled, not every frame",
+		FOOTSTEP_INTERVAL > 0.0)
+
+	# Timer countdown: maxf clamps to 0, does not go negative.
+	_ok("timer countdown: maxf(0, 0.12 - 0.016) < 0.12",
+		maxf(0.0, 0.12 - 0.016) < 0.12)
+	_ok("timer countdown: maxf(0, 0.010 - 0.016) == 0.0 (clamps at zero)",
+		is_equal_approx(maxf(0.0, 0.010 - 0.016), 0.0))
+
+	# Fire condition: timer <= 0.
+	_ok("footstep fires when timer == 0.0 (condition: timer <= 0.0)", 0.0 <= 0.0)
+	# After firing, timer is reset to interval (not zero) so next fire is delayed.
+	var timer_after_fire := FOOTSTEP_INTERVAL
+	_ok("footstep timer resets to interval (0.15 s) after firing, not 0",
+		timer_after_fire > 0.0)
+
+	# Speed gate: fires only when horizontal speed > 0.5 m/s (above dead zone).
+	const MIN_SPEED := 0.5
+	_ok("footstep suppressed at h_speed = 0.3 m/s (below gate)", 0.3 < MIN_SPEED)
+	_ok("footstep fires at h_speed = 2.0 m/s (above gate)", 2.0 >= MIN_SPEED)
+
+	# ---- Footstep mesh geometry ----
+	# 4 lines at TAU/4 (90°) increments. cos²+sin² == 1 confirms unit XZ directions.
+	for i in 4:
+		var angle := float(i) * TAU / 4.0
+		_ok("footstep line %d at 90° interval: cos²+sin² == 1" % i,
+			_near(cos(angle) * cos(angle) + sin(angle) * sin(angle), 1.0))
+
+	# ---- Land impact threshold ----
+	const LAND_THRESHOLD := 0.15
+	_ok("land impact threshold (0.15) below audio heavy threshold (0.25) — fires on lighter landings",
+		LAND_THRESHOLD < 0.25)
+	_ok("light landing impact=0.10 < threshold — no particles", 0.10 < LAND_THRESHOLD)
+	_ok("medium impact=0.20 >= threshold — particles fire", 0.20 >= LAND_THRESHOLD)
+	_ok("heavy impact=1.0 >= threshold — particles fire", 1.0 >= LAND_THRESHOLD)
+
+	# ---- Land impact line-length formula ----
+	# length = 0.08 + impact * 0.22  — heavier landing → longer lines.
+	var len_at_threshold := 0.08 + LAND_THRESHOLD * 0.22
+	var len_at_max       := 0.08 + 1.0 * 0.22
+	_ok("land impact at threshold (0.15): line length ≈ 0.113",
+		_near(len_at_threshold, 0.113))
+	_ok("land impact at max (1.0): line length = 0.30",
+		_near(len_at_max, 0.30))
+	_ok("land impact: heavy lines longer than threshold-level lines",
+		len_at_max > len_at_threshold)

@@ -16,6 +16,7 @@ authored with it in mind.
 
 ## Active iteration
 
+- **🟢 Iter 84 complete.** Footstep dust + land impact particles. `player.gd`: `_footstep_dust_timer` + `_footstep_dust_interval = 0.15` state; `_LAND_IMPACT_THRESHOLD = 0.15`; `_apply_landing_effects(impact)` extracted from `_tick_timers` (kept ≤40 lines); `_spawn_footstep_dust()` / `_build_footstep_mesh()` (4 lines at TAU/4, warm grey, 0.10 s fade); `_spawn_land_impact(impact)` / `_build_impact_mesh(impact)` (6 lines at TAU/6, length=0.08+impact×0.22, 0.03 s hold + 0.18 s fade); `_on_particles_param` handler. `dev_menu.gd`: `particles_param_changed` signal. `dev_menu_overlay.gd`: "Particles — Tuning" subsection, "Footstep interval (s)" slider (0.05–0.40). JUICE.md: Footstep dust + Land impact promoted idea→prototype. 18 unit tests (1002→1020). On-device pending — footstep interval, land impact threshold, alpha values.
 - **🟢 Iter 83 complete.** Run-timer semantics research + par-time calibration. `docs/research/run_timer_semantics.md`: wall-clock model confirmed (SMB/Celeste/Dadish all run timer through deaths); current `game.gd` implementation is correct; `par_time_seconds = 35.0` in `threshold.gd` should be ~37 s after first on-device wall-clock run (3–5 deaths); Approach B (pause during reboot) documented as alternative with code-change instructions; supersedes `win_state_design.md` suggestion to pause timer during reboot. `docs/research/INDEX.md` updated. Side quest: 9 unit tests `_test_run_timer_semantics` — wall-clock continuity during `register_attempt()`, reboot overhead per profile (Snappy 0.33/Floaty 0.50), par calibration formula, deaths-per-10s-overhead table (993 → 1002 assertions).
 - **🟢 Iter 82 complete.** Hardening unit tests: ledge magnet impulse formula, arc assist per-frame budget, screen shake strongest-wins rule. 22 new assertions (971 → 993). Side discovery: Threshold scene uses MeshInstance3D (not CSGBox3D) — CSG baked-lighting blocker resolved; note updated in PLAN.md P0-8.
 - **🟢 Iter 81 complete.** Screen shake system. `game.gd`: `screen_shake_requested(magnitude, duration, freq)` signal added. `camera_rig.gd`: `_shake_remaining`/`_shake_decay`/`_shake_freq` state; `shake_intensity_scale` export (1.0); `_apply_shake(delta)` (sinusoidal yaw+pitch rotation after `look_at`, before `_air_offset` refresh — purely visual, no movement-direction bleed); `_on_screen_shake_requested` (only strongest in-flight shake wins). Camera connects to `Game.screen_shake_requested` in `_ready()`. `player.gd`: land shake (`impact ≥ 0.25`: 0.011×impact rad, 0.13 s, 20 Hz) in `_tick_timers()` just_landed block; death shake (0.022 rad, 0.20 s, 26 Hz) in `respawn()`. Dev menu: "Screen Shake — Tuning" sub-section with "Intensity ×" slider (0–3, default 1). JUICE.md: "Hard land" + "Death/respawn" promoted to prototype; directional hazard-hit deferred. 8 unit tests (`_test_screen_shake_system`). 963 → 971 assertions. On-device pending — shake magnitudes and intensity scale need device tuning.
@@ -240,6 +241,13 @@ These mirror "Open questions waiting on you" in the README.
 
 ## Recently completed (last 5)
 
+- 2026-05-14 — iter 84. **Footstep dust + land impact particles.**
+  `_spawn_footstep_dust()` (4-line ImmediateMesh, TAU/4 spread, warm grey, 0.10 s fade, throttled by
+  `_footstep_dust_interval=0.15`); `_spawn_land_impact(impact)` (6-line ImmediateMesh, TAU/6 spread,
+  length=0.08+impact×0.22, upward kick=impact×0.12, 0.03 s hold + 0.18 s fade).
+  `_apply_landing_effects(impact)` extracted from `_tick_timers` to keep it ≤ 40 lines.
+  Dev menu "Particles — Tuning → Footstep interval (s)" slider. 18 unit tests (1002→1020).
+  JUICE.md: both promoted idea→prototype. On-device pending.
 - 2026-05-14 — iter 82. **Hardening unit tests: ledge magnet impulse, arc assist budget, shake strongest-wins.**
   `tests/test_controller_kinematics.gd`: three new test functions —
   `_test_ledge_magnet_impulse_formula` (7 assertions: dist=0→impulse=0, dist=radius→full strength,
