@@ -130,6 +130,9 @@ func _ready() -> void:
 	_test_run_timer_semantics()
 	_test_footstep_and_land_impact_math()
 	_test_footstep_dust_state_machine()
+	_test_blob_shadow_export_defaults()
+	_test_blob_shadow_param_dispatch()
+	_test_blob_shadow_juice_toggle()
 	_report()
 
 
@@ -5213,3 +5216,77 @@ func _test_footstep_dust_state_machine() -> void:
 		t >= 0.0)
 	_ok("timer countdown: nearly-expired timer IS 0 (ready to fire next check)",
 		t == 0.0)
+
+
+func _test_blob_shadow_export_defaults() -> void:
+	## Guards the BlobShadow @export_range initial values that the dev-menu sliders
+	## and the depth-perception tuning session depend on. Changing a default here
+	## without updating the dev-menu slider range or the iter-85 research note is a
+	## silent regression — this test makes it loud.
+	print("\n-- BlobShadow export defaults --")
+
+	var bs := BlobShadow.new()
+	_ok("radius_at_ground default 0.22 m (close-to-floor disc size)",
+		_near(bs.radius_at_ground, 0.22))
+	_ok("radius_at_height default 0.55 m (disc expands with height for penumbra cue)",
+		_near(bs.radius_at_height, 0.55))
+	_ok("fade_height default 6.0 m (shadow readable for typical jump arcs)",
+		_near(bs.fade_height, 6.0))
+	_ok("alpha_max default 0.42 (visible but not black-disc distracting)",
+		_near(bs.alpha_max, 0.42))
+	_ok("radius_at_height > radius_at_ground (shadow expands upward — depth cue correct)",
+		bs.radius_at_height > bs.radius_at_ground)
+	bs.free()
+
+
+func _test_blob_shadow_param_dispatch() -> void:
+	## Mirrors the match block in blob_shadow.gd::_on_blob_shadow_param_changed.
+	## Ensures every dev-menu "Blob Shadow — Tuning" slider routes to the correct
+	## property. A missing or mis-spelled match arm is caught here before it causes
+	## a silent no-op on device.
+	print("\n-- BlobShadow param dispatch --")
+
+	var bs := BlobShadow.new()
+
+	bs._on_blob_shadow_param_changed(&"radius_at_ground", 0.35)
+	_ok("radius_at_ground dispatch sets property", _near(bs.radius_at_ground, 0.35))
+
+	bs._on_blob_shadow_param_changed(&"radius_at_height", 0.90)
+	_ok("radius_at_height dispatch sets property", _near(bs.radius_at_height, 0.90))
+
+	bs._on_blob_shadow_param_changed(&"fade_height", 12.0)
+	_ok("fade_height dispatch sets property", _near(bs.fade_height, 12.0))
+
+	bs._on_blob_shadow_param_changed(&"alpha_max", 0.75)
+	_ok("alpha_max dispatch sets property", _near(bs.alpha_max, 0.75))
+
+	# Unknown param must be a silent no-op — no crash, no mutation of known props.
+	var rg_snapshot := bs.radius_at_ground
+	bs._on_blob_shadow_param_changed(&"nonexistent_param", 99.0)
+	_ok("unknown param leaves radius_at_ground unchanged (match is exhaustive)",
+		_near(bs.radius_at_ground, rg_snapshot))
+
+	bs.free()
+
+
+func _test_blob_shadow_juice_toggle() -> void:
+	## Mirrors blob_shadow.gd::_on_juice_changed. The juice toggle system calls
+	## this with every key change; only the &"blob_shadow" key should mutate
+	## _enabled. Other keys must be ignored so toggling unrelated juice elements
+	## (squash_stretch, screen_shake, etc.) does not affect the shadow.
+	print("\n-- BlobShadow juice toggle --")
+
+	var bs := BlobShadow.new()
+
+	_ok("blob shadow starts enabled (_enabled default true)", bs._enabled == true)
+
+	bs._on_juice_changed(&"blob_shadow", false)
+	_ok("juice_changed blob_shadow→false disables shadow", bs._enabled == false)
+
+	bs._on_juice_changed(&"blob_shadow", true)
+	_ok("juice_changed blob_shadow→true re-enables shadow", bs._enabled == true)
+
+	bs._on_juice_changed(&"squash_stretch", false)
+	_ok("unrelated key squash_stretch does not disable blob shadow", bs._enabled == true)
+
+	bs.free()
