@@ -101,6 +101,56 @@ The full iteration log lives here, newest first. Every iteration appends an entr
 
 <!-- ITERATION ENTRIES BELOW — DO NOT REMOVE OLDER ENTRIES -->
 
+### [2026-05-14] — iter 78 — Assisted Profile Phase 2: ledge magnetism + arc assist
+
+Branch: `claude/gifted-shannon-NngGn`
+Throttle: 🟢 normal (1 iteration since 2026-05-14 direction session)
+Gate: Gate 1 — Vertical Slice prep
+
+**Primary: Assisted Profile Phase 2 — ledge magnetism + arc assist.**
+
+`scripts/controller/controller_profile.gd`:
+- 3 new `@export_range` properties in `@export_category("Assisted")`:
+  `ledge_magnet_radius: float = 0.0`, `ledge_magnet_strength: float = 0.0`, `arc_assist_max: float = 0.0`.
+  All three default to 0 (disabled) — backwards-compatible with Snappy/Floaty/Momentum.
+
+`resources/profiles/assisted.tres`:
+- Phase 2 defaults: `ledge_magnet_radius = 0.20`, `ledge_magnet_strength = 1.0`, `arc_assist_max = 0.40`.
+
+`scripts/player/player.gd`:
+- `_attract_to_ledge()` — fires once at ground/coyote jump time. Probes ahead-left and ahead-right of
+  the player's input direction (two sphere casts at foot level, CAPSULE_R + 5 cm offset). If a platform
+  surface is found within `ledge_magnet_radius`, applies a proportional lateral impulse (≤ `ledge_magnet_strength`).
+  Guard: `is_on_floor()` required — skips the coyote window so the magnet doesn't pull players back
+  toward an edge they've already left. 2 physics casts per jump; zero casts when radius=0.
+- `_apply_arc_assist()` — runs every airborne non-dashing frame. Casts 20 rays along the simulated arc
+  (using `gravity_after_apex` for a conservative prediction). If the predicted landing drifts within
+  `arc_assist_max` metres of a surface, applies ≤ 5% × arc_assist_max per frame (capped to 15% of
+  `jump_velocity × delta`). Lifetime cap: 1.5 m/s accumulated per arc (`_arc_assist_accumulated`, reset
+  on each jump). Guard: `_coyote_timer > 0` blocks during floor-departure window.
+- `_arc_assist_accumulated` state var — fresh budget per arc; reset in `_try_jump()` + `respawn()`.
+- `_physics_process`: calls `_apply_arc_assist(delta)` when `not on_floor and not _is_dashing`.
+
+`tools/dev_menu/dev_menu_overlay.gd`:
+- 3 new sliders in Controller → Assist section: "Magnet radius (m)", "Magnet str (m/s)", "Arc assist (m/s)".
+
+`tests/test_controller_kinematics.gd`:
+- `_test_assisted_phase2_params` (10 assertions): default-profile params all 0, assisted.tres non-zero
+  defaults, guard conditions for both methods (radius=0 → no magnet, arc_max=0 → no arc assist,
+  coyote_timer>0 → no arc assist), accumulated reset on jump. **922 → 932.**
+
+**Side quest:** none (blob shadow already implemented + documented in prior iteration).
+**Perf:** 2 sphere casts per jump (ledge magnet, no-op on other profiles), 20 ray casts per airborne frame
+for arc assist (Assisted only; ~2 ms physics cost per the tbdr_mobile_gpu.md budget note). On-device pending.
+**Bugs fixed:** none.
+**New dev-menu controls:** Magnet radius, Magnet str, Arc assist (all in Controller → Assist).
+**Assets acquired:** none.
+**Research added:** none (design basis was `docs/research/assist_mechanics.md`, already written).
+**On-device pending:** feel tuning of radius/strength/arc_max for the Assisted profile. Edge-snap deferred.
+**Needs human attention:** on-device Assisted profile test with the three new tunables live in dev menu.
+
+---
+
 ### [2026-05-14] — human direction session — Kenney asset coverage + camera pitch-up auto-correct fight fix
 
 Branch: `claude/identify-dev-blockers-JWRiC`

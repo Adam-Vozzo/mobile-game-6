@@ -125,11 +125,16 @@ The next iteration should pull from the top of this list. Items marked
    Ceilings + corridor walls removed. Shard collection bug fixed (collision_mask=2).
    _(Promoted over Assisted Phase 2 — level is the Gate 1 critical path; assist mechanics
    are supporting.)_
-9. **Assisted profile Phase 2.** Phase 1 (sticky landing) shipped iter 27.
-   Phase 2 (ledge magnetism + arc assist) approved by human as a heavy-
-   impact game-feel mechanic — build it after #5 / #6 are validated on
-   device. See `docs/research/assist_mechanics.md` for implementation
-   sketches.
+9. ~~**Assisted profile Phase 2.**~~ Done (iter 78). Ledge magnetism
+   (`_attract_to_ledge`: 2-probe sphere cast at jump time, ahead-left/right of
+   input direction; lateral impulse ≤ ledge_magnet_strength) + arc assist
+   (`_apply_arc_assist`: 20-step lookahead ray, per-frame ≤ 15% jump_velocity×delta
+   correction, 1.5 m/s lifetime cap). 3 new `ControllerProfile` params
+   (`ledge_magnet_radius`, `ledge_magnet_strength`, `arc_assist_max`) — all 0 in
+   Snappy/Floaty/Momentum, non-zero in `assisted.tres` (0.20 / 1.0 / 0.40).
+   3 new dev-menu sliders (Controller → Assist section). 10 unit tests (922 → 932).
+   On-device pending for feel tuning. Edge-snap deferred — implement only if
+   players still fall off after ledge-magnet + sticky-landing combined.
 
 ### P1 — Supporting
 
@@ -225,6 +230,11 @@ These mirror "Open questions waiting on you" in the README.
 
 ## Recently completed (last 5)
 
+- 2026-05-14 — iter 78. **Assisted Phase 2 — ledge magnetism + arc assist.** 3 new `ControllerProfile`
+  params + `_attract_to_ledge()` + `_apply_arc_assist()` in `player.gd`. `assisted.tres` defaults:
+  `ledge_magnet_radius=0.20`, `ledge_magnet_strength=1.0`, `arc_assist_max=0.40`. 3 dev-menu sliders
+  (Controller → Assist). 10 unit tests (922 → 932). On-device pending for tuning; edge-snap deferred.
+  See `docs/research/assist_mechanics.md` for the design basis.
 - 2026-05-14 — Human direction session. **Kenney asset coverage + camera pitch-up auto-correct fight fix. THROTTLE RESET.**
   Verdicts on iter-77 open questions: A (Threshold redesign) feels a lot better; B (asset picks) → add Kenney coverage;
   C (air-dash mode) and E (texture-pass timing) → TBD; D (camera pitch 70°) → ceiling correct, but "auto-correction

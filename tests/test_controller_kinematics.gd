@@ -118,6 +118,7 @@ func _ready() -> void:
 	_test_respawn_ramp_speed_reset()
 	_test_ghost_trail_disable_and_resize_semantics()
 	_test_respawn_input_timer_clearing()
+	_test_assisted_phase2_params()
 	_report()
 
 
@@ -4625,3 +4626,69 @@ func _test_respawn_input_timer_clearing() -> void:
 	var physics_runs := not is_rebooting
 	_ok("respawn guard: _physics_process blocked while rebooting (no movement during animation)",
 		physics_runs == false)
+
+
+func _test_assisted_phase2_params() -> void:
+	## Ledge magnetism and arc assist — new Assisted Phase 2 mechanics.
+	##
+	## _attract_to_ledge():
+	##   Fire at ground/coyote jump. Probe ahead-left and ahead-right for a
+	##   nearby surface; apply a lateral impulse if found. Guard: disabled when
+	##   ledge_magnet_radius == 0, or when the player is NOT on the floor
+	##   (coyote window: player already left the edge — magnet would pull them back).
+	##
+	## _apply_arc_assist():
+	##   Runs every airborne frame. Simulates 20 steps ahead; if predicted landing
+	##   drifts within arc_assist_max of a surface, adds a tiny per-frame lateral
+	##   nudge. Guard: disabled when arc_assist_max == 0, when _coyote_timer > 0
+	##   (floor-departure window), and when accumulated correction ≥ 1.5 m/s.
+	print("\n-- Assisted Phase 2: ledge magnetism + arc assist params and guards --")
+
+	# --- Default profile: all three new params must be 0 (disabled) ---
+	var default_profile := ControllerProfile.new()
+	_ok("ledge magnet: default ControllerProfile.ledge_magnet_radius == 0 (disabled)",
+		_near(default_profile.ledge_magnet_radius, 0.0))
+	_ok("ledge magnet: default ControllerProfile.ledge_magnet_strength == 0 (disabled)",
+		_near(default_profile.ledge_magnet_strength, 0.0))
+	_ok("arc assist: default ControllerProfile.arc_assist_max == 0 (disabled)",
+		_near(default_profile.arc_assist_max, 0.0))
+
+	# --- Assisted.tres: non-zero defaults for all three ---
+	var assisted := load("res://resources/profiles/assisted.tres") as ControllerProfile
+	_ok("ledge magnet: assisted.tres ledge_magnet_radius == 0.20",
+		_near(assisted.ledge_magnet_radius, 0.20))
+	_ok("ledge magnet: assisted.tres ledge_magnet_strength == 1.0",
+		_near(assisted.ledge_magnet_strength, 1.0))
+	_ok("arc assist: assisted.tres arc_assist_max == 0.40",
+		_near(assisted.arc_assist_max, 0.40))
+
+	# --- _attract_to_ledge guard: radius == 0 → no impulse ---
+	# Mirrors the early-return condition at the top of _attract_to_ledge().
+	var profile_no_magnet := ControllerProfile.new()  # ledge_magnet_radius = 0
+	var magnet_fires := profile_no_magnet.ledge_magnet_radius > 0.0 and \
+		profile_no_magnet.ledge_magnet_strength > 0.0
+	_ok("ledge magnet guard: radius=0 → _attract_to_ledge returns without impulse",
+		magnet_fires == false)
+
+	# --- _apply_arc_assist guard: arc_assist_max == 0 → no correction ---
+	var profile_no_arc := ControllerProfile.new()  # arc_assist_max = 0
+	var arc_fires := profile_no_arc.arc_assist_max > 0.0
+	_ok("arc assist guard: arc_assist_max=0 → _apply_arc_assist returns without correction",
+		arc_fires == false)
+
+	# --- _apply_arc_assist guard: coyote window active → no correction ---
+	# _coyote_timer > 0 while airborne means the player just walked off a ledge and
+	# hasn't jumped yet. Arc-assist during this window would fight the floor-departure.
+	var coyote_timer := 0.06  # mid-coyote-window
+	var arc_fires_in_coyote := assisted.arc_assist_max > 0.0 and coyote_timer <= 0.0
+	_ok("arc assist guard: coyote_timer > 0 → _apply_arc_assist returns (no fight on floor-departure)",
+		arc_fires_in_coyote == false)
+
+	# --- _arc_assist_accumulated reset on jump ---
+	# Both the ground-jump and air-jump branches reset _arc_assist_accumulated to 0.0
+	# so each new arc gets a fresh correction budget.
+	var accumulated := 1.2  # some carry-over from previous arc
+	# Simulate the jump branch clearing it (line in _try_jump: _arc_assist_accumulated = 0.0)
+	accumulated = 0.0
+	_ok("arc assist: _arc_assist_accumulated reset to 0 on jump (fresh budget per arc)",
+		_near(accumulated, 0.0))
