@@ -5,10 +5,10 @@ A mobile 3D platformer. Brutalist megastructure inspired by *BLAME!*. Controller
 ## Status
 
 Current gate: **Gate 0 — Feel Lab** (closing out; Gate 1 prep in flight)
-Last activity: 2026-05-14 — iter 77: refactor `_run_reboot_effect` (41→32 lines, extract `_play_death_squish` + `_play_reboot_grow`, 920→922 assertions)
+Last activity: 2026-05-14 — direction session: Threshold redesign feel-good ✅, Kenney asset coverage added (A5–A7, B5, C6–C8), camera pitch-up auto-correction fight bug fixed (drag formula → cylindrical)
 Test device build: ✅ verified 2026-05-12 — runs in Godot 4.6 on PC and on Nothing Phone 4(a) Pro
 Performance: 144 fps / 6.9 ms in editor at 1920×1080 (Feel Lab); on-device frametimes TBD
-Throttle level: **🔴 HARD** (11 iterations since 2026-05-14 direction session — new feature work halted)
+Throttle level: **🟢 RESET** (2026-05-14 direction session: A confirmed, B+D actioned, C+E deferred)
 
 If you only read one section, read **Open questions waiting on you** below.
 
@@ -16,33 +16,30 @@ If you only read one section, read **Open questions waiting on you** below.
 
 Things Claude can't decide alone, or where it's stalled and needs direction.
 
-> **🔴 HARD THROTTLE — iter 77.** 11 autonomous iterations since the last direction session. New feature work is halted until you provide direction. Hardening-only work continues (tests, refactors, perf), but the next meaningful step requires your input. Please read the numbered list below and pick one direction.
+> **🟢 THROTTLE RESET — 2026-05-14 direction session.** Verdicts captured below; throttle cleared, feature work resumes from the next iteration. Two items remain open (C air-dash and E texture pass — both tagged TBD; the loop will *not* block on them).
 
-> **Suggested next directions (pick one or redirect):**
+> **2026-05-14 direction session — verdicts:**
 >
-> A. **On-device playtest** — the most valuable action available. Load Threshold on the Nothing Phone 4(a) Pro, run through the Spyro-style redesign, and give feel notes. Five minutes of play produces enough signal to unblock the next 5+ iterations of tuning and polish.
->
-> B. **Asset picks from `docs/ASSET_OPTIONS.md`** — a 5-minute read. Three slots (Stray mesh, ambient audio, concrete kit), each with 2–5 CC0 candidates and a fidelity-check note. Approving picks unblocks the art pass, CSG-to-mesh conversion, and the baked-lighting pipeline.
->
-> C. **Air-dash verdict** — "always buffer", "never buffer", or "drop the option." One word unblocks the touch-overlay cleanup (removes a dev-menu toggle and the associated branch in `touch_overlay.gd`).
->
-> D. **Camera pitch** — is 70° pitch_max right? If you want to look up at structures from below, say "let pitch go negative" and we'll add a `pitch_min_degrees` export and a dev-menu slider for it.
->
-> E. **Texture pass now** — if you want to do the art pass before on-device play, say so and we'll start the CSG → MeshInstance + concrete-kit workflow (requires asset picks from B first, but partial progress is possible without them).
+> - **A. On-device playtest of Spyro-style Threshold → ✅ feels a lot better.** The open level design is good; continue in that direction. No specific tuning notes filed yet — small tweaks will come per-iteration as needed.
+> - **B. Asset picks → "get some options from Kenney also".** `docs/ASSET_OPTIONS.md` updated with Kenney candidates A5 (Mini Characters), A6 (Mini Arena), A7 (Blocky Characters), B5 (Sci-Fi Sounds), C6 (Prototype Textures), C7 (Modular Space Kit), C8 (Factory Kit). Picks still pending — A1 (Quaternius), B1+B2 (freesound CC0), C2 (Poly Haven) remain the top recommendations; **C8 (Factory Kit)** is the highest-value Kenney addition for Zone 2/3 set-dressing.
+> - **C. Air-dash verdict → TBD.** Both modes (whip-on-fire vs buffer-and-discard) still live behind the dev-menu toggle.
+> - **D. Camera pitch → 70° better, BUT** "when pitching the camera up and holding it the auto-correction fights with the player and looks a bit buggy." → **Fixed this session.** Root cause: `_apply_drag_input` wrote camera position with a *spherical* parametrization (XZ scaled by `cos(elev)`) while `_compute_ground_camera_pos` enforces *cylindrical* (XZ at full `effective_distance`). At 70° pitch the drag put XZ at ≈ 0.34 × distance, then the ground branch eased it back out to full distance over ~0.5 s — visibly fighting the player after they released the pitch-up swipe. Fix: drop the `cos(elev)` factor in the drag formula so both branches use the same cylindrical parametrization. `_test_tripod_drag_orbit` rewritten and a new consistency assertion added.
+> - **E. Texture pass now → TBD.**
 >
 > **What's still waiting for your read:**
-> 1. **Spyro-style Threshold on device.** New Zone 1 plaza (3 routes), Zone 2 maintenance yard (perimeter ledges), Zone 3 lateral platforms. 4 shards scattered. Is the feel right? Are platforms reachable with the new Snappy values?
-> 2. **Hold-jump+swipe air dash — two modes to compare.** (iter 67) Dev menu Touch section now has "Buffer dash cam" toggle. Try both: off = current (swipe also pans camera); on = camera suppressed during gesture window, flushed on expiry, discarded on fire (no whip). Pick whichever feels right — or say "always buffer" / "drop the option" and we'll clean it up.
-> 3. **Camera pitch 70°.** Was the previous 55° "too tight" complaint solved by the raise, or does pitch_min (hard-clamped at 0) need to go negative too (look up at structures from below)?
-> 4. **Industrial press.** Still at x=8 (decorative). After on-device feel of the new gantry layout, decide: move to critical path, or leave it as atmosphere?
-> 5. **Gate 1 art direction — `docs/ASSET_OPTIONS.md` is ready for your review (iter 71).** Three slots with 3–5 candidates each: Stray mesh (A1 Quaternius LowPoly Robot recommended), ambient audio (B1 spacecraft hum + B2 industrial fans recommended), concrete kit (C2 Poly Haven + Godot add-on recommended). All CC0. After you approve picks, autonomous asset acquisition resumes. Open the doc and pick (or redirect); ~5-minute read.
-> 6. **Assisted Phase 2** (ledge magnetism + arc assist) — still queued behind level work.
+> 1. **Hold-jump+swipe air dash — two modes to compare.** (iter 67) Dev menu Touch section has "Buffer dash cam" toggle. Try both, or say "always buffer" / "drop the option" and we'll clean it up.
+> 2. **Industrial press.** Still at x=8 (decorative). Move to critical path, or leave it as atmosphere?
+> 3. **Gate 1 art direction — `docs/ASSET_OPTIONS.md`.** Now includes Kenney coverage (A5–A7, B5, C6–C8). Top picks: **A1 Quaternius**, **B1+B2 freesound + B5 Kenney SFX layer**, **C2 Poly Haven + C8 Kenney Factory Kit for dressing**. After ~3 approvals autonomous asset acquisition resumes.
+> 4. **Assisted Phase 2** (ledge magnetism + arc assist) — still queued behind level work.
+> 5. **`pitch_min_degrees` (negative pitch)?** Pitch lower bound is hard-clamped at 0 (horizontal). If you ever want to look *up* at the megastructure from below, say so and we'll add the export + slider.
 
 - [x] **Open the project in Godot 4.6 and run the on-device first-run checklist in `docs/ANDROID.md`.** Done 2026-05-12 — runs in editor and deploys to Nothing Phone 4(a) Pro. Remaining ANDROID.md items: headless CI signing via env vars, release Play Store build (both gate-locked to ship).
 - [x] **First feel verdict — Snappy vs Floaty vs Momentum.** Snappy feel approved as good overall; tune-down (max_speed 6.5 → 6.0) queued. Floaty and Momentum verdicts to come as level design forces switching between them.
 - [x] **Gate 1 level selection.** Threshold picked as the first build. Lung and Spine remain queued — Claude will build them after Threshold is feature-complete.
 - [x] **Auto-merge git workflow confirmed and instrumented.** Now enforced by `.github/workflows/auto-merge.yml` — PRs labeled `auto-merge` are squash-merged automatically.
-- [ ] **Asset suggestions for first-pick approval.** `docs/ASSET_OPTIONS.md` written (iter 71) — 3 slots, 3–5 candidates each, CC0 confirmed, fidelity notes included. **Awaiting your picks.** After ~3 approvals, autonomous acquisition resumes.
+- [x] **On-device playtest of Spyro-style Threshold redesign.** 2026-05-14 verdict: feels a lot better; open level design direction confirmed.
+- [x] **Camera pitch 70° vs 55°.** 70° is the right ceiling. Auto-correction-fight bug surfaced and fixed in same session.
+- [ ] **Asset suggestions for first-pick approval.** `docs/ASSET_OPTIONS.md` now covers Kenney (A5–A7, B5, C6–C8) in addition to the freesound/Quaternius/Poly Haven recommendations. **Awaiting your picks.** After ~3 approvals, autonomous acquisition resumes.
 - [ ] **Ongoing Snappy tuning passes.** Snappy feel is good but will keep getting small tweaks as level design progresses. Whenever a level beat feels wrong, note "Snappy felt too X on that beat" — it goes into the next tuning iteration.
 
 ## Roadmap
@@ -103,6 +100,41 @@ Goal: store-ready build.
 The full iteration log lives here, newest first. Every iteration appends an entry. Skim the dates to find where you last left off.
 
 <!-- ITERATION ENTRIES BELOW — DO NOT REMOVE OLDER ENTRIES -->
+
+### [2026-05-14] — human direction session — Kenney asset coverage + camera pitch-up auto-correct fight fix
+
+Branch: `claude/identify-dev-blockers-JWRiC`
+Throttle: 🟢 RESET (was 🔴 HARD at iter 77, 11 iterations since prior direction)
+Gate: Gate 1 — Vertical Slice prep
+
+**Verdicts on iter-77 open questions:**
+- A. On-device playtest of Spyro-style Threshold → **feels a lot better.** Open level design direction confirmed.
+- B. Asset picks → **"get some options from Kenney also."** `docs/ASSET_OPTIONS.md` extended with Kenney candidates in all three slots.
+- C. Air-dash mode → **TBD** (both modes stay live behind dev-menu toggle).
+- D. Camera `pitch_max=70°` → better, but a real bug surfaced: "when pitching the camera up and holding it the auto-correction fights with the player and looks a bit buggy." → **Fixed.**
+- E. Texture pass timing → **TBD.**
+
+**Camera pitch-up auto-correct fight — root cause + fix.**
+
+`scripts/camera/camera_rig.gd::_apply_drag_input` wrote the camera position with a *spherical* parametrization (XZ scaled by `cos(elev)`), but `_compute_ground_camera_pos` enforces a *cylindrical* one (horizontal XZ at full `effective_distance`, Y at `sin(elev) * effective_distance + aim_height` above pivot). At 70° pitch the two formulae disagree by `effective_distance * (1 - cos(70°)) ≈ 0.66 × distance` in horizontal distance — every frame the ground branch then eased the camera back out from the drag pose to full XZ distance over ~0.5 s (`ease_out_smoothing = 6/sec`). That outward drift after the player released the pitch-up swipe was the visible "auto-correction fight."
+
+Fix: drop the `cos(elev)` factor on XZ in `_apply_drag_input` so both branches use the same cylindrical parametrization. Now drag-written and ground-enforced positions match at every pitch — no transient correction. The Y formula already matched (both use `sin(elev) * effective_distance + aim_height`), so this only touches XZ. `_pitch_rad` clamp + inversion semantics unchanged.
+
+**Tests updated.**
+
+`tests/test_controller_kinematics.gd`:
+- `_test_tripod_drag_orbit` rewritten end-to-end. Old assertions ("pure yaw drag preserves 3D radius (orbit on sphere)") relied on the spherical formula and would have stayed green over the buggy code. New assertions: "XZ radius from drag-written position == distance (cylindrical)" and "pure yaw drag preserves XZ radius (cylindrical orbit)." Drag/ground consistency invariant at 70° pitch added explicitly: drag-written XZ and Y both equal the ground-branch values, so no fight on grounded frames.
+
+**Kenney asset coverage (B verdict).**
+
+`docs/ASSET_OPTIONS.md` extended with seven new Kenney candidates, all CC0:
+- **Slot A — Stray mesh:** A5 Mini Characters (rig + civilians, requires mesh swap), A6 Mini Arena (rig donor only), A7 Blocky Characters (stylistic clash flagged). Honest framing: Kenney does not ship a chibi *robot* mesh, so A1 Quaternius remains the recommended pick.
+- **Slot B — Ambient audio:** B5 Kenney Sci-Fi Sounds. Kenney does not ship long-form ambient beds, so B5 is positioned as an additive one-shot SFX layer over the B1+B2 freesound bed, not a replacement.
+- **Slot C — Concrete kit:** C6 Prototype Textures (no PBR — greybox layer only), C7 Modular Space Kit (sci-fi panelled, fallback), C8 Factory Kit (140 industrial dressing pieces — flagged as highest-value Kenney addition for Zone 2/3 set-dressing).
+
+Decision table updated with a Kenney-coverage column.
+
+**Throttle reset.** Direction session unblocks autonomous iteration. Next iterations may resume Gate-1 feature work — Kenney asset picks (B), industrial-press critical-path routing, and Assisted Phase 2 remain the next-up open items.
 
 ### [2026-05-14] — iter 77 — Refactor: extract `_play_death_squish` + `_play_reboot_grow` helpers
 

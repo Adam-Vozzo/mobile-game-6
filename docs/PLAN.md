@@ -17,9 +17,10 @@ authored with it in mind.
 ## Active iteration
 
 - _No iteration currently in flight._
-- **🔴 HARD THROTTLE — Iter 77 complete.** 11 iterations since 2026-05-14 direction session. Hardening only: refactor `_run_reboot_effect` (41→32 lines) — extracted `_play_death_squish(duration)` and `_play_reboot_grow(duration)` helpers; both now tracked via `_squash_tween` (consistent with `_play_land_squash` / `_play_jump_stretch` / `_play_dash_stretch`). `_build_ui` and `_make_slider` were found within 40 lines — removed from backlog. 2 new tween-containment assertions in `_test_respawn_params` (920 → 922). JUICE.md "Death squish" entry updated to reference new helpers.
-- **🔴 HARD THROTTLE — Iter 76 complete.** 10 iterations since 2026-05-14 direction session. New feature work halted. Hardening only: 16 new unit tests — `_test_ghost_trail_disable_and_resize_semantics` (8 assertions: blank-after-resize fix semantics, disabled-path 300× cost reduction, one-time disable blank) + `_test_respawn_input_timer_clearing` (8 assertions: buffer/coyote/air-jumps/dash clearing, double-respawn guard, physics block). 904 → 920 assertions. Refactor backlog notes added for `_run_reboot_effect` (45 lines), `_build_ui` (~41 lines), `_make_slider` (~43 lines) — all marginal, defer.
-- **🔴 HARD THROTTLE — Iter 75 complete.** 9 iterations since 2026-05-14 direction session. New feature work halted. See README "Open questions waiting on you" for 5 suggested next directions. Hardening only: 17 new unit tests in `test_controller_kinematics.gd` — `_test_zone_env_bounds_and_disabled` (10 assertions: null-sentinel at envs[0], zone_id=4 OOB safety, disabled-mode fallback, enabled-path slot routing) + `_test_respawn_ramp_speed_reset` (7 assertions: initial = max_speed, 2 s ramp-up lifts speed, respawn resets, decay floor, landing alone does not reset). 887 → 904 assertions.
+- **🟢 THROTTLE RESET 2026-05-14.** Human direction session captured iter-77 verdicts: A (Threshold redesign) feels a lot better — open-level direction confirmed; B (asset picks) — "get some options from Kenney also", `docs/ASSET_OPTIONS.md` extended with Kenney candidates A5–A7 / B5 / C6–C8; C (air-dash mode) and E (texture-pass timing) — TBD, loop will not block on them; D (camera `pitch_max=70°`) — ceiling correct, but the user surfaced an "auto-correction fights when pitching up and holding" bug. Fixed in same session: `_apply_drag_input` used spherical XZ (`cos(elev)` factor) while `_compute_ground_camera_pos` enforces cylindrical XZ at full distance — the ground branch was easing the camera back out from the drag pose over ~0.5 s. Drag formula now matches ground branch; `_test_tripod_drag_orbit` rewritten and a 70°-pitch consistency assertion added.
+- **Iter 77 complete.** Hardening only: refactor `_run_reboot_effect` (41→32 lines) — extracted `_play_death_squish(duration)` and `_play_reboot_grow(duration)` helpers; both now tracked via `_squash_tween` (consistent with `_play_land_squash` / `_play_jump_stretch` / `_play_dash_stretch`). `_build_ui` and `_make_slider` were found within 40 lines — removed from backlog. 2 new tween-containment assertions in `_test_respawn_params` (920 → 922). JUICE.md "Death squish" entry updated to reference new helpers.
+- **Iter 76 complete.** Hardening only: 16 new unit tests — `_test_ghost_trail_disable_and_resize_semantics` (8 assertions: blank-after-resize fix semantics, disabled-path 300× cost reduction, one-time disable blank) + `_test_respawn_input_timer_clearing` (8 assertions: buffer/coyote/air-jumps/dash clearing, double-respawn guard, physics block). 904 → 920 assertions. Refactor backlog notes added for `_run_reboot_effect` (45 lines), `_build_ui` (~41 lines), `_make_slider` (~43 lines) — all marginal, defer.
+- **Iter 75 complete.** Hardening only: 17 new unit tests in `test_controller_kinematics.gd` — `_test_zone_env_bounds_and_disabled` (10 assertions: null-sentinel at envs[0], zone_id=4 OOB safety, disabled-mode fallback, enabled-path slot routing) + `_test_respawn_ramp_speed_reset` (7 assertions: initial = max_speed, 2 s ramp-up lifts speed, respawn resets, decay floor, landing alone does not reset). 887 → 904 assertions.
 - **🟢 Iter 74 complete.** Camera occlusion tunables exposed in dev menu: 4 missing `camera_rig.gd` sphere-cast params (`occlusion_probe_radius`, `pull_in_smoothing`, `ease_out_smoothing`, `occlusion_release_delay`) now have dev-menu sliders under "Camera — Occlusion" sub-section. `_on_camera_param_changed` gained 4 match arms. Duplicate `_occlude()` docstring removed. 8 unit tests (879 → 887). Side quest: `docs/research/tbdr_mobile_gpu.md` — TBDR pipeline, alpha-blending cost, no manual depth pre-pass needed, Adreno LRZ/Mali FPK notes, SubViewport cost, CSG migration benefits. Resolves last open INDEX.md research suggestion.
 - **🟢 Iter 73 complete.** Baked lighting research (`docs/research/baked_lighting.md`): LightmapGI on Mobile renderer, critical zone-atmosphere/baking conflict documented (Option A/C recommended), CSG→MeshInstance blocker surfaced, atlas sizing for Threshold. Side quest: `ghost_trail_renderer.gd` two bugs fixed — (1) blank-after-resize so new MultiMesh instances above old count are zeroed immediately (was blank-before, leaving new instances white for one frame); (2) replace per-frame `_blank_from(0)` when disabled with `_mmesh.visible = false` (eliminates 300 set_instance_color writes per frame at 60 fps when ghost trails are off). 5 new unit tests (874 → 879). INDEX.md + PLAN.md updated with bake prereqs.
 - **🟢 Iter 72 complete.** Ghost trail recording + MultiMesh renderer. See README iter 72 entry.
@@ -204,16 +205,50 @@ The next iteration should pull from the top of this list. Items marked
 
 These mirror "Open questions waiting on you" in the README.
 
-- **First asset suggestions for human approval.** `docs/ASSET_OPTIONS.md` is ready
-  for your review (iter 71). Three slots: Stray mesh (A1 Quaternius recommended),
-  ambient audio (B1+B2 freesound CC0 recommended), concrete kit (C2 Poly Haven + Godot
-  add-on recommended). After ~3 confirmed picks, autonomous asset acquisition resumes
-  per CLAUDE.md. See the doc for full candidate lists with source/licence/fidelity notes.
+- **First asset suggestions for human approval.** `docs/ASSET_OPTIONS.md` was extended
+  in the 2026-05-14 direction session with Kenney coverage (A5 Mini Characters,
+  A6 Mini Arena, A7 Blocky Characters, B5 Sci-Fi Sounds, C6 Prototype Textures,
+  C7 Modular Space Kit, C8 Factory Kit). Top recommendations unchanged: A1 Quaternius,
+  B1+B2 freesound CC0, C2 Poly Haven; C8 (Factory Kit) is the highest-value Kenney
+  addition for Zone 2/3 set-dressing. After ~3 confirmed picks, autonomous asset
+  acquisition resumes per CLAUDE.md.
+- **Air-dash verdict (C) — TBD.** Both modes (whip-on-fire vs buffer-and-discard)
+  remain live behind dev-menu toggle. Iter loop should not block on this.
+- **Texture-pass timing (E) — TBD.** CSG → MeshInstance + concrete-kit workflow remains
+  queued; gated on asset picks (B). Iter loop should not block on this.
+- **Industrial press critical-path routing.** Press at x=8 still decorative.
+  Critical-path vs atmosphere decision still pending; iteration loop can keep
+  the press as atmosphere until then.
 - **Ongoing Snappy tuning passes.** Snappy feel is good but will keep getting small
   tweaks as level design progresses. Notes of the form "Snappy felt too X on beat Y"
   drive the next tuning iteration.
 
 ## Recently completed (last 5)
+
+- 2026-05-14 — Human direction session. **Kenney asset coverage + camera pitch-up auto-correct fight fix. THROTTLE RESET.**
+  Verdicts on iter-77 open questions: A (Threshold redesign) feels a lot better; B (asset picks) → add Kenney coverage;
+  C (air-dash mode) and E (texture-pass timing) → TBD; D (camera pitch 70°) → ceiling correct, but "auto-correction
+  fights when pitching up and holding" bug surfaced.
+  `scripts/camera/camera_rig.gd::_apply_drag_input`: dropped the `cos(elev)` factor on XZ. Previously the drag wrote a
+  spherical pose (`effective_distance * cos_e * sin(theta)` / `* cos(theta)` on XZ) while `_compute_ground_camera_pos`
+  enforces full-`effective_distance` XZ. At 70° pitch the drag put XZ at ~0.34 × distance, then the ground branch eased
+  the camera back out to full XZ over ~0.5 s — the visible "fight" after the player released the swipe. Drag now uses the
+  same cylindrical parametrization. Updated docstring explains the prior spherical-vs-cylindrical mismatch alongside the
+  earlier asin-derived-phi mismatch (iter 22 fix).
+  `tests/test_controller_kinematics.gd::_test_tripod_drag_orbit`: rewritten to mirror the cylindrical formula. New
+  invariants: XZ radius == distance regardless of pitch; pure yaw drag preserves XZ radius (not 3D radius — the prior
+  "orbit on sphere" assertion stayed green over buggy code); drag XZ at 70° matches ground-branch XZ exactly;
+  drag Y at 70° matches ground-branch Y on grounded frames. Lower/upper elev clamp and `_pitch_rad ≤ 0` invariants
+  preserved.
+  `docs/ASSET_OPTIONS.md`: seven new Kenney candidates added (CC0, all): A5 Mini Characters, A6 Mini Arena, A7 Blocky
+  Characters (Slot A — none ship a CC0 chibi robot, so A1 Quaternius still wins); B5 Sci-Fi Sounds (Slot B — Kenney
+  doesn't ship long ambient beds, so B5 is positioned as SFX-layer complement over B1+B2); C6 Prototype Textures,
+  C7 Modular Space Kit, C8 Factory Kit (Slot C — C8 flagged as highest-value Kenney addition for Zone 2/3 industrial
+  dressing). Decision table gained a Kenney-coverage column.
+  `README.md`: throttle reset banner (🔴 HARD → 🟢 RESET), open-questions section rewritten to reflect verdicts, new
+  iteration entry appended.
+  `docs/PLAN.md`: active-iteration banner updated, Blocked section rewritten to reflect C/E TBD status and the new
+  Kenney coverage.
 
 - 2026-05-14 — Iteration 77. **Refactor `_run_reboot_effect` — extract `_play_death_squish` + `_play_reboot_grow`. HARD throttle.**
   `scripts/player/player.gd`: extracted two helpers from `_run_reboot_effect` (41→32 lines).
