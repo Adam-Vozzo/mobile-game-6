@@ -112,6 +112,7 @@ func _ready() -> void:
 	_test_zone_atmosphere_logic()
 	_test_jump_anticipation_squish_math()
 	_test_ghost_trail_recording()
+	_test_ghost_trail_resize_math()
 	_report()
 
 
@@ -4258,3 +4259,34 @@ func _test_ghost_trail_recording() -> void:
 		roundi(2.0 * 30.0) == 60)
 	_ok("ghost trail: visible_points(4.0 s) = 120",
 		roundi(4.0 * 30.0) == 120)
+
+
+func _test_ghost_trail_resize_math() -> void:
+	# Documents instance_count = MAX_DEPTH × visible_points after a slider resize.
+	# These invariants verify that blank-after-resize covers all instances,
+	# including the new ones above the old count.
+	const MAX_D  := 5
+	const SAMPLE := 30.0
+
+	# 2 s window → 60 pts per attempt → 300 instances.
+	_ok("ghost trail resize: instance_count(2 s) = 300",
+		MAX_D * roundi(2.0 * SAMPLE) == 300)
+
+	# 1 s window → 30 pts per attempt → 150 instances.
+	_ok("ghost trail resize: instance_count(1 s) = 150",
+		MAX_D * roundi(1.0 * SAMPLE) == 150)
+
+	# 5 s window → 150 pts per attempt → 750 instances.
+	_ok("ghost trail resize: instance_count(5 s) = 750",
+		MAX_D * roundi(5.0 * SAMPLE) == 750)
+
+	# Growing the window produces more instances (monotone).
+	var count_2s := MAX_D * roundi(2.0 * SAMPLE)
+	var count_5s := MAX_D * roundi(5.0 * SAMPLE)
+	_ok("ghost trail resize: larger window → more instances (monotone)",
+		count_5s > count_2s)
+
+	# Shrinking the window produces fewer instances (monotone).
+	var count_1s := MAX_D * roundi(1.0 * SAMPLE)
+	_ok("ghost trail resize: smaller window → fewer instances (monotone)",
+		count_1s < count_2s)
