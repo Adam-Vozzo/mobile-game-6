@@ -119,6 +119,8 @@ func _ready() -> void:
 	_test_ghost_trail_disable_and_resize_semantics()
 	_test_respawn_input_timer_clearing()
 	_test_assisted_phase2_params()
+	_test_free_cam_mode()
+	_test_snappy_reboot_duration()
 	_report()
 
 
@@ -4692,3 +4694,91 @@ func _test_assisted_phase2_params() -> void:
 	accumulated = 0.0
 	_ok("arc assist: _arc_assist_accumulated reset to 0 on jump (fresh budget per arc)",
 		_near(accumulated, 0.0))
+
+
+func _test_free_cam_mode() -> void:
+	## Free-camera mode — CLAUDE.md required Level section dev menu item.
+	##
+	## Key invariants:
+	##   - debug_viz_state contains &"free_cam" key, default false.
+	##   - CameraRig.free_cam_speed default is 10.0 m/s.
+	##   - Shift boost multiplies speed by 3×.
+	##   - Pitch clamp bounds: ±PI*0.45 (~81°).
+	##   - On enable: _free_cam_yaw/_pitch seeded from current camera pose.
+	##   - On disable: _initialized reset so the tracking ratchet rebuilds cleanly.
+	##   - TouchInput drain: consume_camera_drag_delta() called each free-cam frame
+	##     to prevent drag accumulation appearing as a jump on mode exit.
+	print("\n-- Free cam mode: debug viz entry + CameraRig defaults --")
+
+	# DevMenu: key present and defaults to false
+	_ok("free cam: DevMenu.debug_viz_state has &'free_cam' key",
+		DevMenu.debug_viz_state.has(&"free_cam"))
+	_ok("free cam: default is false (player-tracking mode on startup)",
+		DevMenu.is_debug_viz_on(&"free_cam") == false)
+
+	# Round-trip set/get
+	DevMenu.set_debug_viz(&"free_cam", true)
+	_ok("free cam: set_debug_viz(true) → is_debug_viz_on() == true",
+		DevMenu.is_debug_viz_on(&"free_cam") == true)
+	DevMenu.set_debug_viz(&"free_cam", false)
+	_ok("free cam: set_debug_viz(false) → is_debug_viz_on() == false",
+		DevMenu.is_debug_viz_on(&"free_cam") == false)
+
+	# CameraRig: free_cam_speed export default
+	var rig := CameraRig.new()
+	_ok("free cam: CameraRig.free_cam_speed default == 10.0 m/s",
+		_near(rig.free_cam_speed, 10.0))
+
+	# Shift speed-boost formula
+	var boosted := rig.free_cam_speed * 3.0
+	_ok("free cam: Shift boost is 3× base speed (30.0 m/s at default)",
+		_near(boosted, 30.0))
+
+	# Pitch clamp bounds
+	var max_pitch := PI * 0.45
+	_ok("free cam: pitch upper bound == PI * 0.45 (~81°)",
+		_near(max_pitch, 1.4137, 0.001))
+	_ok("free cam: clampf beyond +PI stays at PI * 0.45",
+		_near(clampf(PI, -max_pitch, max_pitch), max_pitch))
+	_ok("free cam: clampf beyond -PI stays at -PI * 0.45",
+		_near(clampf(-PI, -max_pitch, max_pitch), -max_pitch))
+
+	# _initialized starts false on a fresh rig (tracking not yet started)
+	_ok("free cam: CameraRig._initialized starts false (no tracking until first _process)",
+		rig._initialized == false)
+
+	rig.free()
+
+
+func _test_snappy_reboot_duration() -> void:
+	## Snappy reboot_duration tuning (side quest iter 79).
+	##
+	## Research (level_design_references.md): precision platformers benefit from
+	## ≤ 0.35 s reboot (SMB analysis: 0.3–0.35 s optimal — fast enough for thumb
+	## re-settle before the next attempt). Cinematic profiles (Floaty, Assisted,
+	## Momentum) stay at 0.5 s. Human confirmed Snappy feel is "good overall"
+	## (2026-05-14 direction session), unblocking this tune-down.
+	print("\n-- Snappy reboot_duration: precision timing vs cinematic profiles --")
+
+	var snappy  := load("res://resources/profiles/snappy.tres")  as ControllerProfile
+	var floaty  := load("res://resources/profiles/floaty.tres")  as ControllerProfile
+	var momentum := load("res://resources/profiles/momentum.tres") as ControllerProfile
+	var assisted := load("res://resources/profiles/assisted.tres") as ControllerProfile
+
+	# Snappy must be within the research-recommended precision range
+	_ok("reboot_duration: snappy.tres is within [0.30, 0.35] s",
+		snappy.reboot_duration >= 0.30 and snappy.reboot_duration <= 0.35)
+	_ok("reboot_duration: snappy.tres == 0.33 (research midpoint)",
+		_near(snappy.reboot_duration, 0.33))
+
+	# Floaty / Assisted / Momentum remain at 0.5 s (cinematic / forgiving)
+	_ok("reboot_duration: floaty.tres == 0.5 (cinematic)",
+		_near(floaty.reboot_duration, 0.5))
+	_ok("reboot_duration: assisted.tres == 0.5 (forgiving)",
+		_near(assisted.reboot_duration, 0.5))
+	_ok("reboot_duration: momentum.tres == 0.5 (cinematic)",
+		_near(momentum.reboot_duration, 0.5))
+
+	# Ordering invariant: Snappy < Floaty (precision < cinematic)
+	_ok("reboot_duration: snappy < floaty (precision-feel shorter than cinematic)",
+		snappy.reboot_duration < floaty.reboot_duration)

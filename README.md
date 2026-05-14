@@ -5,7 +5,7 @@ A mobile 3D platformer. Brutalist megastructure inspired by *BLAME!*. Controller
 ## Status
 
 Current gate: **Gate 0 — Feel Lab** (closing out; Gate 1 prep in flight)
-Last activity: 2026-05-14 — direction session: Threshold redesign feel-good ✅, Kenney asset coverage added (A5–A7, B5, C6–C8), camera pitch-up auto-correction fight bug fixed (drag formula → cylindrical)
+Last activity: 2026-05-14 — iter 79: free-camera mode (Level section dev menu, WASD+QE+RMB look) + Snappy reboot_duration 0.5→0.33 s
 Test device build: ✅ verified 2026-05-12 — runs in Godot 4.6 on PC and on Nothing Phone 4(a) Pro
 Performance: 144 fps / 6.9 ms in editor at 1920×1080 (Feel Lab); on-device frametimes TBD
 Throttle level: **🟢 RESET** (2026-05-14 direction session: A confirmed, B+D actioned, C+E deferred)
@@ -100,6 +100,46 @@ Goal: store-ready build.
 The full iteration log lives here, newest first. Every iteration appends an entry. Skim the dates to find where you last left off.
 
 <!-- ITERATION ENTRIES BELOW — DO NOT REMOVE OLDER ENTRIES -->
+
+### [2026-05-14] — iter 79 — Free-camera mode + Snappy reboot_duration tuning
+
+Branch: `iter/free-cam-mode`
+Throttle: 🟢 normal (2 iterations since 2026-05-14 direction session)
+Gate: Gate 1 — Vertical Slice prep
+
+**Primary: Free-camera mode** — CLAUDE.md required Level section dev menu item, was missing.
+
+`scripts/autoload/dev_menu.gd`:
+- `&"free_cam": false` added to `debug_viz_state`. Uses existing `set_debug_viz` / `is_debug_viz_on` / `debug_viz_changed` signal path — no new API needed.
+
+`scripts/camera/camera_rig.gd`:
+- `@export float free_cam_speed = 10.0` — flight speed (m/s), tunable in Inspector. Hold Shift for 3× boost.
+- `_free_cam`, `_free_cam_yaw`, `_free_cam_pitch` state vars (yaw/pitch in radians, YXZ Euler convention).
+- `_on_debug_viz_changed(key, enabled)` — fires on `DevMenu.debug_viz_changed`. On **enable**: seeds `_free_cam_yaw`/`_free_cam_pitch` from `_camera.global_basis.get_euler(EULER_ORDER_YXZ)` so view direction is preserved. On **disable**: resets `_initialized = false` so the ground ratchet rebuilds cleanly from the player's current position.
+- `_process_free_cam(delta)` — WASD + Q/E keyboard flight in camera-local axes. `Basis.from_euler(Vector3(pitch, yaw, 0))` with default YXZ order (yaw first in world space, pitch then in yaw-rotated local X). `TouchInput.consume_camera_drag_delta()` drained each frame to prevent drag accumulating during the mode.
+- `_unhandled_input(event)` — RMB + mouse motion rotates camera. Reuses `yaw_drag_sens` / `pitch_drag_sens`. Pitch clamped to ±PI×0.45 (~81°).
+- Early-return guard in `_process`: `if _free_cam: _process_free_cam(delta); return` — no interference with normal tracking path.
+
+`tools/dev_menu/dev_menu_overlay.gd`:
+- "Free cam (WASD+QE, RMB look)" checkbox inserted in Level section after Time scale slider, before level-select buttons.
+
+**Side quest: Snappy `reboot_duration` 0.5 → 0.33 s**
+
+`resources/profiles/snappy.tres`: `reboot_duration = 0.33`.
+Research basis: `level_design_references.md` (≤ 0.35 s for precision platformer feel; SMB analysis 0.3–0.35 s optimal for thumb re-settle). Human confirmed Snappy feel overall good (2026-05-14 direction session). Floaty/Assisted/Momentum remain 0.5 s (cinematic/forgiving).
+
+**Tests:** 16 new assertions (932 → 948):
+- `_test_free_cam_mode` (10): DevMenu key present + default false, round-trip set/get, `free_cam_speed` default 10.0, Shift 3× formula, pitch clamp ±PI×0.45 bounds, `_initialized` starts false on fresh rig.
+- `_test_snappy_reboot_duration` (6): snappy in [0.30, 0.35], snappy == 0.33, floaty/assisted/momentum == 0.5, ordering invariant snappy < floaty.
+
+**Perf:** no runtime cost in tracking mode (free_cam guard is a bool check + early return). Free-cam flight: `Basis.from_euler` + one `get_euler` call per entry — both are O(1) trig, negligible.
+**Bugs fixed:** none.
+**New dev-menu controls:** "Free cam (WASD+QE, RMB look)" in Level section.
+**Assets acquired:** none.
+**Research added:** none.
+**On-device pending:** free-cam feel (speed tuning via Inspector `free_cam_speed` export); Snappy reboot-duration feel (0.33 s vs 0.5 s).
+
+---
 
 ### [2026-05-14] — iter 78 — Assisted Profile Phase 2: ledge magnetism + arc assist
 

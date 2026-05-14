@@ -21,4 +21,4 @@ air_jumps = 1
 air_jump_velocity_multiplier = 0.9
 max_floor_angle_degrees = 50.0
 fall_kill_y = -35.0
-reboot_duration = 0.5
+reboot_duration = 0.33

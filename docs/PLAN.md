@@ -16,7 +16,7 @@ authored with it in mind.
 
 ## Active iteration
 
-- _No iteration currently in flight._
+- **🟢 Iter 79 complete.** Free-camera mode (CLAUDE.md required Level section dev menu item, was missing). `debug_viz_state[&"free_cam"]` added to `dev_menu.gd`. `camera_rig.gd`: `free_cam_speed` export (10.0 m/s), `_free_cam`/`_free_cam_yaw`/`_free_cam_pitch` state; `_on_debug_viz_changed` seeds Euler angles from `_camera.global_basis.get_euler(YXZ)` on enable, resets `_initialized` on disable; `_process_free_cam` (WASD+QE + Shift 3× boost); `_unhandled_input` (RMB+drag look, yaw_drag_sens / pitch_drag_sens reused, ±PI×0.45 pitch clamp). Dev menu Level section gains "Free cam (WASD+QE, RMB look)" checkbox. 10 unit tests (`_test_free_cam_mode`). Side quest: Snappy `reboot_duration` 0.33 s (was 0.5 s) — per `level_design_references.md` research (≤ 0.35 s for precision feel); Floaty/Assisted/Momentum stay at 0.5 s. 6 unit tests (`_test_snappy_reboot_duration`). 932 → 948 assertions. On-device pending.
 - **🟢 THROTTLE RESET 2026-05-14.** Human direction session captured iter-77 verdicts: A (Threshold redesign) feels a lot better — open-level direction confirmed; B (asset picks) — "get some options from Kenney also", `docs/ASSET_OPTIONS.md` extended with Kenney candidates A5–A7 / B5 / C6–C8; C (air-dash mode) and E (texture-pass timing) — TBD, loop will not block on them; D (camera `pitch_max=70°`) — ceiling correct, but the user surfaced an "auto-correction fights when pitching up and holding" bug. Fixed in same session: `_apply_drag_input` used spherical XZ (`cos(elev)` factor) while `_compute_ground_camera_pos` enforces cylindrical XZ at full distance — the ground branch was easing the camera back out from the drag pose over ~0.5 s. Drag formula now matches ground branch; `_test_tripod_drag_orbit` rewritten and a 70°-pitch consistency assertion added.
 - **Iter 77 complete.** Hardening only: refactor `_run_reboot_effect` (41→32 lines) — extracted `_play_death_squish(duration)` and `_play_reboot_grow(duration)` helpers; both now tracked via `_squash_tween` (consistent with `_play_land_squash` / `_play_jump_stretch` / `_play_dash_stretch`). `_build_ui` and `_make_slider` were found within 40 lines — removed from backlog. 2 new tween-containment assertions in `_test_respawn_params` (920 → 922). JUICE.md "Death squish" entry updated to reference new helpers.
 - **Iter 76 complete.** Hardening only: 16 new unit tests — `_test_ghost_trail_disable_and_resize_semantics` (8 assertions: blank-after-resize fix semantics, disabled-path 300× cost reduction, one-time disable blank) + `_test_respawn_input_timer_clearing` (8 assertions: buffer/coyote/air-jumps/dash clearing, double-respawn guard, physics block). 904 → 920 assertions. Refactor backlog notes added for `_run_reboot_effect` (45 lines), `_build_ui` (~41 lines), `_make_slider` (~43 lines) — all marginal, defer.
@@ -166,10 +166,11 @@ The next iteration should pull from the top of this list. Items marked
   is decorative for now (player already reads the resource). No action
   needed until a second consumer appears.
 - ~~**Momentum profile speed ramp.**~~ Done (iter 68). `speed_ramp_rate` + `ramp_max_speed` added to `ControllerProfile`; `_ramp_speed` state in `player.gd`; Momentum `.tres` gets `speed_ramp_rate = 4.0`, `ramp_max_speed = 18.0`. Dev menu "Ramp rate" + "Ramp top speed" sliders. 10 unit tests. On-device pending — profile now meaningfully distinct from Snappy/Floaty.
-- **Snappy reboot_duration tuning.** Research note (level_design_references.md)
-  recommends ≤ 0.35 s for precision feel (current default 0.5 s is "cinematic").
-  Tune after first on-device feel; SMB analysis suggests 0.3–0.35 s. Floaty
-  profile may keep 0.5 s. Defer until human confirms Snappy feels right otherwise.
+- ~~**Snappy reboot_duration tuning.**~~ Done (iter 79 side quest). `snappy.tres`
+  `reboot_duration = 0.33` (was 0.5). Per `level_design_references.md` (≤ 0.35 s
+  for precision feel, SMB 0.3–0.35 s optimal). Human confirmed Snappy feel good
+  (2026-05-14 direction session). Floaty/Assisted/Momentum remain at 0.5 s.
+  6 unit tests (`_test_snappy_reboot_duration`). On-device pending.
 
 ### P2 — Opportunistic
 
@@ -230,6 +231,14 @@ These mirror "Open questions waiting on you" in the README.
 
 ## Recently completed (last 5)
 
+- 2026-05-14 — iter 79. **Free-camera mode + Snappy reboot_duration tuning.**
+  `camera_rig.gd`: `free_cam_speed` export, `_free_cam`/`_free_cam_yaw`/`_free_cam_pitch` state,
+  `_on_debug_viz_changed` (seeds YXZ Euler from `_camera.global_basis` on enable; resets `_initialized`
+  on disable), `_process_free_cam` (WASD+QE fly, Shift 3×, Basis.from_euler YXZ), `_unhandled_input`
+  (RMB+mouse look, ±PI×0.45 pitch clamp). `dev_menu.gd`: `&"free_cam": false` added to `debug_viz_state`.
+  `dev_menu_overlay.gd`: "Free cam (WASD+QE, RMB look)" checkbox in Level section. Side quest:
+  `snappy.tres`: `reboot_duration = 0.33` (was 0.5; research: ≤ 0.35 s for precision feel;
+  Floaty/Assisted/Momentum stay 0.5 s). 16 unit tests (932 → 948).
 - 2026-05-14 — iter 78. **Assisted Phase 2 — ledge magnetism + arc assist.** 3 new `ControllerProfile`
   params + `_attract_to_ledge()` + `_apply_arc_assist()` in `player.gd`. `assisted.tres` defaults:
   `ledge_magnet_radius=0.20`, `ledge_magnet_strength=1.0`, `arc_assist_max=0.40`. 3 dev-menu sliders

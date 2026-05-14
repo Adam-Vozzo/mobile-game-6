@@ -268,6 +268,7 @@ func _build_level_section(vbox: VBoxContainer) -> void:
 			Engine.time_scale = v
 			DevMenu.time_scale_changed.emit(v),
 		1.0)
+	_make_viz_checkbox(vbox, "Free cam (WASD+QE, RMB look)", &"free_cam")
 	_build_level_select(vbox)
 	_build_feel_lab_teleports(vbox)
 	_build_threshold_teleports(vbox)
