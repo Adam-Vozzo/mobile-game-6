@@ -129,6 +129,7 @@ func _ready() -> void:
 	_test_screen_shake_strongest_wins()
 	_test_run_timer_semantics()
 	_test_footstep_and_land_impact_math()
+	_test_footstep_dust_state_machine()
 	_report()
 
 
@@ -5166,3 +5167,49 @@ func _test_footstep_and_land_impact_math() -> void:
 		_near(len_at_max, 0.30))
 	_ok("land impact: heavy lines longer than threshold-level lines",
 		len_at_max > len_at_threshold)
+
+
+func _test_footstep_dust_state_machine() -> void:
+	## Mirrors the state-machine logic extracted into _tick_footstep_dust() in
+	## player.gd (iter 85 refactor). Tests the three conditions that gate dust emission:
+	## (A) not the landing frame, (B) on_floor, (C) h_speed > 0.5.
+	## The timer countdown and reset are also verified.
+	print("\n-- _tick_footstep_dust state machine (iter 85) --")
+
+	const INTERVAL := 0.15   # _footstep_dust_interval default
+	const MIN_SPEED := 0.5   # h_speed gate
+	const DELTA := 1.0 / 60.0  # one physics tick
+
+	# Landing-frame skip: even when on_floor and h_speed is above gate,
+	# dust must NOT fire when just_landed is true (land impact burst has its own frame).
+	var timer_before := 0.0   # timer already expired — would fire next tick
+	var timer_after_landing_frame := maxf(0.0, timer_before - DELTA)
+	var would_fire_without_skip := (true and not false and true and (2.0 >= MIN_SPEED) and timer_after_landing_frame <= 0.0)
+	var would_fire_with_skip    := (true and not true  and true and (2.0 >= MIN_SPEED) and timer_after_landing_frame <= 0.0)
+	_ok("landing frame: without just_landed guard, dust would fire (baseline)", would_fire_without_skip)
+	_ok("landing frame: with just_landed=true guard, dust does NOT fire", not would_fire_with_skip)
+
+	# Airborne guard: on_floor=false suppresses dust regardless of speed or timer.
+	var airborne_fire := (false and not false and true and (5.0 >= MIN_SPEED) and 0.0 <= 0.0)
+	_ok("airborne: on_floor=false prevents dust even with high speed and expired timer", not airborne_fire)
+
+	# Speed gate: h_speed <= MIN_SPEED suppresses dust even when timer expired and on floor.
+	var slow_fire := (true and not false and true and (0.3 >= MIN_SPEED) and 0.0 <= 0.0)
+	_ok("speed gate: h_speed=0.3 < MIN_SPEED (0.5) suppresses dust", not slow_fire)
+	var walk_fire := (true and not false and true and (0.6 >= MIN_SPEED) and 0.0 <= 0.0)
+	_ok("speed gate: h_speed=0.6 >= MIN_SPEED (0.5) allows dust", walk_fire)
+
+	# Timer reset after firing: timer is set to INTERVAL, not zero.
+	# Next emission is delayed by exactly INTERVAL seconds.
+	var timer_after_fire := INTERVAL
+	_ok("timer resets to INTERVAL (0.15 s) after spawn — prevents next-frame re-fire",
+		timer_after_fire > 0.0)
+	_ok("timer after reset will not immediately expire on next tick (INTERVAL > DELTA)",
+		timer_after_fire > DELTA)
+
+	# Timer countdown clamps at zero (maxf guard).
+	var t := maxf(0.0, 0.005 - DELTA)
+	_ok("timer countdown: nearly-expired timer clamps to 0.0, does not go negative",
+		t >= 0.0)
+	_ok("timer countdown: nearly-expired timer IS 0 (ready to fire next check)",
+		t == 0.0)

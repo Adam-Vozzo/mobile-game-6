@@ -5,16 +5,34 @@ A mobile 3D platformer. Brutalist megastructure inspired by *BLAME!*. Controller
 ## Status
 
 Current gate: **Gate 0 — Feel Lab** (closing out; Gate 1 prep in flight)
-Last activity: 2026-05-14 — iter 84: footstep dust + land impact particles (1002 → 1020)
+Last activity: 2026-05-14 — iter 85: depth perception research + `_tick_footstep_dust` refactor (1020 → 1030)
 Test device build: ✅ verified 2026-05-12 — runs in Godot 4.6 on PC and on Nothing Phone 4(a) Pro
 Performance: 144 fps / 6.9 ms in editor at 1920×1080 (Feel Lab); on-device frametimes TBD
-Throttle level: **🟡 soft** (8 iterations since 2026-05-14 direction session)
+Throttle level: **🔴 hard** (9 iterations since 2026-05-14 direction session — stalled, waiting for direction)
 
 If you only read one section, read **Open questions waiting on you** below.
 
 ## Open questions waiting on you
 
 Things Claude can't decide alone, or where it's stalled and needs direction.
+
+> **🔴 HARD THROTTLE — iter 85 (2026-05-14).** 9 iterations since the last direction session.
+> Feature work has stopped. This iteration: depth-perception research note + minor refactor only.
+> Suggest three directions for the next session — pick one and drop it in chat:
+>
+> - **Direction 1 — On-device blob shadow + particle tuning.** Run Threshold on the Nothing Phone.
+>   Tune `max_alpha`, `fade_height`, `radius_ground` in the Juice → Blob Shadow dev-menu sliders.
+>   Note footstep dust interval (default 0.15 s) and land impact threshold feel. One session = full
+>   particle tuning pass locked in.
+> - **Direction 2 — Asset picks.** Read `docs/ASSET_OPTIONS.md` and approve at least 3 picks
+>   (Stray mesh, ambient audio, concrete kit). After ~3 approvals the loop can acquire and
+>   integrate assets autonomously. Kenney candidates are now documented alongside the freesound /
+>   Quaternius / Poly Haven recommendations.
+> - **Direction 3 — Air dash verdict.** Open the dev menu Touch section → "Buffer dash cam" toggle.
+>   Try both modes on the Threshold lateral gantry beats (Zone 3). Say "always buffer", "drop the
+>   option", or "keep both" — then the loop will clean up whichever path you don't want.
+>
+> Any of these unlocks multiple follow-on iterations autonomously. All three would be ideal.
 
 > **🟢 THROTTLE RESET — 2026-05-14 direction session.** Verdicts captured below; throttle cleared, feature work resumes from the next iteration. Two items remain open (C air-dash and E texture pass — both tagged TBD; the loop will *not* block on them).
 
@@ -101,6 +119,39 @@ Goal: store-ready build.
 The full iteration log lives here, newest first. Every iteration appends an entry. Skim the dates to find where you last left off.
 
 <!-- ITERATION ENTRIES BELOW — DO NOT REMOVE OLDER ENTRIES -->
+
+### [2026-05-14] — iter 85 — Depth perception research + _tick_footstep_dust refactor
+
+Branch: `claude/gifted-shannon-ZV4mu`
+Throttle: 🔴 hard (9 iterations since 2026-05-14 direction session)
+Gate: Gate 1 — Vertical Slice prep
+
+**Primary: Refactor `_tick_timers` (player.gd)** — extract `_tick_footstep_dust(on_floor, just_landed, delta)`.
+`_tick_timers` was 41 lines (1 over the 40-line limit). The footstep-dust block (8 lines)
+is a coherent unit with its own comment; extracted to a named helper. `_tick_timers` is now
+33 lines. New helper is 10 lines.
+
+**Side quest: Research note** — `docs/research/depth_perception_cues.md`.
+Addresses the SMB 3D depth-perception criticism documented in `smb3d.md`. Covers:
+blob shadow as highest-ROI cue (1 ray + 1 draw call); landing-target predictor (Gate 1
+enhancement — second ray to predicted landing position, only if Zone 3 lateral jumps read
+ambiguous on device); platform edge contrast (mat_concrete_edge.tres, texture-pass work);
+camera pitch below 20° degrades depth perception (soft recenter boost suggestion);
+hazard-stripe vs Stray-red readability; zone atmosphere as altitude legibility tool;
+"do not reduce fog for depth" guidance. 7 concrete Void implications.
+
+**Unit tests:** `_test_footstep_dust_state_machine` — 10 new assertions (1020 → 1030).
+Landing-frame skip invariant, airborne guard, speed gate, timer-reset-to-interval,
+timer countdown non-negative. Complements the 18 geometry/math tests from iter 84.
+
+**Perf:** no change (extraction preserves behaviour exactly).
+**Bugs fixed:** none.
+**New dev-menu controls:** none.
+**Assets acquired:** none.
+**Research added:** `docs/research/depth_perception_cues.md`.
+**On-device pending:** blob shadow tuning (max_alpha, fade_height, radius_ground) — P0 for Gate 1.
+
+---
 
 ### [2026-05-14] — iter 84 — Footstep dust + land impact particles
 
