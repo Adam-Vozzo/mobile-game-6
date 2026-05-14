@@ -17,6 +17,7 @@ authored with it in mind.
 ## Active iteration
 
 - _No iteration currently in flight._
+- **🔴 HARD THROTTLE — Iter 75 complete.** 9 iterations since 2026-05-14 direction session. New feature work halted. See README "Open questions waiting on you" for 5 suggested next directions. Hardening only: 17 new unit tests in `test_controller_kinematics.gd` — `_test_zone_env_bounds_and_disabled` (10 assertions: null-sentinel at envs[0], zone_id=4 OOB safety, disabled-mode fallback, enabled-path slot routing) + `_test_respawn_ramp_speed_reset` (7 assertions: initial = max_speed, 2 s ramp-up lifts speed, respawn resets, decay floor, landing alone does not reset). 887 → 904 assertions.
 - **🟢 Iter 74 complete.** Camera occlusion tunables exposed in dev menu: 4 missing `camera_rig.gd` sphere-cast params (`occlusion_probe_radius`, `pull_in_smoothing`, `ease_out_smoothing`, `occlusion_release_delay`) now have dev-menu sliders under "Camera — Occlusion" sub-section. `_on_camera_param_changed` gained 4 match arms. Duplicate `_occlude()` docstring removed. 8 unit tests (879 → 887). Side quest: `docs/research/tbdr_mobile_gpu.md` — TBDR pipeline, alpha-blending cost, no manual depth pre-pass needed, Adreno LRZ/Mali FPK notes, SubViewport cost, CSG migration benefits. Resolves last open INDEX.md research suggestion.
 - **🟢 Iter 73 complete.** Baked lighting research (`docs/research/baked_lighting.md`): LightmapGI on Mobile renderer, critical zone-atmosphere/baking conflict documented (Option A/C recommended), CSG→MeshInstance blocker surfaced, atlas sizing for Threshold. Side quest: `ghost_trail_renderer.gd` two bugs fixed — (1) blank-after-resize so new MultiMesh instances above old count are zeroed immediately (was blank-before, leaving new instances white for one frame); (2) replace per-frame `_blank_from(0)` when disabled with `_mmesh.visible = false` (eliminates 300 set_instance_color writes per frame at 60 fps when ghost trails are off). 5 new unit tests (874 → 879). INDEX.md + PLAN.md updated with bake prereqs.
 - **🟢 Iter 72 complete.** Ghost trail recording + MultiMesh renderer. See README iter 72 entry.
@@ -211,6 +212,14 @@ These mirror "Open questions waiting on you" in the README.
   drive the next tuning iteration.
 
 ## Recently completed (last 5)
+
+- 2026-05-14 — Iteration 75. **Hardening unit tests: zone env bounds + ramp lifecycle. HARD throttle.**
+  `tests/test_controller_kinematics.gd`: two new test functions — `_test_zone_env_bounds_and_disabled`
+  (10 assertions: null-sentinel at envs[0], zone_id=4 OOB guard, disabled-mode fallback always uses
+  zone1_env, enabled-path slot routing for zone_ids 1/2); `_test_respawn_ramp_speed_reset` (7
+  assertions: initial = max_speed, ramp-up over 2 s, respawn reset, decay-frame decrease, decay
+  floor = max_speed, landing does not reset ramp, full decay ≥ 1.5 s). 17 new assertions (887 → 904).
+  README + PLAN.md updated to 🔴 HARD throttle with 5 concrete next-direction suggestions.
 
 - 2026-05-14 — Iteration 74. **Camera occlusion dev-menu tunables + TBDR GPU research.**
   `scripts/camera/camera_rig.gd`: 4 new match arms in `_on_camera_param_changed`

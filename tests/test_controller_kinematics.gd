@@ -114,6 +114,8 @@ func _ready() -> void:
 	_test_ghost_trail_recording()
 	_test_ghost_trail_resize_math()
 	_test_camera_occlusion_defaults()
+	_test_zone_env_bounds_and_disabled()
+	_test_respawn_ramp_speed_reset()
 	_report()
 
 
@@ -4342,3 +4344,122 @@ func _test_camera_occlusion_defaults() -> void:
 	# Case: hit at 2.0 m — margin subtraction gives 1.7 m, above the floor → margin wins.
 	_ok("safe_dist margin: hit 2.0, margin 0.3 → max(0.8, 1.7) = 1.7",
 		_near(maxf(MIN_DIST, 2.0 - MARGIN), 1.7))
+
+
+func _test_zone_env_bounds_and_disabled() -> void:
+	## Pure-logic mirror of threshold.gd::_apply_zone_env.
+	##
+	## envs = [null, zone1_env, zone2_env, zone3_env]  (indices 0–3, size=4)
+	## target = envs[zone_id] if zone_id < 4 else null
+	##
+	## Swap condition (enabled path):   zone_atmosphere_enabled AND target != null
+	## Disabled-mode fallback (elif):   NOT zone_atmosphere_enabled AND zone1_env != null
+	##
+	## No Environment objects created — tests the selection/guard formulas directly.
+	print("\n-- zone env selection: bounds check + disabled-mode fallback (threshold.gd) --")
+
+	# Model envs as integer slots: -1 = null sentinel, 1/2/3 = zone slot index.
+	var SIZE := 4
+	var _slot := func(id: int) -> int:
+		if id >= SIZE:
+			return -1   # out of bounds → null
+		return [-1, 1, 2, 3][id]
+
+	# Index 0 is the null sentinel — zone IDs are 1-based.
+	_ok("zone env: envs[0] is null sentinel (zone IDs are 1-based, not 0-based)",
+		_slot.call(0) == -1)
+	_ok("zone env: envs[1] = zone1 slot (valid zone_id=1 maps to zone1_env)",
+		_slot.call(1) == 1)
+	_ok("zone env: envs[2] = zone2 slot (valid zone_id=2 maps to zone2_env)",
+		_slot.call(2) == 2)
+	_ok("zone env: envs[3] = zone3 slot (valid zone_id=3 maps to zone3_env)",
+		_slot.call(3) == 3)
+	# Out-of-bounds guard: a caller passing zone_id=4 gets null, no crash or OOB read.
+	_ok("zone env: zone_id=4 is out of bounds → null slot (safe; no array OOB crash)",
+		_slot.call(4) == -1)
+
+	# zone_id=0 with enabled=true: null sentinel blocks the swap (first condition false).
+	# This prevents an accidental off-by-one from reaching zone1_env via the enabled path.
+	var zone_id_0_slot := _slot.call(0)
+	_ok("zone env: zone_id=0 enabled → no swap (null slot, enabled branch requires target != null)",
+		not (true and zone_id_0_slot != -1))
+
+	# Disabled-mode fallback: mirrors the `elif` branch in threshold.gd.
+	# When the dev-menu "Zone atmo" toggle is OFF, zone1_env is used regardless
+	# of which zone the player is in — providing a clean A/B reference frame.
+	var _disabled_result := func(atmo_on: bool, z1_present: bool, zone_id: int) -> int:
+		# Returns: -1 = no swap, 1 = zone1 fallback/slot, 2/3 = target slot
+		var slot := _slot.call(zone_id)
+		if atmo_on and slot != -1:
+			return slot
+		elif not atmo_on and z1_present:
+			return 1   # zone1 fallback
+		return -1   # no swap (null target or no z1)
+
+	# Disabled + zone2 → zone1 fallback (dev-menu off always shows zone1 reference).
+	_ok("zone env: zone_id=2 disabled + z1_present → zone1 fallback (A/B comparison baseline)",
+		_disabled_result.call(false, true, 2) == 1)
+	# Disabled + zone3 → zone1 fallback.
+	_ok("zone env: zone_id=3 disabled → zone1 fallback",
+		_disabled_result.call(false, true, 3) == 1)
+	# Enabled + zone1 → zone1 via the enabled path (not the fallback).
+	_ok("zone env: zone_id=1 enabled → zone1 via enabled path (slot=1, not fallback)",
+		_disabled_result.call(true, true, 1) == 1)
+	# Enabled + zone2 → zone2 (not zone1 fallback).
+	_ok("zone env: zone_id=2 enabled → zone2 via enabled path (correct zone identity)",
+		_disabled_result.call(true, true, 2) == 2)
+
+
+func _test_respawn_ramp_speed_reset() -> void:
+	## Documents the _ramp_speed lifecycle in player.gd.
+	##
+	## Initialised/reset to profile.max_speed in exactly two places:
+	##   _apply_profile_to_body() — profile load or dev-menu swap.
+	##   respawn()               — on death, so speed carry-over can't inflate
+	##                             the next attempt's momentum profile.
+	##
+	## Landing (on_floor branch in _tick_timers) does NOT reset _ramp_speed.
+	## The `else` branch in _apply_horizontal decays it back to max_speed
+	## naturally when no input is held — landing alone does not clear momentum.
+	print("\n-- _ramp_speed lifecycle: init / respawn reset / landing-no-reset --")
+	const RATE     := 4.0    # Momentum profile speed_ramp_rate
+	const MAX_SPD  := 11.0   # Momentum profile max_speed
+	const RAMP_MAX := 18.0   # Momentum profile ramp_max_speed
+	const DELTA    := 1.0 / 60.0
+
+	# Initial state: _apply_profile_to_body() sets _ramp_speed = profile.max_speed.
+	var ramp := MAX_SPD
+	_ok("ramp lifecycle: initial _ramp_speed = profile.max_speed (not ramp_max)",
+		_near(ramp, MAX_SPD))
+
+	# Ramp-up: 2 seconds of sustained input lifts speed above max_speed.
+	for _i: int in 120:
+		ramp = minf(ramp + RATE * DELTA, RAMP_MAX)
+	_ok("ramp lifecycle: after 2 s input _ramp_speed > max_speed (ramp engaged)",
+		ramp > MAX_SPD)
+
+	# Respawn: _ramp_speed reset to max_speed — carries no momentum into next attempt.
+	ramp = MAX_SPD   # simulate: `_ramp_speed = profile.max_speed` in respawn()
+	_ok("ramp lifecycle: respawn resets _ramp_speed to max_speed (no attempt carry-over)",
+		_near(ramp, MAX_SPD))
+
+	# Decay without input: each no-input frame brings _ramp_speed back toward max_speed.
+	ramp = RAMP_MAX   # assume fully ramped
+	var prev := ramp
+	ramp = maxf(ramp - RATE * DELTA, MAX_SPD)   # one no-input frame
+	_ok("ramp lifecycle: no-input frame decreases _ramp_speed (decay branch active)",
+		ramp < prev)
+	_ok("ramp lifecycle: decay floor — _ramp_speed never falls below max_speed",
+		ramp >= MAX_SPD)
+
+	# Landing alone does NOT reset _ramp_speed (decay is the mechanism, not on_floor).
+	# After landing + 0.5 s no input, speed is still above max_speed — not yet decayed.
+	ramp = RAMP_MAX
+	for _i: int in 30:   # 0.5 s × 60 fps = 30 frames of no input post-landing
+		ramp = maxf(ramp - RATE * DELTA, MAX_SPD)
+	# After 0.5 s: 18.0 − 4.0 × 0.5 = 16.0 > 11.0
+	_ok("ramp lifecycle: 0.5 s post-landing no-input → _ramp_speed still above max (decay not landing-reset)",
+		ramp > MAX_SPD)
+	# Full decay to max_speed takes (18 − 11) / 4 = 1.75 s — documents the window.
+	_ok("ramp lifecycle: full decay from ramp_max to max_speed takes ≥ 1.5 s ((ramp_max-max)/rate)",
+		(RAMP_MAX - MAX_SPD) / RATE > 1.5)

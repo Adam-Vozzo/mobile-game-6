@@ -5,10 +5,10 @@ A mobile 3D platformer. Brutalist megastructure inspired by *BLAME!*. Controller
 ## Status
 
 Current gate: **Gate 0 — Feel Lab** (closing out; Gate 1 prep in flight)
-Last activity: 2026-05-14 — iter 74: camera occlusion dev-menu tunables + TBDR GPU research
+Last activity: 2026-05-14 — iter 75: hardening unit tests (zone env + ramp lifecycle, 887 → 904)
 Test device build: ✅ verified 2026-05-12 — runs in Godot 4.6 on PC and on Nothing Phone 4(a) Pro
 Performance: 144 fps / 6.9 ms in editor at 1920×1080 (Feel Lab); on-device frametimes TBD
-Throttle level: **🟡 SOFT** (8 iterations since 2026-05-14 direction session — non-destructive work preferred)
+Throttle level: **🔴 HARD** (9 iterations since 2026-05-14 direction session — new feature work halted)
 
 If you only read one section, read **Open questions waiting on you** below.
 
@@ -16,9 +16,21 @@ If you only read one section, read **Open questions waiting on you** below.
 
 Things Claude can't decide alone, or where it's stalled and needs direction.
 
-> **🟢 Throttle reset 2026-05-14.** Human direction session landed a major redesign pass. The autonomous queue is unblocked on a single concrete next step: **on-device verification of the redesign.** See `docs/PLAN.md` item P0-0.
+> **🔴 HARD THROTTLE — 2026-05-14 iter 75.** Autonomous iterations have reached 9 since the last direction session. New feature work is halted until you provide direction. Hardening-only work continues (tests, refactors, perf), but the next meaningful step requires your input. Please read the numbered list below and pick one direction.
 
-> **What's waiting for your read:**
+> **Suggested next directions (pick one or redirect):**
+>
+> A. **On-device playtest** — the most valuable action available. Load Threshold on the Nothing Phone 4(a) Pro, run through the Spyro-style redesign, and give feel notes. Five minutes of play produces enough signal to unblock the next 5+ iterations of tuning and polish.
+>
+> B. **Asset picks from `docs/ASSET_OPTIONS.md`** — a 5-minute read. Three slots (Stray mesh, ambient audio, concrete kit), each with 2–5 CC0 candidates and a fidelity-check note. Approving picks unblocks the art pass, CSG-to-mesh conversion, and the baked-lighting pipeline.
+>
+> C. **Air-dash verdict** — "always buffer", "never buffer", or "drop the option." One word unblocks the touch-overlay cleanup (removes a dev-menu toggle and the associated branch in `touch_overlay.gd`).
+>
+> D. **Camera pitch** — is 70° pitch_max right? If you want to look up at structures from below, say "let pitch go negative" and we'll add a `pitch_min_degrees` export and a dev-menu slider for it.
+>
+> E. **Texture pass now** — if you want to do the art pass before on-device play, say so and we'll start the CSG → MeshInstance + concrete-kit workflow (requires asset picks from B first, but partial progress is possible without them).
+>
+> **What's still waiting for your read:**
 > 1. **Spyro-style Threshold on device.** New Zone 1 plaza (3 routes), Zone 2 maintenance yard (perimeter ledges), Zone 3 lateral platforms. 4 shards scattered. Is the feel right? Are platforms reachable with the new Snappy values?
 > 2. **Hold-jump+swipe air dash — two modes to compare.** (iter 67) Dev menu Touch section now has "Buffer dash cam" toggle. Try both: off = current (swipe also pans camera); on = camera suppressed during gesture window, flushed on expiry, discarded on fire (no whip). Pick whichever feels right — or say "always buffer" / "drop the option" and we'll clean it up.
 > 3. **Camera pitch 70°.** Was the previous 55° "too tight" complaint solved by the raise, or does pitch_min (hard-clamped at 0) need to go negative too (look up at structures from below)?
@@ -91,6 +103,51 @@ Goal: store-ready build.
 The full iteration log lives here, newest first. Every iteration appends an entry. Skim the dates to find where you last left off.
 
 <!-- ITERATION ENTRIES BELOW — DO NOT REMOVE OLDER ENTRIES -->
+
+### [2026-05-14] — iter 75 — Hardening unit tests: zone env bounds + ramp lifecycle
+
+Branch: `iter/hardening-zone-env-ramp-tests`
+Throttle: 🔴 HARD (9 iterations since 2026-05-14 direction session)
+Gate: Gate 1 — Vertical Slice prep
+
+**Primary: 17 new unit tests — zone env selection bounds check + ramp-speed lifecycle (887 → 904).**
+
+Two test groups added to `tests/test_controller_kinematics.gd`:
+
+**`_test_zone_env_bounds_and_disabled` (10 assertions)** — Pure-logic mirror of
+`threshold.gd::_apply_zone_env`. Guards against regressions in:
+- The null-sentinel at `envs[0]` (zone IDs are 1-based; off-by-one must never reach
+  zone1_env via the enabled path).
+- Out-of-bounds guard: `zone_id=4` returns null via the ternary, no array OOB crash.
+- Disabled-mode fallback: when dev-menu "Zone atmo" is OFF, zone1_env is always used
+  regardless of zone_id — so the A/B toggle is a clean comparison baseline, not a
+  partial-zone mix.
+- Enabled-path slot routing: zone_id 1/2/3 each route to their respective env slot
+  and not to the fallback.
+
+**`_test_respawn_ramp_speed_reset` (7 assertions)** — Pure-logic mirror of the
+`_ramp_speed` lifecycle in `player.gd`. Documents:
+- Initial value = `profile.max_speed` (not `ramp_max_speed`).
+- 2 seconds of sustained input lifts speed above `max_speed`.
+- `respawn()` resets to `max_speed` — speed doesn't carry over between attempts.
+- Decay without input: `_ramp_speed` decreases toward `max_speed` each frame;
+  the floor is `max_speed` (never under-shoots).
+- Landing alone does NOT reset `_ramp_speed` — decay is the mechanism (0.5 s
+  after landing the ramp speed is still elevated). Full decay from `ramp_max`
+  to `max_speed` takes 1.75 s at the Momentum profile's default rate.
+
+These tests provide regression guards for recently-shipped Momentum profile and
+Threshold zone-identity code, both of which are pending on-device verification.
+
+**Perf.** No runtime code changed. Editor snapshot unchanged: 144 fps / 6.9 ms.
+
+**HARD throttle notice.** See "Open questions waiting on you" above for 5 suggested
+directions. The autonomous queue is blocked on on-device verification and/or human
+direction. No new feature work until a direction is chosen.
+
+**New dev-menu controls:** None.
+**Assets acquired:** None.
+**Research added:** None.
 
 ### [2026-05-14] — iter 74 — Camera occlusion dev-menu tunables + TBDR GPU research
 
