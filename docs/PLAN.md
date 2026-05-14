@@ -16,6 +16,12 @@ authored with it in mind.
 
 ## Active iteration
 
+- **🔴 Iter 86 complete. HARD THROTTLE.** BlobShadow unit tests (1030 → 1044).
+  Three new test functions in `tests/test_controller_kinematics.gd`:
+  `_test_blob_shadow_export_defaults` (5 assertions — guards four @export defaults + invariant),
+  `_test_blob_shadow_param_dispatch` (5 assertions — mirrors `_on_blob_shadow_param_changed` match),
+  `_test_blob_shadow_juice_toggle` (4 assertions — mirrors `_on_juice_changed` key filter).
+  10 iterations since last human direction. See README "Open questions" for three suggested directions.
 - **🔴 Iter 85 complete. HARD THROTTLE.** Depth perception research + `_tick_footstep_dust` refactor.
   `player.gd`: extracted `_tick_footstep_dust(on_floor, just_landed, delta)` from `_tick_timers`
   (41 lines → 33 lines). `tests/test_controller_kinematics.gd`: `_test_footstep_dust_state_machine`

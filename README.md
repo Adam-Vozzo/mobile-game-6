@@ -5,10 +5,10 @@ A mobile 3D platformer. Brutalist megastructure inspired by *BLAME!*. Controller
 ## Status
 
 Current gate: **Gate 0 — Feel Lab** (closing out; Gate 1 prep in flight)
-Last activity: 2026-05-14 — iter 85: depth perception research + `_tick_footstep_dust` refactor (1020 → 1030)
+Last activity: 2026-05-14 — iter 86: BlobShadow unit tests (1030 → 1044)
 Test device build: ✅ verified 2026-05-12 — runs in Godot 4.6 on PC and on Nothing Phone 4(a) Pro
 Performance: 144 fps / 6.9 ms in editor at 1920×1080 (Feel Lab); on-device frametimes TBD
-Throttle level: **🔴 hard** (9 iterations since 2026-05-14 direction session — stalled, waiting for direction)
+Throttle level: **🔴 hard** (10 iterations since 2026-05-14 direction session — stalled, waiting for direction)
 
 If you only read one section, read **Open questions waiting on you** below.
 
@@ -16,8 +16,8 @@ If you only read one section, read **Open questions waiting on you** below.
 
 Things Claude can't decide alone, or where it's stalled and needs direction.
 
-> **🔴 HARD THROTTLE — iter 85 (2026-05-14).** 9 iterations since the last direction session.
-> Feature work has stopped. This iteration: depth-perception research note + minor refactor only.
+> **🔴 HARD THROTTLE — iter 86 (2026-05-14).** 10 iterations since the last direction session.
+> Feature work has stopped. This iteration: BlobShadow unit tests (1030 → 1044 assertions).
 > Suggest three directions for the next session — pick one and drop it in chat:
 >
 > - **Direction 1 — On-device blob shadow + particle tuning.** Run Threshold on the Nothing Phone.
@@ -119,6 +119,43 @@ Goal: store-ready build.
 The full iteration log lives here, newest first. Every iteration appends an entry. Skim the dates to find where you last left off.
 
 <!-- ITERATION ENTRIES BELOW — DO NOT REMOVE OLDER ENTRIES -->
+
+### [2026-05-14] — iter 86 — BlobShadow unit tests (hard throttle)
+
+Branch: `claude/gifted-shannon-kv94F`
+Throttle: 🔴 hard (10 iterations since 2026-05-14 direction session)
+Gate: Gate 1 — Vertical Slice prep
+
+**Primary: Unit tests for BlobShadow** — three new test functions covering export defaults,
+param dispatch, and juice toggle.
+
+- `_test_blob_shadow_export_defaults` (5 assertions): guards the four @export_range initial
+  values (`radius_at_ground=0.22`, `radius_at_height=0.55`, `fade_height=6.0`, `alpha_max=0.42`)
+  and the invariant `radius_at_height > radius_at_ground`. These are the tuning baselines the
+  depth-perception session (iter 85 research) depends on.
+- `_test_blob_shadow_param_dispatch` (5 assertions): mirrors the match block in
+  `_on_blob_shadow_param_changed` — each of the four dev-menu slider params routes to its
+  property; unknown param is a silent no-op. Catches mis-spelled match arms before they
+  silently no-op on device.
+- `_test_blob_shadow_juice_toggle` (4 assertions): mirrors `_on_juice_changed` — correct key
+  enables/disables, unrelated keys (e.g. `&"squash_stretch"`) are ignored.
+
+1030 → **1044** assertions total.
+
+**Side quest:** none (depth perception research done in iter 85; no second research note same day).
+**Perf:** no change.
+**Bugs fixed:** none.
+**New dev-menu controls:** none.
+**Assets acquired:** none.
+**Research added:** none.
+**On-device pending:** blob shadow tuning (max_alpha, fade_height, radius_ground) — P0 for Gate 1.
+
+---
+
+**🔴 HARD THROTTLE — 10 iterations since last direction session. Waiting for human direction.**
+See "Open questions waiting on you" for three suggested directions.
+
+---
 
 ### [2026-05-14] — iter 85 — Depth perception research + _tick_footstep_dust refactor
 
