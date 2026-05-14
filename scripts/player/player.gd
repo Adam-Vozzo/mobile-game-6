@@ -186,8 +186,12 @@ func _tick_timers(delta: float, on_floor: bool) -> void:
 		var impact := clampf(-_last_fall_speed / profile.terminal_velocity, 0.0, 1.0)
 		_apply_landing_effects(impact)
 	_was_on_floor_last_frame = on_floor
-	# Footstep dust: throttled, skips the landing frame so the land impact
-	# burst isn't masked by simultaneous footstep geometry.
+	_tick_footstep_dust(on_floor, just_landed, delta)
+
+
+## Throttled footstep dust emitter. Skips the landing frame so the land-impact
+## burst isn't masked by simultaneous footstep geometry.
+func _tick_footstep_dust(on_floor: bool, just_landed: bool, delta: float) -> void:
 	_footstep_dust_timer = maxf(0.0, _footstep_dust_timer - delta)
 	if on_floor and not just_landed and DevMenu.is_juice_on(&"particles"):
 		var h_speed := Vector3(velocity.x, 0.0, velocity.z).length()
