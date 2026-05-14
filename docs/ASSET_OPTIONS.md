@@ -1,15 +1,24 @@
 # Asset Options — Project Void
 ## First-pick candidates for human approval
 
-Three asset slots are blocking Gate 1 art direction: the **Stray mesh**, the
+> **DECISION 2026-05-15** — Human selected full-Kenney visual direction. Selections:
+> A8 Cube Pets yellow chick (Stray re-framed from robot to bird), B1+B2 freesound CC0
+> ambient bed + B5 Kenney Sci-Fi Sounds for accents, C8 Factory Kit + C9 Space Station
+> Kit for architecture/set-dressing. **Distant-atmosphere layer (Dadish 3D-inspired)**
+> authored from `BoxMesh` primitives with dark material override — C4 Modular Buildings
+> considered but rejected as too detailed for fog-blurred far Z. Photoreal concrete
+> (C2 Poly Haven) dropped to avoid clash with chibi Kenney silhouettes. See `docs/DECISIONS.md`
+> 2026-05-15 ADRs. Candidates A1–A7, B3/B4, C1–C7 remain below for traceability but are
+> superseded.
+
+Three asset slots were blocking Gate 1 art direction: the **Stray mesh**, the
 **ambient audio bed**, and the **concrete texture kit**. Each section below
 lists 3–5 candidates with source, licence, fidelity notes, and a
-recommended pick. After the human approves ~3 choices the autonomous asset
-pipeline reopens.
+recommended pick.
 
 Style fidelity benchmark: does it read in the brutalist palette under fog at
 gameplay camera distance? The world is cold, dark, and vast. The Stray is the
-only warm bright thing in it.
+only saturated warm thing in it.
 
 ---
 
@@ -111,6 +120,28 @@ needs at minimum: idle, run, jump, land, death/reboot animations.
   Only listed as a fallback if A5 turns out to be unavailable or insufficient.
 - **Fidelity risk:** Medium — rig donor only, no usable Stray mesh.
 
+#### A8 — Kenney Cube Pets (SELECTED 2026-05-15)
+- **Source:** <https://kenney.nl/assets/cube-pets>
+- **Author:** Kenney
+- **Licence:** CC0
+- **Format:** FBX / GLTF, rigged + animated
+- **Animations:** Shared cube-pet rig (idle / walk / run / jump / sit)
+- **Style / fidelity:**
+  Tiny chibi cube-pet creatures — cat, dog, chicken, etc. Yellow chick variant
+  selected: bright lemon yellow against grey concrete gives strong focal-point
+  contrast. Re-frames the Stray from robot to small bird — double jump becomes a
+  literal wing-flap. The cube-pet silhouette is unmistakable at distance and
+  reads "small living thing" cleanly against the inhuman megastructure.
+- **Fidelity:** High *with palette shift*. Existing world palette's sodium-vapour
+  yellow needs to read more amber/muted (Zone 1 Environment resource) to keep
+  tonal separation from the chick's saturated lemon yellow. Cyan accents in
+  deeper layers unchanged.
+- **Consequences:** Mechanical SFX vocabulary (servo whirs, soft clanks, reboot
+  hum) shifts to bird vocabulary (chirps, footfalls, wing flap, feather-poof).
+  Player code (`_run_reboot_effect` squash/grow) maps to feather-poof → settle →
+  flap without script changes; rename deferred to art-pass iteration. See
+  `DECISIONS.md` 2026-05-15.
+
 #### A7 — Kenney Blocky Characters
 - **Source:** <https://kenney.nl/assets/blocky-characters>
 - **Author:** Kenney
@@ -125,12 +156,12 @@ needs at minimum: idle, run, jump, land, death/reboot animations.
 - **Fidelity risk:** High — stylistic clash with the brutalist mood.
 
 ### Recommendation
-**A1 (Quaternius LowPoly Robot)** — best fidelity-to-effort ratio, CC0 confirmed,
-animations cover all Gate 1 requirements, FBX imports cleanly into Godot 4.
-If the style feels too "cute" after device review, A2 is the backup. The Kenney
-options (A5–A7) all require a custom robot mesh or visual rework before they
-beat A1; they're listed because the human asked for Kenney coverage but none
-of them ship a CC0 chibi robot the way A1 does.
+**A8 (Kenney Cube Pets yellow chick) — SELECTED 2026-05-15.** Original recommendation
+was A1 (Quaternius LowPoly Robot) but the human chose full-Kenney visual consistency
+over a robot brief: A8 ships a chibi creature with shared rig + animations and pairs
+cleanly with Kenney C8/C9 architecture kits, avoiding the cartoon-vs-photoreal clash
+that A1+C2 would have produced. A1/A2 remain on the shelf as fallback if the bird
+re-framing fails on-device feel.
 
 ---
 
@@ -275,16 +306,20 @@ gameplay-camera distances. 4K is wasteful on mobile.
 - **Fidelity:** Good, slightly lower resolution/quality than C1/C2 in some
   entries, but smaller file sizes. Good as a supplemental source for variants.
 
-#### C4 — Kenney Modular Buildings kit
+#### C4 — Kenney Modular Buildings kit (considered, rejected 2026-05-15)
 - **Source:** <https://kenney.nl/assets/modular-buildings>
 - **Licence:** CC0
 - **Count:** 100 models; walls, floors, roofs, stairs, windows
 - **Format:** GLTF/OBJ. No PBR textures — solid colour with basic geometry detail.
-- **Fidelity:** Low for surface detail, but the **geometry** is useful. These
-  modular pieces could be used as Zone 1 building-block shapes, with
-  ambientCG/Poly Haven materials applied over them. Rough brutalist volumes
-  without surface noise.
-- **Use:** Modular architecture geometry, not texture source.
+- **Rejection rationale (2026-05-15):** Initially selected for the distant-atmosphere
+  layer, then reversed. Window/roof/door detail is wasted at fog-blurred far Z, and
+  risks reading "suburban houses" if fog lifts during atmospheric tuning. Brutalist
+  megastructure silhouettes need to be pure mass — architectural detail works against
+  the aesthetic at distance. Replaced by `BoxMesh` primitives with dark material
+  override (zero download cost, pure silhouette). See `DECISIONS.md` 2026-05-15
+  "Distant-atmosphere layer revision."
+- **When to revisit:** If BoxMesh uniformity reads flat on device, consider
+  hand-authored simple `.glb` silhouettes before reconsidering C4.
 
 #### C5 — Kenney City Kit Industrial
 - **Source:** <https://kenney.nl/assets/city-kit-industrial>
@@ -322,50 +357,64 @@ gameplay-camera distances. 4K is wasteful on mobile.
 - **Fidelity risk:** Medium-high — geometry feel is sci-fi; needs material
   override to read concrete, and even then the panelling will telegraph.
 
-#### C8 — Kenney Factory Kit
+#### C8 — Kenney Factory Kit (SELECTED 2026-05-15)
 - **Source:** <https://kenney.nl/assets/factory-kit>
 - **Licence:** CC0
 - **Count:** 140 modular industrial pieces (pipes, conveyors, machinery,
   structural), multiple formats, with animation + colour variations
 - **Fidelity:** Best Kenney source for *set-dressing* inside brutalist halls
   — pipes, vents, catwalks, dormant machinery to scatter through Zone 2/3.
-  Not a primary wall/floor kit; pairs with C2 Poly Haven concrete for the
-  surrounding architecture. The "playful Kenney" silhouettes are softer
-  than ideal but read fine at distance under heavy fog and amber rim-light.
-  Strongest Kenney-slot pick if you want to fill out Zone 2 maintenance
-  yard / Zone 3 industrial hall with machinery clutter quickly.
-- **Fidelity risk:** Medium — set-dressing only, not primary architecture.
+  Pairs with C9 Space Station Kit for modular architecture and the existing
+  flat-colour `mat_concrete*.tres` materials for surface treatment. The
+  "playful Kenney" silhouettes read fine at distance under heavy fog and
+  amber rim-light, and stay tonally consistent with the chibi A8 Stray.
+  Fills out Zone 2 maintenance yard / Zone 3 industrial hall quickly.
+- **Use:** Zone 2/3 prop layer + Industrial Press / hazard machinery
+  silhouette upgrades. CSG → MeshInstance conversion of Threshold geometry
+  pairs naturally with this pass (baked-lighting prereq, see iter 73 research).
+
+#### C9 — Kenney Space Station Kit (SELECTED 2026-05-15)
+- **Source:** <https://kenney.nl/assets/space-station-kit>
+- **Licence:** CC0
+- **Count:** Modular sci-fi/space-station pieces — walls, floors, doors,
+  corridor segments, structural beams. Multiple formats (FBX/GLTF/OBJ).
+- **Fidelity:** Dark, modular, versatile — pairs cleanly with C8 Factory Kit.
+  Slightly more "habitable interior" than C7 Modular Space Kit; together with
+  C8 covers Zone 1 (habitation) and Zone 2 (maintenance) wall/floor needs.
+  Existing flat-colour concrete materials apply over Kenney geometry without
+  a PBR pass — Gate 1 surface fidelity met without ambientCG/Poly Haven import.
+- **Use:** Primary modular architecture across all three Threshold zones.
+  Supersedes C7 Modular Space Kit for Zone 2; supersedes C2 Poly Haven texture
+  pipeline for Gate 1 (PBR texturing deferred — Kenney silhouettes do the work).
 
 ### Recommendation
-**C1 (ambientCG) or C2 (Poly Haven)** for the texture maps — both are best-in-class
-CC0 PBR. C2 + the Poly Haven Godot add-on is the fastest path to import. Acquire
-3 sets from either source (one per zone tone: light/neutral, cold/stained,
-rough/industrial) and apply over the existing `mat_concrete.tres` material.
+**C8 Factory Kit + C9 Space Station Kit — SELECTED 2026-05-15.** Both CC0 Kenney.
+Pair with the existing flat-colour `mat_concrete.tres` / `mat_concrete_dark.tres`
+materials over the geometry; no PBR texture pass needed for Gate 1. C9 covers Zone
+1/2 modular walls/floors/corridors; C8 covers Zone 2/3 industrial set-dressing and
+the Industrial Press silhouette upgrade. C2 Poly Haven photoreal concrete dropped
+to avoid clash with chibi A8 Stray + chibi Kenney architecture.
 
-Kenney additions for prop / blockout coverage:
-- **C8 (Factory Kit)** is the highest-value Kenney addition — 140 industrial
-  dressing pieces for Zone 2/3 without further art-direction work.
-- **C4 (Modular Buildings)** and **C5 (City Kit Industrial)** stay as Zone 2/3
-  block-shapes when paired with C1/C2 materials.
-- **C7 (Modular Space Kit)** as a fallback if Zone 2 needs more enclosed
-  corridor pieces than C4 supplies.
-- **C6 (Prototype Textures)** only if you want a fast no-PBR placeholder pass
-  before the C1/C2 import is wired up — otherwise skip and go straight to PBR.
+Superseded candidates kept for traceability:
+- C1 ambientCG, C2 Poly Haven — photoreal PBR textures, dropped per visual-consistency
+  decision. Reopen if Kenney coverage is later judged insufficient.
+- C4 Modular Buildings, C5 City Kit Industrial, C6 Prototype Textures, C7 Modular
+  Space Kit — Kenney alternatives, not needed given C8+C9 coverage.
 
 ---
 
-## Decision table
+## Decision table (resolved 2026-05-15)
 
-| Slot | Recommended pick | Fallback | Kenney coverage | Licence | Est. import time |
-|------|-----------------|---------|-----------------|---------|-----------------|
-| A — Stray mesh | A1 Quaternius LowPoly Robot | A2 Godot Asset #1467 | A5–A7 listed; none ship a CC0 chibi robot → A1 still wins | CC0 | 30–60 min |
-| B — Ambient audio | B1 AlaskaRobotics hum + B2 fans layer | B3 InspectorJ (CC-BY) | B5 Sci-Fi Sounds as SFX complement only; no Kenney ambient bed exists | CC0 | 10 min |
-| C — Concrete kit | C2 Poly Haven + Godot add-on | C1 ambientCG | C8 Factory Kit for set-dressing; C4/C5 for blockout shapes; C7 corridor fallback | CC0 | 20 min |
+| Slot | Selected pick | Fallback | Notes | Licence | Est. import time |
+|------|--------------|---------|-------|---------|-----------------|
+| A — Stray mesh | **A8 Kenney Cube Pets** (yellow chick) | A1 Quaternius LowPoly Robot | Stray re-framed robot → bird; double jump = literal flap | CC0 | 30–60 min |
+| B — Ambient audio | **B1 AlaskaRobotics hum + B2 IanStarGem fans + B5 Kenney Sci-Fi** | B3 InspectorJ (CC-BY) | Kenney has no ambient-bed pack; freesound fills gap | CC0 | 10 min |
+| C — Architecture / set-dressing | **C8 Factory Kit + C9 Space Station Kit** | C2 Poly Haven (photoreal, dropped) | Existing flat-colour concrete materials apply over Kenney geometry; no PBR pass for Gate 1 | CC0 | 20 min |
+| D — Distant atmosphere | **BoxMesh primitives + `mat_concrete_dark.tres`** | Custom `.glb` silhouettes if uniformity reads flat | C4 Modular Buildings rejected (too detailed). Pure blocky volumes at varied scales beyond play bounds; no collision; fog does the silhouette work. | n/a | trivial |
 
-Once you approve the picks above (or redirect to alternates), autonomous asset
-acquisition resumes. Each acquired asset will get an `assets/ASSETS.md` entry
-before commit, and a style-fidelity check: "does it read in the brutalist palette
-under fog at gameplay camera distance?"
+Autonomous asset acquisition now reopens per CLAUDE.md. Each acquired asset gets
+an `assets/ASSETS.md` entry before commit, and a style-fidelity check:
+"does it read in the brutalist palette under fog at gameplay camera distance?"
 
 If the answer to any is "wrong style but good quality" the options doc for that
 slot gets expanded before committing. If the answer is "needs modification,"

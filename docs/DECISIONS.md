@@ -15,6 +15,123 @@ Append, don't rewrite. Supersession adds a new entry referencing the old.
 
 ---
 
+## 2026-05-15 — Distant-atmosphere layer revision: BoxMesh primitives, not Modular Buildings
+
+Status: accepted (supersedes the C4 Modular Buildings selection in the earlier 2026-05-15
+ADR "Distant-atmosphere layer")
+Context: After initial C4 selection, human flagged that Kenney Modular Buildings' detail
+(windows, doors, roof trim) is wasted at fog-blurred far Z, and risks reading "suburban
+houses" if fog lifts during atmospheric tuning. Brutalist megastructure silhouettes need
+to be pure mass — architectural detail works against the aesthetic at distance.
+Decision: Drop C4 Modular Buildings. Author the distant-atmosphere layer from `BoxMesh`
+primitives at varied scales (tower / slab / bunker proportions) with
+`mat_concrete_dark.tres` material override and no collision. Group under a
+`DistantSkyline` Node3D placed beyond Threshold zone bounds at far Z. WorldEnvironment
+fog falloff does the silhouette work. Programmatic placement script acceptable if manual
+authoring becomes tedious.
+Alternatives reconsidered:
+- C4 Modular Buildings (previous selection): rejected for the reasons above.
+- C8/C9 silhouettes at distance: already rejected — too detailed and sci-fi-coded.
+- Custom-authored simple `.glb` silhouettes: held in reserve. If BoxMesh uniformity
+  reads flat after on-device test, promote a few hand-authored tower silhouettes;
+  defer until the BoxMesh layer is in place and judged.
+- Skybox baked silhouettes: loses parallax under camera motion; rejected.
+- Billboard sprites: read 2D under camera roll/pitch; rejected.
+Consequences:
+- PLAN.md item 0a goes from 4 packs to 3 packs (Modular Buildings removed).
+- New PLAN.md sub-task absorbed into 0a: author `DistantSkyline` group with a few
+  `BoxMesh` primitives in the Threshold scene. Trivial to add; no script changes.
+- `assets/ASSETS.md` no longer gains a Modular Buildings entry.
+- The "pure blocky silhouette, no architectural detail at distance" principle is
+  captured in `feedback_distant_atmosphere.md` memory for future levels.
+
+## 2026-05-15 — Distant-atmosphere layer: Kenney Modular Buildings (grey) as out-of-bounds silhouettes
+
+Status: accepted (assets pending download)
+Context: Human flagged Dadish 3D's out-of-bounds decoration pattern (trees visible beyond
+playable bounds in their screenshot) as a strong atmosphere technique to adopt. Project
+Void's brutalist megastructure mandate ("city extends forever," BLAME! vistas) maps to
+this pattern with a palette substitution: distant *buildings* in fog instead of cartoon
+trees. Threshold currently has walls/ceilings hemming most zones, so the layer is
+currently invisible — the asset decision and the level-design follow-up come together.
+Decision: Acquire Kenney Modular Buildings (C4, <https://kenney.nl/assets/modular-buildings>,
+CC0) for the distant-atmosphere layer. Use rules:
+- Grey/dark material override (e.g., `mat_concrete_dark.tres` or a new amber/cool
+  variant) — never use the kit's default playful colours.
+- Static `MeshInstance3D` only, no collision shapes (out of player reach).
+- Place beyond zone bounds at far Z; WorldEnvironment fog does the silhouette work.
+- Not used for playable architecture — C8 Factory Kit + C9 Space Station Kit cover that.
+Level-design follow-up (PLAN.md item 0b): Threshold needs deliberate view-openings for
+the layer to be visible. Candidate beats: Zone 1 plaza north edge (toward distant towers),
+Zone 2 yard open ceiling (vertical view up at machinery silhouettes), Zone 3 hall back
+wall (vista of wider works). Author as deliberate vista moments, not incidental gaps.
+Alternatives considered:
+- Skybox-only atmosphere: cheaper but flat — no parallax, no real depth cue. The Modular
+  Buildings layer gives proper parallax against camera motion for negligible cost.
+- Billboard sprites: lower fidelity, will read 2D under camera roll. Not worth the
+  saving on the Mobile renderer at this scale.
+- Reuse C8/C9 pieces at distance: possible but their silhouettes are too detailed/sci-fi
+  for fog-blurred far Z. Modular Buildings' simpler blocky volumes read better in fog.
+- Custom-modelled distant towers: defer until on-device feedback says Kenney silhouettes
+  read wrong.
+Consequences:
+- One additional asset pack to download in PLAN.md item 0a (4 packs total).
+- New PLAN.md item 0b queues the Threshold view-opening level-design pass. Not a
+  blocker — the buildings can be placed first and view openings added incrementally
+  as the level-design pass progresses.
+- No engine cost concern: distant static MeshInstance3D with no collision and aggressive
+  fog falloff is cheap on Mobile renderer (per `tbdr_mobile_gpu.md` research).
+- ASSETS.md will gain a C4 entry alongside the other three Kenney packs.
+
+## 2026-05-15 — Stray re-framed: small yellow bird (Kenney Cube Pets); full-Kenney visual direction
+
+Status: accepted (assets pending download)
+Context: Three asset slots were blocking Gate 1 art direction (Slot A Stray mesh, Slot B
+ambient audio, Slot C concrete/architecture). Top recommendations in `docs/ASSET_OPTIONS.md`
+were A1 Quaternius LowPoly Robot (chibi grey robot, CC0) and C2 Poly Haven photoreal PBR
+concrete textures. Human flagged that mixing a cartoon robot with photoreal concrete would
+cause stylistic clash — assets need to share a visual idiom.
+Decision: Go full Kenney for the visual direction. Three slot selections:
+- **Slot A (Stray mesh)**: Kenney Cube Pets yellow chick — replaces A1 Quaternius.
+  The Stray is re-framed from "small stray robot" to "small stray bird." The double jump
+  becomes a literal flap. The reboot/respawn animation becomes a feather-poof + settle +
+  chirp. Mechanical SFX vocabulary (servo whirs, soft clanks) shifts to bird vocabulary
+  (chirps, footfalls, wing flap). The "stray creature in a world not built for it"
+  narrative is preserved.
+- **Slot C (architecture)**: Kenney Factory Kit (C8) + Kenney Space Station Kit (new C9)
+  for modular dark/light versatile geometry. Replaces C2 Poly Haven photoreal concrete
+  direction — Kenney low-poly silhouettes pair cleanly with the chibi bird. Existing flat-
+  colour `mat_concrete.tres` / `mat_concrete_dark.tres` apply over Kenney geometry; no PBR
+  texture pass needed for Gate 1.
+- **Slot B (audio)**: Unchanged. B1 AlaskaRobotics CC0 hum + B2 IanStarGem CC0 fans bed +
+  B5 Kenney Sci-Fi Sounds for one-shot accents. Kenney has no ambient-bed pack, so freesound
+  CC0 fills that gap.
+Palette implications: focal-point colour shifts red → bright lemon yellow. World's existing
+sodium-vapour lighting needs to read more amber/muted (Zone 1 Environment resource) to keep
+tonal separation from the chick. Cyan accents in deeper layers unchanged. To be tuned on
+device.
+Alternatives considered:
+- Quaternius robot + Poly Haven concrete (original rec): rejected by human — photoreal
+  concrete vs cartoon robot clashes.
+- Kenney Mini Characters rig + custom robot mesh: no off-the-shelf CC0 chibi robot exists;
+  significant custom art work needed; misses the "bird = flap = double jump" thematic.
+- AI-generated chibi robot (A4 fallback): variable quality, rigging gap.
+- Keep robot brief, treat chick as placeholder only: more honest about "for now" but
+  creates a doc/asset mismatch that compounds across iterations. Human chose the cleaner
+  re-framing.
+Consequences:
+- `docs/CLAUDE.md` updated — Protagonist, Palette, Audio sections re-framed for the bird.
+- Player code (`player.gd` `_run_reboot_effect`, `Audio.on_respawn_start`) is name-only
+  legacy — the squash/grow effect maps cleanly to "feather-poof → settle → flap" with no
+  script changes needed. Rename deferred to art-pass iteration.
+- `assets/ASSETS.md` will gain Kenney Cube Pets, Factory Kit, Space Station Kit entries
+  once downloaded. All CC0 — acknowledgement appreciated per Kenney's site convention but
+  not legally required.
+- "Stray" terminology unchanged — works for either creature; theme intact.
+- Zone 1 sodium-yellow may need an amber/cooler shift on device to keep chick distinct.
+  Tunable via existing zone Environment resources; no code change needed.
+- A1/A2/C2 etc. remain in `docs/ASSET_OPTIONS.md` as superseded candidates for traceability.
+
 ## 2026-05-14 — Assisted Phase 2: ledge magnetism + arc assist; edge-snap deferred
 
 Status: accepted (on-device pending for feel tuning)

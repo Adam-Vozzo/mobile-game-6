@@ -1,14 +1,14 @@
 # Project Void
 
-A mobile 3D platformer. Brutalist megastructure inspired by *BLAME!*. Controller feel inspired by *Super Meat Boy*. Accessibility inspired by *Dadish 3D*. You play as the Stray — a small lost robot in a vast machine-built world. Godot 4.x, Android, landscape.
+A mobile 3D platformer. Brutalist megastructure inspired by *BLAME!*. Controller feel inspired by *Super Meat Boy*. Accessibility inspired by *Dadish 3D*. You play as the Stray — a small lost yellow bird in a vast machine-built world. Godot 4.x, Android, landscape.
 
 ## Status
 
 Current gate: **Gate 0 — Feel Lab** (closing out; Gate 1 prep in flight)
-Last activity: 2026-05-14 — iter 81: screen shake system (land + death, dev-menu intensity slider)
+Last activity: 2026-05-15 — direction session: Stray re-framed robot → yellow chick (Kenney Cube Pets), full-Kenney visual direction, BoxMesh distant-atmosphere layer
 Test device build: ✅ verified 2026-05-12 — runs in Godot 4.6 on PC and on Nothing Phone 4(a) Pro
 Performance: 144 fps / 6.9 ms in editor at 1920×1080 (Feel Lab); on-device frametimes TBD
-Throttle level: **🟢 RESET** (2026-05-14 direction session: A confirmed, B+D actioned, C+E deferred)
+Throttle level: **🟢 RESET** (2026-05-15 direction session: asset picks resolved, Stray re-framed; 2026-05-14 verdicts intact)
 
 If you only read one section, read **Open questions waiting on you** below.
 
@@ -39,7 +39,7 @@ Things Claude can't decide alone, or where it's stalled and needs direction.
 - [x] **Auto-merge git workflow confirmed and instrumented.** Now enforced by `.github/workflows/auto-merge.yml` — PRs labeled `auto-merge` are squash-merged automatically.
 - [x] **On-device playtest of Spyro-style Threshold redesign.** 2026-05-14 verdict: feels a lot better; open level design direction confirmed.
 - [x] **Camera pitch 70° vs 55°.** 70° is the right ceiling. Auto-correction-fight bug surfaced and fixed in same session.
-- [ ] **Asset suggestions for first-pick approval.** `docs/ASSET_OPTIONS.md` now covers Kenney (A5–A7, B5, C6–C8) in addition to the freesound/Quaternius/Poly Haven recommendations. **Awaiting your picks.** After ~3 approvals, autonomous acquisition resumes.
+- [x] **Asset suggestions for first-pick approval.** Resolved 2026-05-15. Human chose full-Kenney visual direction: Cube Pets yellow chick (Stray re-framed robot → bird, double jump = literal flap), Factory Kit + Space Station Kit for architecture, freesound CC0 ambient bed + Kenney Sci-Fi accents. Distant atmosphere via BoxMesh primitives (Dadish 3D out-of-bounds pattern, brutalist palette). See `docs/DECISIONS.md` 2026-05-15 ADRs. Autonomous acquisition queued P0.
 - [ ] **Ongoing Snappy tuning passes.** Snappy feel is good but will keep getting small tweaks as level design progresses. Whenever a level beat feels wrong, note "Snappy felt too X on that beat" — it goes into the next tuning iteration.
 
 ## Roadmap
@@ -100,6 +100,45 @@ Goal: store-ready build.
 The full iteration log lives here, newest first. Every iteration appends an entry. Skim the dates to find where you last left off.
 
 <!-- ITERATION ENTRIES BELOW — DO NOT REMOVE OLDER ENTRIES -->
+
+### [2026-05-15] — Direction session — Kenney art direction confirmed; Stray re-framed as yellow chick
+
+Branch: `direction/kenney-asset-direction-2026-05-15`
+Throttle: 🟢 RESET (asset blocker resolved)
+Gate: Gate 1 — Vertical Slice prep
+
+**Visual direction locked.** Human chose full-Kenney visual consistency over the original
+robot-brief + photoreal-concrete mix, citing stylistic clash. Three asset slots resolved:
+
+- **Slot A (Stray mesh) → Kenney Cube Pets yellow chick** (CC0,
+  <https://kenney.nl/assets/cube-pets>). **The Stray is re-framed from robot to small
+  bird.** Double jump becomes a literal wing-flap. Mechanical SFX vocabulary (servo whirs,
+  reboot hum) shifts to bird vocabulary (chirps, footfalls, wing flap, feather-poof on
+  respawn). The "stray creature in a world not built for it" narrative is preserved.
+  `_run_reboot_effect` squash/grow maps cleanly to feather-poof → settle → flap — no
+  script changes needed; rename deferred to art-pass iteration.
+- **Slot B (audio)** unchanged: B1+B2 freesound CC0 ambient bed + B5 Kenney Sci-Fi Sounds
+  for one-shot accents. Kenney has no ambient-bed pack so freesound fills that gap.
+- **Slot C (architecture) → Kenney Factory Kit + Space Station Kit** (CC0). Existing flat-
+  colour `mat_concrete*.tres` materials apply over Kenney geometry; no PBR texture pass
+  needed for Gate 1. Photoreal concrete (C2 Poly Haven, C1 ambientCG) dropped.
+- **Slot D (distant atmosphere)** — added in same session after Dadish 3D screenshot
+  reference. Pure `BoxMesh` primitives with `mat_concrete_dark.tres` override, no
+  collision, grouped under `DistantSkyline` Node3D beyond Threshold play bounds.
+  Initially considered Kenney Modular Buildings (C4) but rejected — windows/roof trim
+  too detailed for fog-blurred far Z, risks reading "suburban houses" if fog lifts.
+  Threshold needs view-openings (open ceilings, perimeter gaps) for the layer to be
+  visible — queued as PLAN.md item 0b.
+
+**Palette implications.** Focal-point colour shifts red → bright lemon yellow. World's
+existing sodium-vapour lighting needs to read more amber/muted (Zone 1 Environment
+resource) to keep tonal separation from the chick. Tunable on device; no code change.
+
+**Docs touched:** `docs/CLAUDE.md` (Protagonist / Palette / Audio sections re-framed),
+`docs/DECISIONS.md` (two new 2026-05-15 ADRs + one supersession), `docs/PLAN.md`
+(asset blocker resolved, P0 items 0a + 0b queued), `docs/ASSET_OPTIONS.md` (A8 + C9
+candidates added, C4 rejection rationale documented, decision table rewritten).
+README's "Open questions" updated. Asset acquisition queued for next iter loop.
 
 ### [2026-05-14] — iter 81 — Screen shake system
 

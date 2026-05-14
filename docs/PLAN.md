@@ -57,6 +57,33 @@ The next iteration should pull from the top of this list. Items marked
    12.0 + air_jumps=1 feels right at the new platform spacings. Outcomes feed back into the
    next tuning iteration.
 
+0a. **Kenney asset acquisition + Stray re-frame (Cube Pets bird).** Direction confirmed
+    2026-05-15 (see DECISIONS.md). Download three Kenney CC0 packs: Cube Pets
+    (<https://kenney.nl/assets/cube-pets>), Factory Kit (<https://kenney.nl/assets/factory-kit>),
+    Space Station Kit (<https://kenney.nl/assets/space-station-kit>). Log entries in
+    `assets/ASSETS.md`. Extract the yellow chick from Cube Pets, import into Godot 4
+    (FBX/GLTF), wire as the player Stray mesh, re-skin/animate as needed (idle / run / jump /
+    land / respawn). Existing `player.gd` `_run_reboot_effect` (squash/grow) maps cleanly to
+    feather-poof → settle → flap with no script changes. Audio dispatch stubs from iter 80
+    (`Audio.on_jump`, `on_land`, `on_respawn_start`) get bird SFX wired once B1+B2+B5 ambient
+    + Sci-Fi packs land. Architecture: drop Factory Kit set-dressing into Zone 2/3, Space
+    Station Kit pieces for Zone 1/2 modular geometry, existing flat-colour concrete materials
+    stay (no PBR pass needed for Gate 1). **Distant atmosphere layer**: `BoxMesh` primitives
+    at varied tower/slab/bunker scales with `mat_concrete_dark.tres` override (no collision),
+    grouped under a `DistantSkyline` Node3D beyond Threshold play bounds. WorldEnvironment fog
+    does the silhouette work — pure blocky volumes, no detail. Modular Buildings (C4)
+    considered and rejected; see DECISIONS.md 2026-05-15 revision. On-device fidelity check
+    before each commit per CLAUDE.md art-pipeline rules.
+
+0b. **Threshold view-openings (level-design follow-up).** Distant-atmosphere layer (item 0a)
+    needs view openings in Threshold for the buildings to actually be visible. Currently
+    most zones are hemmed by walls/ceilings even after the 2026-05-14 Spyro redesign.
+    Candidate openings: Zone 1 plaza north edge (looks out toward distant towers), Zone 2
+    maintenance yard open ceiling (vertical view up at machinery silhouettes), Zone 3
+    industrial hall back wall (vista of the wider works). Frame these as deliberate vista
+    beats, not just incidental gaps. Pairs with the Kenney architecture-kit pass (item 0a)
+    and the CSG → MeshInstance conversion (baked-lighting prereq, iter 73 research).
+
 1. ~~**On-device smoke test.**~~ Done 2026-05-12. Project runs in Godot 4.6 on PC
    and deploys to Nothing Phone 4(a) Pro. Feel Lab reports 144 fps / 6.9 ms in
    editor at 1920×1080. ANDROID.md gaps remaining: headless CI signing via env
@@ -213,13 +240,12 @@ The next iteration should pull from the top of this list. Items marked
 
 These mirror "Open questions waiting on you" in the README.
 
-- **First asset suggestions for human approval.** `docs/ASSET_OPTIONS.md` was extended
-  in the 2026-05-14 direction session with Kenney coverage (A5 Mini Characters,
-  A6 Mini Arena, A7 Blocky Characters, B5 Sci-Fi Sounds, C6 Prototype Textures,
-  C7 Modular Space Kit, C8 Factory Kit). Top recommendations unchanged: A1 Quaternius,
-  B1+B2 freesound CC0, C2 Poly Haven; C8 (Factory Kit) is the highest-value Kenney
-  addition for Zone 2/3 set-dressing. After ~3 confirmed picks, autonomous asset
-  acquisition resumes per CLAUDE.md.
+- ~~**First asset suggestions for human approval.**~~ Resolved 2026-05-15. Human chose
+  full-Kenney visual direction: Cube Pets yellow chick (Stray mesh), Factory Kit +
+  Space Station Kit (architecture), B1+B2 freesound CC0 + B5 Kenney Sci-Fi (audio).
+  Stray re-framed from robot to small bird (double jump = literal flap). See
+  `docs/DECISIONS.md` 2026-05-15 ADR. Asset acquisition queued in P0; autonomous
+  pipeline reopens after first three packs land.
 - **Air-dash verdict (C) — TBD.** Both modes (whip-on-fire vs buffer-and-discard)
   remain live behind dev-menu toggle. Iter loop should not block on this.
 - **Texture-pass timing (E) — TBD.** CSG → MeshInstance + concrete-kit workflow remains
