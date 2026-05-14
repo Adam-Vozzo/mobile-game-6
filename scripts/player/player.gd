@@ -57,6 +57,11 @@ var _dash_charges: int = 0
 var _dash_timer: float = 0.0
 var _dash_dir: Vector3 = Vector3.ZERO
 var _is_dashing: bool = false
+# Arc-assist lifetime cap: total horizontal correction (m/s sum) applied since the
+# last jump. Resets at jump-time so each arc gets a fresh budget. Prevents the
+# per-frame 0.05-factor from compounding into a runaway steering force over a long
+# arc. Capped at 1.5 m/s total — enough to land a platform 0.4 m off-centre.
+var _arc_assist_accumulated: float = 0.0
 
 @onready var _visual: Node3D = $Visual
 @onready var _body_mesh: MeshInstance3D = $Visual/Body
@@ -126,6 +131,8 @@ func _physics_process(delta: float) -> void:
 	_apply_gravity(delta, jump_held)
 	_try_jump()
 	_cut_jump(jump_released)
+	if not on_floor and not _is_dashing:
+		_apply_arc_assist(delta)
 	move_and_slide()
 	_update_visual_facing(delta)
 	if global_position.y < profile.fall_kill_y:
@@ -240,9 +247,11 @@ func _apply_gravity(delta: float, jump_held: bool) -> void:
 
 func _try_jump() -> void:
 	if _buffer_timer > 0.0 and _coyote_timer > 0.0:
+		_attract_to_ledge()
 		velocity.y = profile.jump_velocity
 		_buffer_timer = 0.0
 		_coyote_timer = 0.0
+		_arc_assist_accumulated = 0.0
 		# Refill the air-jump pool for the new aerial phase.
 		_air_jumps_remaining = profile.air_jumps
 		if DevMenu.is_juice_on(&"squash_stretch"):
@@ -256,6 +265,7 @@ func _try_jump() -> void:
 		velocity.z *= profile.air_jump_horizontal_preserve
 		_buffer_timer = 0.0
 		_air_jumps_remaining -= 1
+		_arc_assist_accumulated = 0.0
 		if DevMenu.is_juice_on(&"squash_stretch"):
 			_play_jump_stretch()
 		_spawn_jump_puff()
@@ -264,6 +274,96 @@ func _try_jump() -> void:
 func _cut_jump(jump_released: bool) -> void:
 	if jump_released and velocity.y > profile.jump_velocity * profile.release_velocity_ratio:
 		velocity.y = profile.jump_velocity * profile.release_velocity_ratio
+
+
+## Ledge magnetism — fires once at ground/coyote jump time.
+## Probes ahead-left and ahead-right of the input direction for a nearby platform
+## surface. If found, applies a small lateral impulse toward it so a jump that
+## would barely graze an edge lands cleanly instead. Gate: on_floor only (not in
+## the coyote window) and ledge_magnet_radius > 0.
+func _attract_to_ledge() -> void:
+	if profile.ledge_magnet_radius <= 0.0 or profile.ledge_magnet_strength <= 0.0:
+		return
+	if not is_on_floor():
+		return
+	var move_input := TouchInput.get_move_vector()
+	var dir_3d := Basis(Vector3.UP, _camera_yaw) * Vector3(move_input.x, 0.0, move_input.y)
+	if dir_3d.length_squared() < 0.01:
+		return
+	dir_3d = dir_3d.normalized()
+	var perp := dir_3d.cross(Vector3.UP).normalized()
+	const CAPSULE_R := 0.28  # Stray capsule radius (matches CollisionShape3D in player.tscn)
+	var space := get_world_3d().direct_space_state
+	var query := PhysicsShapeQueryParameters3D.new()
+	var sphere := SphereShape3D.new()
+	sphere.radius = profile.ledge_magnet_radius
+	query.shape = sphere
+	query.collision_mask = 1
+	query.exclude = [get_rid()]
+	var foot := global_position + Vector3(0.0, -0.45, 0.0)
+	var ahead := dir_3d * (CAPSULE_R + 0.05)
+	for side: float in [-1.0, 1.0]:
+		query.transform = Transform3D(Basis.IDENTITY, foot + ahead + perp * side * CAPSULE_R)
+		var hits := space.intersect_shape(query, 1)
+		if hits.is_empty():
+			continue
+		var edge_pt: Vector3 = hits[0]["point"]
+		var pull := edge_pt - foot
+		pull.y = 0.0
+		var dist := pull.length()
+		if dist < 1e-3:
+			continue
+		# Proportional impulse: closer edge → stronger nudge, capped at strength.
+		var impulse := minf(
+			(dist / profile.ledge_magnet_radius) * profile.ledge_magnet_strength,
+			profile.ledge_magnet_strength
+		)
+		velocity += pull.normalized() * impulse
+		break  # one edge at a time
+
+
+## Arc assist — runs every airborne frame (gated by on_floor and dash checks in
+## _physics_process). Simulates 20 physics steps ahead to predict the landing
+## point. If the predicted landing drifts within arc_assist_max metres of a
+## detected surface, a small per-frame lateral impulse steers toward it.
+## Lifetime cap: 1.5 m/s accumulated correction per arc (_arc_assist_accumulated).
+## Gate: arc_assist_max > 0, not in coyote window, not dashing.
+func _apply_arc_assist(delta: float) -> void:
+	if profile.arc_assist_max <= 0.0:
+		return
+	if _coyote_timer > 0.0:
+		return  # still at platform edge; don't fight the floor-departure
+	const MAX_ACCUMULATED := 1.5  # m/s lifetime cap per arc
+	if _arc_assist_accumulated >= MAX_ACCUMULATED:
+		return
+	var sim_pos := global_position
+	var sim_vel := velocity
+	var space := get_world_3d().direct_space_state
+	var query := PhysicsRayQueryParameters3D.new()
+	query.exclude = [get_rid()]
+	query.collision_mask = 1
+	for _step in 20:
+		sim_vel.y = maxf(-profile.terminal_velocity,
+			sim_vel.y - profile.gravity_after_apex * delta)
+		sim_pos += sim_vel * delta
+		query.from = sim_pos
+		query.to = sim_pos + Vector3(0.0, -0.5, 0.0)
+		var hit := space.intersect_ray(query)
+		if hit.is_empty():
+			continue
+		var land_pt: Vector3 = hit["position"]
+		var offset := land_pt - sim_pos
+		offset.y = 0.0
+		if offset.length() >= profile.arc_assist_max:
+			break  # too far off; don't steer
+		# Per-frame correction: 5% of max per frame, capped to 15% of jump_velocity × delta.
+		var per_frame := (offset.normalized() * profile.arc_assist_max * 0.05).limit_length(
+			profile.jump_velocity * 0.15 * delta)
+		var budget := MAX_ACCUMULATED - _arc_assist_accumulated
+		per_frame = per_frame.limit_length(budget)
+		velocity += per_frame
+		_arc_assist_accumulated += per_frame.length()
+		break
 
 
 func _update_visual_facing(delta: float) -> void:
@@ -330,6 +430,7 @@ func respawn() -> void:
 	_dash_timer = 0.0
 	_is_dashing = false
 	_ramp_speed = profile.max_speed
+	_arc_assist_accumulated = 0.0
 	# Kill any running squash-stretch tween so it doesn't fight _run_reboot_effect.
 	if _squash_tween != null:
 		_squash_tween.kill()

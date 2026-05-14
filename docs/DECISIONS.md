@@ -15,6 +15,40 @@ Append, don't rewrite. Supersession adds a new entry referencing the old.
 
 ---
 
+## 2026-05-14 — Assisted Phase 2: ledge magnetism + arc assist; edge-snap deferred
+
+Status: accepted (on-device pending for feel tuning)
+Context: Assisted profile Phase 2 adds the two remaining assists from `docs/research/assist_mechanics.md`.
+Sticky landing (Phase 1, iter 27) was already live. The question was which of the remaining three
+assists to ship (ledge magnetism, arc assist, edge-snap) and in what form.
+Decision:
+  - **Ledge magnetism** (`_attract_to_ledge()`): fires once at jump time (not every frame). Two sphere
+    casts ahead-left and ahead-right of the input direction, at foot level offset by capsule radius.
+    The cylindrical offset (not forward-only) ensures the probe finds an edge even if the player is
+    slightly off-axis. One edge detected → proportional impulse (distance/radius × strength, capped
+    at strength). Guard: `is_on_floor()` required (skips coyote window — player jumped away from an
+    edge they walked off, magnet pulling them back would be wrong). 2 physics casts per jump.
+  - **Arc assist** (`_apply_arc_assist()`): runs every airborne frame while not dashing. Simulates
+    20 ray casts ahead using `gravity_after_apex` as conservative gravity (worst-case arc). If
+    predicted landing is within `arc_assist_max` of a surface, adds ≤ 5% × arc_assist_max per frame
+    capped at 15% × jump_velocity × delta, with a 1.5 m/s lifetime cap per arc (`_arc_assist_accumulated`).
+    Guard: `_coyote_timer > 0` blocks assist during floor-departure window.
+  - **Edge-snap deferred**: the most complex assist and the most likely to jitter. Per
+    `assist_mechanics.md` recommendation, defer until on-device testing confirms it is still needed
+    after ledge magnetism + sticky landing are tuned. `edge_snap_dist` property NOT added yet.
+Alternatives considered:
+  - Edge-snap on landing: post-move_and_slide XZ correction if foot is near a polygon boundary.
+    Deferred — Godot 4 does not expose contact polygon boundary; requires two additional per-frame
+    ray casts; jitter risk is highest of the four assists.
+  - Casting only a single probe ahead (not left+right of input): simpler, but misses edges where
+    the player is slightly off to one side of a platform — the most common near-miss case.
+  - Per-frame ledge magnetism (not just at jump time): fights player control mid-arc and adds 2
+    casts/frame while airborne; jump-time-only is correct per assist_mechanics.md.
+Consequences: `ControllerProfile` gains 3 new exports (all 0-default = disabled for
+Snappy/Floaty/Momentum). `assisted.tres` uses the recommended defaults from the research note.
+3 new dev-menu sliders in Controller → Assist. On-device tuning will determine whether radius=0.20,
+strength=1.0, arc_max=0.40 are the right starting values.
+
 ## 2026-05-13 — Zone 2 emissive surfaces: static geometry over additional OmniLights
 
 Status: accepted (on-device pending for intensity tuning)

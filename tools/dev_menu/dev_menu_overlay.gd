@@ -206,6 +206,12 @@ func _build_controller_assist(vbox: VBoxContainer) -> void:
 		"Sticky factor",       0.0,   0.8,  0.05, &"landing_sticky_factor")
 	_profile_sliders[&"landing_sticky_frames"] = _make_profile_slider(vbox,
 		"Sticky frames",       0.0,   6.0,  1.0,  &"landing_sticky_frames")
+	_profile_sliders[&"ledge_magnet_radius"] = _make_profile_slider(vbox,
+		"Magnet radius (m)",   0.0,   0.5,  0.01, &"ledge_magnet_radius")
+	_profile_sliders[&"ledge_magnet_strength"] = _make_profile_slider(vbox,
+		"Magnet str (m/s)",    0.0,   2.0,  0.05, &"ledge_magnet_strength")
+	_profile_sliders[&"arc_assist_max"] = _make_profile_slider(vbox,
+		"Arc assist (m/s)",    0.0,   1.0,  0.05, &"arc_assist_max")
 
 
 func _build_controller_air_dash(vbox: VBoxContainer) -> void:

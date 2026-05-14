@@ -22,3 +22,6 @@ fall_kill_y = -35.0
 reboot_duration = 0.5
 landing_sticky_factor = 0.2
 landing_sticky_frames = 2
+ledge_magnet_radius = 0.2
+ledge_magnet_strength = 1.0
+arc_assist_max = 0.4

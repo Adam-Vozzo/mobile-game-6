@@ -90,3 +90,18 @@ class_name ControllerProfile
 ## How many grounded physics frames to apply landing_sticky_factor after landing.
 ## 0 = disabled. Counting resets if the player leaves the floor before it expires.
 @export_range(0, 6, 1) var landing_sticky_frames: int = 0
+## Detection radius for ledge magnetism (metres). On a ground/coyote jump, the
+## controller probes ahead-left and ahead-right of the player for nearby platform
+## surfaces within this radius. If found, a small lateral impulse nudges the
+## player toward the platform centre. 0 = disabled (default for all non-Assisted).
+@export_range(0.0, 0.5, 0.01) var ledge_magnet_radius: float = 0.0
+## Max lateral impulse (m/s) the ledge magnet can apply per jump. Scales linearly
+## with proximity — the farther the detected edge, the smaller the nudge.
+## 0 = disabled. Assisted default: 1.0.
+@export_range(0.0, 2.0, 0.05) var ledge_magnet_strength: float = 0.0
+## Maximum lateral correction magnitude (m/s) that arc assist can steer toward a
+## detected platform per frame (0.05 × this, capped at 15% of jump_velocity × delta).
+## While airborne, the controller simulates 20 steps ahead; if a platform lands
+## within this radius of the predicted touch-down, a tiny per-frame impulse nudges
+## the player onto it. 0 = disabled (default for all non-Assisted).
+@export_range(0.0, 1.0, 0.05) var arc_assist_max: float = 0.0
