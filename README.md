@@ -5,10 +5,10 @@ A mobile 3D platformer. Brutalist megastructure inspired by *BLAME!*. Controller
 ## Status
 
 Current gate: **Gate 0 — Feel Lab** (closing out; Gate 1 prep in flight)
-Last activity: 2026-05-14 — iter 73: baked lighting research + ghost trail renderer bug fixes
+Last activity: 2026-05-14 — iter 74: camera occlusion dev-menu tunables + TBDR GPU research
 Test device build: ✅ verified 2026-05-12 — runs in Godot 4.6 on PC and on Nothing Phone 4(a) Pro
 Performance: 144 fps / 6.9 ms in editor at 1920×1080 (Feel Lab); on-device frametimes TBD
-Throttle level: **🟡 SOFT** (7 iterations since 2026-05-14 direction session — non-destructive work preferred)
+Throttle level: **🟡 SOFT** (8 iterations since 2026-05-14 direction session — non-destructive work preferred)
 
 If you only read one section, read **Open questions waiting on you** below.
 
@@ -91,6 +91,57 @@ Goal: store-ready build.
 The full iteration log lives here, newest first. Every iteration appends an entry. Skim the dates to find where you last left off.
 
 <!-- ITERATION ENTRIES BELOW — DO NOT REMOVE OLDER ENTRIES -->
+
+### [2026-05-14] — iter 74 — Camera occlusion dev-menu tunables + TBDR GPU research
+
+Branch: `iter/camera-occlusion-dev-menu`
+Throttle: 🟡 SOFT (8 iterations since 2026-05-14 direction session)
+Gate: Gate 1 — Vertical Slice prep
+
+**Primary: Camera occlusion tunables exposed in dev menu.**
+
+Four `camera_rig.gd` sphere-cast occlusion parameters were missing from the dev menu
+("tunables not in the dev menu don't exist" — CLAUDE.md). All four are now live-adjustable
+from the Camera section:
+
+- **Probe radius** (0.0–0.5 m, default 0.22) — sphere-cast radius. 0 falls back to point ray.
+  A small sphere absorbs frame-to-frame flicker at wall edges; the 0.22 default has been the
+  live value since the sphere cast was added, but was un-observable from the dev menu.
+- **Pull-in rate** (1–60 /sec, default 28) — how fast the camera pulls toward the player when
+  an occluder enters. High = fast reveal; player never stays hidden long.
+- **Ease-out rate** (0.5–60 /sec, default 6) — how slowly the camera falls back to full
+  distance after the occluder clears. Low = no bounce at corner edges.
+- **Latch delay s** (0–0.6 s, default 0.18) — how long the "occluded" pose is held after the
+  probe stops detecting a hit. Prevents flicker when the camera grazes a wall corner.
+
+`_on_camera_param_changed` in `camera_rig.gd` gained 4 new match arms (previously these
+params were unreachable via the signal). Also removed a duplicate `_occlude()` docstring that
+had been copy-pasted twice (lines 451–462 in the pre-patch version).
+
+Unit tests: `_test_camera_occlusion_defaults` (8 assertions, 879 → 887): probe radius default,
+sphere-cast branch condition (radius > 0), ray-cast fallback (radius == 0), pull-in > ease-out
+asymmetry, latch delay default, and the `safe_dist = max(min_dist, hit - margin)` floor formula
+for two cases (near occluder → floor wins; far occluder → margin wins).
+
+**Side quest: `docs/research/tbdr_mobile_gpu.md` — Tile-based deferred GPU costs.**
+
+Resolves the last open research suggestion in `INDEX.md`. Covers:
+- TBDR pipeline (binning → tile render → one DRAM write): why draw-call budget is a *CPU*
+  submission cost on mobile, not a GPU fill-rate limit.
+- Alpha blending on TBDR: breaks on-chip tile reuse — ghost trail MultiMesh + DataShard pulse
+  are the two live alpha sources; keep togglable.
+- No manual depth pre-pass needed — Adreno LRZ / Mali FPK do early-Z rejection for free.
+- SubViewport = tile flush = avoid (CanvasLayer dev menu is fine).
+- Architecture-specific: Adreno LRZ (front-to-back Godot sort is already correct), Mali FPK,
+  PowerVR HSR (Compatibility renderer preferred for budget devices).
+- CSG → MeshInstance migration reduces CPU binning cost and enables baking in the same pass.
+
+**Perf.** No runtime changes. Ghost trail fix (iter 73) + occlusion signal arms are no-ops
+when no dev menu is open. Snapshot unchanged: 144 fps / 6.9 ms in editor.
+
+**New dev-menu controls:** Camera — Occlusion: Probe radius, Pull-in rate, Ease-out rate, Latch delay s.
+**Assets acquired:** None.
+**Research added:** `docs/research/tbdr_mobile_gpu.md`.
 
 ### [2026-05-14] — iter 73 — Baked lighting research + ghost trail renderer fixes
 

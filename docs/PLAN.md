@@ -17,6 +17,7 @@ authored with it in mind.
 ## Active iteration
 
 - _No iteration currently in flight._
+- **🟢 Iter 74 complete.** Camera occlusion tunables exposed in dev menu: 4 missing `camera_rig.gd` sphere-cast params (`occlusion_probe_radius`, `pull_in_smoothing`, `ease_out_smoothing`, `occlusion_release_delay`) now have dev-menu sliders under "Camera — Occlusion" sub-section. `_on_camera_param_changed` gained 4 match arms. Duplicate `_occlude()` docstring removed. 8 unit tests (879 → 887). Side quest: `docs/research/tbdr_mobile_gpu.md` — TBDR pipeline, alpha-blending cost, no manual depth pre-pass needed, Adreno LRZ/Mali FPK notes, SubViewport cost, CSG migration benefits. Resolves last open INDEX.md research suggestion.
 - **🟢 Iter 73 complete.** Baked lighting research (`docs/research/baked_lighting.md`): LightmapGI on Mobile renderer, critical zone-atmosphere/baking conflict documented (Option A/C recommended), CSG→MeshInstance blocker surfaced, atlas sizing for Threshold. Side quest: `ghost_trail_renderer.gd` two bugs fixed — (1) blank-after-resize so new MultiMesh instances above old count are zeroed immediately (was blank-before, leaving new instances white for one frame); (2) replace per-frame `_blank_from(0)` when disabled with `_mmesh.visible = false` (eliminates 300 set_instance_color writes per frame at 60 fps when ghost trails are off). 5 new unit tests (874 → 879). INDEX.md + PLAN.md updated with bake prereqs.
 - **🟢 Iter 72 complete.** Ghost trail recording + MultiMesh renderer. See README iter 72 entry.
 - **🟢 Iter 71 complete.** Asset options document written (`docs/ASSET_OPTIONS.md`): 4 Stray-mesh candidates (A1 Quaternius LowPoly Robot recommended), 4 ambient-audio candidates (B1 AlaskaRobotics hum + B2 IanStarGem fans recommended), 5 concrete-kit candidates (C2 Poly Haven + Godot add-on recommended). All CC0 or CC-BY confirmed; fidelity check vs brutalist palette included. Side quest: pre-jump anticipation squish (`_play_jump_stretch` gains coil_y=1−0.18×scale, coil_xz=1+0.08×scale, 0.04 s EASE_IN prepend; 10 unit tests 854 → 864); JUICE.md updated.
@@ -183,8 +184,11 @@ The next iteration should pull from the top of this list. Items marked
   Play Store build doesn't require touching the editor settings.~~
   Done (iter 26). `docs/ANDROID.md` "Headless / CI signing" section covers
   Pattern A (env vars, Godot 4.3+) and Pattern B (local.properties + Gradle patch).
-- Consider upgrading camera occlusion from point ray to ShapeCast3D
-  (capsule) if poke-through is observed in Gate 1 tighter geometry.
+- ~~Consider upgrading camera occlusion from point ray to ShapeCast3D
+  (capsule) if poke-through is observed in Gate 1 tighter geometry.~~
+  Done (iter prior to 74): sphere cast via `PhysicsShapeQueryParameters3D.cast_motion`
+  already in `_probe_hit_dist`. Dev-menu tunables (`occlusion_probe_radius`,
+  `pull_in_smoothing`, `ease_out_smoothing`, `occlusion_release_delay`) exposed in iter 74.
 - ~~**Zone atmosphere research (Mobile renderer).**~~ Done (iter 68, side quest). `docs/research/zone_atmosphere.md` — WorldEnvironment swap as zone-identity tool, emissive surfaces over light count (INSIDE principle), 12-OmniLight budget, concrete colour palettes for all three Threshold zones, baked-lighting plan. Unblocks Threshold "ambient volumes" when device-feel blocker clears.
 - ~~**Gate 1 level concepts.**~~ Done (iter 30). Three candidates in `docs/levels/`:
   `spine.md` (wall-jump column ascent), `lung.md` (ventilation timing chamber),
@@ -207,6 +211,16 @@ These mirror "Open questions waiting on you" in the README.
   drive the next tuning iteration.
 
 ## Recently completed (last 5)
+
+- 2026-05-14 — Iteration 74. **Camera occlusion dev-menu tunables + TBDR GPU research.**
+  `scripts/camera/camera_rig.gd`: 4 new match arms in `_on_camera_param_changed`
+  (`occlusion_probe_radius`, `pull_in_smoothing`, `ease_out_smoothing`,
+  `occlusion_release_delay`); duplicate `_occlude()` docstring removed.
+  `tools/dev_menu/dev_menu_overlay.gd`: "Camera — Occlusion" sub-section with 4 sliders
+  (Probe radius / Pull-in rate / Ease-out rate / Latch delay s) inserted between the main
+  Camera section and Camera — Tuning. Unit tests: `_test_camera_occlusion_defaults`
+  (8 assertions, 879 → 887). Side quest: `docs/research/tbdr_mobile_gpu.md` written;
+  `docs/research/INDEX.md` entry added (last open research suggestion resolved).
 
 - 2026-05-14 — Iteration 73. **Baked lighting research + ghost trail renderer bug fixes.**
   `docs/research/baked_lighting.md`: Godot 4 LightmapGI for Mobile renderer — setup workflow,

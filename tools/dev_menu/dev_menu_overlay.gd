@@ -228,6 +228,12 @@ func _build_camera_section(vbox: VBoxContainer) -> void:
 	_make_cam_slider(vbox, "Pitch sens",      &"pitch_drag_sens",    0.001,  0.05, 0.001, 0.003)
 	_make_cam_slider(vbox, "Occl. margin",    &"occlusion_margin",   0.1,    1.0,  0.05,  0.3)
 
+	vbox.add_child(_make_label("Camera — Occlusion", SECTION_FONT_SIZE, false))
+	_make_cam_slider(vbox, "Probe radius",    &"occlusion_probe_radius",  0.0,   0.5,  0.01,  0.22)
+	_make_cam_slider(vbox, "Pull-in rate",    &"pull_in_smoothing",       1.0,  60.0,  0.5,  28.0)
+	_make_cam_slider(vbox, "Ease-out rate",   &"ease_out_smoothing",      0.5,  60.0,  0.5,   6.0)
+	_make_cam_slider(vbox, "Latch delay s",   &"occlusion_release_delay", 0.0,   0.6,  0.01,  0.18)
+
 	vbox.add_child(_make_label("Camera — Tuning", SECTION_FONT_SIZE, true))
 	_make_cam_slider(vbox, "Aim height",      &"aim_height",          0.0,   3.0,  0.05,  0.6)
 	_make_cam_slider(vbox, "Pitch max deg",   &"pitch_max_degrees",   0.0,  89.0,  1.0,   70.0)

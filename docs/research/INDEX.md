@@ -160,10 +160,12 @@ Suggested (still open):
 
 - [`baked_lighting.md`](baked_lighting.md) — Godot 4 LightmapGI for the Mobile renderer (Gate 1+ prerequisite). Key findings: (1) LightmapGI works on Mobile unlike VoxelGI/FogVolume; (2) **critical architectural conflict**: Threshold's WorldEnvironment zone-swap is incompatible with a naive single bake — use Option A (real-time only at Gate 1) or Option C (Env Disabled, OmniLights stay dynamic) when baking; (3) **CSG geometry cannot be baked** — all CSGBox3D/CSGMesh3D must be converted to MeshInstance3D before any bake pass (pairs naturally with the concrete-kit art pass); (4) atlas target 2048×2048 ASTC ~1.1 MB; Texel Density 8–12 for Threshold's large floors; (5) Zone OmniLights must stay Dynamic (Bake Mode); (6) emissive surfaces (Zone 2 conduits, HazardStripe) contribute to Option C bake — free zone identity. Concrete checklist included.
 
+- [`tbdr_mobile_gpu.md`](tbdr_mobile_gpu.md) — Tile-based deferred rendering (TBDR) cost structure for PowerVR / Mali / Adreno. Key findings: (1) draw-call budget is a **CPU submission cost**, not a GPU fill-rate limit — TBDR HSR/LRZ handles early-Z rejection for free; (2) alpha blending breaks the on-chip tile-reuse model — ghost trail MultiMesh + DataShard pulse are the current alpha-blended objects, keep them togglable; (3) no manual depth pre-pass needed — Adreno LRZ already does this; (4) SubViewports = DRAM tile flushes = avoid in Gate 1+; (5) CSG → MeshInstance3D migration will reduce CPU binning cost and unlock baking in one pass. Architecture-specific notes for Adreno LRZ (front-to-back default is correct), Mali FPK, and PowerVR HSR. Implications table in the "Implications for Project Void" section.
+
 Suggested:
 - ~~Godot's Compatibility renderer fallback for very-low-end devices.~~ Done (iter 23, `compatibility_renderer.md`).
 - ~~Godot 4 LightmapGI baked lighting for Mobile renderer.~~ Done (iter 73, `baked_lighting.md`).
-- Tile-based deferred mobile GPU costs (PowerVR/Mali/Adreno).
+- ~~Tile-based deferred mobile GPU costs (PowerVR/Mali/Adreno).~~ Done (iter 74, `tbdr_mobile_gpu.md`).
 
 ## Gate 1 — zone atmosphere and lighting
 
