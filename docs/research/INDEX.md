@@ -32,6 +32,15 @@ they're written.
   replay post-level deferred. 6 concrete Gate 1 implications including `Game.is_running` flag,
   par_time_seconds in level meta, and WinState as the last Gate 1 scene to author.
 
+- [`run_timer_semantics.md`](run_timer_semantics.md) — Par-time calibration and timer-during-reboot
+  analysis. Survey: SMB/SMB3D/Celeste/Dadish all use wall-clock timers (timer runs through deaths).
+  Current Void implementation is wall-clock (correct). Reboot overhead per profile: Snappy 0.33 s,
+  others 0.50 s — 30 Snappy deaths or 20 Floaty deaths adds ~10 s overhead. **Recommendation:**
+  keep wall-clock model (no code change), calibrate `par_time_seconds` from a 3–5-death wall-clock
+  run rather than a deathless movement-time run. `par_time_seconds = 35.0` placeholder in
+  `threshold.gd` should be ~37 s after first on-device playtest. Supersedes the `win_state_design.md`
+  note suggesting the timer should pause during reboot. 9 unit tests (`_test_run_timer_semantics`).
+
 ## Gate 1 — collectibles
 
 - [`collectible_design.md`](collectible_design.md) — Gate 1 prereq: one collectible type. Survey of SMB (bandages — cosmetic, off critical path), Celeste (strawberries — lose on death, create tension without blocking), Mario Odyssey (moon model — sparse, individually authored pockets). Mobile constraints: must glow (Area3D radius 0.9 m, generous pick-up zone), cyan biolume fits brutalist palette. **Void recommendation: the data shard** — small cyan emissive prism, slow Y rotation, `Area3D` collect zone, off par-route, one per Gate 1 level. `Game` autoload tracks `shards_collected` / `shards_total`. 6 concrete Gate 1 implications.
