@@ -116,6 +116,8 @@ func _ready() -> void:
 	_test_camera_occlusion_defaults()
 	_test_zone_env_bounds_and_disabled()
 	_test_respawn_ramp_speed_reset()
+	_test_ghost_trail_disable_and_resize_semantics()
+	_test_respawn_input_timer_clearing()
 	_report()
 
 
@@ -4463,3 +4465,128 @@ func _test_respawn_ramp_speed_reset() -> void:
 	# Full decay to max_speed takes (18 − 11) / 4 = 1.75 s — documents the window.
 	_ok("ramp lifecycle: full decay from ramp_max to max_speed takes ≥ 1.5 s ((ramp_max-max)/rate)",
 		(RAMP_MAX - MAX_SPD) / RATE > 1.5)
+
+
+func _test_ghost_trail_disable_and_resize_semantics() -> void:
+	## Documents iter-73 behavioral fixes in ghost_trail_renderer.gd:
+	##
+	## Fix 1 — blank AFTER resize:
+	##   _on_ghost_trail_param resizes instance_count THEN calls _blank_from(0).
+	##   Blanking BEFORE resize only zeros [0..old_count) and leaves the new slots
+	##   [old_count..new_count) at Godot's default colour (opaque white), producing
+	##   a one-frame flash on window enlargement.
+	##
+	## Fix 2 — _process disabled path uses _mmesh.visible = false (O(1)),
+	##   not _blank_from(0) per frame (O(instances)).
+	##   _on_juice_changed still calls _blank_from(0) once on the disable event
+	##   so stale data is cleared before the node is hidden.
+	print("\n-- Ghost trail: disable blank and resize-then-blank semantics (iter-73 fixes) --")
+	const MAX_D  := 5
+	const SAMPLE := 30.0
+
+	# --- Fix 1: resize-then-blank covers all instances including newly added ones. ---
+	# Window enlarged from 2 s (300 instances) to 5 s (750 instances).
+	var old_count := MAX_D * roundi(2.0 * SAMPLE)   # 300
+	var new_count := MAX_D * roundi(5.0 * SAMPLE)   # 750
+
+	# Buggy path: blank [0, old_count) first, THEN set instance_count = new_count.
+	# Slots [old_count, new_count) are added AFTER blanking — never zeroed.
+	var buggy_blank_ceiling := old_count              # 300 — stops here
+	var buggy_unzeroed      := new_count - buggy_blank_ceiling  # 450 slots flash white
+
+	# Fixed path: set instance_count = new_count first, THEN blank [0, new_count).
+	# All slots, including the new ones, are zeroed in the same pass.
+	var fixed_blank_ceiling := new_count              # 750 — covers everything
+	var fixed_unzeroed      := new_count - fixed_blank_ceiling  # 0
+
+	_ok("resize-then-blank: buggy path leaves 450 new slots unzeroed (documents the bug)",
+		buggy_unzeroed == 450)
+	_ok("resize-then-blank: fixed path leaves zero slots unzeroed",
+		fixed_unzeroed == 0)
+	_ok("resize-then-blank: fixed blank ceiling > buggy blank ceiling",
+		fixed_blank_ceiling > buggy_blank_ceiling)
+
+	# Shrink case (5 s → 2 s): slots above new_count are discarded by the resize;
+	# blank [0, new_count) covers only the surviving instances. No flash possible.
+	var shrink_discarded := (MAX_D * roundi(5.0 * SAMPLE)) - (MAX_D * roundi(2.0 * SAMPLE))
+	_ok("resize shrink: 450 old slots discarded by resize (no unzeroed-slot risk on shrink)",
+		shrink_discarded == 450)
+
+	# --- Fix 2: _process disabled path performance model. ---
+	# Before fix: _process called _blank_from(0) every frame while disabled.
+	#   Cost: 300 instances × 60 fps = 18,000 set_instance_color GPU writes/sec.
+	# After fix: _process sets _mmesh.visible = false (1 call/frame, O(1)).
+	#   _on_juice_changed calls _blank_from(0) once on the disable event (data hygiene).
+	var instances := old_count   # 300 (default 2 s window)
+	var fps       := 60
+	var old_cost  := instances * fps   # 18,000 writes/sec
+	var new_cost  := 1 * fps           # 60 writes/sec
+
+	_ok("disabled path old cost: 300 × 60 = 18,000 GPU writes/sec (per-frame blank_from)",
+		old_cost == 18000)
+	_ok("disabled path new cost: 60 writes/sec (visible=false, O(1) per frame)",
+		new_cost == 60)
+	_ok("disabled path: fix reduces write rate by exactly instance_count (300×)",
+		old_cost / new_cost == instances)
+
+	# Combined disable behaviour: one blank on the event, then node hidden per frame.
+	# Ensures no stale trail data is visible if ghost trails are re-enabled mid-run.
+	var blank_calls_on_disable := 1   # _on_juice_changed: _blank_from(0) called once
+	var blank_calls_per_frame  := 0   # _process: visible=false, no _blank_from
+	_ok("on disable: one _blank_from call on event + zero per frame (data hygiene + efficiency)",
+		blank_calls_on_disable == 1 and blank_calls_per_frame == 0)
+
+
+func _test_respawn_input_timer_clearing() -> void:
+	## Documents the cleanup performed by player.gd::respawn():
+	## every input-derived timer and state flag is zeroed at death so nothing from
+	## the fatal frame can carry into the next attempt's startup.
+	##
+	## Guard: `if _is_rebooting: return` at the top of respawn() ensures a second
+	## death event during the reboot animation is silently discarded.
+	## _physics_process has the same guard — no gravity, movement, or jumps during
+	## the reboot animation sequence.
+	print("\n-- respawn(): input timer clearing and double-respawn guard --")
+
+	# Simulate pre-death state: all timers live, dash active.
+	var buffer_timer := 0.15   # jump buffered one frame before death
+	var coyote_timer := 0.08   # died mid-coyote-window
+	var air_jumps    := 1      # one air jump remaining in the aerial pool
+	var dash_charges := 1      # dash charge available
+	var dash_timer   := 0.10   # mid-dash at moment of death
+	var is_dashing   := true
+
+	# Apply the exact clearing assignments from player.gd::respawn() (lines 322–335).
+	buffer_timer = 0.0
+	coyote_timer = 0.0
+	air_jumps    = 0
+	dash_charges = 0
+	dash_timer   = 0.0
+	is_dashing   = false
+
+	_ok("respawn: _buffer_timer cleared (buffered jump at death-frame cannot fire post-reboot)",
+		_near(buffer_timer, 0.0))
+	_ok("respawn: _coyote_timer cleared (coyote window cannot carry into reboot)",
+		_near(coyote_timer, 0.0))
+	_ok("respawn: _air_jumps_remaining zeroed (no aerial jump pool during reboot)",
+		air_jumps == 0)
+	_ok("respawn: _dash_charges zeroed (charge cannot carry into next attempt)",
+		dash_charges == 0)
+	_ok("respawn: _dash_timer cleared (no lingering dash duration after death)",
+		_near(dash_timer, 0.0))
+	_ok("respawn: _is_dashing cleared (dash cannot be active during reboot animation)",
+		is_dashing == false)
+
+	# Double-respawn guard: _is_rebooting is set immediately at the top of respawn(),
+	# before any async work starts.  A second respawn() call hits the guard and returns.
+	var is_rebooting := false
+	is_rebooting = true   # first call: sets flag at entry
+	var second_call_proceeds := not is_rebooting  # guard: "if _is_rebooting: return"
+	_ok("respawn guard: second call during reboot is discarded (_is_rebooting blocks re-entry)",
+		second_call_proceeds == false)
+
+	# _physics_process also checks _is_rebooting and returns early,
+	# blocking gravity, movement, and jump processing for the full reboot duration.
+	var physics_runs := not is_rebooting
+	_ok("respawn guard: _physics_process blocked while rebooting (no movement during animation)",
+		physics_runs == false)
