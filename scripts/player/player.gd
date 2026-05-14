@@ -171,9 +171,12 @@ func _tick_timers(delta: float, on_floor: bool) -> void:
 			_sticky_frames_remaining -= 1
 		else:
 			_sticky_frames_remaining = 0  # took off before window expired
-	if just_landed and not _is_rebooting and DevMenu.is_juice_on(&"squash_stretch"):
+	if just_landed and not _is_rebooting:
 		var impact := clampf(-_last_fall_speed / profile.terminal_velocity, 0.0, 1.0)
-		_play_land_squash(impact)
+		if DevMenu.is_juice_on(&"squash_stretch"):
+			_play_land_squash(impact)
+		if has_node("/root/Audio"):
+			Audio.on_land(impact)
 	_was_on_floor_last_frame = on_floor
 
 
@@ -257,6 +260,8 @@ func _try_jump() -> void:
 		if DevMenu.is_juice_on(&"squash_stretch"):
 			_play_jump_stretch()
 		_spawn_jump_puff()
+		if has_node("/root/Audio"):
+			Audio.on_jump()
 	elif _buffer_timer > 0.0 and _air_jumps_remaining > 0:
 		velocity.y = profile.jump_velocity * profile.air_jump_velocity_multiplier
 		# Scale horizontal velocity at the moment of jump (1.0 = full preserve,
@@ -269,6 +274,8 @@ func _try_jump() -> void:
 		if DevMenu.is_juice_on(&"squash_stretch"):
 			_play_jump_stretch()
 		_spawn_jump_puff()
+		if has_node("/root/Audio"):
+			Audio.on_jump()
 
 
 func _cut_jump(jump_released: bool) -> void:
@@ -440,6 +447,8 @@ func respawn() -> void:
 	if has_node("/root/Game"):
 		Game.register_attempt()
 		Game.player_respawned.emit()
+	if has_node("/root/Audio"):
+		Audio.on_respawn_start()
 	_run_reboot_effect()
 
 

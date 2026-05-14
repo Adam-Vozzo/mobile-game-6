@@ -121,6 +121,8 @@ func _ready() -> void:
 	_test_assisted_phase2_params()
 	_test_free_cam_mode()
 	_test_snappy_reboot_duration()
+	_test_audio_skeleton()
+	_test_wall_normal_viz_key()
 	_report()
 
 
@@ -4782,3 +4784,55 @@ func _test_snappy_reboot_duration() -> void:
 	# Ordering invariant: Snappy < Floaty (precision < cinematic)
 	_ok("reboot_duration: snappy < floaty (precision-feel shorter than cinematic)",
 		snappy.reboot_duration < floaty.reboot_duration)
+
+
+func _test_audio_skeleton() -> void:
+	## Audio autoload upgrade (iter 80): bus setup, sound_layers wiring, event
+	## dispatch stubs. All stream vars must be null until assets land; every
+	## dispatch method must exist with the right name; LAND_HEAVY_THRESHOLD must
+	## sit in the valid impact range (0..1).
+	print("\n-- Audio skeleton: stream defaults + dispatch methods --")
+
+	# LAND_HEAVY_THRESHOLD splits light vs heavy landing SFX.
+	_ok("LAND_HEAVY_THRESHOLD == 0.25",
+		_near(AU.LAND_HEAVY_THRESHOLD, 0.25))
+	_ok("LAND_HEAVY_THRESHOLD is in valid impact range (0, 1)",
+		AU.LAND_HEAVY_THRESHOLD > 0.0 and AU.LAND_HEAVY_THRESHOLD < 1.0)
+
+	# Instantiate without adding to tree so _ready() does not fire.
+	var au := AU.new()
+
+	# All stream vars must default null (no assets committed yet).
+	_ok("_sfx_jump defaults null",          au._sfx_jump         == null)
+	_ok("_sfx_land_light defaults null",    au._sfx_land_light   == null)
+	_ok("_sfx_land_heavy defaults null",    au._sfx_land_heavy   == null)
+	_ok("_sfx_collect_shard defaults null", au._sfx_collect_shard == null)
+	_ok("_sfx_respawn_start defaults null", au._sfx_respawn_start == null)
+
+	# Dispatch methods must exist so call-sites in player.gd / data_shard.gd
+	# compile without error even before any stream is assigned.
+	_ok("has method on_jump()",           au.has_method(&"on_jump"))
+	_ok("has method on_land()",           au.has_method(&"on_land"))
+	_ok("has method on_collect_shard()",  au.has_method(&"on_collect_shard"))
+	_ok("has method on_respawn_start()",  au.has_method(&"on_respawn_start"))
+	_ok("has method play_sfx()",          au.has_method(&"play_sfx"))
+
+	au.free()
+
+
+func _test_wall_normal_viz_key() -> void:
+	## Wall normal is listed in CLAUDE.md debug-viz requirements ("ground/wall
+	## normals"). Verify the key was added to debug_viz_state and defaults OFF
+	## (consistent with other on-demand viz keys).
+	print("\n-- Wall normal debug viz key --")
+
+	var dm := DM.new()
+
+	_ok("wall_normal key present in debug_viz_state",
+		dm.debug_viz_state.has(&"wall_normal"))
+	_ok("wall_normal defaults false (off by default)",
+		dm.debug_viz_state[&"wall_normal"] == false)
+	_ok("ground_normal key still present (no regression)",
+		dm.debug_viz_state.has(&"ground_normal"))
+
+	dm.free()

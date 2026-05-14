@@ -5,7 +5,7 @@ A mobile 3D platformer. Brutalist megastructure inspired by *BLAME!*. Controller
 ## Status
 
 Current gate: **Gate 0 — Feel Lab** (closing out; Gate 1 prep in flight)
-Last activity: 2026-05-14 — iter 79: free-camera mode (Level section dev menu, WASD+QE+RMB look) + Snappy reboot_duration 0.5→0.33 s
+Last activity: 2026-05-14 — iter 80: audio skeleton (bus setup, sound_layers wiring, dispatch stubs) + wall normal debug viz
 Test device build: ✅ verified 2026-05-12 — runs in Godot 4.6 on PC and on Nothing Phone 4(a) Pro
 Performance: 144 fps / 6.9 ms in editor at 1920×1080 (Feel Lab); on-device frametimes TBD
 Throttle level: **🟢 RESET** (2026-05-14 direction session: A confirmed, B+D actioned, C+E deferred)
@@ -100,6 +100,62 @@ Goal: store-ready build.
 The full iteration log lives here, newest first. Every iteration appends an entry. Skim the dates to find where you last left off.
 
 <!-- ITERATION ENTRIES BELOW — DO NOT REMOVE OLDER ENTRIES -->
+
+### [2026-05-14] — iter 80 — Audio skeleton upgrade + wall normal debug viz
+
+Branch: `claude/gifted-shannon-ivw0I`
+Throttle: 🟢 normal (3 iterations since 2026-05-14 direction session)
+Gate: Gate 1 — Vertical Slice prep
+
+**Primary: Audio skeleton upgrade** — `audio.gd` upgraded from a 17-line stub to a
+working infrastructure. `sound_layers` juice toggle now actually mutes SFX buses.
+
+`scripts/autoload/audio.gd`:
+- `_ensure_bus(name, parent)` — creates SFX_Player, SFX_World, Music buses under Master
+  at runtime via `AudioServer.add_bus()` if absent. No project.godot changes required.
+- `_on_juice_toggle` + `_apply_sound_layers(enabled)` — mutes SFX_Player + SFX_World
+  when `sound_layers` is toggled OFF. Music is not affected (direction-neutral).
+- `play_sfx(stream, bus)` — one-shot AudioStreamPlayer; `finished` → `queue_free`.
+  `null` stream is a safe no-op (no-op until assets land).
+- `LAND_HEAVY_THRESHOLD = 0.25` — tested constant splitting light vs heavy land SFX.
+- Event dispatch stubs: `on_jump()`, `on_land(impact)`, `on_collect_shard()`, `on_respawn_start()`.
+
+Integration:
+- `scripts/player/player.gd`: `Audio.on_jump()` in `_try_jump()` (both floor + air-jump paths);
+  `Audio.on_land(impact)` in `_tick_timers()` just_landed block (guarded `not _is_rebooting`,
+  impact computation extracted from the squash_stretch gate so it runs independently);
+  `Audio.on_respawn_start()` in `respawn()`. All calls guarded `has_node("/root/Audio")`.
+- `scripts/levels/data_shard.gd`: `Audio.on_collect_shard()` in `_collect()`.
+
+**Side quest: Wall normal debug viz** — fills CLAUDE.md "ground/wall normals" requirement.
+- `scripts/autoload/dev_menu.gd`: `&"wall_normal": false` added to `debug_viz_state`.
+- `tools/dev_menu/dev_menu_overlay.gd`: "Wall normal" checkbox in Debug viz section.
+- `tools/debug/player_debug_draw.gd`: `_C_WALL_NORMAL` (magenta), `_draw_wall_normal`
+  (fires when `_player.is_on_wall()`; same arrow+notch structure as `_draw_ground_normal`).
+  `_refresh_viz_active()` includes new key.
+
+**Research:** `docs/research/audio_placeholder.md` — 4 placeholder options (silence,
+Kenney B5, individual freesound CC0 clips, procedural tones). Recommendation: silence
+until human confirms direction pick. AudioStreamRandomizer pattern for post-direction
+variation documented. `docs/research/INDEX.md` updated.
+
+**Tests:** 15 new assertions (948 → 963):
+- `_test_audio_skeleton` (12): LAND_HEAVY_THRESHOLD == 0.25 and in (0,1), all 5 stream
+  vars null by default, 5 dispatch methods exist (on_jump/on_land/on_collect_shard/
+  on_respawn_start/play_sfx).
+- `_test_wall_normal_viz_key` (3): key present in debug_viz_state, defaults false,
+  ground_normal still present (no regression).
+
+**Perf:** `_refresh_viz_active` gains one bool OR — negligible. `play_sfx` with null
+stream exits on the first line. Bus mute state change is O(1) AudioServer call.
+**Bugs fixed:** `sound_layers` toggle was a no-op; now live.
+**New dev-menu controls:** "Wall normal" checkbox in Debug viz.
+**Assets acquired:** none.
+**Research added:** `docs/research/audio_placeholder.md`.
+**On-device pending:** wall_normal viz (speed/clarity against walls); all SFX (no
+streams assigned — will need audio direction before first real sound plays).
+
+---
 
 ### [2026-05-14] — iter 79 — Free-camera mode + Snappy reboot_duration tuning
 
