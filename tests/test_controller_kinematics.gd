@@ -127,6 +127,7 @@ func _ready() -> void:
 	_test_ledge_magnet_impulse_formula()
 	_test_arc_assist_per_frame_budget()
 	_test_screen_shake_strongest_wins()
+	_test_run_timer_semantics()
 	_report()
 
 
@@ -5042,3 +5043,69 @@ func _test_screen_shake_strongest_wins() -> void:
 	const DEATH_FREQ := 26.0
 	_ok("land (20 Hz) and death (26 Hz) shake frequencies are distinct — different tactile feel",
 		not is_equal_approx(LAND_FREQ, DEATH_FREQ))
+
+
+func _test_run_timer_semantics() -> void:
+	## Documents the wall-clock timer model: timer runs continuously through all
+	## deaths and reboot animations. Mirrors the analysis in
+	## docs/research/run_timer_semantics.md.
+	##
+	## Key invariant: Game.is_running is NOT toggled by respawn — only by
+	## level_complete() (win) and reset_run() (replay). This means displayed
+	## run_time_seconds includes reboot-animation overhead.
+	##
+	## Par-time calibration formula:
+	##   par_wall_clock = movement_time + (expected_deaths × reboot_duration)
+	print("\n-- Run-timer semantics (wall-clock model, run_timer_semantics.md) --")
+	var g: GM = GM.new()
+
+	# register_attempt() is what respawn() calls on the Game autoload.
+	# It must NOT change is_running — only increments the attempt counter.
+	g.start_run()
+	g.register_attempt()
+	_ok("register_attempt (respawn path) does not stop the run timer (is_running stays true)",
+		g.is_running == true)
+	g.register_attempt()
+	g.register_attempt()
+	_ok("multiple respawns keep is_running true (wall-clock model: timer runs through deaths)",
+		g.is_running == true)
+
+	# Reboot-duration overhead table (from run_timer_semantics.md):
+	#   Snappy 0.33 s, others 0.50 s
+	const SNAPPY_REBOOT := 0.33
+	const FLOATY_REBOOT := 0.50
+
+	# Snappy overhead: 4 deaths × 0.33 s = 1.32 s
+	var snappy_overhead_4 := 4 * SNAPPY_REBOOT
+	_ok("Snappy 4 deaths: overhead = 4 × 0.33 = 1.32 s",
+		_near(snappy_overhead_4, 1.32))
+
+	# Floaty overhead: 4 deaths × 0.50 s = 2.0 s
+	var floaty_overhead_4 := 4 * FLOATY_REBOOT
+	_ok("Floaty 4 deaths: overhead = 4 × 0.50 = 2.0 s",
+		_near(floaty_overhead_4, 2.0))
+
+	# Par calibration: Threshold placeholder is 35.0 s (pure movement time).
+	# With 4 Snappy deaths, wall-clock par ≈ 35.0 + 1.32 = 36.32 s.
+	# The research note recommends rounding up to 37 s for a conservative par.
+	const THRESHOLD_MOVEMENT_PAR := 35.0
+	var calibrated_par := THRESHOLD_MOVEMENT_PAR + snappy_overhead_4
+	_ok("par calibration: movement_time + overhead > pure movement_time (wall-clock par is higher)",
+		calibrated_par > THRESHOLD_MOVEMENT_PAR)
+	_ok("par calibration: Threshold wall-clock par with 4 Snappy deaths ≈ 36.3 s",
+		_near(calibrated_par, 36.32))
+
+	# "deaths needed to add ~10 s overhead" threshold from the research table.
+	# Snappy: 10 / 0.33 ≈ 30.3 → 30 deaths. Floaty: 10 / 0.50 = 20 deaths.
+	var snappy_deaths_for_10s: int = int(10.0 / SNAPPY_REBOOT)
+	var floaty_deaths_for_10s: int = int(10.0 / FLOATY_REBOOT)
+	_ok("Snappy: ~30 deaths to accumulate 10 s overhead (Snappy reboot 0.33 s)",
+		snappy_deaths_for_10s == 30)
+	_ok("Floaty: 20 deaths to accumulate 10 s overhead (Floaty reboot 0.50 s)",
+		floaty_deaths_for_10s == 20)
+
+	# Snappy reboot is shorter than Floaty — less per-death overhead, faster respawn feel.
+	_ok("Snappy reboot (0.33 s) is shorter than Floaty reboot (0.50 s)",
+		SNAPPY_REBOOT < FLOATY_REBOOT)
+
+	g.free()

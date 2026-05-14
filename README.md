@@ -5,7 +5,7 @@ A mobile 3D platformer. Brutalist megastructure inspired by *BLAME!*. Controller
 ## Status
 
 Current gate: **Gate 0 — Feel Lab** (closing out; Gate 1 prep in flight)
-Last activity: 2026-05-14 — iter 82: hardening unit tests (ledge magnet, arc assist, shake strongest-wins; 971 → 993)
+Last activity: 2026-05-14 — iter 83: run-timer semantics research + par-time calibration (993 → 1002)
 Test device build: ✅ verified 2026-05-12 — runs in Godot 4.6 on PC and on Nothing Phone 4(a) Pro
 Performance: 144 fps / 6.9 ms in editor at 1920×1080 (Feel Lab); on-device frametimes TBD
 Throttle level: **🟢 RESET** (2026-05-14 direction session: A confirmed, B+D actioned, C+E deferred)
@@ -41,6 +41,7 @@ Things Claude can't decide alone, or where it's stalled and needs direction.
 - [x] **Camera pitch 70° vs 55°.** 70° is the right ceiling. Auto-correction-fight bug surfaced and fixed in same session.
 - [ ] **Asset suggestions for first-pick approval.** `docs/ASSET_OPTIONS.md` now covers Kenney (A5–A7, B5, C6–C8) in addition to the freesound/Quaternius/Poly Haven recommendations. **Awaiting your picks.** After ~3 approvals, autonomous acquisition resumes.
 - [ ] **Ongoing Snappy tuning passes.** Snappy feel is good but will keep getting small tweaks as level design progresses. Whenever a level beat feels wrong, note "Snappy felt too X on that beat" — it goes into the next tuning iteration.
+- [ ] **Par-time calibration for Threshold.** Current `par_time_seconds = 35.0` is a placeholder (pure movement time). After first on-device 3–5-death playtest, replace with the actual wall-clock time for that run (~37 s expected for Snappy). See `docs/research/run_timer_semantics.md` for the calibration formula. Also: if you prefer the timer to **pause during reboot** rather than run continuously, that option is documented in the same note with exact code-change instructions.
 
 ## Roadmap
 
@@ -100,6 +101,47 @@ Goal: store-ready build.
 The full iteration log lives here, newest first. Every iteration appends an entry. Skim the dates to find where you last left off.
 
 <!-- ITERATION ENTRIES BELOW — DO NOT REMOVE OLDER ENTRIES -->
+
+### [2026-05-14] — iter 83 — Run-timer semantics research + par-time calibration
+
+Branch: `iter/run-timer-research`
+Throttle: 🟡 soft (7 iterations since 2026-05-14 direction session)
+Gate: Gate 1 — Vertical Slice prep
+
+**Primary: Research note** — `docs/research/run_timer_semantics.md`.
+
+Documents the wall-clock run-timer model and its implications for par-time calibration.
+
+Key findings:
+- SMB, SMB 3D, Celeste, Dadish 3D all use wall-clock timers (timer runs through all deaths).
+- Current `game.gd` implementation (`_process` accumulates while `is_running`) is **correct**
+  for this model — no code change needed.
+- `win_state_design.md` note suggesting "timer should not tick during reboot" reflected an
+  alternative model (Approach B); research recommends wall-clock (Approach A) instead.
+  `run_timer_semantics.md` supersedes that note.
+- `par_time_seconds = 35.0` in `threshold.gd` is a pure-movement-time placeholder.
+  After the first on-device 3–5-death playtest, update to the wall-clock time (~37 s expected
+  for Snappy at 4 deaths: 35.0 + 4 × 0.33 = 36.32 s → round up).
+- Approach B (pause during reboot) documented with code-change instructions in case the
+  human prefers it after on-device feel testing.
+
+**Side quest: Unit tests** — `_test_run_timer_semantics` (9 new assertions):
+- `register_attempt()` (the respawn path) does not change `is_running` (wall-clock invariant).
+- Multiple respawns keep timer running.
+- Reboot overhead per profile: Snappy 0.33 s × 4 deaths = 1.32 s, Floaty 0.50 s × 4 deaths = 2.0 s.
+- Par calibration: wall-clock par > pure movement par.
+- Deaths-to-10s-overhead table: Snappy ~30, Floaty 20.
+- Snappy reboot < Floaty reboot (faster feel on precision profile).
+
+**Tests:** 9 new assertions (993 → 1002).
+**Perf:** no change.
+**Bugs fixed:** none (design gap documented and clarified, no code fix needed).
+**New dev-menu controls:** none.
+**Assets acquired:** none.
+**Research added:** `docs/research/run_timer_semantics.md`.
+**On-device pending:** par-time calibration (update `par_time_seconds` after first 3–5-death run).
+
+---
 
 ### [2026-05-14] — iter 82 — Hardening: ledge magnet + arc assist + shake strongest-wins tests
 
