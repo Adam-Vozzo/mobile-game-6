@@ -16,6 +16,7 @@ authored with it in mind.
 
 ## Active iteration
 
+- **🟢 Iter 80 complete.** Audio skeleton upgrade + wall normal debug viz. `audio.gd`: bus setup (`_ensure_bus` creates SFX_Player/SFX_World/Music under Master at runtime), `_apply_sound_layers` mutes SFX buses when `sound_layers` juice toggle is OFF (was no-op), `play_sfx(null)` safe no-op, four event dispatch stubs (`on_jump`, `on_land`, `on_collect_shard`, `on_respawn_start`) wired in `player.gd` + `data_shard.gd`. `LAND_HEAVY_THRESHOLD = 0.25` constant. Wall normal debug viz: `&"wall_normal": false` added to `debug_viz_state`; checkbox in Debug viz section; `_draw_wall_normal` in `player_debug_draw.gd` (magenta arrow, fires when `is_on_wall()`). 15 new unit tests (`_test_audio_skeleton` 12 + `_test_wall_normal_viz_key` 3). 948 → 963 assertions. Research: `docs/research/audio_placeholder.md`. JUICE.md sound-layers section updated (toggle is live; dispatch stubs table added).
 - **🟢 Iter 79 complete.** Free-camera mode (CLAUDE.md required Level section dev menu item, was missing). `debug_viz_state[&"free_cam"]` added to `dev_menu.gd`. `camera_rig.gd`: `free_cam_speed` export (10.0 m/s), `_free_cam`/`_free_cam_yaw`/`_free_cam_pitch` state; `_on_debug_viz_changed` seeds Euler angles from `_camera.global_basis.get_euler(YXZ)` on enable, resets `_initialized` on disable; `_process_free_cam` (WASD+QE + Shift 3× boost); `_unhandled_input` (RMB+drag look, yaw_drag_sens / pitch_drag_sens reused, ±PI×0.45 pitch clamp). Dev menu Level section gains "Free cam (WASD+QE, RMB look)" checkbox. 10 unit tests (`_test_free_cam_mode`). Side quest: Snappy `reboot_duration` 0.33 s (was 0.5 s) — per `level_design_references.md` research (≤ 0.35 s for precision feel); Floaty/Assisted/Momentum stay at 0.5 s. 6 unit tests (`_test_snappy_reboot_duration`). 932 → 948 assertions. On-device pending.
 - **🟢 THROTTLE RESET 2026-05-14.** Human direction session captured iter-77 verdicts: A (Threshold redesign) feels a lot better — open-level direction confirmed; B (asset picks) — "get some options from Kenney also", `docs/ASSET_OPTIONS.md` extended with Kenney candidates A5–A7 / B5 / C6–C8; C (air-dash mode) and E (texture-pass timing) — TBD, loop will not block on them; D (camera `pitch_max=70°`) — ceiling correct, but the user surfaced an "auto-correction fights when pitching up and holding" bug. Fixed in same session: `_apply_drag_input` used spherical XZ (`cos(elev)` factor) while `_compute_ground_camera_pos` enforces cylindrical XZ at full distance — the ground branch was easing the camera back out from the drag pose over ~0.5 s. Drag formula now matches ground branch; `_test_tripod_drag_orbit` rewritten and a 70°-pitch consistency assertion added.
 - **Iter 77 complete.** Hardening only: refactor `_run_reboot_effect` (41→32 lines) — extracted `_play_death_squish(duration)` and `_play_reboot_grow(duration)` helpers; both now tracked via `_squash_tween` (consistent with `_play_land_squash` / `_play_jump_stretch` / `_play_dash_stretch`). `_build_ui` and `_make_slider` were found within 40 lines — removed from backlog. 2 new tween-containment assertions in `_test_respawn_params` (920 → 922). JUICE.md "Death squish" entry updated to reference new helpers.
@@ -231,6 +232,22 @@ These mirror "Open questions waiting on you" in the README.
 
 ## Recently completed (last 5)
 
+- 2026-05-14 — iter 80. **Audio skeleton upgrade + wall normal debug viz.**
+  `scripts/autoload/audio.gd`: upgraded from stub. `_ensure_bus()` creates SFX_Player/SFX_World/Music
+  buses under Master at runtime via `AudioServer.add_bus()`. `_apply_sound_layers(enabled)` mutes
+  SFX_Player + SFX_World when `sound_layers` juice toggle is OFF (was no-op). `play_sfx(null)` is a
+  safe no-op. Four event dispatch stubs: `on_jump()`, `on_land(impact)`, `on_collect_shard()`,
+  `on_respawn_start()`. `LAND_HEAVY_THRESHOLD = 0.25` constant (light/heavy split). Integration:
+  `player.gd` calls `Audio.on_jump()` in `_try_jump()` (both floor + air paths), `Audio.on_land(impact)`
+  in `_tick_timers()` (just_landed frame, guarded by `not _is_rebooting`), `Audio.on_respawn_start()`
+  in `respawn()`. `data_shard.gd` calls `Audio.on_collect_shard()` in `_collect()`. All calls guarded
+  by `has_node("/root/Audio")` for test safety. Wall normal debug viz: `&"wall_normal": false` added to
+  `debug_viz_state`; "Wall normal" checkbox in Debug viz section (dev_menu_overlay.gd); `_draw_wall_normal`
+  (magenta, fires when `is_on_wall()`) + `_C_WALL_NORMAL` constant added to `player_debug_draw.gd`.
+  `_refresh_viz_active()` includes new key. Research: `docs/research/audio_placeholder.md` — 4 placeholder
+  options surveyed, silence recommended, AudioStreamRandomizer pattern for post-direction implementation.
+  JUICE.md sound-layers section updated. INDEX.md updated. 15 unit tests (`_test_audio_skeleton` 12
+  + `_test_wall_normal_viz_key` 3). 948 → 963 assertions.
 - 2026-05-14 — iter 79. **Free-camera mode + Snappy reboot_duration tuning.**
   `camera_rig.gd`: `free_cam_speed` export, `_free_cam`/`_free_cam_yaw`/`_free_cam_pitch` state,
   `_on_debug_viz_changed` (seeds YXZ Euler from `_camera.global_basis` on enable; resets `_initialized`

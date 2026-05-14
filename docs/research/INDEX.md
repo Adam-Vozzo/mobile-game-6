@@ -171,6 +171,10 @@ Suggested:
 
 - [`zone_atmosphere.md`](zone_atmosphere.md) — Zone-distinct atmosphere on the Mobile renderer (no FogVolume). Key findings: (1) WorldEnvironment swap (current = toggle) is the zone-identity mechanism — one node per zone, zero rendering cost; (2) emissive surfaces carry more zone identity than light count (INSIDE principle); (3) light-count ceiling is 12 OmniLights for Threshold (shadow-disabled in corridors); (4) baked lighting plan: Zone 1 as bake env, Zones 2/3 rely on emissive surfaces over the bake; (5) FogVolume is Forward+ only, not needed for sequential zones; (6) concrete colour palette for all three Threshold zones. Unblocks Threshold "ambient volumes" item when device-feel clears.
 
+## Audio
+
+- [`audio_placeholder.md`](audio_placeholder.md) — Placeholder SFX strategy for Gate 1. Bus hierarchy (Master → Music / SFX_Player / SFX_World) implemented in `audio.gd`; dispatch points wired (jump, land, collect, respawn). Four options surveyed: silence (current, recommended), Kenney B5, individual freesound CC0 clips, procedural. Recommendation: stay silent until human confirms sound direction pick from ASSET_OPTIONS.md. `LAND_HEAVY_THRESHOLD = 0.25` documented and tested. AudioStreamRandomizer pattern for post-direction variation included.
+
 ## Gate 1 — level hazard design
 
 - [`machinery_hazards.md`](machinery_hazards.md) — Industrial machinery as platformer

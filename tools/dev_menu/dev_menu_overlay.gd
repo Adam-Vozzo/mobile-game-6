@@ -445,6 +445,7 @@ func _build_debug_section(vbox: VBoxContainer) -> void:
 	_make_viz_checkbox(vbox, "Collision capsule",  &"collision_capsule")
 	_make_viz_checkbox(vbox, "Velocity arrow",     &"velocity_arrow")
 	_make_viz_checkbox(vbox, "Ground normal",      &"ground_normal")
+	_make_viz_checkbox(vbox, "Wall normal",        &"wall_normal")
 	_make_viz_checkbox(vbox, "Jump arc",           &"jump_arc")
 
 

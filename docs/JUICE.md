@@ -68,12 +68,21 @@ Status legend:
 
 ## Sound layers — toggle key `sound_layers`
 
+**Toggle is now live** (iter 80): mutes `SFX_Player` + `SFX_World` AudioServer buses.
+Bus hierarchy: Master → Music / SFX_Player / SFX_World. Dispatch points wired in
+`player.gd` (jump, land, respawn) and `data_shard.gd` (collect). All streams `null`
+until audio direction confirmed — toggle mutes cleanly even with no assets loaded.
+See `docs/research/audio_placeholder.md` for placeholder strategy.
+
 | element | status | notes |
 |---------|--------|-------|
+| Jump SFX (`on_jump`) | prototype-stub | dispatch wired; stream null until direction confirmed |
+| Land SFX (`on_land`) | prototype-stub | light/heavy split at impact=0.25; stream null |
+| Collect shard SFX (`on_collect_shard`) | prototype-stub | dispatch wired; stream null |
+| Respawn start SFX (`on_respawn_start`) | prototype-stub | dispatch wired; stream null |
 | Servo whir under run | idea | looped, pitch-modulated by speed |
 | Footstep impacts | idea | layered under whir |
 | Jump anticipation hum | idea | starts in buffer window, fades out at apex |
-| Land clank + dust puff | idea | scaled by impact velocity |
 | Reboot chord | idea | sparks → power-on hum → boot chord |
 
 ## Camera juice — currently no toggle (always-on, polish later)

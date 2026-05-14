@@ -8,6 +8,7 @@ class_name PlayerDebugDraw
 ##   collision_capsule — wireframe capsule matching the physics shape
 ##   velocity_arrow    — arrow in velocity direction, length ∝ speed
 ##   ground_normal     — floor surface normal arrow when on ground
+##   wall_normal       — wall contact normal arrow when pressing against a wall
 ##   jump_arc          — predicted jump/fall parabola from current position
 
 const _SEGS     := 24   # horizontal circle resolution
@@ -18,10 +19,11 @@ const _CAP_R  := 0.28
 const _CAP_H  := 0.9
 const _CAP_OY := 0.45   # capsule centre above player origin
 
-const _C_CAPSULE := Color(0.0, 0.9, 0.8)
-const _C_VEL     := Color(1.0, 0.8, 0.0)
-const _C_NORMAL  := Color(0.2, 1.0, 0.2)
-const _C_ARC     := Color(1.0, 0.45, 0.1)
+const _C_CAPSULE     := Color(0.0, 0.9, 0.8)
+const _C_VEL         := Color(1.0, 0.8, 0.0)
+const _C_NORMAL      := Color(0.2, 1.0, 0.2)
+const _C_WALL_NORMAL := Color(1.0, 0.3, 0.9)
+const _C_ARC         := Color(1.0, 0.45, 0.1)
 
 var _imesh: ImmediateMesh
 var _player: Player
@@ -50,6 +52,7 @@ func _refresh_viz_active() -> void:
 		DevMenu.is_debug_viz_on(&"collision_capsule") or
 		DevMenu.is_debug_viz_on(&"velocity_arrow") or
 		DevMenu.is_debug_viz_on(&"ground_normal") or
+		DevMenu.is_debug_viz_on(&"wall_normal") or
 		DevMenu.is_debug_viz_on(&"jump_arc"))
 
 
@@ -73,6 +76,8 @@ func _process(_delta: float) -> void:
 		_draw_velocity_arrow(origin)
 	if DevMenu.is_debug_viz_on(&"ground_normal"):
 		_draw_ground_normal(origin)
+	if DevMenu.is_debug_viz_on(&"wall_normal"):
+		_draw_wall_normal(origin)
 	if DevMenu.is_debug_viz_on(&"jump_arc"):
 		_draw_jump_arc(origin)
 	_imesh.surface_end()
@@ -130,6 +135,22 @@ func _draw_ground_normal(origin: Vector3) -> void:
 		perp = n.cross(Vector3.RIGHT).normalized() * 0.12
 	else:
 		perp = n.cross(Vector3.FORWARD).normalized() * 0.12
+	_add_line(tip, origin + n * 1.0 + perp)
+	_add_line(tip, origin + n * 1.0 - perp)
+
+
+func _draw_wall_normal(origin: Vector3) -> void:
+	if not _player.is_on_wall():
+		return
+	_imesh.surface_set_color(_C_WALL_NORMAL)
+	var n   := _player.get_wall_normal()
+	var tip := origin + n * 1.2
+	_add_line(origin, tip)
+	var perp: Vector3
+	if absf(n.dot(Vector3.UP)) < 0.9:
+		perp = n.cross(Vector3.UP).normalized() * 0.12
+	else:
+		perp = n.cross(Vector3.RIGHT).normalized() * 0.12
 	_add_line(tip, origin + n * 1.0 + perp)
 	_add_line(tip, origin + n * 1.0 - perp)
 

@@ -105,6 +105,8 @@ func _collect() -> void:
 	_collected = true
 	if has_node("/root/Game"):
 		Game.shards_collected += 1
+	if has_node("/root/Audio"):
+		Audio.on_collect_shard()
 	# Hide the mesh immediately; keep the light visible for the pulse
 	if is_instance_valid(_mesh_instance):
 		_mesh_instance.visible = false
