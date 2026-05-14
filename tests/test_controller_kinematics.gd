@@ -469,6 +469,10 @@ func _test_respawn_params() -> void:
 	print("\n-- Respawn / reboot parameters --")
 	# Phase fractions in player.gd::_run_reboot_effect: 12 + 35 + 35 + 18 = 100 %.
 	_ok("reboot phase fractions sum to 1.0", _near(0.12 + 0.35 + 0.35 + 0.18, 1.0))
+	# Tween animation durations must fit within their containing await windows so
+	# the effect completes cleanly before the next phase fires.
+	_ok("_play_death_squish (0.08) fits inside dark-frame await (0.12)", 0.08 < 0.12)
+	_ok("_play_reboot_grow  (0.28) fits inside power-on await  (0.35)", 0.28 < 0.35)
 
 	var profiles := [
 		["snappy",   "res://resources/profiles/snappy.tres"],

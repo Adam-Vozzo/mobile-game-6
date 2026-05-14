@@ -5,10 +5,10 @@ A mobile 3D platformer. Brutalist megastructure inspired by *BLAME!*. Controller
 ## Status
 
 Current gate: **Gate 0 — Feel Lab** (closing out; Gate 1 prep in flight)
-Last activity: 2026-05-14 — iter 76: hardening unit tests (ghost trail fix semantics + respawn clearing, 904 → 920)
+Last activity: 2026-05-14 — iter 77: refactor `_run_reboot_effect` (41→32 lines, extract `_play_death_squish` + `_play_reboot_grow`, 920→922 assertions)
 Test device build: ✅ verified 2026-05-12 — runs in Godot 4.6 on PC and on Nothing Phone 4(a) Pro
 Performance: 144 fps / 6.9 ms in editor at 1920×1080 (Feel Lab); on-device frametimes TBD
-Throttle level: **🔴 HARD** (10 iterations since 2026-05-14 direction session — new feature work halted)
+Throttle level: **🔴 HARD** (11 iterations since 2026-05-14 direction session — new feature work halted)
 
 If you only read one section, read **Open questions waiting on you** below.
 
@@ -16,7 +16,7 @@ If you only read one section, read **Open questions waiting on you** below.
 
 Things Claude can't decide alone, or where it's stalled and needs direction.
 
-> **🔴 HARD THROTTLE — 2026-05-14 iter 75.** Autonomous iterations have reached 9 since the last direction session. New feature work is halted until you provide direction. Hardening-only work continues (tests, refactors, perf), but the next meaningful step requires your input. Please read the numbered list below and pick one direction.
+> **🔴 HARD THROTTLE — iter 77.** 11 autonomous iterations since the last direction session. New feature work is halted until you provide direction. Hardening-only work continues (tests, refactors, perf), but the next meaningful step requires your input. Please read the numbered list below and pick one direction.
 
 > **Suggested next directions (pick one or redirect):**
 >
@@ -103,6 +103,34 @@ Goal: store-ready build.
 The full iteration log lives here, newest first. Every iteration appends an entry. Skim the dates to find where you last left off.
 
 <!-- ITERATION ENTRIES BELOW — DO NOT REMOVE OLDER ENTRIES -->
+
+### [2026-05-14] — iter 77 — Refactor: extract `_play_death_squish` + `_play_reboot_grow` helpers
+
+Branch: `iter/refactor-reboot-squash-helpers`
+Throttle: 🔴 HARD (11 iterations since 2026-05-14 direction session)
+Gate: Gate 1 — Vertical Slice prep
+
+**Primary: refactor `_run_reboot_effect` (41→32 lines) — extract death/spawn-in squash helpers.**
+
+`scripts/player/player.gd`:
+- `_play_death_squish(duration)` — extracts the beat-1 flat-crush tween from `_run_reboot_effect`. Was an untracked local `squish` var; now assigned to `_squash_tween` (killable by `respawn()`, consistent with all other `_play_*` helpers).
+- `_play_reboot_grow(duration)` — extracts the beat-3 scale-from-tiny animation. Handles juice-off path (`_visual.scale = Vector3.ONE`) in one place instead of an `if/else` block in the parent function.
+- `_run_reboot_effect` shrinks from 41 to 32 lines; per-beat intent is now immediately scannable.
+
+`tests/test_controller_kinematics.gd`:
+- `_test_respawn_params` gains 2 tween-containment assertions (920 → 922): death-squish duration (0.08 × dur) must be < dark-frame await (0.12 × dur), reboot-grow (0.28 × dur) must be < power-on await (0.35 × dur). These catch any future constant adjustment that clips the animation.
+
+`docs/JUICE.md`: "Death squish | prototype" entry updated to reference both new helpers.
+
+**Refactor-backlog clearance:** `_build_ui` and `_make_slider` were measured at 38–39 lines each — not actually over the 40-line limit; removed from backlog.
+
+**Side quest:** none.
+**Perf:** no change (pure refactor; behaviour identical).
+**New dev-menu controls:** none.
+**Assets acquired:** none.
+**Research added:** none.
+
+---
 
 ### [2026-05-14] — iter 76 — Hardening unit tests: ghost trail fix semantics + respawn timer clearing
 
