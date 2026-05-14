@@ -38,6 +38,8 @@ signal press_param_changed(param: StringName, value: float)
 signal atmosphere_param_changed(param: StringName, value: Variant)
 @warning_ignore("unused_signal")
 signal ghost_trail_param_changed(param: StringName, value: float)
+@warning_ignore("unused_signal")
+signal particles_param_changed(param: StringName, value: float)
 
 var is_open: bool = false
 var juice_state: Dictionary[StringName, bool] = {

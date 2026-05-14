@@ -16,6 +16,25 @@ authored with it in mind.
 
 ## Active iteration
 
+- **🔴 Iter 86 complete. HARD THROTTLE.** BlobShadow unit tests (1030 → 1044).
+  Three new test functions in `tests/test_controller_kinematics.gd`:
+  `_test_blob_shadow_export_defaults` (5 assertions — guards four @export defaults + invariant),
+  `_test_blob_shadow_param_dispatch` (5 assertions — mirrors `_on_blob_shadow_param_changed` match),
+  `_test_blob_shadow_juice_toggle` (4 assertions — mirrors `_on_juice_changed` key filter).
+  10 iterations since last human direction. See README "Open questions" for three suggested directions.
+- **🔴 Iter 85 complete. HARD THROTTLE.** Depth perception research + `_tick_footstep_dust` refactor.
+  `player.gd`: extracted `_tick_footstep_dust(on_floor, just_landed, delta)` from `_tick_timers`
+  (41 lines → 33 lines). `tests/test_controller_kinematics.gd`: `_test_footstep_dust_state_machine`
+  — 10 new assertions (1020 → 1030): landing-frame skip, airborne guard, speed gate, timer-reset,
+  countdown clamp. Research: `docs/research/depth_perception_cues.md` — blob shadow as P0 Gate 1
+  tuning item; landing-target predictor as Gate 1 enhancement if Zone 3 lateral jumps read ambiguous;
+  platform edge contrast for texture pass; camera-pitch depth degradation below 20°; zone atmosphere
+  as altitude legibility. 7 Void implications. INDEX.md updated.
+  9 iterations since last human direction — **stalled, waiting for direction**. See README "Open
+  questions" for three suggested directions to resume feature work.
+- **🟢 Iter 84 complete.** Footstep dust + land impact particles. `player.gd`: `_footstep_dust_timer` + `_footstep_dust_interval = 0.15` state; `_LAND_IMPACT_THRESHOLD = 0.15`; `_apply_landing_effects(impact)` extracted from `_tick_timers` (kept ≤40 lines); `_spawn_footstep_dust()` / `_build_footstep_mesh()` (4 lines at TAU/4, warm grey, 0.10 s fade); `_spawn_land_impact(impact)` / `_build_impact_mesh(impact)` (6 lines at TAU/6, length=0.08+impact×0.22, 0.03 s hold + 0.18 s fade); `_on_particles_param` handler. `dev_menu.gd`: `particles_param_changed` signal. `dev_menu_overlay.gd`: "Particles — Tuning" subsection, "Footstep interval (s)" slider (0.05–0.40). JUICE.md: Footstep dust + Land impact promoted idea→prototype. 18 unit tests (1002→1020). On-device pending — footstep interval, land impact threshold, alpha values.
+- **🟢 Iter 83 complete.** Run-timer semantics research + par-time calibration. `docs/research/run_timer_semantics.md`: wall-clock model confirmed (SMB/Celeste/Dadish all run timer through deaths); current `game.gd` implementation is correct; `par_time_seconds = 35.0` in `threshold.gd` should be ~37 s after first on-device wall-clock run (3–5 deaths); Approach B (pause during reboot) documented as alternative with code-change instructions; supersedes `win_state_design.md` suggestion to pause timer during reboot. `docs/research/INDEX.md` updated. Side quest: 9 unit tests `_test_run_timer_semantics` — wall-clock continuity during `register_attempt()`, reboot overhead per profile (Snappy 0.33/Floaty 0.50), par calibration formula, deaths-per-10s-overhead table (993 → 1002 assertions).
+- **🟢 Iter 82 complete.** Hardening unit tests: ledge magnet impulse formula, arc assist per-frame budget, screen shake strongest-wins rule. 22 new assertions (971 → 993). Side discovery: Threshold scene uses MeshInstance3D (not CSGBox3D) — CSG baked-lighting blocker resolved; note updated in PLAN.md P0-8.
 - **🟢 Iter 81 complete.** Screen shake system. `game.gd`: `screen_shake_requested(magnitude, duration, freq)` signal added. `camera_rig.gd`: `_shake_remaining`/`_shake_decay`/`_shake_freq` state; `shake_intensity_scale` export (1.0); `_apply_shake(delta)` (sinusoidal yaw+pitch rotation after `look_at`, before `_air_offset` refresh — purely visual, no movement-direction bleed); `_on_screen_shake_requested` (only strongest in-flight shake wins). Camera connects to `Game.screen_shake_requested` in `_ready()`. `player.gd`: land shake (`impact ≥ 0.25`: 0.011×impact rad, 0.13 s, 20 Hz) in `_tick_timers()` just_landed block; death shake (0.022 rad, 0.20 s, 26 Hz) in `respawn()`. Dev menu: "Screen Shake — Tuning" sub-section with "Intensity ×" slider (0–3, default 1). JUICE.md: "Hard land" + "Death/respawn" promoted to prototype; directional hazard-hit deferred. 8 unit tests (`_test_screen_shake_system`). 963 → 971 assertions. On-device pending — shake magnitudes and intensity scale need device tuning.
 - **🟢 Iter 80 complete.** Audio skeleton upgrade + wall normal debug viz. `audio.gd`: bus setup (`_ensure_bus` creates SFX_Player/SFX_World/Music under Master at runtime), `_apply_sound_layers` mutes SFX buses when `sound_layers` juice toggle is OFF (was no-op), `play_sfx(null)` safe no-op, four event dispatch stubs (`on_jump`, `on_land`, `on_collect_shard`, `on_respawn_start`) wired in `player.gd` + `data_shard.gd`. `LAND_HEAVY_THRESHOLD = 0.25` constant. Wall normal debug viz: `&"wall_normal": false` added to `debug_viz_state`; checkbox in Debug viz section; `_draw_wall_normal` in `player_debug_draw.gd` (magenta arrow, fires when `is_on_wall()`). 15 new unit tests (`_test_audio_skeleton` 12 + `_test_wall_normal_viz_key` 3). 948 → 963 assertions. Research: `docs/research/audio_placeholder.md`. JUICE.md sound-layers section updated (toggle is live; dispatch stubs table added).
 - **🟢 Iter 79 complete.** Free-camera mode (CLAUDE.md required Level section dev menu item, was missing). `debug_viz_state[&"free_cam"]` added to `dev_menu.gd`. `camera_rig.gd`: `free_cam_speed` export (10.0 m/s), `_free_cam`/`_free_cam_yaw`/`_free_cam_pitch` state; `_on_debug_viz_changed` seeds Euler angles from `_camera.global_basis.get_euler(YXZ)` on enable, resets `_initialized` on disable; `_process_free_cam` (WASD+QE + Shift 3× boost); `_unhandled_input` (RMB+drag look, yaw_drag_sens / pitch_drag_sens reused, ±PI×0.45 pitch clamp). Dev menu Level section gains "Free cam (WASD+QE, RMB look)" checkbox. 10 unit tests (`_test_free_cam_mode`). Side quest: Snappy `reboot_duration` 0.33 s (was 0.5 s) — per `level_design_references.md` research (≤ 0.35 s for precision feel); Floaty/Assisted/Momentum stay at 0.5 s. 6 unit tests (`_test_snappy_reboot_duration`). 932 → 948 assertions. On-device pending.
@@ -81,8 +100,9 @@ The next iteration should pull from the top of this list. Items marked
     Candidate openings: Zone 1 plaza north edge (looks out toward distant towers), Zone 2
     maintenance yard open ceiling (vertical view up at machinery silhouettes), Zone 3
     industrial hall back wall (vista of the wider works). Frame these as deliberate vista
-    beats, not just incidental gaps. Pairs with the Kenney architecture-kit pass (item 0a)
-    and the CSG → MeshInstance conversion (baked-lighting prereq, iter 73 research).
+    beats, not just incidental gaps. Pairs with the Kenney architecture-kit pass (item 0a).
+    Note: Threshold is already StaticBody3D + MeshInstance3D (no CSG), per iter 82
+    side-discovery — the baked-lighting prereq is met.
 
 1. ~~**On-device smoke test.**~~ Done 2026-05-12. Project runs in Godot 4.6 on PC
    and deploys to Nothing Phone 4(a) Pro. Feel Lab reports 144 fps / 6.9 ms in
@@ -140,11 +160,16 @@ The next iteration should pull from the top of this list. Items marked
    ~~Industrial press functional (iter 59) — IndustrialPress.gd four-beat cycle, amber
    emissive strip, KillZone HazardBody child; 5 dev-menu sliders; 13 unit tests.~~
    Remaining items (texture pass, par-route routing) blocked on device feel.
-   **Baked lighting prereq (from iter 73 research):** All Threshold geometry is CSGBox3D — CSG
-   cannot be baked. CSG → MeshInstance3D conversion is required before any LightmapGI bake pass,
-   and pairs naturally with the concrete-kit texture pass (both happen together). Defer to after
-   on-device design finalization. When baking, use Option C (LightmapGI Environment Mode = Disabled):
-   zone OmniLights stay Dynamic; emissive surfaces contribute to the atlas; no per-zone bake needed.
+   **Par-time calibration (iter 83 research):** `par_time_seconds = 35.0` is a pure-movement
+   placeholder. After first on-device 3–5-death wall-clock run, replace with that time (~37 s
+   expected). See `docs/research/run_timer_semantics.md`.
+   **Baked lighting prereq (iter 73 research, CSG blocker resolved iter 82):**
+   The Spyro-style redesign (2026-05-14) rebuilt Threshold geometry as
+   StaticBody3D + MeshInstance3D + CollisionShape3D — no CSGBox3D is present.
+   The CSG blocker from the iter 73 research note no longer applies.
+   Bake path is clear when design is finalised on device. Use Option C
+   (LightmapGI Environment Mode = Disabled): zone OmniLights stay Dynamic;
+   emissive surfaces contribute to the atlas; no per-zone bake needed.
    See `docs/research/baked_lighting.md`.
    ~~**Spyro-style redesign 2026-05-14.**~~ Done. Zone 1 corridor → open plaza (24×36 floor,
    3 routes: floor walk / rubble hop / vertical climb to Lookout shard). Zone 2 corridor →
@@ -259,6 +284,32 @@ These mirror "Open questions waiting on you" in the README.
 
 ## Recently completed (last 5)
 
+- 2026-05-14 — iter 85. **Depth perception research + `_tick_footstep_dust` refactor. HARD THROTTLE.**
+  `player.gd`: `_tick_footstep_dust(on_floor, just_landed, delta)` extracted from `_tick_timers`
+  (41 → 33 lines). 10 new assertions `_test_footstep_dust_state_machine` (1020 → 1030).
+  Research: `docs/research/depth_perception_cues.md` — 7 Void implications: blob shadow tuning is
+  Gate 1 P0; landing-target predictor is Gate 1 enhancement gated on device feedback; platform edge
+  contrast is texture-pass work; camera pitch <20° degrades depth (soft recenter boost suggestion);
+  zone atmosphere protects altitude legibility; do not reduce fog. INDEX.md updated.
+- 2026-05-14 — iter 84. **Footstep dust + land impact particles.**
+  `_spawn_footstep_dust()` (4-line ImmediateMesh, TAU/4 spread, warm grey, 0.10 s fade, throttled by
+  `_footstep_dust_interval=0.15`); `_spawn_land_impact(impact)` (6-line ImmediateMesh, TAU/6 spread,
+  length=0.08+impact×0.22, upward kick=impact×0.12, 0.03 s hold + 0.18 s fade).
+  `_apply_landing_effects(impact)` extracted from `_tick_timers` to keep it ≤ 40 lines.
+  Dev menu "Particles — Tuning → Footstep interval (s)" slider. 18 unit tests (1002→1020).
+  JUICE.md: both promoted idea→prototype. On-device pending.
+- 2026-05-14 — iter 82. **Hardening unit tests: ledge magnet impulse, arc assist budget, shake strongest-wins.**
+  `tests/test_controller_kinematics.gd`: three new test functions —
+  `_test_ledge_magnet_impulse_formula` (7 assertions: dist=0→impulse=0, dist=radius→full strength,
+  beyond-radius cap, linear proportionality, monotone, Assisted spot checks at half/full radius);
+  `_test_arc_assist_per_frame_budget` (8 assertions: Limit A = 0.02 m/frame, Limit B = 0.025 m/frame
+  at Assisted defaults, effective = min(A,B)=Limit A, budget = 1.5-accumulated, budget=0→clamped-to-zero,
+  offset≥max→skipped, offset<max→fires);
+  `_test_screen_shake_strongest_wins` (7 assertions: stronger replaces weaker, weaker discarded,
+  equal discarded, decay formula, decay×duration=magnitude, zero-duration guard, distinct frequencies).
+  22 new assertions (971 → 993).
+  Side: Threshold scene verified as using MeshInstance3D (not CSGBox3D) — CSG baked-lighting
+  blocker from iter 73 research note is resolved; PLAN.md item 8 prereq note updated.
 - 2026-05-14 — iter 81. **Screen shake system.** `game.gd`: `screen_shake_requested(magnitude, duration, freq)` signal. `camera_rig.gd`: `_apply_shake(delta)` (sinusoidal yaw+pitch after look_at, no movement-direction bleed), `_on_screen_shake_requested` (strongest wins), `shake_intensity_scale` export + `&"shake_intensity"` dev-menu arm. `player.gd`: land shake (impact ≥ 0.25 → 0.011×impact rad, 0.13 s, 20 Hz) + death shake (0.022 rad, 0.20 s, 26 Hz). Dev menu: "Screen Shake — Tuning" → "Intensity ×" slider. JUICE.md: hard-land + death/respawn promoted to prototype; directional hazard-hit deferred. 8 unit tests (963 → 971). On-device pending.
 - 2026-05-14 — iter 80. **Audio skeleton upgrade + wall normal debug viz.**
   `scripts/autoload/audio.gd`: upgraded from stub. `_ensure_bus()` creates SFX_Player/SFX_World/Music

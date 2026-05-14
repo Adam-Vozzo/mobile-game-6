@@ -13,6 +13,8 @@ they're written.
 
 - [`smb3d.md`](smb3d.md) — Released March 2026 (Sluggerfly + Team Meat). Closest live reference to Project Void. Key findings: (1) blob shadow is mandatory for depth perception — even SMB 3D's full spatial-aid suite still drew depth-perception criticism; (2) fixed-per-level camera chosen explicitly because dynamic camera "couldn't keep up with the pace" — Void's tripod model is aligned; (3) level length ~20 s skilled — each Void beat should be ~20 s; (4) air dash as one-shot depth-error correction is a strong mobile candidate for Assisted/Gate 1; (5) ghost trail attempt-replay confirmed as the pedagogical core mechanic, not optional; (6) style loss (SMB 3D's biggest failure) reinforces: protect the brutalist/BLAME! identity through the 3D transition.
 
+- [`depth_perception_cues.md`](depth_perception_cues.md) — Depth perception for 3D mobile platformers: why SMB 3D drew depth-perception criticism despite spatial aids; how blob shadow is the highest-ROI cue (1 ray + 1 draw call); secondary cues: landing-target predictor (second raycast to predicted landing point — Gate 1 enhancement if Zone 3 lateral jumps read ambiguous), platform edge contrast (mat_concrete_edge.tres albedo +0.08, texture-pass work), camera pitch degradation below 20° (soft recenter boost), hazard-stripe vs Stray-red readability (monitor on device), zone atmosphere as altitude legibility. 7 concrete Void implications including blob-shadow tuning as Gate 1 P0, and "do not reduce fog" guidance.
+
 - [`air_dash.md`](air_dash.md) — Gate 1 mechanic candidate: air dash as depth-error correction. Design spec (duration ~0.18 s, single airborne charge, recharges on landing), input mapping (Option A: right-zone swipe with gesture disambiguation; Option B: double-tap jump), ControllerProfile integration (3 new params: `air_dash_speed`, `air_dash_duration`, `air_dash_gravity_scale`; default 0 = disabled, backwards-compatible), player.gd integration sketch, TouchInput signal approach, juice hooks, and universal-vs-profile-exclusive analysis. Recommendation: implement with speed=0 default (disabled), enable on Assisted first, let device testing drive per-profile tuning. Key implication: blob shadow (read) + air dash (recovery) = Void's complete answer to SMB 3D's depth-perception problem.
 
 ## Character controllers
@@ -31,6 +33,15 @@ they're written.
   par comparison, shard count; REPLAY button calls `Game.reset_run()` + reload; ghost trail
   replay post-level deferred. 6 concrete Gate 1 implications including `Game.is_running` flag,
   par_time_seconds in level meta, and WinState as the last Gate 1 scene to author.
+
+- [`run_timer_semantics.md`](run_timer_semantics.md) — Par-time calibration and timer-during-reboot
+  analysis. Survey: SMB/SMB3D/Celeste/Dadish all use wall-clock timers (timer runs through deaths).
+  Current Void implementation is wall-clock (correct). Reboot overhead per profile: Snappy 0.33 s,
+  others 0.50 s — 30 Snappy deaths or 20 Floaty deaths adds ~10 s overhead. **Recommendation:**
+  keep wall-clock model (no code change), calibrate `par_time_seconds` from a 3–5-death wall-clock
+  run rather than a deathless movement-time run. `par_time_seconds = 35.0` placeholder in
+  `threshold.gd` should be ~37 s after first on-device playtest. Supersedes the `win_state_design.md`
+  note suggesting the timer should pause during reboot. 9 unit tests (`_test_run_timer_semantics`).
 
 ## Gate 1 — collectibles
 

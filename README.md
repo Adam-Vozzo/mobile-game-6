@@ -5,16 +5,34 @@ A mobile 3D platformer. Brutalist megastructure inspired by *BLAME!*. Controller
 ## Status
 
 Current gate: **Gate 0 — Feel Lab** (closing out; Gate 1 prep in flight)
-Last activity: 2026-05-15 — direction session: Stray re-framed robot → yellow chick (Kenney Cube Pets), full-Kenney visual direction, BoxMesh distant-atmosphere layer
+Last activity: 2026-05-15 — direction session: Stray re-framed robot → yellow chick (Kenney Cube Pets), full-Kenney visual direction, BoxMesh distant-atmosphere layer (after iter 86)
 Test device build: ✅ verified 2026-05-12 — runs in Godot 4.6 on PC and on Nothing Phone 4(a) Pro
 Performance: 144 fps / 6.9 ms in editor at 1920×1080 (Feel Lab); on-device frametimes TBD
-Throttle level: **🟢 RESET** (2026-05-15 direction session: asset picks resolved, Stray re-framed; 2026-05-14 verdicts intact)
+Throttle level: **🟢 RESET** (2026-05-15 direction session: asset picks resolved, Stray re-framed; supersedes 🔴 hard throttle from 10 iters since 2026-05-14)
 
 If you only read one section, read **Open questions waiting on you** below.
 
 ## Open questions waiting on you
 
 Things Claude can't decide alone, or where it's stalled and needs direction.
+
+> **🔴 HARD THROTTLE — iter 86 (2026-05-14).** 10 iterations since the last direction session.
+> Feature work has stopped. This iteration: BlobShadow unit tests (1030 → 1044 assertions).
+> Suggest three directions for the next session — pick one and drop it in chat:
+>
+> - **Direction 1 — On-device blob shadow + particle tuning.** Run Threshold on the Nothing Phone.
+>   Tune `max_alpha`, `fade_height`, `radius_ground` in the Juice → Blob Shadow dev-menu sliders.
+>   Note footstep dust interval (default 0.15 s) and land impact threshold feel. One session = full
+>   particle tuning pass locked in.
+> - **Direction 2 — Asset picks.** Read `docs/ASSET_OPTIONS.md` and approve at least 3 picks
+>   (Stray mesh, ambient audio, concrete kit). After ~3 approvals the loop can acquire and
+>   integrate assets autonomously. Kenney candidates are now documented alongside the freesound /
+>   Quaternius / Poly Haven recommendations.
+> - **Direction 3 — Air dash verdict.** Open the dev menu Touch section → "Buffer dash cam" toggle.
+>   Try both modes on the Threshold lateral gantry beats (Zone 3). Say "always buffer", "drop the
+>   option", or "keep both" — then the loop will clean up whichever path you don't want.
+>
+> Any of these unlocks multiple follow-on iterations autonomously. All three would be ideal.
 
 > **🟢 THROTTLE RESET — 2026-05-14 direction session.** Verdicts captured below; throttle cleared, feature work resumes from the next iteration. Two items remain open (C air-dash and E texture pass — both tagged TBD; the loop will *not* block on them).
 
@@ -41,6 +59,7 @@ Things Claude can't decide alone, or where it's stalled and needs direction.
 - [x] **Camera pitch 70° vs 55°.** 70° is the right ceiling. Auto-correction-fight bug surfaced and fixed in same session.
 - [x] **Asset suggestions for first-pick approval.** Resolved 2026-05-15. Human chose full-Kenney visual direction: Cube Pets yellow chick (Stray re-framed robot → bird, double jump = literal flap), Factory Kit + Space Station Kit for architecture, freesound CC0 ambient bed + Kenney Sci-Fi accents. Distant atmosphere via BoxMesh primitives (Dadish 3D out-of-bounds pattern, brutalist palette). See `docs/DECISIONS.md` 2026-05-15 ADRs. Autonomous acquisition queued P0.
 - [ ] **Ongoing Snappy tuning passes.** Snappy feel is good but will keep getting small tweaks as level design progresses. Whenever a level beat feels wrong, note "Snappy felt too X on that beat" — it goes into the next tuning iteration.
+- [ ] **Par-time calibration for Threshold.** Current `par_time_seconds = 35.0` is a placeholder (pure movement time). After first on-device 3–5-death playtest, replace with the actual wall-clock time for that run (~37 s expected for Snappy). See `docs/research/run_timer_semantics.md` for the calibration formula. Also: if you prefer the timer to **pause during reboot** rather than run continuously, that option is documented in the same note with exact code-change instructions.
 
 ## Roadmap
 
@@ -104,7 +123,7 @@ The full iteration log lives here, newest first. Every iteration appends an entr
 ### [2026-05-15] — Direction session — Kenney art direction confirmed; Stray re-framed as yellow chick
 
 Branch: `direction/kenney-asset-direction-2026-05-15`
-Throttle: 🟢 RESET (asset blocker resolved)
+Throttle: 🟢 RESET (asset blocker resolved; supersedes 🔴 hard throttle from iter 86)
 Gate: Gate 1 — Vertical Slice prep
 
 **Visual direction locked.** Human chose full-Kenney visual consistency over the original
@@ -139,6 +158,206 @@ resource) to keep tonal separation from the chick. Tunable on device; no code ch
 (asset blocker resolved, P0 items 0a + 0b queued), `docs/ASSET_OPTIONS.md` (A8 + C9
 candidates added, C4 rejection rationale documented, decision table rewritten).
 README's "Open questions" updated. Asset acquisition queued for next iter loop.
+
+---
+
+
+### [2026-05-14] — iter 86 — BlobShadow unit tests (hard throttle)
+
+Branch: `claude/gifted-shannon-kv94F`
+Throttle: 🔴 hard (10 iterations since 2026-05-14 direction session)
+Gate: Gate 1 — Vertical Slice prep
+
+**Primary: Unit tests for BlobShadow** — three new test functions covering export defaults,
+param dispatch, and juice toggle.
+
+- `_test_blob_shadow_export_defaults` (5 assertions): guards the four @export_range initial
+  values (`radius_at_ground=0.22`, `radius_at_height=0.55`, `fade_height=6.0`, `alpha_max=0.42`)
+  and the invariant `radius_at_height > radius_at_ground`. These are the tuning baselines the
+  depth-perception session (iter 85 research) depends on.
+- `_test_blob_shadow_param_dispatch` (5 assertions): mirrors the match block in
+  `_on_blob_shadow_param_changed` — each of the four dev-menu slider params routes to its
+  property; unknown param is a silent no-op. Catches mis-spelled match arms before they
+  silently no-op on device.
+- `_test_blob_shadow_juice_toggle` (4 assertions): mirrors `_on_juice_changed` — correct key
+  enables/disables, unrelated keys (e.g. `&"squash_stretch"`) are ignored.
+
+1030 → **1044** assertions total.
+
+**Side quest:** none (depth perception research done in iter 85; no second research note same day).
+**Perf:** no change.
+**Bugs fixed:** none.
+**New dev-menu controls:** none.
+**Assets acquired:** none.
+**Research added:** none.
+**On-device pending:** blob shadow tuning (max_alpha, fade_height, radius_ground) — P0 for Gate 1.
+
+---
+
+**🔴 HARD THROTTLE — 10 iterations since last direction session. Waiting for human direction.**
+See "Open questions waiting on you" for three suggested directions.
+
+---
+
+### [2026-05-14] — iter 85 — Depth perception research + _tick_footstep_dust refactor
+
+Branch: `claude/gifted-shannon-ZV4mu`
+Throttle: 🔴 hard (9 iterations since 2026-05-14 direction session)
+Gate: Gate 1 — Vertical Slice prep
+
+**Primary: Refactor `_tick_timers` (player.gd)** — extract `_tick_footstep_dust(on_floor, just_landed, delta)`.
+`_tick_timers` was 41 lines (1 over the 40-line limit). The footstep-dust block (8 lines)
+is a coherent unit with its own comment; extracted to a named helper. `_tick_timers` is now
+33 lines. New helper is 10 lines.
+
+**Side quest: Research note** — `docs/research/depth_perception_cues.md`.
+Addresses the SMB 3D depth-perception criticism documented in `smb3d.md`. Covers:
+blob shadow as highest-ROI cue (1 ray + 1 draw call); landing-target predictor (Gate 1
+enhancement — second ray to predicted landing position, only if Zone 3 lateral jumps read
+ambiguous on device); platform edge contrast (mat_concrete_edge.tres, texture-pass work);
+camera pitch below 20° degrades depth perception (soft recenter boost suggestion);
+hazard-stripe vs Stray-red readability; zone atmosphere as altitude legibility tool;
+"do not reduce fog for depth" guidance. 7 concrete Void implications.
+
+**Unit tests:** `_test_footstep_dust_state_machine` — 10 new assertions (1020 → 1030).
+Landing-frame skip invariant, airborne guard, speed gate, timer-reset-to-interval,
+timer countdown non-negative. Complements the 18 geometry/math tests from iter 84.
+
+**Perf:** no change (extraction preserves behaviour exactly).
+**Bugs fixed:** none.
+**New dev-menu controls:** none.
+**Assets acquired:** none.
+**Research added:** `docs/research/depth_perception_cues.md`.
+**On-device pending:** blob shadow tuning (max_alpha, fade_height, radius_ground) — P0 for Gate 1.
+
+---
+
+### [2026-05-14] — iter 84 — Footstep dust + land impact particles
+
+Branch: `iter/footstep-land-impact-particles`
+Throttle: 🟡 soft (8 iterations since 2026-05-14 direction session)
+Gate: Gate 1 — Vertical Slice prep
+
+**Primary: Footstep dust + land impact particles** — promotes two "idea" entries in JUICE.md to "prototype."
+
+`scripts/player/player.gd`:
+- `_footstep_dust_timer: float` + `_footstep_dust_interval: float = 0.15` state vars.
+  Timer counts down in `_tick_timers`; resets to interval after each spawn; footstep dust
+  skips the landing frame so land impact burst has its own frame.
+- `_LAND_IMPACT_THRESHOLD = 0.15` const — lower than `Audio.LAND_HEAVY_THRESHOLD (0.25)`
+  so even moderate landings produce a small dust burst.
+- `_apply_landing_effects(impact)` extracted from `_tick_timers` to keep it ≤ 40 lines.
+  Dispatches squash-stretch, audio, screen shake, and land impact particles.
+- `_spawn_footstep_dust()` + `_build_footstep_mesh()`: 4 ImmediateMesh lines at TAU/4
+  increments, warm grey (0.80/0.77/0.72, α=0.50), slight upward kick (y=0.06), 0.10 s fade.
+- `_spawn_land_impact(impact)` + `_build_impact_mesh(impact)`: 6 lines at TAU/6 increments,
+  length = 0.08 + impact×0.22, upward kick = impact×0.12; 0.03 s hold then 0.18 s fade.
+- `_on_particles_param()` handler wired to `DevMenu.particles_param_changed`.
+- Gate: `DevMenu.is_juice_on(&"particles")` (existing toggle, no new top-level toggle).
+
+`scripts/autoload/dev_menu.gd`: `particles_param_changed` signal added.
+
+`tools/dev_menu/dev_menu_overlay.gd`: "Particles — Tuning" subsection added at the end of
+the Juice section; "Footstep interval (s)" slider (0.05–0.40, default 0.15).
+
+**Side quest: Unit tests** — `_test_footstep_and_land_impact_math` (18 new assertions):
+timer throttle mechanics, speed gate, footstep 4-line geometry (cos²+sin²=1), land threshold
+comparisons, line-length formula at threshold (≈0.113) and at max (0.30). 1002 → 1020.
+
+**Perf:** no change (particles add ≤1 MeshInstance3D per landing, max ~7/s footstep at 60 fps).
+**Bugs fixed:** `_tick_timers` was 41 lines → extracted `_apply_landing_effects` brings it to 40.
+**New dev-menu controls:** "Particles — Tuning → Footstep interval (s)".
+**Assets acquired:** none.
+**Research added:** none.
+**On-device pending:** footstep interval, land impact threshold, alpha values need device tuning.
+
+---
+
+### [2026-05-14] — iter 83 — Run-timer semantics research + par-time calibration
+
+Branch: `iter/run-timer-research`
+Throttle: 🟡 soft (7 iterations since 2026-05-14 direction session)
+Gate: Gate 1 — Vertical Slice prep
+
+**Primary: Research note** — `docs/research/run_timer_semantics.md`.
+
+Documents the wall-clock run-timer model and its implications for par-time calibration.
+
+Key findings:
+- SMB, SMB 3D, Celeste, Dadish 3D all use wall-clock timers (timer runs through all deaths).
+- Current `game.gd` implementation (`_process` accumulates while `is_running`) is **correct**
+  for this model — no code change needed.
+- `win_state_design.md` note suggesting "timer should not tick during reboot" reflected an
+  alternative model (Approach B); research recommends wall-clock (Approach A) instead.
+  `run_timer_semantics.md` supersedes that note.
+- `par_time_seconds = 35.0` in `threshold.gd` is a pure-movement-time placeholder.
+  After the first on-device 3–5-death playtest, update to the wall-clock time (~37 s expected
+  for Snappy at 4 deaths: 35.0 + 4 × 0.33 = 36.32 s → round up).
+- Approach B (pause during reboot) documented with code-change instructions in case the
+  human prefers it after on-device feel testing.
+
+**Side quest: Unit tests** — `_test_run_timer_semantics` (9 new assertions):
+- `register_attempt()` (the respawn path) does not change `is_running` (wall-clock invariant).
+- Multiple respawns keep timer running.
+- Reboot overhead per profile: Snappy 0.33 s × 4 deaths = 1.32 s, Floaty 0.50 s × 4 deaths = 2.0 s.
+- Par calibration: wall-clock par > pure movement par.
+- Deaths-to-10s-overhead table: Snappy ~30, Floaty 20.
+- Snappy reboot < Floaty reboot (faster feel on precision profile).
+
+**Tests:** 9 new assertions (993 → 1002).
+**Perf:** no change.
+**Bugs fixed:** none (design gap documented and clarified, no code fix needed).
+**New dev-menu controls:** none.
+**Assets acquired:** none.
+**Research added:** `docs/research/run_timer_semantics.md`.
+**On-device pending:** par-time calibration (update `par_time_seconds` after first 3–5-death run).
+
+---
+
+### [2026-05-14] — iter 82 — Hardening: ledge magnet + arc assist + shake strongest-wins tests
+
+Branch: `iter/hardening-shake-ledge-arc-tests`
+Throttle: 🟡 soft (5 iterations since 2026-05-14 direction session)
+Gate: Gate 1 — Vertical Slice prep
+
+**Primary: Unit test hardening** — three new test groups covering formulas and edge cases
+that were untested after iters 78 (Assisted Phase 2) and 81 (screen shake).
+
+`tests/test_controller_kinematics.gd`:
+
+- `_test_ledge_magnet_impulse_formula` (7 assertions): mirrors
+  `impulse = minf((dist / radius) * strength, strength)` from `_attract_to_ledge`.
+  Covers dist=0 (no pull), dist=radius (full strength), dist>radius (capped), linear
+  proportionality at midpoint, monotone ordering, and Assisted.tres spot checks at
+  half-radius and full-radius.
+
+- `_test_arc_assist_per_frame_budget` (8 assertions): mirrors per-frame limits and
+  lifetime budget from `_apply_arc_assist`. Covers Limit A (arc_assist_max×0.05 = 0.02 m/frame),
+  Limit B (jump_velocity×0.15/60 = 0.025 m/frame), effective = min(A,B), partial budget
+  remaining (1.5−1.2=0.3), budget exhaustion → per_frame clamped to 0, offset guard (≥max
+  skips, <max fires).
+
+- `_test_screen_shake_strongest_wins` (7 assertions): mirrors the "only strongest wins"
+  rule in `_on_screen_shake_requested`. Covers stronger replaces weaker, weaker discarded,
+  equal discarded (guard is ≤, not <), decay formula (magnitude/duration), decay×duration=magnitude,
+  zero-duration guard (maxf(0.001, 0)=0.001 → finite), and distinct land/death frequencies
+  (20 Hz vs 26 Hz).
+
+**Side discovery:** Threshold scene (`threshold.tscn`) uses StaticBody3D + MeshInstance3D +
+CollisionShape3D throughout — no CSGBox3D present. The CSG-blocks-baked-lighting note in
+`docs/PLAN.md` P0-8 was written before the Spyro-style redesign and no longer applies.
+Baked lighting path is clear once geometry is design-finalised on device.
+PLAN.md prereq note updated.
+
+**Tests:** 22 new assertions (971 → 993).
+**Perf:** no change.
+**Bugs fixed:** stale PLAN.md CSG blocker note corrected.
+**New dev-menu controls:** none.
+**Assets acquired:** none.
+**Research added:** none.
+**On-device pending:** all shake/ledge/arc tunables from prior iters.
+
+---
 
 ### [2026-05-14] — iter 81 — Screen shake system
 

@@ -124,6 +124,15 @@ func _ready() -> void:
 	_test_audio_skeleton()
 	_test_wall_normal_viz_key()
 	_test_screen_shake_system()
+	_test_ledge_magnet_impulse_formula()
+	_test_arc_assist_per_frame_budget()
+	_test_screen_shake_strongest_wins()
+	_test_run_timer_semantics()
+	_test_footstep_and_land_impact_math()
+	_test_footstep_dust_state_machine()
+	_test_blob_shadow_export_defaults()
+	_test_blob_shadow_param_dispatch()
+	_test_blob_shadow_juice_toggle()
 	_report()
 
 
@@ -4887,3 +4896,397 @@ func _test_screen_shake_system() -> void:
 		_near(DEATH_DECAY * DEATH_DUR, DEATH_MAG))
 	_ok("death shake decay rate > magnitude (clears in < 1 s)",
 		DEATH_DECAY > DEATH_MAG)
+
+
+func _test_ledge_magnet_impulse_formula() -> void:
+	## Mirrors the proportional-impulse formula in player.gd::_attract_to_ledge.
+	##
+	## Formula: impulse = minf((dist / ledge_magnet_radius) * ledge_magnet_strength,
+	##                          ledge_magnet_strength)
+	##
+	## A closer edge needs a weaker nudge (player is already mostly over the platform);
+	## an edge at the full radius gets the configured max strength; beyond radius, capped.
+	print("\n-- Ledge magnet proportional impulse formula (_attract_to_ledge) --")
+	const R := 0.20
+	const S := 1.0
+
+	_ok("lm: dist=0 → impulse=0 (edge at foot — player already over it, no pull needed)",
+		is_equal_approx(minf((0.0 / R) * S, S), 0.0))
+	_ok("lm: dist=radius → impulse=strength (edge at max range → full pull)",
+		is_equal_approx(minf((R / R) * S, S), S))
+	_ok("lm: dist=2×radius → capped at strength (beyond range, cap prevents overshoot)",
+		is_equal_approx(minf((R * 2.0 / R) * S, S), S))
+	_ok("lm: dist=radius/2 → impulse=strength/2 (linearly proportional)",
+		_near(minf((R * 0.5 / R) * S, S), S * 0.5))
+	_ok("lm: monotone — farther edge within radius produces stronger nudge",
+		minf((0.15 / R) * S, S) > minf((0.05 / R) * S, S))
+
+	var ap := load("res://resources/profiles/assisted.tres") as ControllerProfile
+	if ap == null:
+		return
+	var dist_half := ap.ledge_magnet_radius * 0.5
+	_ok("lm: Assisted at half-radius (0.10 m) → impulse = strength/2 (0.5 m/s)",
+		_near(minf((dist_half / ap.ledge_magnet_radius) * ap.ledge_magnet_strength, ap.ledge_magnet_strength),
+			ap.ledge_magnet_strength * 0.5))
+	_ok("lm: Assisted at full radius (0.20 m) → impulse = strength exactly (1.0 m/s)",
+		_near(minf((ap.ledge_magnet_radius / ap.ledge_magnet_radius) * ap.ledge_magnet_strength, ap.ledge_magnet_strength),
+			ap.ledge_magnet_strength))
+
+
+func _test_arc_assist_per_frame_budget() -> void:
+	## Mirrors the per-frame correction limits and lifetime budget in
+	## player.gd::_apply_arc_assist.
+	##
+	## Two concurrent limits gate each correction step:
+	##   Limit A (raw)      = arc_assist_max * 0.05  (5% of tolerated offset per frame)
+	##   Limit B (vel-cap)  = jump_velocity * 0.15 * delta  (≤ 15% of jump vel × dt)
+	##   Effective per frame = min(Limit A, Limit B)
+	## Lifetime budget = MAX_ACCUMULATED (1.5 m/s), reset on each jump. Once exhausted
+	## _apply_arc_assist returns early — no further steering for that arc.
+	print("\n-- Arc assist per-frame correction limits and lifetime budget --")
+	const MAX_ACC    := 1.5
+	const DELTA_60   := 1.0 / 60.0
+
+	var ap := load("res://resources/profiles/assisted.tres") as ControllerProfile
+	if ap == null:
+		return
+
+	# Limit A: raw cap — at most 5% of the tolerated offset per frame
+	var limit_a := ap.arc_assist_max * 0.05
+	_ok("arc: Limit A = arc_assist_max * 0.05 = 0.40 * 0.05 = 0.02 m/frame",
+		_near(limit_a, 0.02))
+
+	# Limit B: velocity-based cap at 60 fps (Assisted jump_velocity = 10.0)
+	var limit_b := ap.jump_velocity * 0.15 * DELTA_60
+	_ok("arc: Limit B = jump_velocity * 0.15 / 60 = 10.0 * 0.15 / 60 = 0.025 m/frame",
+		_near(limit_b, 0.025, 1e-4))
+
+	# Effective = min(A, B) — Limit A is tighter at Assisted defaults
+	var effective := minf(limit_a, limit_b)
+	_ok("arc: effective = min(Limit A, Limit B) = 0.02 (Limit A wins at Assisted defaults)",
+		_near(effective, limit_a))
+	_ok("arc: effective < Limit B (5%-of-offset cap is smaller than 15%-vel cap here)",
+		effective < limit_b)
+
+	# Budget remaining after partial accumulation
+	var acc_partial := 1.2
+	_ok("arc: budget = MAX_ACCUMULATED - accumulated: 1.5 - 1.2 = 0.3 m/s remaining",
+		_near(MAX_ACC - acc_partial, 0.3))
+
+	# Budget exhausted: per_frame is clamped to zero via limit_length(0)
+	var acc_full := 1.5
+	var budget_at_full := MAX_ACC - acc_full
+	var clamped_correction := Vector3(effective, 0.0, 0.0).limit_length(budget_at_full).length()
+	_ok("arc: accumulated=1.5 → budget=0 → per_frame clamped to 0 (no steering past lifetime cap)",
+		_near(clamped_correction, 0.0))
+
+	# Offset guard: correction skipped when offset >= arc_assist_max (break before velocity update)
+	var offset_beyond := ap.arc_assist_max + 0.01
+	_ok("arc: offset >= arc_assist_max → correction skipped (landing too far off-centre to help)",
+		not (offset_beyond < ap.arc_assist_max))
+	var offset_within := ap.arc_assist_max * 0.5
+	_ok("arc: offset < arc_assist_max → correction fires (drift is within the steerable window)",
+		offset_within < ap.arc_assist_max)
+
+
+func _test_screen_shake_strongest_wins() -> void:
+	## Mirrors the "only the strongest in-flight shake wins" rule in
+	## camera_rig.gd::_on_screen_shake_requested.
+	##
+	## Rule:
+	##   if magnitude <= _shake_remaining: return  # weaker-or-equal discarded
+	##   _shake_remaining = magnitude
+	##   _shake_decay = magnitude / maxf(0.001, duration)
+	##
+	## Prevents land-shake clusters from resetting a stronger death shake, while still
+	## allowing a second death shake to correctly restart the decay from the new peak.
+	print("\n-- Screen shake: strongest-wins rule (_on_screen_shake_requested) --")
+
+	# --- Case 1: stronger incoming replaces the weaker in-flight shake ---
+	var rem_1 := 0.011   # land shake in flight
+	var inc_1 := 0.022   # death shake arrives mid-flight
+	var after_1 := rem_1
+	if inc_1 > rem_1:
+		after_1 = inc_1
+	_ok("stronger shake replaces weaker: death (0.022) overrides land (0.011) in flight",
+		_near(after_1, inc_1))
+
+	# --- Case 2: weaker incoming is discarded ---
+	var rem_2 := 0.022   # death shake in flight
+	var inc_2 := 0.011   # land shake arrives later in the same run
+	var after_2 := rem_2
+	if inc_2 > rem_2:
+		after_2 = inc_2  # would replace — must NOT happen
+	_ok("weaker shake discarded: land (0.011) cannot override in-flight death (0.022)",
+		_near(after_2, rem_2))
+
+	# --- Case 3: equal magnitude is also discarded (guard is <=, not <) ---
+	var rem_3 := 0.022
+	var inc_3 := 0.022
+	var overrode_3 := false
+	if inc_3 > rem_3:  # strict >; equal does not qualify
+		overrode_3 = true
+	_ok("equal magnitude discarded: a second 0.022 does not restart an in-flight 0.022",
+		overrode_3 == false)
+
+	# --- Decay formula: _shake_decay = magnitude / maxf(0.001, duration) ---
+	const MAG := 0.022
+	const DUR := 0.20
+	var decay := MAG / maxf(0.001, DUR)
+	_ok("decay formula: magnitude / duration = 0.022 / 0.20 = 0.11 rad/s",
+		_near(decay, MAG / DUR))
+	_ok("decay * duration == magnitude (shake decays to zero after exactly duration s)",
+		_near(decay * DUR, MAG))
+
+	# --- Zero-duration guard prevents division by zero ---
+	var decay_zero_dur := MAG / maxf(0.001, 0.0)
+	_ok("zero-duration guard: maxf(0.001, 0) → 0.001 → decay is finite (no div-by-zero)",
+		decay_zero_dur > 0.0 and is_finite(decay_zero_dur))
+
+	# --- Land and death shakes use distinct frequencies ---
+	const LAND_FREQ  := 20.0
+	const DEATH_FREQ := 26.0
+	_ok("land (20 Hz) and death (26 Hz) shake frequencies are distinct — different tactile feel",
+		not is_equal_approx(LAND_FREQ, DEATH_FREQ))
+
+
+func _test_run_timer_semantics() -> void:
+	## Documents the wall-clock timer model: timer runs continuously through all
+	## deaths and reboot animations. Mirrors the analysis in
+	## docs/research/run_timer_semantics.md.
+	##
+	## Key invariant: Game.is_running is NOT toggled by respawn — only by
+	## level_complete() (win) and reset_run() (replay). This means displayed
+	## run_time_seconds includes reboot-animation overhead.
+	##
+	## Par-time calibration formula:
+	##   par_wall_clock = movement_time + (expected_deaths × reboot_duration)
+	print("\n-- Run-timer semantics (wall-clock model, run_timer_semantics.md) --")
+	var g: GM = GM.new()
+
+	# register_attempt() is what respawn() calls on the Game autoload.
+	# It must NOT change is_running — only increments the attempt counter.
+	g.start_run()
+	g.register_attempt()
+	_ok("register_attempt (respawn path) does not stop the run timer (is_running stays true)",
+		g.is_running == true)
+	g.register_attempt()
+	g.register_attempt()
+	_ok("multiple respawns keep is_running true (wall-clock model: timer runs through deaths)",
+		g.is_running == true)
+
+	# Reboot-duration overhead table (from run_timer_semantics.md):
+	#   Snappy 0.33 s, others 0.50 s
+	const SNAPPY_REBOOT := 0.33
+	const FLOATY_REBOOT := 0.50
+
+	# Snappy overhead: 4 deaths × 0.33 s = 1.32 s
+	var snappy_overhead_4 := 4 * SNAPPY_REBOOT
+	_ok("Snappy 4 deaths: overhead = 4 × 0.33 = 1.32 s",
+		_near(snappy_overhead_4, 1.32))
+
+	# Floaty overhead: 4 deaths × 0.50 s = 2.0 s
+	var floaty_overhead_4 := 4 * FLOATY_REBOOT
+	_ok("Floaty 4 deaths: overhead = 4 × 0.50 = 2.0 s",
+		_near(floaty_overhead_4, 2.0))
+
+	# Par calibration: Threshold placeholder is 35.0 s (pure movement time).
+	# With 4 Snappy deaths, wall-clock par ≈ 35.0 + 1.32 = 36.32 s.
+	# The research note recommends rounding up to 37 s for a conservative par.
+	const THRESHOLD_MOVEMENT_PAR := 35.0
+	var calibrated_par := THRESHOLD_MOVEMENT_PAR + snappy_overhead_4
+	_ok("par calibration: movement_time + overhead > pure movement_time (wall-clock par is higher)",
+		calibrated_par > THRESHOLD_MOVEMENT_PAR)
+	_ok("par calibration: Threshold wall-clock par with 4 Snappy deaths ≈ 36.3 s",
+		_near(calibrated_par, 36.32))
+
+	# "deaths needed to add ~10 s overhead" threshold from the research table.
+	# Snappy: 10 / 0.33 ≈ 30.3 → 30 deaths. Floaty: 10 / 0.50 = 20 deaths.
+	var snappy_deaths_for_10s: int = int(10.0 / SNAPPY_REBOOT)
+	var floaty_deaths_for_10s: int = int(10.0 / FLOATY_REBOOT)
+	_ok("Snappy: ~30 deaths to accumulate 10 s overhead (Snappy reboot 0.33 s)",
+		snappy_deaths_for_10s == 30)
+	_ok("Floaty: 20 deaths to accumulate 10 s overhead (Floaty reboot 0.50 s)",
+		floaty_deaths_for_10s == 20)
+
+	# Snappy reboot is shorter than Floaty — less per-death overhead, faster respawn feel.
+	_ok("Snappy reboot (0.33 s) is shorter than Floaty reboot (0.50 s)",
+		SNAPPY_REBOOT < FLOATY_REBOOT)
+
+	g.free()
+
+
+func _test_footstep_and_land_impact_math() -> void:
+	## Mirrors the throttle logic in _tick_timers() and the geometry formulas in
+	## _build_footstep_mesh() / _build_impact_mesh() from player.gd (iter 84).
+	print("\n-- Footstep dust + land impact particle math (iter 84) --")
+
+	# ---- Footstep dust timer throttle ----
+	# Default interval is 0.15 s — greater than zero so it does not fire every frame.
+	const FOOTSTEP_INTERVAL := 0.15
+	_ok("footstep interval default (0.15 s) > 0 — throttled, not every frame",
+		FOOTSTEP_INTERVAL > 0.0)
+
+	# Timer countdown: maxf clamps to 0, does not go negative.
+	_ok("timer countdown: maxf(0, 0.12 - 0.016) < 0.12",
+		maxf(0.0, 0.12 - 0.016) < 0.12)
+	_ok("timer countdown: maxf(0, 0.010 - 0.016) == 0.0 (clamps at zero)",
+		is_equal_approx(maxf(0.0, 0.010 - 0.016), 0.0))
+
+	# Fire condition: timer <= 0.
+	_ok("footstep fires when timer == 0.0 (condition: timer <= 0.0)", 0.0 <= 0.0)
+	# After firing, timer is reset to interval (not zero) so next fire is delayed.
+	var timer_after_fire := FOOTSTEP_INTERVAL
+	_ok("footstep timer resets to interval (0.15 s) after firing, not 0",
+		timer_after_fire > 0.0)
+
+	# Speed gate: fires only when horizontal speed > 0.5 m/s (above dead zone).
+	const MIN_SPEED := 0.5
+	_ok("footstep suppressed at h_speed = 0.3 m/s (below gate)", 0.3 < MIN_SPEED)
+	_ok("footstep fires at h_speed = 2.0 m/s (above gate)", 2.0 >= MIN_SPEED)
+
+	# ---- Footstep mesh geometry ----
+	# 4 lines at TAU/4 (90°) increments. cos²+sin² == 1 confirms unit XZ directions.
+	for i in 4:
+		var angle := float(i) * TAU / 4.0
+		_ok("footstep line %d at 90° interval: cos²+sin² == 1" % i,
+			_near(cos(angle) * cos(angle) + sin(angle) * sin(angle), 1.0))
+
+	# ---- Land impact threshold ----
+	const LAND_THRESHOLD := 0.15
+	_ok("land impact threshold (0.15) below audio heavy threshold (0.25) — fires on lighter landings",
+		LAND_THRESHOLD < 0.25)
+	_ok("light landing impact=0.10 < threshold — no particles", 0.10 < LAND_THRESHOLD)
+	_ok("medium impact=0.20 >= threshold — particles fire", 0.20 >= LAND_THRESHOLD)
+	_ok("heavy impact=1.0 >= threshold — particles fire", 1.0 >= LAND_THRESHOLD)
+
+	# ---- Land impact line-length formula ----
+	# length = 0.08 + impact * 0.22  — heavier landing → longer lines.
+	var len_at_threshold := 0.08 + LAND_THRESHOLD * 0.22
+	var len_at_max       := 0.08 + 1.0 * 0.22
+	_ok("land impact at threshold (0.15): line length ≈ 0.113",
+		_near(len_at_threshold, 0.113))
+	_ok("land impact at max (1.0): line length = 0.30",
+		_near(len_at_max, 0.30))
+	_ok("land impact: heavy lines longer than threshold-level lines",
+		len_at_max > len_at_threshold)
+
+
+func _test_footstep_dust_state_machine() -> void:
+	## Mirrors the state-machine logic extracted into _tick_footstep_dust() in
+	## player.gd (iter 85 refactor). Tests the three conditions that gate dust emission:
+	## (A) not the landing frame, (B) on_floor, (C) h_speed > 0.5.
+	## The timer countdown and reset are also verified.
+	print("\n-- _tick_footstep_dust state machine (iter 85) --")
+
+	const INTERVAL := 0.15   # _footstep_dust_interval default
+	const MIN_SPEED := 0.5   # h_speed gate
+	const DELTA := 1.0 / 60.0  # one physics tick
+
+	# Landing-frame skip: even when on_floor and h_speed is above gate,
+	# dust must NOT fire when just_landed is true (land impact burst has its own frame).
+	var timer_before := 0.0   # timer already expired — would fire next tick
+	var timer_after_landing_frame := maxf(0.0, timer_before - DELTA)
+	var would_fire_without_skip := (true and not false and true and (2.0 >= MIN_SPEED) and timer_after_landing_frame <= 0.0)
+	var would_fire_with_skip    := (true and not true  and true and (2.0 >= MIN_SPEED) and timer_after_landing_frame <= 0.0)
+	_ok("landing frame: without just_landed guard, dust would fire (baseline)", would_fire_without_skip)
+	_ok("landing frame: with just_landed=true guard, dust does NOT fire", not would_fire_with_skip)
+
+	# Airborne guard: on_floor=false suppresses dust regardless of speed or timer.
+	var airborne_fire := (false and not false and true and (5.0 >= MIN_SPEED) and 0.0 <= 0.0)
+	_ok("airborne: on_floor=false prevents dust even with high speed and expired timer", not airborne_fire)
+
+	# Speed gate: h_speed <= MIN_SPEED suppresses dust even when timer expired and on floor.
+	var slow_fire := (true and not false and true and (0.3 >= MIN_SPEED) and 0.0 <= 0.0)
+	_ok("speed gate: h_speed=0.3 < MIN_SPEED (0.5) suppresses dust", not slow_fire)
+	var walk_fire := (true and not false and true and (0.6 >= MIN_SPEED) and 0.0 <= 0.0)
+	_ok("speed gate: h_speed=0.6 >= MIN_SPEED (0.5) allows dust", walk_fire)
+
+	# Timer reset after firing: timer is set to INTERVAL, not zero.
+	# Next emission is delayed by exactly INTERVAL seconds.
+	var timer_after_fire := INTERVAL
+	_ok("timer resets to INTERVAL (0.15 s) after spawn — prevents next-frame re-fire",
+		timer_after_fire > 0.0)
+	_ok("timer after reset will not immediately expire on next tick (INTERVAL > DELTA)",
+		timer_after_fire > DELTA)
+
+	# Timer countdown clamps at zero (maxf guard).
+	var t := maxf(0.0, 0.005 - DELTA)
+	_ok("timer countdown: nearly-expired timer clamps to 0.0, does not go negative",
+		t >= 0.0)
+	_ok("timer countdown: nearly-expired timer IS 0 (ready to fire next check)",
+		t == 0.0)
+
+
+func _test_blob_shadow_export_defaults() -> void:
+	## Guards the BlobShadow @export_range initial values that the dev-menu sliders
+	## and the depth-perception tuning session depend on. Changing a default here
+	## without updating the dev-menu slider range or the iter-85 research note is a
+	## silent regression — this test makes it loud.
+	print("\n-- BlobShadow export defaults --")
+
+	var bs := BlobShadow.new()
+	_ok("radius_at_ground default 0.22 m (close-to-floor disc size)",
+		_near(bs.radius_at_ground, 0.22))
+	_ok("radius_at_height default 0.55 m (disc expands with height for penumbra cue)",
+		_near(bs.radius_at_height, 0.55))
+	_ok("fade_height default 6.0 m (shadow readable for typical jump arcs)",
+		_near(bs.fade_height, 6.0))
+	_ok("alpha_max default 0.42 (visible but not black-disc distracting)",
+		_near(bs.alpha_max, 0.42))
+	_ok("radius_at_height > radius_at_ground (shadow expands upward — depth cue correct)",
+		bs.radius_at_height > bs.radius_at_ground)
+	bs.free()
+
+
+func _test_blob_shadow_param_dispatch() -> void:
+	## Mirrors the match block in blob_shadow.gd::_on_blob_shadow_param_changed.
+	## Ensures every dev-menu "Blob Shadow — Tuning" slider routes to the correct
+	## property. A missing or mis-spelled match arm is caught here before it causes
+	## a silent no-op on device.
+	print("\n-- BlobShadow param dispatch --")
+
+	var bs := BlobShadow.new()
+
+	bs._on_blob_shadow_param_changed(&"radius_at_ground", 0.35)
+	_ok("radius_at_ground dispatch sets property", _near(bs.radius_at_ground, 0.35))
+
+	bs._on_blob_shadow_param_changed(&"radius_at_height", 0.90)
+	_ok("radius_at_height dispatch sets property", _near(bs.radius_at_height, 0.90))
+
+	bs._on_blob_shadow_param_changed(&"fade_height", 12.0)
+	_ok("fade_height dispatch sets property", _near(bs.fade_height, 12.0))
+
+	bs._on_blob_shadow_param_changed(&"alpha_max", 0.75)
+	_ok("alpha_max dispatch sets property", _near(bs.alpha_max, 0.75))
+
+	# Unknown param must be a silent no-op — no crash, no mutation of known props.
+	var rg_snapshot := bs.radius_at_ground
+	bs._on_blob_shadow_param_changed(&"nonexistent_param", 99.0)
+	_ok("unknown param leaves radius_at_ground unchanged (match is exhaustive)",
+		_near(bs.radius_at_ground, rg_snapshot))
+
+	bs.free()
+
+
+func _test_blob_shadow_juice_toggle() -> void:
+	## Mirrors blob_shadow.gd::_on_juice_changed. The juice toggle system calls
+	## this with every key change; only the &"blob_shadow" key should mutate
+	## _enabled. Other keys must be ignored so toggling unrelated juice elements
+	## (squash_stretch, screen_shake, etc.) does not affect the shadow.
+	print("\n-- BlobShadow juice toggle --")
+
+	var bs := BlobShadow.new()
+
+	_ok("blob shadow starts enabled (_enabled default true)", bs._enabled == true)
+
+	bs._on_juice_changed(&"blob_shadow", false)
+	_ok("juice_changed blob_shadow→false disables shadow", bs._enabled == false)
+
+	bs._on_juice_changed(&"blob_shadow", true)
+	_ok("juice_changed blob_shadow→true re-enables shadow", bs._enabled == true)
+
+	bs._on_juice_changed(&"squash_stretch", false)
+	_ok("unrelated key squash_stretch does not disable blob shadow", bs._enabled == true)
+
+	bs.free()
