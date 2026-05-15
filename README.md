@@ -5,10 +5,10 @@ A mobile 3D platformer. Brutalist megastructure inspired by *BLAME!*. Controller
 ## Status
 
 Current gate: **Gate 0 — Feel Lab** (closing out; Gate 1 prep in flight)
-Last activity: 2026-05-15 — iter 89: Kenney kit art pass — _body_mesh wired to chick sub-mesh, 13 set-dressing placements in Threshold (7 GLBs)
+Last activity: 2026-05-15 — iter 90: PatrolSentry enemy archetype — Gate 1 requirement implemented
 Test device build: ✅ verified 2026-05-12 — runs in Godot 4.6 on PC and on Nothing Phone 4(a) Pro
-Performance: 144 fps / 6.9 ms in editor at 1920×1080 (Feel Lab); set-dressing GLBs zero runtime cost until Godot imports them; on-device draw-call delta TBD
-Throttle level: **🟢 normal** (3 iterations since 2026-05-15 direction session)
+Performance: 144 fps / 6.9 ms in editor at 1920×1080 (Feel Lab); sentry cost = 3 meshes + 1 Area3D per instance (negligible)
+Throttle level: **🟢 normal** (4 iterations since 2026-05-15 direction session)
 
 If you only read one section, read **Open questions waiting on you** below.
 
@@ -32,6 +32,7 @@ Things Claude can't decide alone, or where it's stalled and needs direction.
 4. **Threshold set-dressing review on device.** (iter 89) 13 Kenney kit props placed in Threshold. On first open in Godot, GLBs auto-import and the pieces appear. Questions: (a) Do cogs/pipes/machine in Zone 2 read as brutalist industrial or feel too "colourful"? If too bright, say so and we'll apply `mat_concrete_dark.tres` overrides. (b) Does the crane above G2 in Zone 3 read well at distance? (c) Are computer consoles in Zone 1 right-scale relative to the Stray?
 5. **On-device DistantSkyline tuning.** After Threshold loads on device: do the tower silhouettes read well at Zone 1 plaza distance? Is the fog density right, or do the buildings feel too close / too far? Tune fog_density and tower positions from what you see.
 6. **`pitch_min_degrees` (negative pitch)?** Pitch lower bound is hard-clamped at 0 (horizontal). If you ever want to look *up* at the megastructure from below, say so and we'll add the export + slider.
+7. **PatrolSentry tuning on device.** (iter 90) One sentry in Zone 1 plaza at (0, 1.2, 16), patrolling X-axis 8 m at 2.5 m/s with 0.5 s wait. Dev menu "Sentry — Tuning" exposes speed/distance/wait/bob. Questions: (a) Does 2.5 m/s feel too fast or too slow to time around? (b) Does 8 m patrol distance block the floor route without sealing the rubble-hop / vertical-climb routes? (c) Does the amber eye read as dangerous against the brutalist backdrop? Feed back any adjustments.
 
 - [x] **Open the project in Godot 4.6 and run the on-device first-run checklist in `docs/ANDROID.md`.** Done 2026-05-12 — runs in editor and deploys to Nothing Phone 4(a) Pro. Remaining ANDROID.md items: headless CI signing via env vars, release Play Store build (both gate-locked to ship).
 - [x] **First feel verdict — Snappy vs Floaty vs Momentum.** Snappy feel approved as good overall; tune-down (max_speed 6.5 → 6.0) queued. Floaty and Momentum verdicts to come as level design forces switching between them.
@@ -101,6 +102,45 @@ Goal: store-ready build.
 The full iteration log lives here, newest first. Every iteration appends an entry. Skim the dates to find where you last left off.
 
 <!-- ITERATION ENTRIES BELOW — DO NOT REMOVE OLDER ENTRIES -->
+
+### [2026-05-15] — iter 90 — PatrolSentry enemy archetype (Gate 1 requirement)
+
+Branch: `claude/gifted-shannon-fuaJp`
+Throttle: 🟢 normal (4 iterations since 2026-05-15 direction session)
+Gate: Gate 1 — Vertical Slice prep
+
+**Primary: Gate 1 enemy archetype — `scripts/enemies/patrol_sentry.gd`.**
+
+`PatrolSentry` (extends AnimatableBody3D) — slow linear-patrol enemy, zero AI:
+- **Patrol logic:** `_offset` (signed displacement from origin along `patrol_axis`), `_dir`
+  (+1/−1), `_waiting` (bool). `_tick_patrol(delta)` clamps to `±half_distance`, flips dir
+  + optionally pauses at each endpoint. `_physics_process` computes
+  `position = _origin + ax * _offset + UP * bob_y`.
+- **Visual (programmatic):** BoxMesh 0.8 m cube (dark grey) + amber emissive eye strip on +Z
+  face (sodium-vapour amber, energy 2.2). BoxShape3D physics collider matches body.
+- **Kill zone:** Area3D carrying `hazard_body.gd`, BoxShape half=0.50 m (> body half 0.40 m
+  — Area3D fires before physics wall stops the player; see DECISIONS.md).
+- **Y-bob:** Gentle `sinf(_bob_t * TAU / BOB_PERIOD) * 0.08` hover. Toggle via `bob_enabled`.
+- **Dev menu:** `DevMenu.sentry_param_changed(param, value: Variant)` signal. "Sentry — Tuning"
+  section in Level with speed (0.5–8 m/s), distance (1–20 m), wait (0–3 s) sliders + bob toggle.
+
+**Threshold placement:** `threshold.gd._spawn_sentries()` — programmatic (follows
+`ResultsPanel.new()` pattern). One sentry at Zone 1 plaza `(0, 1.2, 16)` patrolling
+X-axis 8 m at 2.5 m/s. Placed to cross the floor-walk route without sealing the
+rubble-hop or vertical-climb alternatives.
+
+**11 unit tests** `_test_patrol_sentry_logic` (1055 → 1066): initial offset, half-distance
+reach time, direction flip at endpoint, wait semantics, wait expiry, reversal offset,
+round-trip travel time, full cycle time, bob formula (t=0, t=quarter-period), kill-zone
+larger than body.
+
+Perf: 3 MeshInstance3D + 1 CollisionShape3D + 1 Area3D per sentry. Negligible — below
+0.5 ms frametime delta expected. On-device draw-call delta TBD.
+
+**Needs human attention:**
+7. (new) PatrolSentry tuning on device — see Open questions #7 above.
+
+---
 
 ### [2026-05-15] — iter 89 — Kenney kit art pass: body mesh wired, set-dressing in Threshold
 

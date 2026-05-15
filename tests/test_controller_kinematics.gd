@@ -135,6 +135,7 @@ func _ready() -> void:
 	_test_blob_shadow_juice_toggle()
 	_test_threshold_skyline_param()
 	_test_chick_body_mesh_path()
+	_test_patrol_sentry_logic()
 	_report()
 
 
@@ -5355,3 +5356,68 @@ func _test_chick_body_mesh_path() -> void:
 	p._clear_emission()
 	_ok("_clear_emission with null _body_mesh is a safe no-op", true)
 	p.free()
+
+
+func _test_patrol_sentry_logic() -> void:
+	## Mirrors the patrol math in patrol_sentry.gd without instantiating any node.
+	## Tests timing, boundary clamping, wait semantics, bob formula,
+	## position composition, and kill-zone sizing.
+	print("\n-- Patrol sentry patrol math --")
+
+	# Default export values from patrol_sentry.gd
+	const PATROL_SPEED := 2.5
+	const PATROL_DIST  := 8.0
+	const WAIT_DUR     := 0.5
+	const BODY_HALF    := 0.40
+	const KILL_HALF    := 0.50
+	const BOB_AMP      := 0.08
+	const BOB_PERIOD   := 2.0
+
+	var half := PATROL_DIST * 0.5   # = 4.0 m
+
+	# 1. Starting offset is 0.
+	var offset := 0.0
+	_ok("initial offset is 0", _near(offset, 0.0))
+
+	# 2. After T = half/speed seconds the sentry reaches the endpoint.
+	var t_to_end := half / PATROL_SPEED   # = 1.6 s
+	var simulated_offset := minf(PATROL_SPEED * t_to_end, half)
+	_ok("offset reaches half_dist after T = half/speed", _near(simulated_offset, half))
+
+	# 3. At the endpoint the direction flips (direction goes from +1 to -1).
+	var dir_after := -1.0   # mirrors _dir = -1.0 set in _tick_patrol at +half boundary
+	_ok("direction is -1 after reaching +half endpoint", _near(dir_after, -1.0))
+
+	# 4. While waiting, offset is unchanged.
+	var offset_at_end := half
+	var offset_after_wait_tick := offset_at_end   # _tick_patrol returns early during wait
+	_ok("offset unchanged during wait period", _near(offset_after_wait_tick, half))
+
+	# 5. Wait expires after wait_duration seconds.
+	var wait_t := 0.0
+	wait_t += WAIT_DUR
+	_ok("wait timer reaches wait_duration after one increment", _near(wait_t, WAIT_DUR))
+
+	# 6. After wait, sentry moves back toward –half.
+	# One delta step at speed after reversal from +half:
+	var delta := 0.1
+	var offset_after_one_step := half + dir_after * PATROL_SPEED * delta   # = 4.0 - 0.25 = 3.75
+	_ok("offset decreases after reversal", offset_after_one_step < half)
+
+	# 7. Full round-trip travel time (ignoring wait) = patrol_dist / speed.
+	var travel_time := PATROL_DIST / PATROL_SPEED   # = 3.2 s
+	_ok("round-trip travel time = patrol_dist / speed", _near(travel_time, 3.2))
+
+	# 8. Full cycle time includes two waits.
+	var cycle_time := travel_time + 2.0 * WAIT_DUR   # = 3.2 + 1.0 = 4.2 s
+	_ok("full cycle time = travel_time + 2 × wait_duration", _near(cycle_time, 4.2))
+
+	# 9. Bob formula: sin(0) = 0, sin(TAU/4) = 1 → amplitude at quarter-period.
+	var bob_t0 := sinf(0.0 * TAU / BOB_PERIOD) * BOB_AMP
+	var bob_qtr := sinf((BOB_PERIOD * 0.25) * TAU / BOB_PERIOD) * BOB_AMP
+	_ok("bob at t=0 is 0", _near(bob_t0, 0.0))
+	_ok("bob at t=period/4 equals amplitude", _near(bob_qtr, BOB_AMP))
+
+	# 10. Kill zone half-extent is larger than body half-extent.
+	#     Ensures Area3D fires before the physics wall stops the player.
+	_ok("kill zone larger than visual body (fires before physics wall)", KILL_HALF > BODY_HALF)

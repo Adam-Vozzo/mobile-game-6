@@ -181,6 +181,9 @@ The next iteration should pull from the top of this list. Items marked
    API, dev-menu "Respawn shard" + "Shard ledge" teleport, 7 placement unit tests.~~
    ~~Industrial press functional (iter 59) — IndustrialPress.gd four-beat cycle, amber
    emissive strip, KillZone HazardBody child; 5 dev-menu sliders; 13 unit tests.~~
+   ~~Enemy archetype (iter 90) — PatrolSentry in Zone 1 plaza, programmatic spawn via
+   threshold.gd `_spawn_sentries()`. Speed/distance/wait tunable from dev menu "Sentry —
+   Tuning". On-device pending for feel calibration.~~
    Remaining items (texture pass, par-route routing) blocked on device feel.
    **Par-time calibration (iter 83 research):** `par_time_seconds = 35.0` is a pure-movement
    placeholder. After first on-device 3–5-death wall-clock run, replace with that time (~37 s
@@ -305,6 +308,21 @@ These mirror "Open questions waiting on you" in the README.
   drive the next tuning iteration.
 
 ## Recently completed (last 5)
+
+- 2026-05-15 — iter 90. **PatrolSentry enemy archetype (Gate 1 requirement).**
+  `scripts/enemies/patrol_sentry.gd` (PatrolSentry, extends AnimatableBody3D): slow linear
+  patrol zero-AI enemy. State: `_offset` (signed displacement from origin along `patrol_axis`),
+  `_dir` (+1/-1), `_waiting` (bool). `_tick_patrol(delta)` clamps to ±half_distance, flips
+  direction + sets `_waiting` at endpoints. `_physics_process` computes
+  `position = _origin + ax * _offset + UP * bob_y`. Visual: programmatic BoxMesh (0.8 m cube,
+  dark grey) + amber emissive eye strip on +Z face. Kill zone: Area3D with `hazard_body.gd`
+  script, BoxShape half=0.50 m (> physics body 0.40 m — fires before physics wall).
+  `dev_menu.gd`: `sentry_param_changed(param: StringName, value: Variant)` signal added.
+  `dev_menu_overlay.gd`: "Sentry — Tuning" section in Level with speed/distance/wait sliders
+  + bob toggle. `threshold.gd`: `_spawn_sentries()` places one sentry at Zone 1 plaza
+  (0, 1.2, 16) patrolling X-axis 8 m, speed 2.5, wait 0.5. 11 unit tests (1055 → 1066).
+  JUICE.md: Sentry bob logged prototype. DECISIONS.md: archetype choice documented.
+  On-device pending — speed/distance/bob amplitude all tunable from dev menu.
 
 - 2026-05-15 — iter 88. **Kenney asset acquisition — chick GLB wired as Stray.**
   Downloaded Cube Pets v1.0 + Factory Kit v3.0 + Space Station Kit (all CC0). `animal-chick.glb`

@@ -276,6 +276,7 @@ func _build_level_section(vbox: VBoxContainer) -> void:
 		get_tree().reload_current_scene())
 	_build_press_section(vbox)
 	_build_atmosphere_section(vbox)
+	_build_sentry_section(vbox)
 
 
 func _build_level_select(vbox: VBoxContainer) -> void:
@@ -360,6 +361,23 @@ func _build_atmosphere_section(vbox: VBoxContainer) -> void:
 		func(v: bool) -> void: DevMenu.atmosphere_param_changed.emit(&"zone_atmo_enabled", v))
 	_make_toggle(vbox, "Distant Skyline", true,
 		func(v: bool) -> void: DevMenu.atmosphere_param_changed.emit(&"skyline_visible", v))
+
+
+func _build_sentry_section(vbox: VBoxContainer) -> void:
+	vbox.add_child(_make_label("Sentry — Tuning", SECTION_FONT_SIZE, false))
+	var params: Array[Dictionary] = [
+		{"label": "Speed m/s",    "prop": &"patrol_speed",    "min": 0.5,  "max": 8.0,  "step": 0.1,  "default": 2.5},
+		{"label": "Distance m",   "prop": &"patrol_distance", "min": 1.0,  "max": 20.0, "step": 0.5,  "default": 8.0},
+		{"label": "Wait s",       "prop": &"wait_duration",   "min": 0.0,  "max": 3.0,  "step": 0.1,  "default": 0.5},
+	]
+	for sp: Dictionary in params:
+		var prop: StringName = sp["prop"]
+		_make_slider(vbox, sp["label"],
+			sp["min"], sp["max"], sp["step"],
+			func(v: float) -> void: DevMenu.sentry_param_changed.emit(prop, v),
+			sp["default"])
+	_make_toggle(vbox, "Sentry bob", true,
+		func(v: bool) -> void: DevMenu.sentry_param_changed.emit(&"bob_enabled", v))
 
 
 func _build_touch_section(vbox: VBoxContainer) -> void:

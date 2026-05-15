@@ -36,7 +36,8 @@ is not affected. Only the strongest in-flight shake wins (weaker arrivals are di
 | element | status | notes |
 |---------|--------|-------|
 | Player damaged | idea | 50–80 ms freeze, audio ducks |
-| Enemy hit by player | idea | Gate 1 once an enemy archetype exists |
+| Enemy hit by player | idea | Gate 1 — PatrolSentry now exists; hitstop would fire on Player.respawn() caused by sentry contact. |
+| Sentry bob | prototype | Gentle Y-axis sine oscillation on PatrolSentry (BOB_AMPLITUDE 0.08 m, BOB_PERIOD 2.0 s). Toggle: "Sentry bob" in dev menu Level → Sentry — Tuning (not in Juice toggles — enemy behaviour, not a player response). On-device pending — amplitude may need reduction. |
 
 ## Particles — toggle key `particles`
 
