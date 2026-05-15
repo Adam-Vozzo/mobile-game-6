@@ -48,6 +48,15 @@ authored with it in mind.
   the human picks a survivor. Threshold rebuild kept in repo as the corridor representative;
   next level-touching iter MUST pick an unrepresented shape-family, not iterate on Threshold.
 
+- **🟢 Iter 97 complete.** Spire level (vertical climbing tower shape-family) + level_select.tscn boot screen.
+  `scenes/levels/spire.tscn` + `scripts/levels/spire.gd`: 10×8 m shaft, 8 static platforms zigzag
+  (gaps 1.5–2.5 m tuned for Snappy profile), 1 moving platform (travel 1 m Y, 3 s), checkpoint at
+  mid_shaft (PlatformC y=5.5), WinState at summit (y=17), 3-zone OmniLight (amber/cold-blue/biolume-cyan).
+  `scenes/ui/level_select.tscn` + `scripts/ui/level_select.gd`: programmatic boot selector listing
+  Feel Lab / Threshold / Spire with shape-family descriptions.
+  `project.godot` main scene → `level_select.tscn`. Dev menu Load Level → Spire entry added.
+  On-device pending: jump gaps, camera in enclosed shaft.
+
 - **🔴 Iter 96 complete. HARD THROTTLE.** `_attract_to_ledge` refactor + sentry instant-reversal
   tests (1116→1131 assertions). Refactor: extracted `_compute_ledge_pull(dir_3d) → Vector3`
   from `player.gd::_attract_to_ledge` (46 lines → 14-line caller + 31-line helper, both
@@ -175,7 +184,29 @@ authored with it in mind.
 The next iteration should pull from the top of this list. Items marked
 "P0" advance Gate 0 directly; "P1" is supporting; "P2" is opportunistic.
 
-### P0 — Gate 0 close-out + Gate 1 prep
+### P0 — Gate 1 direction-finding breadth pass (active directive — CLAUDE.md)
+
+**Shape-family inventory:**
+- ~~Shape 1: Linear corridor → Threshold~~ ✅ exists
+- ~~Shape 2: Vertical climbing tower → Spire~~ ✅ exists (iter 97)
+- Shape 3: **Open-air rooftop** (edge-of-void platforming) — NEXT unrepresented family
+- Shape 4: Plaza hub with radiating spokes (Spyro PS1) — queue
+- Shape 5: Cavern / maze with branches — queue
+- Shape 6: Inverted descent (climbing down) — queue
+- Shape 7: Enclosed obstacle gauntlet — queue
+- Shape 8: Exposed bridge crossing with vertical void below — queue
+
+Each shape needs: spawn → win state, Player/CameraRig/TouchOverlay wiring, lives in `scenes/levels/`.
+Do not iterate on an existing shape until the human picks a survivor.
+
+**Next shape to build: open-air rooftop** — exposed top of the megastructure, narrow ledges, wind
+turbines or conduit ribs as obstacles, void visible in all directions below. Distinct from Spire
+(open sky vs. enclosed shaft) and Threshold (no walls, 360° exposure vs. corridor). Floor plan
+from above: a wide irregular polygon with many gaps over void; player must route carefully.
+Boot selector already in place (`scenes/ui/level_select.tscn`).
+
+**Device test (still blocked on human):** Threshold / Spire on Nothing Phone 4(a) Pro — see Open
+questions in README. Even one device session unblocks the largest feedback queue.
 
 0. **On-device verification of 2026-05-14 redesign.** Top priority. Test the Spyro-style
    Threshold on device — Zone 1 plaza traversal feel, Zone 2 perimeter-route discoverability,
