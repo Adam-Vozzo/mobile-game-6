@@ -141,6 +141,7 @@ func _ready() -> void:
 	_test_sentry_param_dispatch()
 	_test_sentry_initial_state()
 	_test_trail_lifecycle()
+	_test_threshold_level_lifecycle()
 	_report()
 
 
@@ -5659,3 +5660,69 @@ func _test_trail_lifecycle() -> void:
 		g._current_trail.size() == 0)
 
 	g.free()
+
+
+func _test_threshold_level_lifecycle() -> void:
+	## Guards threshold.gd state-machine invariants not covered by
+	## _test_zone_env_bounds_and_disabled (_apply_zone_env pure logic) or
+	## _test_threshold_skyline_param (skyline arm: checks skyline.visible but
+	## does NOT verify the zone_atmosphere_enabled field is mutated correctly).
+	##
+	## Three gaps covered:
+	##   A. zone_atmosphere_enabled field state under _on_atmosphere_param_changed.
+	##   B. _on_zone_body_entered non-Player body filter (_active_zone must not
+	##      change when a physics body that is not the Player enters a trigger).
+	##   C. get_spawn_transform() null guard (no crash + returns IDENTITY when
+	##      PlayerSpawn marker is absent from the scene).
+	print("\n-- Threshold level lifecycle (threshold.gd) --")
+
+	var ThresholdScript = load("res://scripts/levels/threshold.gd")
+	_ok("threshold.gd loads without error", ThresholdScript != null)
+	if ThresholdScript == null:
+		return
+	var t = ThresholdScript.new()
+
+	# ── A. zone_atmosphere_enabled field state ───────────────────────────────
+	# Atmosphere toggle must default to enabled so zone-identity fires on level
+	# load without any dev-menu interaction required from the tester.
+	_ok("zone_atmosphere_enabled defaults to true (zone triggers active on level load)",
+		t.zone_atmosphere_enabled == true)
+
+	# The zone_atmo_enabled param must write the field to false (not just skip the
+	# skyline branch — that is what _test_threshold_skyline_param already guards).
+	t._on_atmosphere_param_changed(&"zone_atmo_enabled", false)
+	_ok("zone_atmo_enabled=false sets zone_atmosphere_enabled to false",
+		t.zone_atmosphere_enabled == false)
+
+	# Re-enabling restores the field so subsequent zone entries resume swapping.
+	t._on_atmosphere_param_changed(&"zone_atmo_enabled", true)
+	_ok("zone_atmo_enabled=true restores zone_atmosphere_enabled to true",
+		t.zone_atmosphere_enabled == true)
+
+	# An unrecognised param must not silently mutate the field (no default branch).
+	t._on_atmosphere_param_changed(&"unknown_xyz", false)
+	_ok("unknown param leaves zone_atmosphere_enabled unchanged (no default branch side-effect)",
+		t.zone_atmosphere_enabled == true)
+
+	# ── B. _on_zone_body_entered non-Player body filter ──────────────────────
+	# _active_zone starts at 1 — the level entry is always Zone 1.
+	_ok("_active_zone initialises to 1 (level entry is Zone 1)",
+		t._active_zone == 1)
+
+	# A plain Node3D (patrol sentry, crate, etc.) must not trigger a zone swap.
+	# The early-return guard `if not body is Player: return` exists for exactly this.
+	var non_player := Node3D.new()
+	t._on_zone_body_entered(non_player, 2)
+	_ok("_on_zone_body_entered: non-Player body leaves _active_zone at 1 (early-return guard)",
+		t._active_zone == 1)
+	non_player.free()
+
+	# ── C. get_spawn_transform() null guard ──────────────────────────────────
+	# When PlayerSpawn marker is absent (_spawn is null because _ready() never
+	# runs in this test context), the method must return IDENTITY rather than
+	# crashing with a null dereference on global_transform.
+	var xf := t.get_spawn_transform()
+	_ok("get_spawn_transform: null _spawn returns Transform3D.IDENTITY",
+		xf == Transform3D.IDENTITY)
+
+	t.free()

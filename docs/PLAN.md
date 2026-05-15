@@ -16,6 +16,15 @@ authored with it in mind.
 
 ## Active iteration
 
+- **🔴 Iter 95 complete. HARD THROTTLE.** Threshold level lifecycle hardening tests
+  (1108→1116 assertions). `_test_threshold_level_lifecycle()` — 8 new assertions in
+  `tests/test_controller_kinematics.gd`: (A) `zone_atmosphere_enabled` field state under
+  `_on_atmosphere_param_changed` — defaults true; `zone_atmo_enabled=false` writes false;
+  `zone_atmo_enabled=true` restores true; unknown param no-op. (B) `_on_zone_body_entered`
+  non-Player body filter — `_active_zone` defaults to 1; plain Node3D body with zone_id=2
+  leaves `_active_zone` at 1 (early-return guard). (C) `get_spawn_transform()` null guard
+  returns `Transform3D.IDENTITY`. 9 iterations since last human direction — **stalled**.
+  README "Open questions" updated with hard-stall notice and 4 suggested directions.
 - **🟡 Iter 94 complete. SOFT THROTTLE.** Trail recording lifecycle hardening tests +
   Sky: Children of the Light touch design research. `_test_trail_lifecycle()` — 8 new
   assertions in `tests/test_controller_kinematics.gd`: start_run() clears trail_history
@@ -344,6 +353,13 @@ These mirror "Open questions waiting on you" in the README.
   drive the next tuning iteration.
 
 ## Recently completed (last 5)
+
+- 2026-05-15 — iter 95. **Threshold level lifecycle hardening tests. HARD THROTTLE.**
+  `tests/test_controller_kinematics.gd`: `_test_threshold_level_lifecycle()` (8 assertions):
+  zone_atmosphere_enabled defaults true; zone_atmo_enabled=false/true writes field correctly;
+  unknown param is no-op; _active_zone defaults to 1; non-Player body leaves _active_zone
+  unchanged; get_spawn_transform() null guard returns Transform3D.IDENTITY. 1108→1116.
+  README updated with hard-stall notice and 4 suggested directions.
 
 - 2026-05-15 — iter 94. **Trail lifecycle hardening tests + Sky touch design research. SOFT THROTTLE.**
   `tests/test_controller_kinematics.gd`: `_test_trail_lifecycle()` (8 assertions):
