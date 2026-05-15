@@ -68,6 +68,46 @@ Do not advance a gate without the human's explicit OK in chat.
 3. **Gate 2 — Content Spine**: 8–12 levels in one biome, level-select hub, par-time tracking, basic UX flow.
 4. **Gate 3 — Polish & Ship**: Audio pass, juice pass, settings, save/load, accessibility, Play Store build.
 
+## Gate 1 — level direction is direction-finding, not polish
+
+**Active directive (2026-05-16).** The human has not yet picked a level shape-family
+to commit to for Gate 1's vertical slice. Two earlier passes on Threshold
+(corridor / linear) failed playtest reads — even after a redesign with vision
+blockers, multiple routes, fog, collision on dressing, and broader skyline
+silhouettes, the level still reads as "a straight line with random blocks
+around." That's a shape-family problem, not a polish problem.
+
+Until the human picks a survivor, the autonomous loop's job is **breadth, not
+depth**:
+
+* **Build many level scenes in genuinely distinct shape-families.** Every
+  iter that touches level design picks the next *unrepresented* style to seed
+  — not another pass on an existing one. Variety over polish.
+* **Examples of distinct shape-families** (not an exhaustive list; invent
+  more): linear corridor (Threshold — already exists), plaza hub with
+  radiating spokes (Spyro PS1), vertical climbing tower, cavern / maze with
+  branches, open-air rooftop with edge-of-void platforming, ringed
+  arena, inverted descent (climbing *down*), enclosed obstacle gauntlet,
+  exposed bridge crossing with verticality below. The shape-family is "what
+  does the floor plan look like from above" — not theme or dressing.
+* **Each new level must be playable end-to-end** (spawn → win state), use
+  the same Player + CameraRig + TouchOverlay + Game autoload wiring as
+  Threshold, and live under `scenes/levels/`.
+* **A `level_select.tscn`** lists every level and lets the human jump
+  between them for playtesting. Boot to selector first; selector swaps to
+  the chosen `current_level_path`.
+* **Don't iterate on Threshold or any prior level** until the human picks a
+  survivor — re-polishing rejected shapes is wasted work.
+* **When the human picks a survivor:** the loop pivots to depth on that one
+  shape, and the others become reference scenes (kept in repo, dropped from
+  selector if desired). The directive in this section gets revised at that
+  point.
+
+If a planned iter would touch level work but every shape-family is already
+represented at least once, escalate to the human and pick a different P0
+instead. The point of this directive is to *not* keep polishing the same
+shape.
+
 ## Architecture conventions
 
 ```

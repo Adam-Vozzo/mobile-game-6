@@ -78,6 +78,10 @@ const _LAND_IMPACT_THRESHOLD := 0.15
 # Chick GLB node hierarchy: Chick → root → body (mesh). Null-safe: if the GLB
 # hasn't been imported yet, emission flash stays inert without crashing.
 @onready var _body_mesh: MeshInstance3D = get_node_or_null("Visual/Chick/root/body") as MeshInstance3D
+@onready var _anim_player: AnimationPlayer = get_node_or_null("Visual/Chick/AnimationPlayer") as AnimationPlayer
+
+const _ANIM_WALK_SPEED := 0.4   # m/s — above this, switch idle → walk
+const _ANIM_RUN_SPEED  := 2.5   # m/s — above this, switch walk → run
 
 
 func _ready() -> void:
@@ -149,6 +153,7 @@ func _physics_process(delta: float) -> void:
 		_apply_arc_assist(delta)
 	move_and_slide()
 	_update_visual_facing(delta)
+	_update_anim_state()
 	if global_position.y < profile.fall_kill_y:
 		respawn()
 
@@ -401,6 +406,24 @@ func _apply_arc_assist(delta: float) -> void:
 		velocity += per_frame
 		_arc_assist_accumulated += per_frame.length()
 		break
+
+
+func _update_anim_state() -> void:
+	if _anim_player == null:
+		return
+	var target: StringName
+	if is_on_floor():
+		var horiz := Vector2(velocity.x, velocity.z).length()
+		if horiz >= _ANIM_RUN_SPEED:
+			target = &"run"
+		elif horiz >= _ANIM_WALK_SPEED:
+			target = &"walk"
+		else:
+			target = &"idle"
+	else:
+		target = &"idle"
+	if _anim_player.current_animation != target:
+		_anim_player.play(target)
 
 
 func _update_visual_facing(delta: float) -> void:

@@ -16,6 +16,38 @@ authored with it in mind.
 
 ## Active iteration
 
+- **🟢 Direction session 2026-05-16 (post-pull repair + Threshold redesign).** Human
+  flagged two parser errors landing on `main` from autonomous iters: `AudioStreamOGGVorbis`
+  → `AudioStreamOggVorbis` (Godot 3 → Godot 4 spelling, audio.gd) and `sinf(` → `sin(`
+  (C math.h → GDScript, patrol_sentry.gd + 2 test sites). Saved as `feedback_godot4_naming.md`
+  memory. Chick wiring fixes: moved `colormap-cube-pets.png` → `assets/art/character/Textures/colormap.png`
+  so the GLB's relative URI resolves (was rendering grey); rotated `Visual/Chick` 180° around
+  Y in `player.tscn` (Kenney +Z forward → Godot -Z forward); wired `_anim_player` in `player.gd`
+  to play `idle`/`walk`/`run` from the GLB's 8 anims based on horizontal speed (0.4 / 2.5 m/s
+  thresholds). Then human critique of Threshold: floating-prop dressing, empty void, linear
+  corridor, no architectural vision — saved as `feedback_level_design_quality_bar.md`.
+  Threshold rebuild executed in same session: new approach corridor (tight, vision-blocked
+  spawn) → Z1 plaza with central vision pillar + dual elevated/ground routes + load-bearing
+  Kenney container/computer walls (collision on every dressing piece) → drop transition under
+  lintel hiding Z2 → Z2 maintenance with overhead pipe-bridge alternate route, full enclosing
+  walls + ceiling → tight Alcove (preserved checkpoint) → Zone 3 vertical industrial reveal
+  with 6 descending gantries + G5 intermediate added for press traversal + bigger DeepFloor
+  drop + back-wall crane + integrated structure walls → Beat4 platforms tightened to be
+  reachable from gantries (K1 y=-14 not -16; Terminal y=-16). Fog density 0.01→0.03-0.045
+  per zone; DistantSkyline replaced 11 thin towers (incl. the 5×150×5 humanoid-reading needle)
+  with 10 broader slab/bunker/megablock silhouettes (aspect ratios closer to architecture).
+  Headless `--check-only` verified clean parse; only pre-existing missing-ambient-OGG errors
+  appear. Pre-existing strict-warning parse errors in `test_controller_kinematics.gd` lines
+  2042 / 4446 / 4455 noted (untyped Variant inferences treated as errors under headless
+  parse — unblocks editor F5 run but should be fixed in a future iter).
+  **However:** human reviewed the rebuild and concluded it still reads as "a straight line
+  with random blocks around" — re-polishing Threshold's corridor shape is wasted work.
+  New direction captured in `docs/CLAUDE.md` "Gate 1 — level direction is direction-finding,
+  not polish": autonomous loop seeds many distinct level shape-families (plaza hub, vertical
+  tower, cavern, rooftop, etc.) with a `level_select.tscn` for playtest jump-around, until
+  the human picks a survivor. Threshold rebuild kept in repo as the corridor representative;
+  next level-touching iter MUST pick an unrepresented shape-family, not iterate on Threshold.
+
 - **🔴 Iter 96 complete. HARD THROTTLE.** `_attract_to_ledge` refactor + sentry instant-reversal
   tests (1116→1131 assertions). Refactor: extracted `_compute_ledge_pull(dir_3d) → Vector3`
   from `player.gd::_attract_to_ledge` (46 lines → 14-line caller + 31-line helper, both
@@ -400,7 +432,7 @@ These mirror "Open questions waiting on you" in the README.
   `_setup_ambient_players()` creates `_ambient_global_player` + `_ambient_zone2_player`
   (AudioStreamPlayer nodes, fan layer at −4 dB). `_load_ambient_streams()` loads
   `res://assets/audio/ambient/ambient_global.ogg` and `ambient_zone2.ogg` (null-safe;
-  AudioStreamOGGVorbis.loop = true set programmatically). `set_ambient_zone(zone_id)`:
+  AudioStreamOggVorbis.loop = true set programmatically). `set_ambient_zone(zone_id)`:
   zones 1+3 play global only; zone 2 adds fan layer via `_resume_layer()`.
   `_on_audio_param_changed`: `&"ambient_volume"` arm sets Ambient bus dB.
   `threshold.gd`: `Audio.set_ambient_zone(1)` in `_ready()`; `Audio.set_ambient_zone(zone_id)`

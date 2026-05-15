@@ -5420,8 +5420,8 @@ func _test_patrol_sentry_logic() -> void:
 	_ok("full cycle time = travel_time + 2 × wait_duration", _near(cycle_time, 4.2))
 
 	# 9. Bob formula: sin(0) = 0, sin(TAU/4) = 1 → amplitude at quarter-period.
-	var bob_t0 := sinf(0.0 * TAU / BOB_PERIOD) * BOB_AMP
-	var bob_qtr := sinf((BOB_PERIOD * 0.25) * TAU / BOB_PERIOD) * BOB_AMP
+	var bob_t0 := sin(0.0 * TAU / BOB_PERIOD) * BOB_AMP
+	var bob_qtr := sin((BOB_PERIOD * 0.25) * TAU / BOB_PERIOD) * BOB_AMP
 	_ok("bob at t=0 is 0", _near(bob_t0, 0.0))
 	_ok("bob at t=period/4 equals amplitude", _near(bob_qtr, BOB_AMP))
 
