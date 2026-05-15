@@ -48,6 +48,8 @@ func _ready() -> void:
 	_spawn_sentries()
 	_connect_zone_triggers()
 	_apply_zone_env(1)
+	if has_node("/root/Audio"):
+		Audio.set_ambient_zone(1)
 	if has_node("/root/DevMenu"):
 		DevMenu.atmosphere_param_changed.connect(_on_atmosphere_param_changed)
 
@@ -80,6 +82,8 @@ func _on_zone_body_entered(body: Node3D, zone_id: int) -> void:
 		return
 	_active_zone = zone_id
 	_apply_zone_env(zone_id)
+	if has_node("/root/Audio"):
+		Audio.set_ambient_zone(zone_id)
 
 
 func _apply_zone_env(zone_id: int) -> void:

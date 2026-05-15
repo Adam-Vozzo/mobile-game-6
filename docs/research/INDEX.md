@@ -66,6 +66,8 @@ Suggested early reads (from CLAUDE.md) — now covered:
 
 - [`touch_dead_zone_calibration.md`](touch_dead_zone_calibration.md) — truncating vs. remapping dead zones (formulae + tradeoffs), Genshin Impact observations (8–10% inner dead zone, outer dead zone at 90–95%, floating stick, camera safety band), Sky and Alto notes, HCI sizing guidance (10–20% for touch). 5 concrete implications: current 15% truncating dead zone is correct for Gate 0; Floaty profile may need remapping later; outer dead zone at 93% for sprint ergonomics; camera safety band note; dead zone belongs in touch_overlay not ControllerProfile.
 
+- [`alto_odyssey_touch_design.md`](alto_odyssey_touch_design.md) — Alto's Odyssey (Snowman 2018): one-touch model analysis, input economy vocabulary (tap debt, camera tax, flow corridor), why the full-screen tap zone works, and six concrete implications for Void: jump button hitbox should be large not precise, auto-framing is the camera-tax solution, variable-jump-height = Alto's hold-for-backflip analogy, avoid three-simultaneous-touch combinations. Calibration reference for Gate 1 device testing: measure camera-adjust pauses vs. misjudged-jump deaths.
+
 Suggested:
 - ~~Genshin Impact touch layout postmortem (dead zone tuning specifics).~~ Done (iter 20, `touch_dead_zone_calibration.md`).
 - Sky: Children of the Light gesture system (covered briefly above; more detail on social-game input philosophy worth a deeper read for Gate 2+ UX decisions).

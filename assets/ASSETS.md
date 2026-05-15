@@ -67,3 +67,27 @@ do not commit the asset.
   Tunable from dev menu Juice → Audio — SFX ("SFX volume ×"). On-device
   pending — final clip selection may change after first device playtest.
   No attribution required (CC0).
+
+- assets/audio/ambient/ambient_global.ogg   (PENDING — needs manual download)
+  Source: https://freesound.org/people/AlaskaRobotics/sounds/221570/
+  Author: AlaskaRobotics
+  Licence: CC0 1.0 Universal
+  Date acquired: pending
+  Notes: "Ambient spacecraft hum" — deep bass-heavy industrial hum, 17.8 s
+  loopable. Selected as B1 in ASSET_OPTIONS.md. Looping set programmatically
+  via AudioStreamOGGVorbis.loop = true in audio.gd::_load_ambient_streams().
+  Plays on Ambient bus for all zones. No attribution required (CC0).
+  Download: visit the freesound URL above, log in, click Download OGG, save
+  as assets/audio/ambient/ambient_global.ogg, then reopen Godot to import.
+
+- assets/audio/ambient/ambient_zone2.ogg   (PENDING — needs manual download)
+  Source: https://freesound.org/people/IanStarGem/sounds/271096/
+  Author: IanStarGem
+  Licence: CC0 1.0 Universal
+  Date acquired: pending
+  Notes: "Industrial/Factory Fans Loop" — mechanical fan soundscape, 6.7 s
+  seamless loop. Selected as B2 in ASSET_OPTIONS.md. Zone 2 (maintenance yard)
+  secondary layer — plays at -4 dB relative to global hum. Looping set
+  programmatically. No attribution required (CC0).
+  Download: visit the freesound URL above, log in, click Download OGG, save
+  as assets/audio/ambient/ambient_zone2.ogg, then reopen Godot to import.

@@ -461,6 +461,10 @@ func _build_blob_shadow_tuning(vbox: VBoxContainer) -> void:
 
 
 func _build_audio_sfx_tuning(vbox: VBoxContainer) -> void:
+	vbox.add_child(_make_label("Audio — Ambient", SECTION_FONT_SIZE, false))
+	_make_slider(vbox, "Ambient volume ×", 0.0, 2.0, 0.05,
+		func(v: float) -> void: DevMenu.audio_param_changed.emit(&"ambient_volume", v),
+		1.0)
 	vbox.add_child(_make_label("Audio — SFX", SECTION_FONT_SIZE, false))
 	_make_slider(vbox, "SFX volume ×", 0.0, 2.0, 0.05,
 		func(v: float) -> void: DevMenu.audio_param_changed.emit(&"sfx_volume", v),
