@@ -51,3 +51,19 @@ do not commit the asset.
   Notes: Modular space-station 3D asset kit — floors, walls, panels, doors,
   consoles, containers, structural columns. Used for Zone 1/2 modular geometry
   in Threshold and future habitation-layer levels. No attribution required (CC0).
+
+- assets/audio/sfx/jump.ogg           (source: laserSmall_000.ogg)
+  assets/audio/sfx/land_light.ogg     (source: impactMetal_000.ogg)
+  assets/audio/sfx/land_heavy.ogg     (source: impactMetal_004.ogg)
+  assets/audio/sfx/collect_shard.ogg  (source: forceField_003.ogg)
+  assets/audio/sfx/respawn_start.ogg  (source: laserLarge_000.ogg)
+  Source: https://kenney.nl/assets/sci-fi-sounds
+  Author: Kenney (kenney.nl)
+  Licence: CC0 1.0 Universal
+  Date acquired: 2026-05-15
+  Notes: Five clips selected from the 70-file Sci-Fi Sounds pack for Gate 1
+  placeholder SFX — jump, light land, heavy land, shard collection, respawn.
+  Files renamed from Kenney originals to semantic event names under sfx/.
+  Tunable from dev menu Juice → Audio — SFX ("SFX volume ×"). On-device
+  pending — final clip selection may change after first device playtest.
+  No attribution required (CC0).
