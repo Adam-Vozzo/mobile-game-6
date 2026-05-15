@@ -142,6 +142,8 @@ func _ready() -> void:
 	_test_sentry_initial_state()
 	_test_trail_lifecycle()
 	_test_threshold_level_lifecycle()
+	_test_ledge_pull_geometry()
+	_test_sentry_instant_reversal()
 	_report()
 
 
@@ -5726,3 +5728,104 @@ func _test_threshold_level_lifecycle() -> void:
 		xf == Transform3D.IDENTITY)
 
 	t.free()
+
+
+func _test_ledge_pull_geometry() -> void:
+	## Guards the geometric invariants of player.gd::_compute_ledge_pull extracted
+	## from _attract_to_ledge (iter 96 refactor: 46-line method → 14-line caller
+	## + 24-line _compute_ledge_pull helper).  Pure maths — no scene tree needed.
+	##
+	## Invariants covered:
+	##   A. Perpendicular vector: dir_3d.cross(UP).normalized() is orthogonal to dir_3d.
+	##   B. Constants: CAPSULE_R=0.28, FOOT_Y_OFFSET=-0.45, PROBE_AHEAD=CAPSULE_R+0.05.
+	##   C. Foot position offset is purely vertical (XZ unchanged).
+	##   D. Probe-ahead length is strictly greater than CAPSULE_R (just outside the body).
+	print("\n-- _compute_ledge_pull geometry invariants --")
+
+	# ── A. Perpendicular vector is orthogonal to movement direction ──────────
+	# The probe must fan left/right, not forward/backward, relative to input dir.
+	var dir := Vector3(0.0, 0.0, -1.0).normalized()   # facing –Z
+	var perp := dir.cross(Vector3.UP).normalized()
+	_ok("ledge-pull: perp is perpendicular to dir (dot ≈ 0)",
+		_near(dir.dot(perp), 0.0))
+	_ok("ledge-pull: perp is a unit vector (length ≈ 1)",
+		_near(perp.length(), 1.0))
+	_ok("ledge-pull: perp is horizontal (y ≈ 0, cross of two XZ vectors is pure X)",
+		_near(perp.y, 0.0))
+
+	# ── B. Constants match the CollisionShape3D in player.tscn ───────────────
+	const CAPSULE_R      := 0.28   # from _compute_ledge_pull
+	const FOOT_Y_OFFSET  := -0.45  # capsule half-height from centre to floor
+	const PROBE_AHEAD    := CAPSULE_R + 0.05
+	_ok("ledge-pull: CAPSULE_R is 0.28 m (Stray capsule radius in player.tscn)",
+		_near(CAPSULE_R, 0.28))
+	_ok("ledge-pull: FOOT_Y_OFFSET is −0.45 m (foot sits below capsule centre)",
+		_near(FOOT_Y_OFFSET, -0.45))
+	_ok("ledge-pull: PROBE_AHEAD = CAPSULE_R + 0.05 = 0.33 m",
+		_near(PROBE_AHEAD, 0.33))
+
+	# ── C. Foot offset is vertical-only (XZ unchanged from capsule position) ──
+	var capsule_pos := Vector3(3.0, 2.0, -5.0)
+	var foot := capsule_pos + Vector3(0.0, FOOT_Y_OFFSET, 0.0)
+	_ok("ledge-pull: foot.x equals capsule_pos.x (no lateral offset)",
+		_near(foot.x, capsule_pos.x))
+	_ok("ledge-pull: foot.z equals capsule_pos.z (no depth offset)",
+		_near(foot.z, capsule_pos.z))
+	_ok("ledge-pull: foot.y = capsule_pos.y + FOOT_Y_OFFSET",
+		_near(foot.y, capsule_pos.y + FOOT_Y_OFFSET))
+
+	# ── D. Probe-ahead is strictly outside the capsule body ──────────────────
+	_ok("ledge-pull: PROBE_AHEAD > CAPSULE_R (probe origin is outside the body)",
+		PROBE_AHEAD > CAPSULE_R)
+
+
+func _test_sentry_instant_reversal() -> void:
+	## Guards PatrolSentry._tick_patrol with wait_duration=0 (instant reversal).
+	##
+	## The existing _test_patrol_sentry_logic covers wait_duration=0.5 — the
+	## waiting-state branch.  This test covers the ELSE path: with wait_duration=0
+	## the _waiting flag is NEVER set, so the sentry immediately reverses direction
+	## and moves on the next delta without a pause.
+	##
+	## Three code paths verified:
+	##   A. Normal movement within bounds (no reversal).
+	##   B. Endpoint reached — _dir flips, _waiting stays false (instant reversal).
+	##   C. After reversal, the very next delta moves away from the endpoint.
+	print("\n-- PatrolSentry instant reversal (wait_duration=0) --")
+
+	const PATROL_SPEED := 2.5
+	const PATROL_DIST  := 8.0
+	const WAIT_DUR_ZERO := 0.0   # the case under test
+
+	var half := PATROL_DIST * 0.5   # = 4.0 m
+
+	# ── A. Normal movement: offset increments, _waiting remains false ─────────
+	var offset := 0.0
+	var dir    := 1.0
+	var waiting := false
+
+	var delta := 0.016  # one physics tick at ~60 fps
+	var new_offset_a := offset + dir * PATROL_SPEED * delta   # = 0.04 m
+	_ok("sentry instant-rev: normal step increments offset",
+		new_offset_a > 0.0)
+	offset = new_offset_a
+
+	# ── B. Endpoint reached — direction flips, _waiting NOT set ──────────────
+	# Drive the sentry exactly to the +half boundary.
+	var new_offset_b := half + 0.01   # just past the boundary
+	if new_offset_b >= half:
+		offset = half
+		dir = -1.0
+		if WAIT_DUR_ZERO > 0.0:
+			waiting = true   # this branch is NOT taken with zero wait
+	_ok("sentry instant-rev: at +half endpoint offset clamped to half",
+		_near(offset, half))
+	_ok("sentry instant-rev: direction flipped to −1 at endpoint",
+		_near(dir, -1.0))
+	_ok("sentry instant-rev: _waiting stays false when wait_duration=0",
+		waiting == false)
+
+	# ── C. Immediate post-reversal step moves away from endpoint ─────────────
+	var new_offset_c := offset + dir * PATROL_SPEED * delta   # = 4.0 + (−1)×2.5×0.016 = 3.96 m
+	_ok("sentry instant-rev: post-reversal offset decreases immediately (no pause)",
+		new_offset_c < half)

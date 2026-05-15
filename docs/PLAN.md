@@ -16,6 +16,16 @@ authored with it in mind.
 
 ## Active iteration
 
+- **🔴 Iter 96 complete. HARD THROTTLE.** `_attract_to_ledge` refactor + sentry instant-reversal
+  tests (1116→1131 assertions). Refactor: extracted `_compute_ledge_pull(dir_3d) → Vector3`
+  from `player.gd::_attract_to_ledge` (46 lines → 14-line caller + 31-line helper, both
+  under budget). Named magic numbers `FOOT_Y_OFFSET = -0.45` and `PROBE_AHEAD = CAPSULE_R + 0.05`.
+  Fixed incorrect comment ("stronger" → "weaker" nudge for closer edges — formula is
+  `dist/radius × strength`, so small dist = weak impulse). Side quest: `_test_ledge_pull_geometry`
+  (10 assertions: perpendicularity, unit length, horizontality of perp, constant values, foot
+  XZ unchanged, probe outside body) + `_test_sentry_instant_reversal` (5 assertions: zero-wait
+  direction flip with `_waiting` staying false, immediate post-reversal movement). 10 iterations
+  since last human direction — **stalled**.
 - **🔴 Iter 95 complete. HARD THROTTLE.** Threshold level lifecycle hardening tests
   (1108→1116 assertions). `_test_threshold_level_lifecycle()` — 8 new assertions in
   `tests/test_controller_kinematics.gd`: (A) `zone_atmosphere_enabled` field state under

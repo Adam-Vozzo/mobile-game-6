@@ -319,9 +319,18 @@ func _attract_to_ledge() -> void:
 	var dir_3d := Basis(Vector3.UP, _camera_yaw) * Vector3(move_input.x, 0.0, move_input.y)
 	if dir_3d.length_squared() < 0.01:
 		return
-	dir_3d = dir_3d.normalized()
-	var perp := dir_3d.cross(Vector3.UP).normalized()
+	velocity += _compute_ledge_pull(dir_3d.normalized())
+
+
+## Sphere-casts left and right of the normalised movement direction for a nearby
+## platform edge. Returns the proportional lateral impulse toward the first hit,
+## or Vector3.ZERO when no edge is within ledge_magnet_radius.
+## Called exclusively from _attract_to_ledge after guards pass.
+func _compute_ledge_pull(dir_3d: Vector3) -> Vector3:
 	const CAPSULE_R := 0.28  # Stray capsule radius (matches CollisionShape3D in player.tscn)
+	const FOOT_Y_OFFSET := -0.45  # foot position relative to capsule centre
+	const PROBE_AHEAD := CAPSULE_R + 0.05  # just beyond the capsule edge
+	var perp := dir_3d.cross(Vector3.UP).normalized()
 	var space := get_world_3d().direct_space_state
 	var query := PhysicsShapeQueryParameters3D.new()
 	var sphere := SphereShape3D.new()
@@ -329,26 +338,25 @@ func _attract_to_ledge() -> void:
 	query.shape = sphere
 	query.collision_mask = 1
 	query.exclude = [get_rid()]
-	var foot := global_position + Vector3(0.0, -0.45, 0.0)
-	var ahead := dir_3d * (CAPSULE_R + 0.05)
+	var foot := global_position + Vector3(0.0, FOOT_Y_OFFSET, 0.0)
+	var ahead := dir_3d * PROBE_AHEAD
 	for side: float in [-1.0, 1.0]:
 		query.transform = Transform3D(Basis.IDENTITY, foot + ahead + perp * side * CAPSULE_R)
 		var hits := space.intersect_shape(query, 1)
 		if hits.is_empty():
 			continue
-		var edge_pt: Vector3 = hits[0]["point"]
-		var pull := edge_pt - foot
+		var pull := (hits[0]["point"] as Vector3) - foot
 		pull.y = 0.0
 		var dist := pull.length()
 		if dist < 1e-3:
 			continue
-		# Proportional impulse: closer edge → stronger nudge, capped at strength.
+		# Proportional impulse: closer edge → weaker nudge, capped at strength.
 		var impulse := minf(
 			(dist / profile.ledge_magnet_radius) * profile.ledge_magnet_strength,
 			profile.ledge_magnet_strength
 		)
-		velocity += pull.normalized() * impulse
-		break  # one edge at a time
+		return pull.normalized() * impulse
+	return Vector3.ZERO
 
 
 ## Arc assist — runs every airborne frame (gated by on_floor and dash checks in
