@@ -5,10 +5,10 @@ A mobile 3D platformer. Brutalist megastructure inspired by *BLAME!*. Controller
 ## Status
 
 Current gate: **Gate 0 — Feel Lab** (closing out; Gate 1 prep in flight)
-Last activity: 2026-05-15 — iter 98: Rooftop level (open-air rooftop, shape-family 3)
+Last activity: 2026-05-15 — iter 99: Plaza level (hub with radiating spokes, shape-family 4)
 Test device build: ✅ verified 2026-05-12 — runs in Godot 4.6 on PC and on Nothing Phone 4(a) Pro
 Performance: 144 fps / 6.9 ms in editor at 1920×1080 (Feel Lab); Threshold perf TBD after rebuild
-Throttle level: **🟢 normal** — 2 iters since 2026-05-16 direction session
+Throttle level: **🟢 normal** — 3 iters since 2026-05-16 direction session
 
 If you only read one section, read **Open questions waiting on you** below.
 
@@ -115,6 +115,38 @@ Goal: store-ready build.
 The full iteration log lives here, newest first. Every iteration appends an entry. Skim the dates to find where you last left off.
 
 <!-- ITERATION ENTRIES BELOW — DO NOT REMOVE OLDER ENTRIES -->
+
+### [2026-05-15] — iter 99 — Plaza level (hub + radiating spokes, shape-family 4)
+
+Branch: `claude/gifted-shannon-RPEB2`
+Throttle: 🟢 normal (3 iters since 2026-05-16 direction session)
+Gate: Gate 1 — direction-finding breadth pass
+
+**Primary: new level `scenes/levels/plaza.tscn` (hub with radiating spokes, shape-family 4).**
+
+Shape-family premise: "Interchange Atrium" — ruined transit hub at the convergence of three megastructure circulation corridors. The 18×18 m hub floor is the only large open space; the player spawns here, can see all three spoke arms simultaneously, and chooses a route. A monitoring pillar rises from the hub's north face — the only exit.
+
+**Layout (Snappy-profile-calibrated):**
+- **North arm / critical path:** Hub → `PillarStep1` (8×7 m, 1.5 m gap, +1 m rise) → `PillarStep2` (6×5 m, 2 m gap, +1.5 m rise — checkpoint here) → `PillarSummit` (9×8 m, 1.5 m gap, +2.5 m rise — needs double-jump — WIN)
+- **East arm (timing):** Hub → `ESide1` (5×5 m, 0.5 m gap, +1 m rise) → `MovingPlatE` (4×4 m, travel 7 m E-W, 4.5 s — must ride to east end to jump across) → `ETerminus` (8×7 m, +1 m rise — Shard 1)
+- **West arm (precision):** Hub → `WPost` (5×5 m) → `WNarrow` (3×7 m narrow beam, 3 m gap) → `WChamber` (9×8 m, 3 m gap — Shard 2)
+- Checkpoint: `PillarStep2` (before hardest jump). Win state above `PillarSummit`.
+- 2 data shards: `ETerminus` and `WChamber`.
+- 1 moving platform (east arm bridge, travel 7 m X, 4.5 s period).
+
+**Atmosphere:** warm amber hub light (sodium centre), cold blue omni on each arm (industrial), biolume cyan at summit pillar (exit beacon). Fog density 0.055. Four megastructure columns framing the atrium (visual only, 7×60×7 m). Central landmark pillar (4×45×4 m) visible from spawn — points to the win.
+
+**Level selector + dev menu:** Plaza entry added to both `level_select.gd` and `dev_menu_overlay.gd` → Load Level.
+
+Perf delta: unknown (on-device pending). Structural count is comparable to Rooftop.
+Bugs fixed: none.
+New dev-menu controls: Load Level → Plaza (hub/spokes).
+Assets: none acquired.
+On-device: pending (jump calibration for PillarSummit double-jump, west arm 3 m gaps, moving platform timing).
+
+**Needs human attention:** 4 shape families now seeded (Threshold, Spire, Rooftop, Plaza). Device play-around in `level_select.tscn` will let you compare shape-family reads. Pick a survivor and the loop pivots to depth on that one. Or say "keep seeding" and the next iteration adds Shape 5 (cavern/maze).
+
+---
 
 ### [2026-05-15] — iter 98 — Rooftop level (open-air, shape-family 3)
 

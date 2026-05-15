@@ -285,6 +285,7 @@ func _build_level_select(vbox: VBoxContainer) -> void:
 		{"label": "Threshold (Gate 1)", "path": "res://scenes/levels/threshold.tscn"},
 		{"label": "Spire (tower)",      "path": "res://scenes/levels/spire.tscn"},
 		{"label": "Rooftop (void)",     "path": "res://scenes/levels/rooftop.tscn"},
+		{"label": "Plaza (hub/spokes)", "path": "res://scenes/levels/plaza.tscn"},
 		{"label": "Feel Lab",           "path": "res://scenes/levels/feel_lab.tscn"},
 	]
 	for entry: Dictionary in levels:
