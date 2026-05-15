@@ -284,6 +284,7 @@ func _build_level_select(vbox: VBoxContainer) -> void:
 	var levels: Array[Dictionary] = [
 		{"label": "Threshold (Gate 1)", "path": "res://scenes/levels/threshold.tscn"},
 		{"label": "Spire (tower)",      "path": "res://scenes/levels/spire.tscn"},
+		{"label": "Rooftop (void)",     "path": "res://scenes/levels/rooftop.tscn"},
 		{"label": "Feel Lab",           "path": "res://scenes/levels/feel_lab.tscn"},
 	]
 	for entry: Dictionary in levels:

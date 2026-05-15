@@ -5,10 +5,10 @@ A mobile 3D platformer. Brutalist megastructure inspired by *BLAME!*. Controller
 ## Status
 
 Current gate: **Gate 0 — Feel Lab** (closing out; Gate 1 prep in flight)
-Last activity: 2026-05-16 — iter 97: Spire level (vertical tower shape-family) + level selector boot screen
+Last activity: 2026-05-15 — iter 98: Rooftop level (open-air rooftop, shape-family 3)
 Test device build: ✅ verified 2026-05-12 — runs in Godot 4.6 on PC and on Nothing Phone 4(a) Pro
 Performance: 144 fps / 6.9 ms in editor at 1920×1080 (Feel Lab); Threshold perf TBD after rebuild
-Throttle level: **🟢 normal** — 1 iter since 2026-05-16 direction session
+Throttle level: **🟢 normal** — 2 iters since 2026-05-16 direction session
 
 If you only read one section, read **Open questions waiting on you** below.
 
@@ -115,6 +115,35 @@ Goal: store-ready build.
 The full iteration log lives here, newest first. Every iteration appends an entry. Skim the dates to find where you last left off.
 
 <!-- ITERATION ENTRIES BELOW — DO NOT REMOVE OLDER ENTRIES -->
+
+### [2026-05-15] — iter 98 — Rooftop level (open-air, shape-family 3)
+
+Branch: `iter/rooftop-level`
+Throttle: 🟢 normal (2 iters since 2026-05-16 direction session)
+Gate: Gate 1 — direction-finding breadth pass
+
+**Primary: new level `scenes/levels/rooftop.tscn` (open-air rooftop, shape-family 3).**
+
+Shape-family premise: exposed top surface of a megastructure floor plate. No enclosing walls or ceiling. The void is below on all sides. Navigation requires reading broken concrete fragments, narrow structural beams, and catwalks to route across to a raised comms relay beacon. Fundamentally distinct from Threshold (enclosed corridor) and Spire (enclosed vertical shaft) — the camera sees open sky and the depth cue is the void below rather than framing architecture.
+
+**Layout** (all using Snappy-profile-calibrated jump gaps):
+- `SpawnSlab` (14×12 m, large safe entry) → `FragA` (8×5 m, 0.5 m gap, +1 m up) → `BeamB` (2.5×8 m narrow, 2.5 m Z gap) → `SlabC` (9×7 m, checkpoint, 1.5 m gap) → E-W `MovingPlatE` bridge (travel 4 m, 4 s period) → `EastPost` (7×7 m) → `StepG` (6×6 m, 2.5 m Z gap, +1 m up) → `RelayPad` (14×10 m, 2 m Z gap, +1 m up, WIN)
+- Checkpoint: `SlabC` (mid-traverse). Win: `RelayPad` (comms relay summit).
+- 2 data shards: on `BeamB` (narrow beam, risky) and `StepG` front edge.
+- Par time: 45 s (placeholder; calibrate after first on-device run).
+
+**Atmosphere:** Cold blue-white ambient (megastructure ceiling far above), dense cold fog (density 0.065), 4 massive atmospheric columns in fog at ±38 m flanks (brutalist megastructure scale sense). Warm sodium spawn light → cold blue mid-traverse → biolume cyan at relay beacon. Void glow (amber, below floor level) implies light leaking up from the floor below.
+
+**New dev-menu entry:** "Rooftop (void)" in Load Level section.
+**Level selector updated:** ROOFTOP added as shape-family 3.
+**On-device pending:** gap legibility, moving platform timing, camera behaviour over open void.
+
+Perf: no measurements (on-device pending). No new draw calls vs Spire (same pattern, no new light types).
+Bugs fixed: none.
+New dev-menu controls: Load Level → "Rooftop (void)" button.
+Research added: none.
+
+---
 
 ### [2026-05-16] — iter 97 — Spire level + level selector
 
