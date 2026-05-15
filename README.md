@@ -5,10 +5,10 @@ A mobile 3D platformer. Brutalist megastructure inspired by *BLAME!*. Controller
 ## Status
 
 Current gate: **Gate 0 — Feel Lab** (closing out; Gate 1 prep in flight)
-Last activity: 2026-05-15 — iter 99: Plaza level (hub with radiating spokes, shape-family 4)
+Last activity: 2026-05-15 — iter 100: Cavern level (maze with branches, shape-family 5)
 Test device build: ✅ verified 2026-05-12 — runs in Godot 4.6 on PC and on Nothing Phone 4(a) Pro
 Performance: 144 fps / 6.9 ms in editor at 1920×1080 (Feel Lab); Threshold perf TBD after rebuild
-Throttle level: **🟢 normal** — 3 iters since 2026-05-16 direction session
+Throttle level: **🟢 normal** — 4 iters since 2026-05-16 direction session
 
 If you only read one section, read **Open questions waiting on you** below.
 
@@ -116,6 +116,37 @@ The full iteration log lives here, newest first. Every iteration appends an entr
 
 <!-- ITERATION ENTRIES BELOW — DO NOT REMOVE OLDER ENTRIES -->
 
+### [2026-05-15] — iter 100 — Cavern level (maze with branches, shape-family 5)
+
+Branch: `iter/cavern-level`
+Throttle: 🟢 normal (4 iters since 2026-05-16 direction session)
+Gate: Gate 1 — direction-finding breadth pass
+
+**Primary: new level `scenes/levels/cavern.tscn` (cavern/maze with branches, shape-family 5).**
+
+Shape-family premise: "Conduit Junction" — a maintenance conduit network buried in the megastructure. Low ceilings, narrow 4 m passages, T-junctions, dead ends. Player spawns in a service bay and cannot see any route to the win from spawn. Orientation (not reflex) is the primary challenge.
+
+**Layout (Snappy-profile-calibrated):**
+- **Critical path:** `EntryFloor` (10×10 m, spawn) → `NorthPass` (4×10 m narrow tunnel, 0 m gap — walkable connection) → `JunctionFloor` (14×12 m, 0 m gap — checkpoint here) → `NorthLedge` (5×6 m, 1 m gap + 1.5 m rise) → `FinalChamber` (12×10 m, 1 m gap + 3 m rise — double-jump required — WIN)
+- **West arm (Shard 1):** Junction west edge → `WestPass` (8×4 m corridor) → `WestSpur` (10×9 m dead end — Shard 1)
+- **East arm (Shard 2):** Junction east edge → `EastPass` (8×4 m corridor) → `EastSpur` (9×7 m dead end — Shard 2)
+- Checkpoint: `JunctionFloor` (player arrives from dark tunnel, must choose 3 exits). Win state at `FinalChamber`.
+- 2 data shards; no moving platforms (maze is the challenge, not timing).
+
+**Atmosphere:** Dense fog 0.090 (darkest level — visibility ~10 m). 5 OmniLights: sodium amber at entry, cold blue at junction, dim amber at west spur, dim cold blue at east spur, biolume cyan at final chamber (exit beacon). 4 low ceiling slabs (4–6 m clearance) + 5 wall slabs enclose the passages. Very dim ambient (0.18 energy) to make light-pools dramatic.
+
+**Level selector + dev menu:** Cavern entry added to both `level_select.gd` and `dev_menu_overlay.gd` → Load Level.
+
+Perf delta: unknown (on-device pending). No moving platforms; structural count lower than Plaza.
+Bugs fixed: none.
+New dev-menu controls: Load Level → Cavern (maze).
+Assets: none acquired.
+On-device: pending (NorthLedge jump feel, FinalChamber double-jump gap, fog density at low-brightness device).
+
+**Needs human attention:** 5 shape families now seeded (Threshold, Spire, Rooftop, Plaza, Cavern). The level_select.tscn boot screen lets you jump between all five. Pick a survivor and the loop pivots to depth on that shape. Or say "keep seeding" and the next iteration adds Shape 6 (inverted descent — player descends rather than ascends).
+
+---
+
 ### [2026-05-15] — iter 99 — Plaza level (hub + radiating spokes, shape-family 4)
 
 Branch: `claude/gifted-shannon-RPEB2`
@@ -144,7 +175,7 @@ New dev-menu controls: Load Level → Plaza (hub/spokes).
 Assets: none acquired.
 On-device: pending (jump calibration for PillarSummit double-jump, west arm 3 m gaps, moving platform timing).
 
-**Needs human attention:** 4 shape families now seeded (Threshold, Spire, Rooftop, Plaza). Device play-around in `level_select.tscn` will let you compare shape-family reads. Pick a survivor and the loop pivots to depth on that one. Or say "keep seeding" and the next iteration adds Shape 5 (cavern/maze).
+**Needs human attention:** 5 shape families now seeded (Threshold, Spire, Rooftop, Plaza, Cavern). Device play-around in `level_select.tscn` will let you compare shape-family reads. Pick a survivor and the loop pivots to depth on that one. Or say "keep seeding" and the next iteration adds Shape 6 (inverted descent — player descends rather than ascends).
 
 ---
 
