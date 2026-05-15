@@ -5,10 +5,10 @@ A mobile 3D platformer. Brutalist megastructure inspired by *BLAME!*. Controller
 ## Status
 
 Current gate: **Gate 0 — Feel Lab** (closing out; Gate 1 prep in flight)
-Last activity: 2026-05-15 — iter 88: Kenney asset acquisition — chick GLB wired as Stray, Factory Kit + Space Station Kit copied
+Last activity: 2026-05-15 — iter 89: Kenney kit art pass — _body_mesh wired to chick sub-mesh, 13 set-dressing placements in Threshold (7 GLBs)
 Test device build: ✅ verified 2026-05-12 — runs in Godot 4.6 on PC and on Nothing Phone 4(a) Pro
-Performance: 144 fps / 6.9 ms in editor at 1920×1080 (Feel Lab); no regression from asset acquisition (GLB + arch kits are file copies, zero runtime cost until placed); on-device TBD
-Throttle level: **🟢 normal** (2 iterations since 2026-05-15 direction session)
+Performance: 144 fps / 6.9 ms in editor at 1920×1080 (Feel Lab); set-dressing GLBs zero runtime cost until Godot imports them; on-device draw-call delta TBD
+Throttle level: **🟢 normal** (3 iterations since 2026-05-15 direction session)
 
 If you only read one section, read **Open questions waiting on you** below.
 
@@ -20,14 +20,18 @@ Things Claude can't decide alone, or where it's stalled and needs direction.
 > Stray re-framed as yellow bird. Throttle cleared; feature work resumed from iter 87.
 > Iter 87: DistantSkyline BoxMesh layer done (PLAN.md item 0b ✅).
 > Iter 88: Kenney asset acquisition done (PLAN.md item 0a ✅) — chick GLB wired as Stray.
-> Next: Factory Kit / Space Station Kit architecture dressing in Threshold zones.
+> Iter 89: Art pass done — `_body_mesh` wired to `Visual/Chick/root/body`, 13 set-dressing
+> placements in Threshold (7 Kenney GLBs: cog-a, machine, pipe-large, crane, hopper-round from
+> Factory Kit; computer-system, container-flat from Space Station Kit). GLBs auto-import on
+> next Godot editor open. On-device review of scale/materials is the next device task.
 
 **What's still waiting for your read:**
 1. **Hold-jump+swipe air dash — two modes to compare.** (iter 67) Dev menu Touch section has "Buffer dash cam" toggle. Try both, or say "always buffer" / "drop the option" and we'll clean it up.
 2. **Industrial press.** Still at x=8 (decorative). Move to critical path, or leave it as atmosphere?
 3. **Stray chick scale on device.** `animal-chick.glb` wired at scale 0.8 under `Visual`. The pivot is assumed to be at the chick's feet (standard Kenney). On first device run: does the chick sit correctly on platforms, or does it float/clip? Adjust scale and y-offset if needed — feed back the corrected values.
-4. **On-device DistantSkyline tuning.** After Threshold loads on device: do the tower silhouettes read well at Zone 1 plaza distance? Is the fog density right, or do the buildings feel too close / too far? Tune fog_density and tower positions from what you see.
-5. **`pitch_min_degrees` (negative pitch)?** Pitch lower bound is hard-clamped at 0 (horizontal). If you ever want to look *up* at the megastructure from below, say so and we'll add the export + slider.
+4. **Threshold set-dressing review on device.** (iter 89) 13 Kenney kit props placed in Threshold. On first open in Godot, GLBs auto-import and the pieces appear. Questions: (a) Do cogs/pipes/machine in Zone 2 read as brutalist industrial or feel too "colourful"? If too bright, say so and we'll apply `mat_concrete_dark.tres` overrides. (b) Does the crane above G2 in Zone 3 read well at distance? (c) Are computer consoles in Zone 1 right-scale relative to the Stray?
+5. **On-device DistantSkyline tuning.** After Threshold loads on device: do the tower silhouettes read well at Zone 1 plaza distance? Is the fog density right, or do the buildings feel too close / too far? Tune fog_density and tower positions from what you see.
+6. **`pitch_min_degrees` (negative pitch)?** Pitch lower bound is hard-clamped at 0 (horizontal). If you ever want to look *up* at the megastructure from below, say so and we'll add the export + slider.
 
 - [x] **Open the project in Godot 4.6 and run the on-device first-run checklist in `docs/ANDROID.md`.** Done 2026-05-12 — runs in editor and deploys to Nothing Phone 4(a) Pro. Remaining ANDROID.md items: headless CI signing via env vars, release Play Store build (both gate-locked to ship).
 - [x] **First feel verdict — Snappy vs Floaty vs Momentum.** Snappy feel approved as good overall; tune-down (max_speed 6.5 → 6.0) queued. Floaty and Momentum verdicts to come as level design forces switching between them.
@@ -97,6 +101,46 @@ Goal: store-ready build.
 The full iteration log lives here, newest first. Every iteration appends an entry. Skim the dates to find where you last left off.
 
 <!-- ITERATION ENTRIES BELOW — DO NOT REMOVE OLDER ENTRIES -->
+
+### [2026-05-15] — iter 89 — Kenney kit art pass: body mesh wired, set-dressing in Threshold
+
+Branch: `claude/gifted-shannon-exfuI`
+Throttle: 🟢 normal (3 iterations since 2026-05-15 direction session)
+Gate: Gate 1 — Vertical Slice prep
+
+**Primary: Kenney kit art pass (PLAN.md item 0a "art pass iter").**
+
+`_body_mesh` wired to chick sub-mesh:
+- `player.gd`: `_body_mesh` @onready updated from `"Visual/Body"` (old CapsuleMesh, removed)
+  to `"Visual/Chick/root/body"`. Path derived from GLB binary parse: `animal-chick` (root) →
+  `root` → `body` (mesh 2). Reboot emission flash is now live when the GLB is imported in Godot.
+  Null guard unchanged — if GLB not yet imported, flash stays inert, no crash.
+
+Threshold set-dressing (13 placements, 7 unique GLBs, `load_steps` 89→96):
+- **Zone 1 (Habitation)** — Space Station Kit: `CompSys1`/`CompSys2` (computer-system.glb,
+  facing inward at x=−10.5, z=8 and z=22); `Container1`/`Container2` (container-flat.glb,
+  x=+10.5, z=5 and z=14). All grouped under `Z1Dressing` Node3D.
+- **Zone 2 (Maintenance)** — Factory Kit: `CogA1`/`CogA2` (cog-a.glb, flanking at x=±9.5,
+  z=44 and z=58); `Machine1` (machine.glb, x=−9.5, z=64 near exit); `PipeL1`/`PipeL2`/`PipeL3`
+  (pipe-large.glb, left wall z=47/52 and right z=51). Grouped under `Z2Dressing`.
+- **Zone 3 (Industrial)** — Factory Kit: `Crane1` (crane.glb, overhead at z=90 above G2);
+  `HopperR1`/`HopperR2` (hopper-round.glb, flanking at z=97 and z=108). Grouped under `Z3Dressing`.
+- All decorative (no collision). GLBs auto-import on first Godot scene open.
+
+**Side quest:** 7 unit tests added (`_test_chick_body_mesh_path`): path structure, GLB hierarchy
+documentation, `_set_emission`/`_clear_emission` null guards. 1048 → 1055 assertions.
+
+Perf: no runtime cost from set-dressing until Godot imports GLBs; draw-call delta deferred to
+on-device test. Previous: 144 fps / 6.9 ms (Feel Lab, editor).
+
+**Needs human attention:**
+1. On-device: open Threshold in Godot editor — GLBs auto-import. Check chick scale (0.8×) sits
+   correctly on platforms and set-dressing reads in the brutalist fog. Adjust scale/y-offset if
+   chick floats or clips.
+2. Set-dressing material tuning: Kit pieces use their own atlased colormaps. If any piece reads
+   too bright or wrong palette in-scene, apply `mat_concrete_dark.tres` override or remove.
+3. Audio dispatch stubs: `on_jump`, `on_land`, `on_respawn_start` still silent. Pending B5
+   Kenney Sci-Fi SFX acquisition direction.
 
 ### [2026-05-15] — iter 88 — Kenney asset acquisition: chick GLB wired as Stray
 

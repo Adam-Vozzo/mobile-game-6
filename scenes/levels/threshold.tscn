@@ -1,4 +1,4 @@
-[gd_scene load_steps=89 format=3]
+[gd_scene load_steps=96 format=3]
 
 [ext_resource type="Script" path="res://scripts/levels/threshold.gd" id="1_thresh"]
 [ext_resource type="Script" path="res://scripts/levels/rotating_hazard.gd" id="2_roth"]
@@ -16,6 +16,13 @@
 [ext_resource type="PackedScene" path="res://scenes/levels/data_shard.tscn" id="14_shard"]
 [ext_resource type="Script" path="res://scripts/levels/industrial_press.gd" id="15_ip"]
 [ext_resource type="Script" path="res://scripts/levels/ghost_trail_renderer.gd" id="16_ghost"]
+[ext_resource type="PackedScene" path="res://assets/art/architecture/space-station-kit/computer-system.glb" id="17_compSys"]
+[ext_resource type="PackedScene" path="res://assets/art/architecture/space-station-kit/container-flat.glb" id="18_contF"]
+[ext_resource type="PackedScene" path="res://assets/art/architecture/factory-kit/cog-a.glb" id="19_cogA"]
+[ext_resource type="PackedScene" path="res://assets/art/architecture/factory-kit/machine.glb" id="20_mach"]
+[ext_resource type="PackedScene" path="res://assets/art/architecture/factory-kit/pipe-large.glb" id="21_pipeL"]
+[ext_resource type="PackedScene" path="res://assets/art/architecture/factory-kit/crane.glb" id="22_crane"]
+[ext_resource type="PackedScene" path="res://assets/art/architecture/factory-kit/hopper-round.glb" id="23_hopR"]
 
 [sub_resource type="Environment" id="Env_Threshold"]
 background_mode = 1
@@ -534,6 +541,20 @@ pull_back_amount = 2.0
 [node name="Shape" type="CollisionShape3D" parent="Zone1_Habitation/CameraHint1"]
 shape = SubResource("Shape_CameraHintSm")
 
+[node name="Z1Dressing" type="Node3D" parent="Zone1_Habitation"]
+
+[node name="CompSys1" parent="Zone1_Habitation/Z1Dressing" instance=ExtResource("17_compSys")]
+transform = Transform3D(0, 0, 1, 0, 1, 0, -1, 0, 0, -10.5, 0, 8)
+
+[node name="CompSys2" parent="Zone1_Habitation/Z1Dressing" instance=ExtResource("17_compSys")]
+transform = Transform3D(0, 0, 1, 0, 1, 0, -1, 0, 0, -10.5, 0, 22)
+
+[node name="Container1" parent="Zone1_Habitation/Z1Dressing" instance=ExtResource("18_contF")]
+transform = Transform3D(1, 0, 0, 0, 1, 0, 0, 0, 1, 10.5, 0, 5)
+
+[node name="Container2" parent="Zone1_Habitation/Z1Dressing" instance=ExtResource("18_contF")]
+transform = Transform3D(1, 0, 0, 0, 1, 0, 0, 0, 1, 10.5, 0, 14)
+
 [node name="Zone2_Maintenance" type="Node3D" parent="."]
 
 [node name="Floor" type="StaticBody3D" parent="Zone2_Maintenance"]
@@ -666,6 +687,26 @@ mesh = SubResource("Mesh_PlazaPillarLow")
 
 [node name="Collider" type="CollisionShape3D" parent="Zone2_Maintenance/Z2StepRight"]
 shape = SubResource("Shape_PlazaPillarLow")
+
+[node name="Z2Dressing" type="Node3D" parent="Zone2_Maintenance"]
+
+[node name="CogA1" parent="Zone2_Maintenance/Z2Dressing" instance=ExtResource("19_cogA")]
+transform = Transform3D(1, 0, 0, 0, 1, 0, 0, 0, 1, -9.5, -5, 44)
+
+[node name="CogA2" parent="Zone2_Maintenance/Z2Dressing" instance=ExtResource("19_cogA")]
+transform = Transform3D(0, 0, -1, 0, 1, 0, 1, 0, 0, 9.5, -5, 58)
+
+[node name="Machine1" parent="Zone2_Maintenance/Z2Dressing" instance=ExtResource("20_mach")]
+transform = Transform3D(0, 0, 1, 0, 1, 0, -1, 0, 0, -9.5, -5, 64)
+
+[node name="PipeL1" parent="Zone2_Maintenance/Z2Dressing" instance=ExtResource("21_pipeL")]
+transform = Transform3D(1, 0, 0, 0, 1, 0, 0, 0, 1, -9.5, -4.5, 47)
+
+[node name="PipeL2" parent="Zone2_Maintenance/Z2Dressing" instance=ExtResource("21_pipeL")]
+transform = Transform3D(1, 0, 0, 0, 1, 0, 0, 0, 1, -9.5, -4.5, 52)
+
+[node name="PipeL3" parent="Zone2_Maintenance/Z2Dressing" instance=ExtResource("21_pipeL")]
+transform = Transform3D(-1, 0, 0, 0, 1, 0, 0, 0, -1, 9.5, -4.5, 51)
 
 [node name="ConduitLeft" type="MeshInstance3D" parent="Zone2_Maintenance"]
 transform = Transform3D(1, 0, 0, 0, 1, 0, 0, 0, 1, -7.7, -4.85, 52.5)
@@ -851,6 +892,17 @@ mesh = SubResource("Mesh_PlazaLookout")
 
 [node name="Collider" type="CollisionShape3D" parent="Zone3_Industrial/Z3SidePlatB"]
 shape = SubResource("Shape_PlazaLookout")
+
+[node name="Z3Dressing" type="Node3D" parent="Zone3_Industrial"]
+
+[node name="Crane1" parent="Zone3_Industrial/Z3Dressing" instance=ExtResource("22_crane")]
+transform = Transform3D(1, 0, 0, 0, 1, 0, 0, 0, 1, 0, -4, 90)
+
+[node name="HopperR1" parent="Zone3_Industrial/Z3Dressing" instance=ExtResource("23_hopR")]
+transform = Transform3D(1, 0, 0, 0, 1, 0, 0, 0, 1, -11, -14, 97)
+
+[node name="HopperR2" parent="Zone3_Industrial/Z3Dressing" instance=ExtResource("23_hopR")]
+transform = Transform3D(1, 0, 0, 0, 1, 0, 0, 0, 1, 11, -18, 108)
 
 [node name="Beat4_Ketsu" type="Node3D" parent="."]
 

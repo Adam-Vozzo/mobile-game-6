@@ -16,6 +16,11 @@ authored with it in mind.
 
 ## Active iteration
 
+- **🟢 Iter 89 complete.** Kenney kit art pass — `_body_mesh` wired to `Visual/Chick/root/body`
+  (emission flash live). Factory Kit set-dressing: CogA×2, Machine1, PipeL×3 in Zone 2;
+  Crane1, HopperR×2 in Zone 3. Space Station Kit: CompSys×2, Container×2 in Zone 1. 7 GLBs,
+  13 placements, `load_steps` 89→96. 7 unit tests (1048→1055). On-device pending — scale/
+  material tuning after first Threshold playtest with Godot auto-importing the GLBs.
 - **🟢 Iter 88 complete.** Kenney asset acquisition — chick GLB wired as Stray, Factory Kit + Space
   Station Kit copied. `animal-chick.glb` → `assets/art/character/` (CC0). 143 Factory Kit GLBs →
   `assets/art/architecture/factory-kit/`. 97 Space Station Kit GLBs → `assets/art/architecture/
@@ -100,12 +105,15 @@ The next iteration should pull from the top of this list. Items marked
     in `assets/art/architecture/factory-kit/`. 97 Space Station Kit GLBs in
     `assets/art/architecture/space-station-kit/`. `assets/ASSETS.md` updated with all
     three entries.~~
-    **Next (art pass iter):** (a) Confirm chick scale + pivot on device; adjust 0.8× if
-    needed. (b) Wire `_body_mesh` to a specific chick sub-mesh for reboot emission flash.
-    (c) Drop Factory Kit catwalk/pipe/crane pieces into Zone 2/3 as set-dressing.
-    (d) Drop Space Station Kit floor/wall panels into Zone 1/2 geometry for modular feel.
-    (e) Wire Audio dispatch stubs (on_jump, on_land, on_respawn_start) to B5 Kenney Sci-Fi
-    SFX once acquired.
+    ~~**Art pass iter 89:**~~ (b) `_body_mesh` wired to `Visual/Chick/root/body` — GLB node
+    hierarchy parsed from binary (animal-chick → root → body). Emission flash live when
+    GLB imported. (c) Factory Kit set-dressing in Zone 2 (Z2Dressing: CogA1/2, Machine1,
+    PipeL1/2/3) and Zone 3 (Z3Dressing: Crane1, HopperR1/2). (d) Space Station Kit
+    set-dressing in Zone 1 (Z1Dressing: CompSys1/2, Container1/2). 7 GLBs × 13 placements
+    total. `load_steps` 89→96. 7 unit tests (1048→1055): chick body mesh path, null guards.
+    **Still pending:** (a) Confirm chick scale + pivot on device. (e) Wire Audio dispatch
+    stubs to B5 Kenney Sci-Fi SFX once acquired. On-device: GLB import auto-fires when
+    Godot opens Threshold; scale/material tuning needed after first playtest.
     ~~**Distant atmosphere layer** (iter 87 complete): `DistantSkyline` Node3D with 11
     BoxMesh primitives at far Z/rear/flanks added to `threshold.tscn`. HallBackWall removed
     to open Zone 3 vista. Toggle in dev menu Level → Zone Atmosphere section.~~
