@@ -48,6 +48,16 @@ authored with it in mind.
   the human picks a survivor. Threshold rebuild kept in repo as the corridor representative;
   next level-touching iter MUST pick an unrepresented shape-family, not iterate on Threshold.
 
+- **🟢 Iter 99 complete.** Plaza level (hub with radiating spokes, shape-family 4).
+  `scenes/levels/plaza.tscn` + `scripts/levels/plaza.gd`: 18×18 m hub floor, 3 spoke arms
+  (north win path, east moving-platform timing arm, west narrow-beam precision arm), 10 platforms
+  total, 1 moving platform (travel 7 m X, 4.5 s), 2 data shards (ETerminus + WChamber), central
+  landmark pillar (4×45×4 m visual), 4 atmosphere columns, 4 OmniLights (amber hub / cold-blue
+  arms / biolume-cyan summit). Checkpoint at PillarStep2. Win at PillarSummit (double-jump
+  required). Level selector + dev menu Load Level updated. Shape-family distinct: anchored
+  hub with choice visible from centre — no enclosing walls, no linear sequence, routes as choices.
+  On-device pending.
+
 - **🟢 Iter 98 complete.** Rooftop level (open-air rooftop, shape-family 3).
   `scenes/levels/rooftop.tscn` + `scripts/levels/rooftop.gd`: 8 platforms (SpawnSlab → FragA →
   BeamB narrow → SlabC checkpoint → MovingPlatE E-W bridge → EastPost → StepG → RelayPad win),
@@ -197,8 +207,8 @@ The next iteration should pull from the top of this list. Items marked
 - ~~Shape 1: Linear corridor → Threshold~~ ✅ exists
 - ~~Shape 2: Vertical climbing tower → Spire~~ ✅ exists (iter 97)
 - ~~Shape 3: Open-air rooftop → Rooftop~~ ✅ exists (iter 98)
-- Shape 4: **Plaza hub with radiating spokes** (Spyro PS1) — NEXT unrepresented family
-- Shape 5: Cavern / maze with branches — queue
+- ~~Shape 4: Plaza hub with radiating spokes → Plaza~~ ✅ exists (iter 99)
+- Shape 5: **Cavern / maze with branches** — NEXT unrepresented family
 - Shape 6: Inverted descent (climbing down) — queue
 - Shape 7: Enclosed obstacle gauntlet — queue
 - Shape 8: Exposed bridge crossing with vertical void below — queue
@@ -206,10 +216,11 @@ The next iteration should pull from the top of this list. Items marked
 Each shape needs: spawn → win state, Player/CameraRig/TouchOverlay wiring, lives in `scenes/levels/`.
 Do not iterate on an existing shape until the human picks a survivor.
 
-**Next shape to build: plaza hub with radiating spokes** — a central open plaza with 3–4 elevated
-spoke paths radiating outward to sub-goals, then a final path up to the win state. Spyro PS1 layout
-grammar. Distinct from all three existing levels: no enclosing walls (like Rooftop) but with a
-central hub that makes the player feel anchored and the routes feel like choices.
+**Next shape to build: cavern / maze with branches** — a low-ceilinged cave network with forking
+passages, multi-directional routing, and a maze-like feel. No single dominant path visible from
+spawn. The navigation challenge is orientation, not just reflex. Distinct from all four existing
+levels. Consider: narrow passages, T-junctions, dead ends with shards, a single elevated final
+chamber as the win state.
 Boot selector and dev-menu Load Level entry already in place.
 
 **Device test (still blocked on human):** Threshold / Spire on Nothing Phone 4(a) Pro — see Open

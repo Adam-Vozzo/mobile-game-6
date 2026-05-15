@@ -1,0 +1,293 @@
+[gd_scene load_steps=39 format=3]
+
+[ext_resource type="Script" path="res://scripts/levels/plaza.gd" id="1_plaza"]
+[ext_resource type="Script" path="res://scripts/levels/checkpoint.gd" id="2_cp"]
+[ext_resource type="Script" path="res://scripts/levels/win_state.gd" id="3_win"]
+[ext_resource type="PackedScene" path="res://scenes/player/player.tscn" id="4_player"]
+[ext_resource type="PackedScene" path="res://scenes/player/camera_rig.tscn" id="5_camrig"]
+[ext_resource type="PackedScene" path="res://scenes/ui/touch_overlay.tscn" id="6_touch"]
+[ext_resource type="Material" path="res://resources/materials/mat_concrete.tres" id="7_matC"]
+[ext_resource type="Material" path="res://resources/materials/mat_concrete_dark.tres" id="8_matCd"]
+[ext_resource type="Script" path="res://scripts/levels/moving_platform.gd" id="9_movp"]
+[ext_resource type="Script" path="res://scripts/levels/ghost_trail_renderer.gd" id="10_ghost"]
+[ext_resource type="Script" path="res://tools/debug/player_debug_draw.gd" id="11_dbg"]
+[ext_resource type="PackedScene" path="res://scenes/levels/data_shard.tscn" id="12_shard"]
+
+[sub_resource type="Environment" id="Env_Plaza"]
+background_mode = 1
+background_color = Color(0.06, 0.05, 0.04, 1)
+ambient_light_source = 2
+ambient_light_color = Color(0.25, 0.22, 0.18, 1)
+ambient_light_energy = 0.30
+tonemap_mode = 2
+fog_enabled = true
+fog_light_color = Color(0.10, 0.09, 0.07, 1)
+fog_light_energy = 1.0
+fog_density = 0.055
+fog_aerial_perspective = 0.5
+fog_sky_affect = 0.0
+
+[sub_resource type="BoxMesh" id="Mesh_Hub"]
+material = ExtResource("8_matCd")
+size = Vector3(18, 0.5, 18)
+
+[sub_resource type="BoxShape3D" id="Shape_Hub"]
+size = Vector3(18, 0.5, 18)
+
+[sub_resource type="BoxMesh" id="Mesh_PStep1"]
+material = ExtResource("8_matCd")
+size = Vector3(8, 0.5, 7)
+
+[sub_resource type="BoxShape3D" id="Shape_PStep1"]
+size = Vector3(8, 0.5, 7)
+
+[sub_resource type="BoxMesh" id="Mesh_PStep2"]
+material = ExtResource("7_matC")
+size = Vector3(6, 0.5, 5)
+
+[sub_resource type="BoxShape3D" id="Shape_PStep2"]
+size = Vector3(6, 0.5, 5)
+
+[sub_resource type="BoxMesh" id="Mesh_PSummit"]
+material = ExtResource("8_matCd")
+size = Vector3(9, 0.5, 8)
+
+[sub_resource type="BoxShape3D" id="Shape_PSummit"]
+size = Vector3(9, 0.5, 8)
+
+[sub_resource type="BoxMesh" id="Mesh_ESide1"]
+material = ExtResource("7_matC")
+size = Vector3(5, 0.5, 5)
+
+[sub_resource type="BoxShape3D" id="Shape_ESide1"]
+size = Vector3(5, 0.5, 5)
+
+[sub_resource type="BoxMesh" id="Mesh_EMovPlat"]
+material = ExtResource("7_matC")
+size = Vector3(4, 0.5, 4)
+
+[sub_resource type="BoxShape3D" id="Shape_EMovPlat"]
+size = Vector3(4, 0.5, 4)
+
+[sub_resource type="BoxMesh" id="Mesh_ETerm"]
+material = ExtResource("8_matCd")
+size = Vector3(8, 0.5, 7)
+
+[sub_resource type="BoxShape3D" id="Shape_ETerm"]
+size = Vector3(8, 0.5, 7)
+
+[sub_resource type="BoxMesh" id="Mesh_WPost"]
+material = ExtResource("7_matC")
+size = Vector3(5, 0.5, 5)
+
+[sub_resource type="BoxShape3D" id="Shape_WPost"]
+size = Vector3(5, 0.5, 5)
+
+[sub_resource type="BoxMesh" id="Mesh_WNarrow"]
+material = ExtResource("7_matC")
+size = Vector3(3, 0.5, 7)
+
+[sub_resource type="BoxShape3D" id="Shape_WNarrow"]
+size = Vector3(3, 0.5, 7)
+
+[sub_resource type="BoxMesh" id="Mesh_WChamber"]
+material = ExtResource("8_matCd")
+size = Vector3(9, 0.5, 8)
+
+[sub_resource type="BoxShape3D" id="Shape_WChamber"]
+size = Vector3(9, 0.5, 8)
+
+[sub_resource type="BoxMesh" id="Mesh_Column"]
+material = ExtResource("8_matCd")
+size = Vector3(7, 60, 7)
+
+[sub_resource type="BoxMesh" id="Mesh_PillarCol"]
+material = ExtResource("8_matCd")
+size = Vector3(4, 45, 4)
+
+[sub_resource type="BoxShape3D" id="Shape_Checkpoint"]
+size = Vector3(7, 3, 5)
+
+[sub_resource type="BoxShape3D" id="Shape_WinState"]
+size = Vector3(8, 3, 6)
+
+[node name="Plaza" type="Node3D"]
+script = ExtResource("1_plaza")
+
+[node name="WorldEnv" type="WorldEnvironment" parent="."]
+environment = SubResource("Env_Plaza")
+
+[node name="KeyLight" type="DirectionalLight3D" parent="."]
+transform = Transform3D(1, 0, 0, 0, 0.940, 0.342, 0, -0.342, 0.940, 0, 25, 0)
+light_color = Color(0.60, 0.65, 0.90, 1)
+light_energy = 0.25
+shadow_enabled = false
+
+[node name="Lights" type="Node3D" parent="."]
+
+[node name="HubLight" type="OmniLight3D" parent="Lights"]
+transform = Transform3D(1, 0, 0, 0, 1, 0, 0, 0, 1, 0, 5, 2)
+light_color = Color(0.85, 0.60, 0.25, 1)
+light_energy = 3.5
+omni_range = 14.0
+
+[node name="ELight" type="OmniLight3D" parent="Lights"]
+transform = Transform3D(1, 0, 0, 0, 1, 0, 0, 0, 1, 20, 4, -2)
+light_color = Color(0.35, 0.50, 0.85, 1)
+light_energy = 2.5
+omni_range = 12.0
+
+[node name="WLight" type="OmniLight3D" parent="Lights"]
+transform = Transform3D(1, 0, 0, 0, 1, 0, 0, 0, 1, -20, 4, -3)
+light_color = Color(0.35, 0.50, 0.85, 1)
+light_energy = 2.5
+omni_range = 12.0
+
+[node name="PillarLight" type="OmniLight3D" parent="Lights"]
+transform = Transform3D(1, 0, 0, 0, 1, 0, 0, 0, 1, 0, 7, -30)
+light_color = Color(0.25, 0.80, 0.70, 1)
+light_energy = 3.5
+omni_range = 14.0
+
+[node name="PlayerSpawn" type="Marker3D" parent="."]
+transform = Transform3D(1, 0, 0, 0, 1, 0, 0, 0, 1, 0, 1, 7)
+
+[node name="Player" parent="." instance=ExtResource("4_player")]
+transform = Transform3D(1, 0, 0, 0, 1, 0, 0, 0, 1, 0, 1, 7)
+
+[node name="CameraRig" parent="." instance=ExtResource("5_camrig")]
+target_path = NodePath("../Player")
+
+[node name="TouchOverlay" parent="." instance=ExtResource("6_touch")]
+
+[node name="PlayerDebugDraw" type="MeshInstance3D" parent="."]
+script = ExtResource("11_dbg")
+
+[node name="GhostTrailRenderer" type="Node3D" parent="."]
+script = ExtResource("10_ghost")
+
+[node name="Platforms" type="Node3D" parent="."]
+
+[node name="HubFloor" type="StaticBody3D" parent="Platforms"]
+transform = Transform3D(1, 0, 0, 0, 1, 0, 0, 0, 1, 0, -0.25, 0)
+[node name="Mesh" type="MeshInstance3D" parent="Platforms/HubFloor"]
+mesh = SubResource("Mesh_Hub")
+[node name="Collider" type="CollisionShape3D" parent="Platforms/HubFloor"]
+shape = SubResource("Shape_Hub")
+
+[node name="PillarStep1" type="StaticBody3D" parent="Platforms"]
+transform = Transform3D(1, 0, 0, 0, 1, 0, 0, 0, 1, 0, 0.75, -14)
+[node name="Mesh" type="MeshInstance3D" parent="Platforms/PillarStep1"]
+mesh = SubResource("Mesh_PStep1")
+[node name="Collider" type="CollisionShape3D" parent="Platforms/PillarStep1"]
+shape = SubResource("Shape_PStep1")
+
+[node name="PillarStep2" type="StaticBody3D" parent="Platforms"]
+transform = Transform3D(1, 0, 0, 0, 1, 0, 0, 0, 1, 0, 2.25, -22)
+[node name="Mesh" type="MeshInstance3D" parent="Platforms/PillarStep2"]
+mesh = SubResource("Mesh_PStep2")
+[node name="Collider" type="CollisionShape3D" parent="Platforms/PillarStep2"]
+shape = SubResource("Shape_PStep2")
+
+[node name="PillarSummit" type="StaticBody3D" parent="Platforms"]
+transform = Transform3D(1, 0, 0, 0, 1, 0, 0, 0, 1, 0, 4.75, -30)
+[node name="Mesh" type="MeshInstance3D" parent="Platforms/PillarSummit"]
+mesh = SubResource("Mesh_PSummit")
+[node name="Collider" type="CollisionShape3D" parent="Platforms/PillarSummit"]
+shape = SubResource("Shape_PSummit")
+
+[node name="ESide1" type="StaticBody3D" parent="Platforms"]
+transform = Transform3D(1, 0, 0, 0, 1, 0, 0, 0, 1, 12, 0.75, 2)
+[node name="Mesh" type="MeshInstance3D" parent="Platforms/ESide1"]
+mesh = SubResource("Mesh_ESide1")
+[node name="Collider" type="CollisionShape3D" parent="Platforms/ESide1"]
+shape = SubResource("Shape_ESide1")
+
+[node name="MovingPlatE" type="AnimatableBody3D" parent="Platforms"]
+transform = Transform3D(1, 0, 0, 0, 1, 0, 0, 0, 1, 15, 1.25, -1)
+script = ExtResource("9_movp")
+travel = Vector3(7, 0, 0)
+period_seconds = 4.5
+[node name="Mesh" type="MeshInstance3D" parent="Platforms/MovingPlatE"]
+mesh = SubResource("Mesh_EMovPlat")
+[node name="Collider" type="CollisionShape3D" parent="Platforms/MovingPlatE"]
+shape = SubResource("Shape_EMovPlat")
+
+[node name="ETerminus" type="StaticBody3D" parent="Platforms"]
+transform = Transform3D(1, 0, 0, 0, 1, 0, 0, 0, 1, 28, 2.25, -4)
+[node name="Mesh" type="MeshInstance3D" parent="Platforms/ETerminus"]
+mesh = SubResource("Mesh_ETerm")
+[node name="Collider" type="CollisionShape3D" parent="Platforms/ETerminus"]
+shape = SubResource("Shape_ETerm")
+
+[node name="WPost" type="StaticBody3D" parent="Platforms"]
+transform = Transform3D(1, 0, 0, 0, 1, 0, 0, 0, 1, -12, 0.75, -1)
+[node name="Mesh" type="MeshInstance3D" parent="Platforms/WPost"]
+mesh = SubResource("Mesh_WPost")
+[node name="Collider" type="CollisionShape3D" parent="Platforms/WPost"]
+shape = SubResource("Shape_WPost")
+
+[node name="WNarrow" type="StaticBody3D" parent="Platforms"]
+transform = Transform3D(1, 0, 0, 0, 1, 0, 0, 0, 1, -19, 1.75, -3)
+[node name="Mesh" type="MeshInstance3D" parent="Platforms/WNarrow"]
+mesh = SubResource("Mesh_WNarrow")
+[node name="Collider" type="CollisionShape3D" parent="Platforms/WNarrow"]
+shape = SubResource("Shape_WNarrow")
+
+[node name="WChamber" type="StaticBody3D" parent="Platforms"]
+transform = Transform3D(1, 0, 0, 0, 1, 0, 0, 0, 1, -28, 2.75, -5)
+[node name="Mesh" type="MeshInstance3D" parent="Platforms/WChamber"]
+mesh = SubResource("Mesh_WChamber")
+[node name="Collider" type="CollisionShape3D" parent="Platforms/WChamber"]
+shape = SubResource("Shape_WChamber")
+
+[node name="Atmosphere" type="Node3D" parent="."]
+
+[node name="ColNE" type="MeshInstance3D" parent="Atmosphere"]
+transform = Transform3D(1, 0, 0, 0, 1, 0, 0, 0, 1, 30, 28, -20)
+mesh = SubResource("Mesh_Column")
+
+[node name="ColNW" type="MeshInstance3D" parent="Atmosphere"]
+transform = Transform3D(1, 0, 0, 0, 1, 0, 0, 0, 1, -30, 28, -20)
+mesh = SubResource("Mesh_Column")
+
+[node name="ColSE" type="MeshInstance3D" parent="Atmosphere"]
+transform = Transform3D(1, 0, 0, 0, 1, 0, 0, 0, 1, 30, 28, 12)
+mesh = SubResource("Mesh_Column")
+
+[node name="ColSW" type="MeshInstance3D" parent="Atmosphere"]
+transform = Transform3D(1, 0, 0, 0, 1, 0, 0, 0, 1, -30, 28, 12)
+mesh = SubResource("Mesh_Column")
+
+[node name="PillarCol" type="MeshInstance3D" parent="Atmosphere"]
+transform = Transform3D(1, 0, 0, 0, 1, 0, 0, 0, 1, 0, 22, -30)
+mesh = SubResource("Mesh_PillarCol")
+
+[node name="Shards" type="Node3D" parent="."]
+
+[node name="Shard1" parent="Shards" instance=ExtResource("12_shard")]
+transform = Transform3D(1, 0, 0, 0, 1, 0, 0, 0, 1, 28, 2.75, -4)
+
+[node name="Shard2" parent="Shards" instance=ExtResource("12_shard")]
+transform = Transform3D(1, 0, 0, 0, 1, 0, 0, 0, 1, -28, 3.25, -5)
+
+[node name="CheckPoint" type="Area3D" parent="."]
+transform = Transform3D(1, 0, 0, 0, 1, 0, 0, 0, 1, 0, 4, -22)
+script = ExtResource("2_cp")
+checkpoint_id = &"pillar_mid"
+collision_layer = 0
+collision_mask = 2
+monitoring = true
+monitorable = false
+[node name="Shape" type="CollisionShape3D" parent="CheckPoint"]
+shape = SubResource("Shape_Checkpoint")
+
+[node name="WinState" type="Area3D" parent="."]
+transform = Transform3D(1, 0, 0, 0, 1, 0, 0, 0, 1, 0, 6.5, -30)
+script = ExtResource("3_win")
+collision_layer = 0
+collision_mask = 2
+monitoring = true
+monitorable = false
+[node name="Shape" type="CollisionShape3D" parent="WinState"]
+shape = SubResource("Shape_WinState")
