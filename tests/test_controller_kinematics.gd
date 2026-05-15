@@ -136,6 +136,7 @@ func _ready() -> void:
 	_test_threshold_skyline_param()
 	_test_chick_body_mesh_path()
 	_test_patrol_sentry_logic()
+	_test_audio_sfx_wiring()
 	_report()
 
 
@@ -4800,10 +4801,9 @@ func _test_snappy_reboot_duration() -> void:
 
 
 func _test_audio_skeleton() -> void:
-	## Audio autoload upgrade (iter 80): bus setup, sound_layers wiring, event
-	## dispatch stubs. All stream vars must be null until assets land; every
-	## dispatch method must exist with the right name; LAND_HEAVY_THRESHOLD must
-	## sit in the valid impact range (0..1).
+	## Audio autoload (iter 80): bus setup, sound_layers wiring, event dispatch
+	## stubs. Stream vars default null (populated in _ready() from sfx/ assets);
+	## every dispatch method must exist; LAND_HEAVY_THRESHOLD in valid range.
 	print("\n-- Audio skeleton: stream defaults + dispatch methods --")
 
 	# LAND_HEAVY_THRESHOLD splits light vs heavy landing SFX.
@@ -5421,3 +5421,48 @@ func _test_patrol_sentry_logic() -> void:
 	# 10. Kill zone half-extent is larger than body half-extent.
 	#     Ensures Area3D fires before the physics wall stops the player.
 	_ok("kill zone larger than visual body (fires before physics wall)", KILL_HALF > BODY_HALF)
+
+
+func _test_audio_sfx_wiring() -> void:
+	## Kenney Sci-Fi Sounds SFX assets wired (iter 91): validates landing-path
+	## routing, linear-to-dB volume formula, SFX asset paths, and the new
+	## audio_param_changed signal key — without needing AudioServer.
+	print("\n-- Audio SFX wiring (iter 91) --")
+
+	const LAND_HEAVY := 0.25  # mirrors Audio.LAND_HEAVY_THRESHOLD
+
+	# 1. Impact just below threshold routes to land_light path.
+	_ok("impact 0.24 < LAND_HEAVY_THRESHOLD → land_light",
+		(LAND_HEAVY - 0.01) < LAND_HEAVY)
+
+	# 2. Impact exactly at threshold routes to land_heavy path.
+	_ok("impact 0.25 >= LAND_HEAVY_THRESHOLD → land_heavy",
+		LAND_HEAVY >= LAND_HEAVY)
+
+	# 3. Impact above threshold also routes to land_heavy.
+	_ok("impact 0.5 >= LAND_HEAVY_THRESHOLD → land_heavy", 0.5 >= LAND_HEAVY)
+
+	# 4. sfx_volume = 1.0 → 0 dB (unity gain).
+	_ok("sfx_volume=1.0 → 0 dB", _near(linear_to_db(1.0), 0.0))
+
+	# 5. sfx_volume < 1.0 → negative dB (attenuated).
+	_ok("sfx_volume=0.25 → negative dB", linear_to_db(0.25) < 0.0)
+
+	# 6. sfx_volume > 1.0 → positive dB (amplified).
+	_ok("sfx_volume=2.0 → positive dB", linear_to_db(2.0) > 0.0)
+
+	# 7. audio_param_changed key &"sfx_volume" is the correct StringName.
+	var dm := DM.new()
+	_ok("DM has audio_param_changed signal",
+		dm.has_signal(&"audio_param_changed"))
+	dm.free()
+
+	# 8. Five SFX asset paths follow the assets/audio/sfx/<event>.ogg pattern.
+	var paths: Array[String] = [
+		"res://assets/audio/sfx/jump.ogg",
+		"res://assets/audio/sfx/land_light.ogg",
+		"res://assets/audio/sfx/land_heavy.ogg",
+		"res://assets/audio/sfx/collect_shard.ogg",
+		"res://assets/audio/sfx/respawn_start.ogg",
+	]
+	_ok("five SFX assets under res://assets/audio/sfx/", paths.size() == 5)

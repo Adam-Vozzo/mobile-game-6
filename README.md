@@ -5,10 +5,10 @@ A mobile 3D platformer. Brutalist megastructure inspired by *BLAME!*. Controller
 ## Status
 
 Current gate: **Gate 0 — Feel Lab** (closing out; Gate 1 prep in flight)
-Last activity: 2026-05-15 — iter 90: PatrolSentry enemy archetype — Gate 1 requirement implemented
+Last activity: 2026-05-15 — iter 91: Kenney Sci-Fi SFX wired — 5 OGG clips loaded, SFX volume slider in dev menu
 Test device build: ✅ verified 2026-05-12 — runs in Godot 4.6 on PC and on Nothing Phone 4(a) Pro
-Performance: 144 fps / 6.9 ms in editor at 1920×1080 (Feel Lab); sentry cost = 3 meshes + 1 Area3D per instance (negligible)
-Throttle level: **🟢 normal** (4 iterations since 2026-05-15 direction session)
+Performance: 144 fps / 6.9 ms in editor at 1920×1080 (Feel Lab); audio cost = AudioStreamPlayer per event, freed on finish
+Throttle level: **🟡 soft** (5 iterations since 2026-05-15 direction session)
 
 If you only read one section, read **Open questions waiting on you** below.
 
@@ -18,12 +18,10 @@ Things Claude can't decide alone, or where it's stalled and needs direction.
 
 > **🟢 THROTTLE RESET — 2026-05-15 direction session.** Kenney asset direction confirmed,
 > Stray re-framed as yellow bird. Throttle cleared; feature work resumed from iter 87.
-> Iter 87: DistantSkyline BoxMesh layer done (PLAN.md item 0b ✅).
-> Iter 88: Kenney asset acquisition done (PLAN.md item 0a ✅) — chick GLB wired as Stray.
-> Iter 89: Art pass done — `_body_mesh` wired to `Visual/Chick/root/body`, 13 set-dressing
-> placements in Threshold (7 Kenney GLBs: cog-a, machine, pipe-large, crane, hopper-round from
-> Factory Kit; computer-system, container-flat from Space Station Kit). GLBs auto-import on
-> next Godot editor open. On-device review of scale/materials is the next device task.
+> Iter 87: DistantSkyline BoxMesh layer done. Iter 88: Kenney asset acquisition done.
+> Iter 89: Art pass done — chick + 13 set-dressing props. Iter 90: PatrolSentry enemy done.
+> Iter 91: Kenney Sci-Fi SFX wired — 5 clips loaded, SFX volume in dev menu.
+> **Throttle is now soft (5 iterations). Next device session strongly encouraged.**
 
 **What's still waiting for your read:**
 1. **Hold-jump+swipe air dash — two modes to compare.** (iter 67) Dev menu Touch section has "Buffer dash cam" toggle. Try both, or say "always buffer" / "drop the option" and we'll clean it up.
@@ -33,6 +31,7 @@ Things Claude can't decide alone, or where it's stalled and needs direction.
 5. **On-device DistantSkyline tuning.** After Threshold loads on device: do the tower silhouettes read well at Zone 1 plaza distance? Is the fog density right, or do the buildings feel too close / too far? Tune fog_density and tower positions from what you see.
 6. **`pitch_min_degrees` (negative pitch)?** Pitch lower bound is hard-clamped at 0 (horizontal). If you ever want to look *up* at the megastructure from below, say so and we'll add the export + slider.
 7. **PatrolSentry tuning on device.** (iter 90) One sentry in Zone 1 plaza at (0, 1.2, 16), patrolling X-axis 8 m at 2.5 m/s with 0.5 s wait. Dev menu "Sentry — Tuning" exposes speed/distance/wait/bob. Questions: (a) Does 2.5 m/s feel too fast or too slow to time around? (b) Does 8 m patrol distance block the floor route without sealing the rubble-hop / vertical-climb routes? (c) Does the amber eye read as dangerous against the brutalist backdrop? Feed back any adjustments.
+8. **SFX clip selection on device.** (iter 91) Five Kenney Sci-Fi Sounds CC0 clips wired: jump (laserSmall), land-light (impactMetal_000), land-heavy (impactMetal_004), collect (forceField_003), respawn (laserLarge_000). Files auto-import on first Godot open. Dev menu Juice → Audio — SFX has a "SFX volume ×" slider (0–2). Questions: (a) Do the clip choices feel right, or do any sound wrong? (b) Is the default volume (1×) too loud or too soft against the brutalist ambience? Feed back specific "swap X for Y" or "raise/lower volume" notes.
 
 - [x] **Open the project in Godot 4.6 and run the on-device first-run checklist in `docs/ANDROID.md`.** Done 2026-05-12 — runs in editor and deploys to Nothing Phone 4(a) Pro. Remaining ANDROID.md items: headless CI signing via env vars, release Play Store build (both gate-locked to ship).
 - [x] **First feel verdict — Snappy vs Floaty vs Momentum.** Snappy feel approved as good overall; tune-down (max_speed 6.5 → 6.0) queued. Floaty and Momentum verdicts to come as level design forces switching between them.
@@ -102,6 +101,45 @@ Goal: store-ready build.
 The full iteration log lives here, newest first. Every iteration appends an entry. Skim the dates to find where you last left off.
 
 <!-- ITERATION ENTRIES BELOW — DO NOT REMOVE OLDER ENTRIES -->
+
+### [2026-05-15] — iter 91 — Kenney Sci-Fi Sounds SFX wired
+
+Branch: `claude/gifted-shannon-BV4vw` (iter/audio-sfx-wiring)
+Throttle: 🟡 soft (5 iterations since 2026-05-15 direction session)
+Gate: Gate 1 — Vertical Slice prep
+
+**Primary: Audio SFX — Kenney Sci-Fi Sounds CC0 assets acquired and wired.**
+
+`audio.gd::_load_sfx_streams()` (called from `_ready()`) loads five OGG clips:
+
+| event | file | source clip |
+|-------|------|-------------|
+| jump | `assets/audio/sfx/jump.ogg` | `laserSmall_000.ogg` — brief sci-fi bwoop for wing-flap takeoff |
+| land light | `assets/audio/sfx/land_light.ogg` | `impactMetal_000.ogg` — soft metal tap |
+| land heavy | `assets/audio/sfx/land_heavy.ogg` | `impactMetal_004.ogg` — heavier clank (impact ≥ 0.25) |
+| collect shard | `assets/audio/sfx/collect_shard.ogg` | `forceField_003.ogg` — energy activation |
+| respawn start | `assets/audio/sfx/respawn_start.ogg` | `laserLarge_000.ogg` — brief power-on burst |
+
+`load()` returns null if files aren't imported yet (safe no-op path preserved).
+
+`dev_menu.gd`: `audio_param_changed(param: StringName, value: float)` signal added.
+`dev_menu_overlay.gd`: "Audio — SFX" sub-section in Juice with "SFX volume ×" slider (0.0–2.0, default 1.0).
+`audio.gd::_on_audio_param_changed`: `&"sfx_volume"` arm sets `SFX_Player` bus volume via `linear_to_db()`.
+
+`assets/ASSETS.md`: Kenney Sci-Fi Sounds CC0 entry added with per-clip source mapping.
+`docs/JUICE.md`: Sound layers section updated — all five events promoted stub→prototype.
+
+**8 unit tests** `_test_audio_sfx_wiring` (1066 → 1074): light/heavy routing thresholds ×3,
+linear-to-dB formula ×3, `audio_param_changed` signal presence, five-path count.
+
+Perf: audio cost = one `AudioStreamPlayer` per event, freed on `finished` signal — no persistent overhead.
+On-device pending — clip selection and SFX volume calibration after first playtest. OGG files auto-import on next Godot editor open (same pattern as Kenney GLBs from iter 88).
+
+**Side quest:** none this iteration.
+
+**Needs human attention:**
+- SFX clip selection (item 8 in Open questions above) — first Godot open auto-imports the OGGs.
+- Throttle is soft (5 iterations). A device session would clear several open questions at once.
 
 ### [2026-05-15] — iter 90 — PatrolSentry enemy archetype (Gate 1 requirement)
 

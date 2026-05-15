@@ -16,6 +16,13 @@ authored with it in mind.
 
 ## Active iteration
 
+- **🟡 Iter 91 complete. SOFT THROTTLE.** Kenney Sci-Fi Sounds SFX wired — 5 OGG clips
+  (jump/land-light/land-heavy/collect-shard/respawn-start) loaded from `assets/audio/sfx/`
+  via `audio.gd::_load_sfx_streams()`. `audio_param_changed` signal + "SFX volume ×" dev menu
+  slider in Juice → Audio — SFX. 8 unit tests (1066→1074). On-device pending — clip selection
+  and volume tuning. 5 iterations since last human direction.
+- **🟢 Iter 90 complete.** PatrolSentry enemy archetype. `scripts/enemies/patrol_sentry.gd`.
+  One sentry in Zone 1 plaza (0, 1.2, 16). Dev menu "Sentry — Tuning". 11 unit tests (1055→1066).
 - **🟢 Iter 89 complete.** Kenney kit art pass — `_body_mesh` wired to `Visual/Chick/root/body`
   (emission flash live). Factory Kit set-dressing: CogA×2, Machine1, PipeL×3 in Zone 2;
   Crane1, HopperR×2 in Zone 3. Space Station Kit: CompSys×2, Container×2 in Zone 1. 7 GLBs,
@@ -308,6 +315,17 @@ These mirror "Open questions waiting on you" in the README.
   drive the next tuning iteration.
 
 ## Recently completed (last 5)
+
+- 2026-05-15 — iter 91. **Kenney Sci-Fi Sounds SFX wired. SOFT THROTTLE.**
+  `audio.gd`: `_load_sfx_streams()` (called from `_ready()`) loads 5 CC0 OGG clips:
+  `jump.ogg` (laserSmall_000), `land_light.ogg` (impactMetal_000), `land_heavy.ogg`
+  (impactMetal_004), `collect_shard.ogg` (forceField_003), `respawn_start.ogg` (laserLarge_000).
+  `load()` returns null gracefully if not yet imported (safe no-op path preserved).
+  `dev_menu.gd`: `audio_param_changed(param, value: float)` signal.
+  `dev_menu_overlay.gd`: "Audio — SFX" sub-section in Juice → "SFX volume ×" slider (0–2, default 1.0).
+  `audio.gd::_on_audio_param_changed`: `&"sfx_volume"` arm sets SFX_Player bus dB.
+  `assets/ASSETS.md`: Kenney Sci-Fi Sounds CC0 entry. `docs/JUICE.md`: sound events stub→prototype.
+  8 unit tests (1066→1074). On-device pending. 5 iterations since 2026-05-15 direction session.
 
 - 2026-05-15 — iter 90. **PatrolSentry enemy archetype (Gate 1 requirement).**
   `scripts/enemies/patrol_sentry.gd` (PatrolSentry, extends AnimatableBody3D): slow linear

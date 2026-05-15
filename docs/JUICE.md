@@ -75,18 +75,20 @@ is not affected. Only the strongest in-flight shake wins (weaker arrivals are di
 
 ## Sound layers — toggle key `sound_layers`
 
-**Toggle is now live** (iter 80): mutes `SFX_Player` + `SFX_World` AudioServer buses.
-Bus hierarchy: Master → Music / SFX_Player / SFX_World. Dispatch points wired in
-`player.gd` (jump, land, respawn) and `data_shard.gd` (collect). All streams `null`
-until audio direction confirmed — toggle mutes cleanly even with no assets loaded.
-See `docs/research/audio_placeholder.md` for placeholder strategy.
+**Toggle is live** (iter 80): mutes `SFX_Player` + `SFX_World` AudioServer buses.
+**Kenney Sci-Fi Sounds CC0 assets wired** (iter 91): five OGG clips loaded from
+`assets/audio/sfx/` in `audio.gd::_ready()`. Falls back to silent no-op if files
+aren't imported yet (safe for headless/test environments). SFX volume tunable from
+dev menu Juice → Audio — SFX ("SFX volume ×", 0.0–2.0). On-device pending — final
+clip selection and volume calibration after first device playtest.
 
 | element | status | notes |
 |---------|--------|-------|
-| Jump SFX (`on_jump`) | prototype-stub | dispatch wired; stream null until direction confirmed |
-| Land SFX (`on_land`) | prototype-stub | light/heavy split at impact=0.25; stream null |
-| Collect shard SFX (`on_collect_shard`) | prototype-stub | dispatch wired; stream null |
-| Respawn start SFX (`on_respawn_start`) | prototype-stub | dispatch wired; stream null |
+| Jump SFX (`on_jump`) | prototype | `assets/audio/sfx/jump.ogg` (Kenney laserSmall_000 CC0); short sci-fi "bwoop" for wing-flap takeoff |
+| Land SFX — light (`on_land`, impact < 0.25) | prototype | `assets/audio/sfx/land_light.ogg` (Kenney impactMetal_000 CC0); soft metal tap |
+| Land SFX — heavy (`on_land`, impact ≥ 0.25) | prototype | `assets/audio/sfx/land_heavy.ogg` (Kenney impactMetal_004 CC0); heavier clank for hard landings |
+| Collect shard SFX (`on_collect_shard`) | prototype | `assets/audio/sfx/collect_shard.ogg` (Kenney forceField_003 CC0); energy activation for data shard pick-up |
+| Respawn start SFX (`on_respawn_start`) | prototype | `assets/audio/sfx/respawn_start.ogg` (Kenney laserLarge_000 CC0); brief sci-fi burst for reboot sequence |
 | Servo whir under run | idea | looped, pitch-modulated by speed |
 | Footstep impacts | idea | layered under whir |
 | Jump anticipation hum | idea | starts in buffer window, fades out at apex |

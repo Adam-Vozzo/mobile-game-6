@@ -449,6 +449,7 @@ func _build_juice_section(vbox: VBoxContainer) -> void:
 	_build_ghost_trail_tuning(vbox)
 	_build_screen_shake_tuning(vbox)
 	_build_particles_tuning(vbox)
+	_build_audio_sfx_tuning(vbox)
 
 
 func _build_blob_shadow_tuning(vbox: VBoxContainer) -> void:
@@ -457,6 +458,13 @@ func _build_blob_shadow_tuning(vbox: VBoxContainer) -> void:
 	_make_blob_slider(vbox, "Radius height",  &"radius_at_height",  0.1,  2.0,  0.01, 0.55)
 	_make_blob_slider(vbox, "Fade height",    &"fade_height",        1.0,  20.0, 0.5,  6.0)
 	_make_blob_slider(vbox, "Max alpha",      &"alpha_max",          0.05, 1.0,  0.01, 0.42)
+
+
+func _build_audio_sfx_tuning(vbox: VBoxContainer) -> void:
+	vbox.add_child(_make_label("Audio — SFX", SECTION_FONT_SIZE, false))
+	_make_slider(vbox, "SFX volume ×", 0.0, 2.0, 0.05,
+		func(v: float) -> void: DevMenu.audio_param_changed.emit(&"sfx_volume", v),
+		1.0)
 
 
 func _build_debug_section(vbox: VBoxContainer) -> void:
