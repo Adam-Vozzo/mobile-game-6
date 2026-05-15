@@ -4,3 +4,6 @@
 
 # Claude Code scratch (worktrees, sessions, etc.)
 .claude/
+
+# Temporary asset download staging — not project files
+assets/_downloads/
