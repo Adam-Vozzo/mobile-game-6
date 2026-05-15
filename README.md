@@ -5,10 +5,10 @@ A mobile 3D platformer. Brutalist megastructure inspired by *BLAME!*. Controller
 ## Status
 
 Current gate: **Gate 0 — Feel Lab** (closing out; Gate 1 prep in flight)
-Last activity: 2026-05-15 — iter 95: threshold level lifecycle hardening tests (1108→1116 assertions)
+Last activity: 2026-05-15 — iter 96: `_attract_to_ledge` refactor + sentry instant-reversal tests (1116→1131 assertions)
 Test device build: ✅ verified 2026-05-12 — runs in Godot 4.6 on PC and on Nothing Phone 4(a) Pro
 Performance: 144 fps / 6.9 ms in editor at 1920×1080 (Feel Lab); no perf delta this iteration
-Throttle level: **🔴 hard** (9 iterations since 2026-05-15 direction session)
+Throttle level: **🔴 hard** (10 iterations since 2026-05-15 direction session)
 
 If you only read one section, read **Open questions waiting on you** below.
 
@@ -16,10 +16,11 @@ If you only read one section, read **Open questions waiting on you** below.
 
 Things Claude can't decide alone, or where it's stalled and needs direction.
 
-> **🔴 HARD THROTTLE — stalled at iter 95 (9 iterations since 2026-05-15 direction session).**
-> Feature work suspended. Recent hardening: iter 93 PatrolSentry tests, iter 94 trail lifecycle
-> tests + Sky touch research, iter 95 threshold level lifecycle tests. The P0 queue is fully
-> blocked on device feel — on-device verification is the only meaningful unlocker.
+> **🔴 HARD THROTTLE — stalled at iter 96 (10 iterations since 2026-05-15 direction session).**
+> Feature work suspended. Recent hardening: iter 94 trail lifecycle tests + Sky touch research,
+> iter 95 threshold level lifecycle tests, iter 96 `_attract_to_ledge` refactor + sentry
+> instant-reversal geometry tests. The P0 queue is fully blocked on device feel —
+> on-device verification is the only meaningful unlocker.
 >
 > **Suggested next directions (pick one or more):**
 > 1. **Device session** — open Threshold on the Nothing Phone 4(a) Pro. Even 15 minutes of
@@ -114,6 +115,36 @@ Goal: store-ready build.
 The full iteration log lives here, newest first. Every iteration appends an entry. Skim the dates to find where you last left off.
 
 <!-- ITERATION ENTRIES BELOW — DO NOT REMOVE OLDER ENTRIES -->
+
+### [2026-05-15] — iter 96 — `_attract_to_ledge` refactor + sentry instant-reversal tests
+
+Branch: `claude/gifted-shannon-TfXfb`
+Throttle: 🔴 hard (10 iterations since 2026-05-15 direction session)
+Gate: Gate 1 — Vertical Slice prep
+
+**Primary: extract `_compute_ledge_pull` from `_attract_to_ledge` in `player.gd`.**
+
+`_attract_to_ledge` was 46 lines (over the 40-line budget). Extracted the physics-query body into `_compute_ledge_pull(dir_3d: Vector3) -> Vector3`, which returns the lateral impulse vector (or `Vector3.ZERO` when no edge hit). Caller is now 14 lines; helper is 31 lines — both under budget.
+
+Changes in the refactor:
+- Named the two magic numbers: `-0.45` → `FOOT_Y_OFFSET`, `CAPSULE_R + 0.05` → `PROBE_AHEAD`
+- Inlined `edge_pt` temp variable (`var edge_pt: Vector3 = hits[0]["point"]` → `(hits[0]["point"] as Vector3) - foot`)
+- Fixed incorrect comment: "closer edge → stronger nudge" was backwards — the formula `dist/radius × strength` is weaker for small `dist`, not stronger. Comment now reads "closer edge → weaker nudge"
+
+**Side quest: `_test_ledge_pull_geometry()` + `_test_sentry_instant_reversal()` — 15 new assertions.**
+
+`_test_ledge_pull_geometry` (10 assertions): verifies perpendicularity of the probe fan direction, unit-length guarantee, horizontal-only character of the perp vector, CAPSULE_R/FOOT_Y_OFFSET/PROBE_AHEAD constant values, foot XZ is unchanged from capsule position, and PROBE_AHEAD > CAPSULE_R (probe origin is outside the body).
+
+`_test_sentry_instant_reversal` (5 assertions): the existing `_test_patrol_sentry_logic` uses `wait_duration=0.5` only. This test covers the `wait_duration=0` code path where `_waiting` is never set at the endpoint — direction flips and the sentry moves immediately on the next tick, with no pause.
+
+1116 → 1131 assertions.
+
+Perf: no change (no scene modifications).
+Bugs fixed: `_attract_to_ledge` comment error (stronger → weaker nudge for close edges).
+New dev-menu controls: none.
+Assets acquired: none.
+Research added: none.
+On-device: pending (all recent features remain on-device pending).
 
 ### [2026-05-15] — iter 95 — Threshold level lifecycle hardening tests
 
