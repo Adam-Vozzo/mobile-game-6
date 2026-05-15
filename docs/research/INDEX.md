@@ -68,9 +68,11 @@ Suggested early reads (from CLAUDE.md) — now covered:
 
 - [`alto_odyssey_touch_design.md`](alto_odyssey_touch_design.md) — Alto's Odyssey (Snowman 2018): one-touch model analysis, input economy vocabulary (tap debt, camera tax, flow corridor), why the full-screen tap zone works, and six concrete implications for Void: jump button hitbox should be large not precise, auto-framing is the camera-tax solution, variable-jump-height = Alto's hold-for-backflip analogy, avoid three-simultaneous-touch combinations. Calibration reference for Gate 1 device testing: measure camera-adjust pauses vs. misjudged-jump deaths.
 
+- [`sky_touch_design.md`](sky_touch_design.md) — Sky: Children of the Light (thatgamecompany 2019): direct-manipulation input model, input-economy (tap-debt) analysis, two-simultaneous-touch ceiling, 15% dead zone validation, no-tutorial affordance vocabulary, and six concrete Void implications: auto-framing non-negotiable, right-side drag validated over Sky's own camera model, air-dash two-touch ceiling to watch on device, Gate 2 tap-to-move mode as audience-broadening option.
+
 Suggested:
 - ~~Genshin Impact touch layout postmortem (dead zone tuning specifics).~~ Done (iter 20, `touch_dead_zone_calibration.md`).
-- Sky: Children of the Light gesture system (covered briefly above; more detail on social-game input philosophy worth a deeper read for Gate 2+ UX decisions).
+- ~~Sky: Children of the Light gesture system.~~ Done (iter 94, `sky_touch_design.md`).
 
 ## Brutalism / *BLAME!* / megastructure
 

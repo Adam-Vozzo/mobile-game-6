@@ -140,6 +140,7 @@ func _ready() -> void:
 	_test_ambient_audio_routing()
 	_test_sentry_param_dispatch()
 	_test_sentry_initial_state()
+	_test_trail_lifecycle()
 	_report()
 
 
@@ -5576,3 +5577,85 @@ func _test_sentry_initial_state() -> void:
 	_ok("_bob_t starts 0.0 — bob phase at sin(0) = 0 on frame 1", _near(ps._bob_t,  0.0))
 
 	ps.free()
+
+
+func _test_trail_lifecycle() -> void:
+	## Guards game.gd trail recording invariants NOT covered by _test_ghost_trail_recording()
+	## (which tests sampling math and archive-depth capping) or _test_game_gate1_api()
+	## (which tests run-timer and shard fields but not trail_history or _recording):
+	##
+	##   start_run()      → trail_history.clear() + _recording = true
+	##   level_complete() → _recording = false  (no samples after the win trigger)
+	##   reset_run()      → trail_history.clear() (replay starts with no ghost data)
+	##   _on_player_respawned() with empty _current_trail
+	##                    → trail_history unchanged, _sample_accum still reset
+	##   _on_player_respawned() with non-empty _current_trail under MAX_TRAIL_DEPTH
+	##                    → trail_history grows by 1 without pop_back; _current_trail cleared
+	print("\n-- Trail recording lifecycle (game.gd) --")
+	var g: GM = GM.new()
+
+	# ── start_run() clears old trail data ────────────────────────────────────
+	# Without this guard a level replay would show ghost trails from the
+	# previous run — the "you already know the route" anti-pattern.
+	var dummy := PackedVector3Array()
+	dummy.append(Vector3.ONE)
+	g.trail_history.push_back(dummy)
+	g.trail_history.push_back(dummy)
+	g.start_run()
+	_ok("start_run: trail_history cleared so prior-run ghosts never appear on replay",
+		g.trail_history.size() == 0)
+
+	# ── start_run() arms the sampler ─────────────────────────────────────────
+	_ok("start_run: _recording set to true (physics_process will write samples)",
+		g._recording == true)
+
+	# ── level_complete() disarms the sampler ─────────────────────────────────
+	# Movement after the WinState trigger must not corrupt the trail that
+	# will be shown as a ghost on the next replay attempt.
+	g.level_complete()
+	_ok("level_complete: _recording set to false (post-win movement not sampled)",
+		g._recording == false)
+
+	# ── reset_run() clears trail data ────────────────────────────────────────
+	g.trail_history.push_back(dummy)
+	g.reset_run()
+	_ok("reset_run: trail_history cleared (ghost data gone for a fresh game)",
+		g.trail_history.size() == 0)
+
+	# ── empty-trail respawn: history guard ───────────────────────────────────
+	# If the player dies before a single 30 Hz sample fires (< 33 ms into the
+	# attempt), _current_trail is empty.  The "if _current_trail.size() > 0"
+	# guard must prevent an empty PackedVector3Array from entering trail_history;
+	# an empty history entry would produce invisible MultiMesh instances and
+	# confuse the archive-depth counter.
+	g.start_run()  # clears trail_history and _current_trail; _recording = true
+	g._on_player_respawned()
+	_ok("_on_player_respawned with empty trail: trail_history stays at 0 (guard skips push_front)",
+		g.trail_history.size() == 0)
+
+	# ── empty-trail respawn: accumulator still resets ─────────────────────────
+	# _sample_accum must reset even when the trail guard fires, otherwise the
+	# next attempt's first sample is delayed by whatever residual was in accum.
+	g._sample_accum = 0.12
+	g._current_trail.resize(0)
+	g._on_player_respawned()
+	_ok("_on_player_respawned with empty trail: _sample_accum reset to 0 (accum guard must not skip it)",
+		_near(g._sample_accum, 0.0))
+
+	# ── non-empty trail respawn under MAX_DEPTH ───────────────────────────────
+	# When history is below capacity no pop_back should fire — the first
+	# several deaths just grow the archive linearly.
+	g.trail_history.clear()
+	g._current_trail.resize(0)
+	g._current_trail.append(Vector3(3.0, 0.0, 0.0))
+	g._on_player_respawned()
+	_ok("first respawn with 1 sample: trail_history grows to 1 (no pop_back below MAX_TRAIL_DEPTH)",
+		g.trail_history.size() == 1)
+
+	# ── _current_trail cleared after archive ─────────────────────────────────
+	# The archived copy is a duplicate(); the live trail must be empty so the
+	# next attempt records a fresh path instead of appending to the old one.
+	_ok("_on_player_respawned: _current_trail cleared after archiving (next attempt starts fresh)",
+		g._current_trail.size() == 0)
+
+	g.free()
