@@ -48,6 +48,21 @@ authored with it in mind.
   the human picks a survivor. Threshold rebuild kept in repo as the corridor representative;
   next level-touching iter MUST pick an unrepresented shape-family, not iterate on Threshold.
 
+- **🟢 Iter 100 complete.** Cavern level (maze with branches, shape-family 5).
+  `scenes/levels/cavern.tscn` + `scripts/levels/cavern.gd`: conduit-network layout,
+  9 floor platforms (EntryFloor → NorthPass → JunctionRoom → WestPass+WestSpur /
+  EastPass+EastSpur / NorthLedge → FinalChamber). Parti: "Conduit Junction" — buried
+  maintenance network, low ceilings, T-junctions, dead-end shard arms, one elevated
+  final alcove as win. Critical path: walk north through narrow 4 m passage → reach
+  14 m junction room → jump 1 m gap + 1.5 m rise to NorthLedge → double-jump 1 m gap
+  + 3 m rise to FinalChamber (WIN). West spur: 2 shards dead-end, easy side branch from
+  junction. East spur: mirrored. Checkpoint at JunctionRoom (player must orient before
+  climb). Fog density 0.090 (densest of all levels) — visibility ~10 m, light-pooling
+  from 5 OmniLights (amber entry / cold-blue junction / dim amber west / dim cold-blue
+  east / biolume-cyan final). 4 ceiling slabs + 5 wall slabs create cave enclosure.
+  Level selector + dev menu Load Level updated. Shape-family distinct: player cannot
+  see route from spawn; orientation challenge, not reflex. On-device pending.
+
 - **🟢 Iter 99 complete.** Plaza level (hub with radiating spokes, shape-family 4).
   `scenes/levels/plaza.tscn` + `scripts/levels/plaza.gd`: 18×18 m hub floor, 3 spoke arms
   (north win path, east moving-platform timing arm, west narrow-beam precision arm), 10 platforms
@@ -208,7 +223,7 @@ The next iteration should pull from the top of this list. Items marked
 - ~~Shape 2: Vertical climbing tower → Spire~~ ✅ exists (iter 97)
 - ~~Shape 3: Open-air rooftop → Rooftop~~ ✅ exists (iter 98)
 - ~~Shape 4: Plaza hub with radiating spokes → Plaza~~ ✅ exists (iter 99)
-- Shape 5: **Cavern / maze with branches** — NEXT unrepresented family
+- ~~Shape 5: Cavern / maze with branches → Cavern~~ ✅ exists (iter 100)
 - Shape 6: Inverted descent (climbing down) — queue
 - Shape 7: Enclosed obstacle gauntlet — queue
 - Shape 8: Exposed bridge crossing with vertical void below — queue
@@ -216,11 +231,10 @@ The next iteration should pull from the top of this list. Items marked
 Each shape needs: spawn → win state, Player/CameraRig/TouchOverlay wiring, lives in `scenes/levels/`.
 Do not iterate on an existing shape until the human picks a survivor.
 
-**Next shape to build: cavern / maze with branches** — a low-ceilinged cave network with forking
-passages, multi-directional routing, and a maze-like feel. No single dominant path visible from
-spawn. The navigation challenge is orientation, not just reflex. Distinct from all four existing
-levels. Consider: narrow passages, T-junctions, dead ends with shards, a single elevated final
-chamber as the win state.
+**Next shape to build: inverted descent (climbing down)** — player starts high and descends
+through floors/shafts, possibly with branching drops. Distinct shape: floor plan reads as a
+series of descending sub-levels visible below, not a flat maze or vertical climb upward.
+
 Boot selector and dev-menu Load Level entry already in place.
 
 **Device test (still blocked on human):** Threshold / Spire on Nothing Phone 4(a) Pro — see Open

@@ -1,0 +1,292 @@
+[gd_scene load_steps=34 format=3]
+
+[ext_resource type="Script" path="res://scripts/levels/cavern.gd" id="1_cav"]
+[ext_resource type="Script" path="res://scripts/levels/checkpoint.gd" id="2_cp"]
+[ext_resource type="Script" path="res://scripts/levels/win_state.gd" id="3_win"]
+[ext_resource type="PackedScene" path="res://scenes/player/player.tscn" id="4_player"]
+[ext_resource type="PackedScene" path="res://scenes/player/camera_rig.tscn" id="5_camrig"]
+[ext_resource type="PackedScene" path="res://scenes/ui/touch_overlay.tscn" id="6_touch"]
+[ext_resource type="Material" path="res://resources/materials/mat_concrete.tres" id="7_matC"]
+[ext_resource type="Material" path="res://resources/materials/mat_concrete_dark.tres" id="8_matCd"]
+[ext_resource type="Script" path="res://scripts/levels/ghost_trail_renderer.gd" id="9_ghost"]
+[ext_resource type="Script" path="res://tools/debug/player_debug_draw.gd" id="10_dbg"]
+[ext_resource type="PackedScene" path="res://scenes/levels/data_shard.tscn" id="11_shard"]
+
+[sub_resource type="Environment" id="E_env"]
+background_mode = 1
+background_color = Color(0.03, 0.03, 0.04, 1)
+ambient_light_source = 2
+ambient_light_color = Color(0.10, 0.11, 0.15, 1)
+ambient_light_energy = 0.18
+tonemap_mode = 2
+fog_enabled = true
+fog_light_color = Color(0.03, 0.03, 0.05, 1)
+fog_light_energy = 1.0
+fog_density = 0.090
+fog_aerial_perspective = 0.4
+fog_sky_affect = 0.0
+
+[sub_resource type="BoxMesh" id="M_entry"]
+material = ExtResource("8_matCd")
+size = Vector3(10, 0.5, 10)
+
+[sub_resource type="BoxShape3D" id="S_entry"]
+size = Vector3(10, 0.5, 10)
+
+[sub_resource type="BoxMesh" id="M_npass"]
+material = ExtResource("8_matCd")
+size = Vector3(4, 0.5, 10)
+
+[sub_resource type="BoxShape3D" id="S_npass"]
+size = Vector3(4, 0.5, 10)
+
+[sub_resource type="BoxMesh" id="M_junc"]
+material = ExtResource("8_matCd")
+size = Vector3(14, 0.5, 12)
+
+[sub_resource type="BoxShape3D" id="S_junc"]
+size = Vector3(14, 0.5, 12)
+
+[sub_resource type="BoxMesh" id="M_arm"]
+material = ExtResource("8_matCd")
+size = Vector3(8, 0.5, 4)
+
+[sub_resource type="BoxShape3D" id="S_arm"]
+size = Vector3(8, 0.5, 4)
+
+[sub_resource type="BoxMesh" id="M_wspur"]
+material = ExtResource("8_matCd")
+size = Vector3(10, 0.5, 9)
+
+[sub_resource type="BoxShape3D" id="S_wspur"]
+size = Vector3(10, 0.5, 9)
+
+[sub_resource type="BoxMesh" id="M_espur"]
+material = ExtResource("8_matCd")
+size = Vector3(9, 0.5, 7)
+
+[sub_resource type="BoxShape3D" id="S_espur"]
+size = Vector3(9, 0.5, 7)
+
+[sub_resource type="BoxMesh" id="M_ledge"]
+material = ExtResource("7_matC")
+size = Vector3(5, 0.5, 6)
+
+[sub_resource type="BoxShape3D" id="S_ledge"]
+size = Vector3(5, 0.5, 6)
+
+[sub_resource type="BoxMesh" id="M_final"]
+material = ExtResource("8_matCd")
+size = Vector3(12, 0.5, 10)
+
+[sub_resource type="BoxShape3D" id="S_final"]
+size = Vector3(12, 0.5, 10)
+
+[sub_resource type="BoxMesh" id="M_wall"]
+material = ExtResource("8_matCd")
+size = Vector3(0.5, 5, 10)
+
+[sub_resource type="BoxMesh" id="M_walls"]
+material = ExtResource("8_matCd")
+size = Vector3(10, 5, 0.5)
+
+[sub_resource type="BoxShape3D" id="S_cp"]
+size = Vector3(13, 4, 11)
+
+[sub_resource type="BoxShape3D" id="S_win"]
+size = Vector3(11, 4, 9)
+
+[node name="Cavern" type="Node3D"]
+script = ExtResource("1_cav")
+
+[node name="WorldEnv" type="WorldEnvironment" parent="."]
+environment = SubResource("E_env")
+
+[node name="KeyLight" type="DirectionalLight3D" parent="."]
+transform = Transform3D(1, 0, 0, 0, 0.940, 0.342, 0, -0.342, 0.940, 0, 20, 0)
+light_color = Color(0.40, 0.44, 0.60, 1)
+light_energy = 0.10
+shadow_enabled = false
+
+[node name="Lights" type="Node3D" parent="."]
+
+[node name="EntryLight" type="OmniLight3D" parent="Lights"]
+transform = Transform3D(1, 0, 0, 0, 1, 0, 0, 0, 1, 0, 3, 2)
+light_color = Color(0.85, 0.60, 0.25, 1)
+light_energy = 2.5
+omni_range = 12.0
+
+[node name="JunctionLight" type="OmniLight3D" parent="Lights"]
+transform = Transform3D(1, 0, 0, 0, 1, 0, 0, 0, 1, 0, 4, -21)
+light_color = Color(0.30, 0.50, 0.90, 1)
+light_energy = 3.0
+omni_range = 18.0
+
+[node name="WestLight" type="OmniLight3D" parent="Lights"]
+transform = Transform3D(1, 0, 0, 0, 1, 0, 0, 0, 1, -20, 2, -21)
+light_color = Color(0.70, 0.50, 0.20, 1)
+light_energy = 1.5
+omni_range = 8.0
+
+[node name="EastLight" type="OmniLight3D" parent="Lights"]
+transform = Transform3D(1, 0, 0, 0, 1, 0, 0, 0, 1, 19.5, 2, -21)
+light_color = Color(0.25, 0.40, 0.80, 1)
+light_energy = 1.5
+omni_range = 8.0
+
+[node name="FinalLight" type="OmniLight3D" parent="Lights"]
+transform = Transform3D(1, 0, 0, 0, 1, 0, 0, 0, 1, 0, 8, -40)
+light_color = Color(0.25, 0.80, 0.70, 1)
+light_energy = 4.0
+omni_range = 16.0
+
+[node name="PlayerSpawn" type="Marker3D" parent="."]
+transform = Transform3D(1, 0, 0, 0, 1, 0, 0, 0, 1, 0, 1, 3)
+
+[node name="Player" parent="." instance=ExtResource("4_player")]
+transform = Transform3D(1, 0, 0, 0, 1, 0, 0, 0, 1, 0, 1, 3)
+
+[node name="CameraRig" parent="." instance=ExtResource("5_camrig")]
+target_path = NodePath("../Player")
+
+[node name="TouchOverlay" parent="." instance=ExtResource("6_touch")]
+
+[node name="PlayerDebugDraw" type="MeshInstance3D" parent="."]
+script = ExtResource("10_dbg")
+
+[node name="GhostTrailRenderer" type="Node3D" parent="."]
+script = ExtResource("9_ghost")
+
+[node name="Platforms" type="Node3D" parent="."]
+
+[node name="EntryFloor" type="StaticBody3D" parent="Platforms"]
+transform = Transform3D(1, 0, 0, 0, 1, 0, 0, 0, 1, 0, -0.25, 0)
+[node name="Mesh" type="MeshInstance3D" parent="Platforms/EntryFloor"]
+mesh = SubResource("M_entry")
+[node name="Collider" type="CollisionShape3D" parent="Platforms/EntryFloor"]
+shape = SubResource("S_entry")
+
+[node name="NorthPass" type="StaticBody3D" parent="Platforms"]
+transform = Transform3D(1, 0, 0, 0, 1, 0, 0, 0, 1, 0, -0.25, -10)
+[node name="Mesh" type="MeshInstance3D" parent="Platforms/NorthPass"]
+mesh = SubResource("M_npass")
+[node name="Collider" type="CollisionShape3D" parent="Platforms/NorthPass"]
+shape = SubResource("S_npass")
+
+[node name="JunctionFloor" type="StaticBody3D" parent="Platforms"]
+transform = Transform3D(1, 0, 0, 0, 1, 0, 0, 0, 1, 0, -0.25, -21)
+[node name="Mesh" type="MeshInstance3D" parent="Platforms/JunctionFloor"]
+mesh = SubResource("M_junc")
+[node name="Collider" type="CollisionShape3D" parent="Platforms/JunctionFloor"]
+shape = SubResource("S_junc")
+
+[node name="WestPass" type="StaticBody3D" parent="Platforms"]
+transform = Transform3D(1, 0, 0, 0, 1, 0, 0, 0, 1, -11, -0.25, -21)
+[node name="Mesh" type="MeshInstance3D" parent="Platforms/WestPass"]
+mesh = SubResource("M_arm")
+[node name="Collider" type="CollisionShape3D" parent="Platforms/WestPass"]
+shape = SubResource("S_arm")
+
+[node name="WestSpur" type="StaticBody3D" parent="Platforms"]
+transform = Transform3D(1, 0, 0, 0, 1, 0, 0, 0, 1, -20, -0.25, -21)
+[node name="Mesh" type="MeshInstance3D" parent="Platforms/WestSpur"]
+mesh = SubResource("M_wspur")
+[node name="Collider" type="CollisionShape3D" parent="Platforms/WestSpur"]
+shape = SubResource("S_wspur")
+
+[node name="EastPass" type="StaticBody3D" parent="Platforms"]
+transform = Transform3D(1, 0, 0, 0, 1, 0, 0, 0, 1, 11, -0.25, -21)
+[node name="Mesh" type="MeshInstance3D" parent="Platforms/EastPass"]
+mesh = SubResource("M_arm")
+[node name="Collider" type="CollisionShape3D" parent="Platforms/EastPass"]
+shape = SubResource("S_arm")
+
+[node name="EastSpur" type="StaticBody3D" parent="Platforms"]
+transform = Transform3D(1, 0, 0, 0, 1, 0, 0, 0, 1, 19.5, -0.25, -21)
+[node name="Mesh" type="MeshInstance3D" parent="Platforms/EastSpur"]
+mesh = SubResource("M_espur")
+[node name="Collider" type="CollisionShape3D" parent="Platforms/EastSpur"]
+shape = SubResource("S_espur")
+
+[node name="NorthLedge" type="StaticBody3D" parent="Platforms"]
+transform = Transform3D(1, 0, 0, 0, 1, 0, 0, 0, 1, 0, 1.25, -31)
+[node name="Mesh" type="MeshInstance3D" parent="Platforms/NorthLedge"]
+mesh = SubResource("M_ledge")
+[node name="Collider" type="CollisionShape3D" parent="Platforms/NorthLedge"]
+shape = SubResource("S_ledge")
+
+[node name="FinalChamber" type="StaticBody3D" parent="Platforms"]
+transform = Transform3D(1, 0, 0, 0, 1, 0, 0, 0, 1, 0, 4.25, -40)
+[node name="Mesh" type="MeshInstance3D" parent="Platforms/FinalChamber"]
+mesh = SubResource("M_final")
+[node name="Collider" type="CollisionShape3D" parent="Platforms/FinalChamber"]
+shape = SubResource("S_final")
+
+[node name="Ceilings" type="Node3D" parent="."]
+
+[node name="Ceil_Entry" type="MeshInstance3D" parent="Ceilings"]
+transform = Transform3D(1, 0, 0, 0, 1, 0, 0, 0, 1, 0, 5.75, 0)
+mesh = SubResource("M_entry")
+
+[node name="Ceil_NPass" type="MeshInstance3D" parent="Ceilings"]
+transform = Transform3D(1, 0, 0, 0, 1, 0, 0, 0, 1, 0, 5.75, -10)
+mesh = SubResource("M_npass")
+
+[node name="Ceil_Junction" type="MeshInstance3D" parent="Ceilings"]
+transform = Transform3D(1, 0, 0, 0, 1, 0, 0, 0, 1, 0, 6.75, -21)
+mesh = SubResource("M_junc")
+
+[node name="Ceil_Final" type="MeshInstance3D" parent="Ceilings"]
+transform = Transform3D(1, 0, 0, 0, 1, 0, 0, 0, 1, 0, 11.25, -40)
+mesh = SubResource("M_final")
+
+[node name="Walls" type="Node3D" parent="."]
+
+[node name="WallS_Entry" type="MeshInstance3D" parent="Walls"]
+transform = Transform3D(1, 0, 0, 0, 1, 0, 0, 0, 1, 0, 2.75, 5.5)
+mesh = SubResource("M_walls")
+
+[node name="WallW_Entry" type="MeshInstance3D" parent="Walls"]
+transform = Transform3D(1, 0, 0, 0, 1, 0, 0, 0, 1, -5.5, 2.75, 0)
+mesh = SubResource("M_wall")
+
+[node name="WallE_Entry" type="MeshInstance3D" parent="Walls"]
+transform = Transform3D(1, 0, 0, 0, 1, 0, 0, 0, 1, 5.5, 2.75, 0)
+mesh = SubResource("M_wall")
+
+[node name="WallW_NPass" type="MeshInstance3D" parent="Walls"]
+transform = Transform3D(1, 0, 0, 0, 1, 0, 0, 0, 1, -2.75, 2.75, -10)
+mesh = SubResource("M_wall")
+
+[node name="WallE_NPass" type="MeshInstance3D" parent="Walls"]
+transform = Transform3D(1, 0, 0, 0, 1, 0, 0, 0, 1, 2.75, 2.75, -10)
+mesh = SubResource("M_wall")
+
+[node name="Shards" type="Node3D" parent="."]
+
+[node name="Shard1" parent="Shards" instance=ExtResource("11_shard")]
+transform = Transform3D(1, 0, 0, 0, 1, 0, 0, 0, 1, -20, 1.25, -21)
+
+[node name="Shard2" parent="Shards" instance=ExtResource("11_shard")]
+transform = Transform3D(1, 0, 0, 0, 1, 0, 0, 0, 1, 19.5, 1.25, -21)
+
+[node name="CheckPoint" type="Area3D" parent="."]
+transform = Transform3D(1, 0, 0, 0, 1, 0, 0, 0, 1, 0, 2, -21)
+script = ExtResource("2_cp")
+checkpoint_id = &"junction"
+collision_layer = 0
+collision_mask = 2
+monitoring = true
+monitorable = false
+[node name="Shape" type="CollisionShape3D" parent="CheckPoint"]
+shape = SubResource("S_cp")
+
+[node name="WinState" type="Area3D" parent="."]
+transform = Transform3D(1, 0, 0, 0, 1, 0, 0, 0, 1, 0, 5.75, -40)
+script = ExtResource("3_win")
+collision_layer = 0
+collision_mask = 2
+monitoring = true
+monitorable = false
+[node name="Shape" type="CollisionShape3D" parent="WinState"]
+shape = SubResource("S_win")
