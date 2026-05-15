@@ -37,23 +37,32 @@ do not commit the asset.
   GLB ships with 8 TRS animations (static, idle, walk, run, eat, dance,
   gesture-positive, gesture-negative). No attribution required (CC0).
 
-- assets/art/architecture/factory-kit/ (143 GLB files + colormap-factory-kit.png)
+- assets/art/architecture/factory-kit/ (143 GLB files)
+  assets/art/architecture/factory-kit/Textures/colormap.png
   Source: https://kenney.nl/assets/factory-kit (v3.0)
   Author: Kenney (kenney.nl)
   Licence: CC0 1.0 Universal
   Date acquired: 2026-05-15
   Notes: Industrial/factory 3D asset kit — conveyors, pipes, cogs, catwalks,
   cranes, tanks, machines. Used for Zone 2/3 set-dressing in Threshold and
-  future industrial levels. No attribution required (CC0).
+  future industrial levels. Every GLB references the kit colormap atlas via
+  the relative URI `Textures/colormap.png`, so the PNG must live in a sibling
+  `Textures/` directory next to the .glb files for Godot's importer to resolve
+  it (same convention as the chick — `Textures/colormap.png`, not the kit-
+  suffixed name Kenney ships standalone). No attribution required (CC0).
 
 - assets/art/architecture/space-station-kit/ (97 GLB files)
+  assets/art/architecture/space-station-kit/Textures/colormap.png
   Source: https://kenney.nl/assets/space-station-kit
   Author: Kenney (kenney.nl)
   Licence: CC0 1.0 Universal
   Date acquired: 2026-05-15
   Notes: Modular space-station 3D asset kit — floors, walls, panels, doors,
   consoles, containers, structural columns. Used for Zone 1/2 modular geometry
-  in Threshold and future habitation-layer levels. No attribution required (CC0).
+  in Threshold and future habitation-layer levels. Same `Textures/colormap.png`
+  URI convention as the factory kit and chick — the atlas must sit in a
+  sibling `Textures/` directory for the importer to bind it. No attribution
+  required (CC0).
 
 - assets/audio/sfx/jump.ogg           (source: laserSmall_000.ogg)
   assets/audio/sfx/land_light.ogg     (source: impactMetal_000.ogg)

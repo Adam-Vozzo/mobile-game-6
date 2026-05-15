@@ -9,7 +9,7 @@
 
 [sub_resource type="Environment" id="Env_StyleTest"]
 background_mode = 1
-background_color = Color(0.04, 0.04, 0.05, 1)
+background_color = Color(0.14, 0.15, 0.18, 1)
 ambient_light_source = 2
 ambient_light_color = Color(0.32, 0.34, 0.38, 1)
 ambient_light_energy = 0.75
