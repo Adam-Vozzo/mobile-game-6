@@ -5,10 +5,10 @@ A mobile 3D platformer. Brutalist megastructure inspired by *BLAME!*. Controller
 ## Status
 
 Current gate: **Gate 0 — Feel Lab** (closing out; Gate 1 prep in flight)
-Last activity: 2026-05-16 — direction session: post-pull repair (parser errors, chick wiring) + Threshold rebuild per quality-bar feedback
+Last activity: 2026-05-16 — iter 97: Spire level (vertical tower shape-family) + level selector boot screen
 Test device build: ✅ verified 2026-05-12 — runs in Godot 4.6 on PC and on Nothing Phone 4(a) Pro
 Performance: 144 fps / 6.9 ms in editor at 1920×1080 (Feel Lab); Threshold perf TBD after rebuild
-Throttle level: **🟢 unblocked** — direction session 2026-05-16
+Throttle level: **🟢 normal** — 1 iter since 2026-05-16 direction session
 
 If you only read one section, read **Open questions waiting on you** below.
 
@@ -115,6 +115,38 @@ Goal: store-ready build.
 The full iteration log lives here, newest first. Every iteration appends an entry. Skim the dates to find where you last left off.
 
 <!-- ITERATION ENTRIES BELOW — DO NOT REMOVE OLDER ENTRIES -->
+
+### [2026-05-16] — iter 97 — Spire level + level selector
+
+Branch: `iter/spire-level-and-select`
+Throttle: 🟢 normal (1 iter since direction session)
+Gate: Gate 1 — direction-finding breadth pass
+
+**Primary: new level `scenes/levels/spire.tscn` (vertical climbing tower, shape-family 2) + `scenes/ui/level_select.tscn` (boot-to-selector as directed in CLAUDE.md).**
+
+**Level selector (`scenes/ui/level_select.tscn`):**
+- Programmatic UI built in `scripts/ui/level_select.gd`; dark brutalist background, title, one button per level with shape-family description.
+- Lists: FEEL LAB / THRESHOLD / SPIRE.
+- Each button calls `Game.reset_run()` then `change_scene_to_file(path)`.
+- `project.godot` main scene changed from `threshold.tscn` → `level_select.tscn`.
+- Dev menu Load Level section updated: "Spire (tower)" added between Threshold and Feel Lab.
+
+**Spire level (`scenes/levels/spire.tscn`):**
+- Shape family 2: vertical climbing tower. Floor plan ~10×8 m; all traversal on the Y axis.
+- Parti: megastructure exhaust shaft — sealed column bored through several floor-plates. Stray climbs from lowest catwalk to summit breach.
+- Geometry (all primitives, no CSG): 4 shaft walls (12–25 m tall), entry floor, 8 static platforms in zigzag staircase pattern, 1 AnimatableBody3D moving platform (travel 1 m vertical, 3 s period).
+- Platform heights calculated from Snappy physics (jump_velocity=12, gravity_rising=38): gaps 1.5–2.5 m, final two steps 2.5 m (tight double-jump). See `spire.gd` for parti + skill target notes.
+- Lighting: 3 OmniLights (amber entry y=3, cold-blue mid y=10, biolume-cyan summit y=18) + dim directional; fog_density=0.070, cold grey-blue atmosphere.
+- Platform visual: `mat_concrete` (lighter, ≈ stepping stones); walls + summit floor: `mat_concrete_dark`.
+- Wiring: PlayerSpawn Marker3D, Player/CameraRig/TouchOverlay instances, GhostTrailRenderer, CheckPoint Area3D (mid_shaft, PlatformC at y=5.5), WinState Area3D (at summit y=17).
+- Script `scripts/levels/spire.gd`: same minimal level lifecycle pattern as threshold.gd (spawn, Game.start_run, ResultsPanel); no zone-atmosphere routing; `par_time_seconds=50.0` placeholder.
+
+**Perf:** On-device pending. No new draw-call additions beyond the 14 new static meshes + 4 walls (≤18 new mesh instances, all unlit primitives). No new particle systems.
+
+**Camera note:** Vertical tower format may compress spring-arm against the walls in tight sections. CameraHints are stubs so no hint framing yet. On-device: check if the shaft occlusion causes uncomfortable view angles; if so, use a CameraHint pull-back at shaft entry or widen the shaft.
+
+New dev-menu controls: none (level select is a separate scene, not accessed via dev menu directly).
+On-device pending: Spire playability, jump-gap calibration, camera behaviour in enclosed shaft.
 
 ### [2026-05-16] — direction session — post-pull repair + Threshold redesign
 
