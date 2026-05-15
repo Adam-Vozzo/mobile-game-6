@@ -20,6 +20,11 @@ const _LEVELS: Array[Dictionary] = [
 		"path": "res://scenes/levels/spire.tscn",
 		"desc": "Vertical climbing tower (shape family 2)",
 	},
+	{
+		"name": "ROOFTOP",
+		"path": "res://scenes/levels/rooftop.tscn",
+		"desc": "Open-air rooftop, void below (shape family 3)",
+	},
 ]
 
 const _BTN_MIN  := Vector2(520.0, 88.0)

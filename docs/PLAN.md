@@ -48,6 +48,13 @@ authored with it in mind.
   the human picks a survivor. Threshold rebuild kept in repo as the corridor representative;
   next level-touching iter MUST pick an unrepresented shape-family, not iterate on Threshold.
 
+- **🟢 Iter 98 complete.** Rooftop level (open-air rooftop, shape-family 3).
+  `scenes/levels/rooftop.tscn` + `scripts/levels/rooftop.gd`: 8 platforms (SpawnSlab → FragA →
+  BeamB narrow → SlabC checkpoint → MovingPlatE E-W bridge → EastPost → StepG → RelayPad win),
+  2 data shards, 4 atmospheric megastructure columns, cold-blue-to-biolume-cyan lighting arc.
+  Level selector + dev menu Load Level updated. Distinct shape-family: no walls, no ceiling, void
+  below all edges — depth cue is the void, not framing geometry. On-device pending.
+
 - **🟢 Iter 97 complete.** Spire level (vertical climbing tower shape-family) + level_select.tscn boot screen.
   `scenes/levels/spire.tscn` + `scripts/levels/spire.gd`: 10×8 m shaft, 8 static platforms zigzag
   (gaps 1.5–2.5 m tuned for Snappy profile), 1 moving platform (travel 1 m Y, 3 s), checkpoint at
@@ -189,8 +196,8 @@ The next iteration should pull from the top of this list. Items marked
 **Shape-family inventory:**
 - ~~Shape 1: Linear corridor → Threshold~~ ✅ exists
 - ~~Shape 2: Vertical climbing tower → Spire~~ ✅ exists (iter 97)
-- Shape 3: **Open-air rooftop** (edge-of-void platforming) — NEXT unrepresented family
-- Shape 4: Plaza hub with radiating spokes (Spyro PS1) — queue
+- ~~Shape 3: Open-air rooftop → Rooftop~~ ✅ exists (iter 98)
+- Shape 4: **Plaza hub with radiating spokes** (Spyro PS1) — NEXT unrepresented family
 - Shape 5: Cavern / maze with branches — queue
 - Shape 6: Inverted descent (climbing down) — queue
 - Shape 7: Enclosed obstacle gauntlet — queue
@@ -199,11 +206,11 @@ The next iteration should pull from the top of this list. Items marked
 Each shape needs: spawn → win state, Player/CameraRig/TouchOverlay wiring, lives in `scenes/levels/`.
 Do not iterate on an existing shape until the human picks a survivor.
 
-**Next shape to build: open-air rooftop** — exposed top of the megastructure, narrow ledges, wind
-turbines or conduit ribs as obstacles, void visible in all directions below. Distinct from Spire
-(open sky vs. enclosed shaft) and Threshold (no walls, 360° exposure vs. corridor). Floor plan
-from above: a wide irregular polygon with many gaps over void; player must route carefully.
-Boot selector already in place (`scenes/ui/level_select.tscn`).
+**Next shape to build: plaza hub with radiating spokes** — a central open plaza with 3–4 elevated
+spoke paths radiating outward to sub-goals, then a final path up to the win state. Spyro PS1 layout
+grammar. Distinct from all three existing levels: no enclosing walls (like Rooftop) but with a
+central hub that makes the player feel anchored and the routes feel like choices.
+Boot selector and dev-menu Load Level entry already in place.
 
 **Device test (still blocked on human):** Threshold / Spire on Nothing Phone 4(a) Pro — see Open
 questions in README. Even one device session unblocks the largest feedback queue.
