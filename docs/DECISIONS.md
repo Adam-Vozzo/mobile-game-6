@@ -15,6 +15,48 @@ Append, don't rewrite. Supersession adds a new entry referencing the old.
 
 ---
 
+## 2026-05-15 — Gate 1 enemy archetype: PatrolSentry (slow linear patrol, zero AI)
+
+Status: accepted (on-device pending for speed / distance tuning)
+Context: Gate 1 requires "one enemy archetype." The `docs/research/enemy_archetypes.md`
+note recommends a static kill zone (Option A) for Gate 1, deferring a linear patroller
+to Gate 2. However, the existing hazards (IndustrialPress, RotatingHazard, HazardBody
+kill zones) already satisfy "static timed hazard." Adding another static kill zone would
+not meet the intent of "one enemy archetype" — the player needs to encounter something
+that reads as a creature or entity, not just another piece of dangerous machinery.
+Decision: Implement `PatrolSentry` (extends AnimatableBody3D) — a slow back-and-forth
+patrol unit with zero AI. State machine has one moving state and one optional wait
+state (flip direction, pause at endpoint). This is not the "full linear patroller"
+deferred to Gate 2 (which would add detection radius, speed variation, and player
+awareness). The PatrolSentry is functionally a moving HazardBody — deterministic,
+readable, and fully authorable without device feel.
+Implementation details:
+- Visual: programmatic BoxMesh (0.8 m cube, dark grey) + amber emissive eye strip
+  on +Z face. No separate .tscn needed — built in `_ready()`.
+- Kill zone: Area3D carrying `hazard_body.gd`, BoxShape half=0.50 m (slightly larger
+  than the 0.40 m physics body so the Area3D fires before the physics wall stops the
+  player — this is intentional, ensuring the kill is registered before any subtle
+  collision corner case).
+- Placement: programmatic via `threshold.gd._spawn_sentries()` (follows the
+  ResultsPanel.new() pattern — see DECISIONS.md 2026-05-12). One sentry in Zone 1
+  plaza at (0, 1.2, 16), patrolling the X-axis 8 m, speed 2.5 m/s, wait 0.5 s.
+- Dev menu: "Sentry — Tuning" section in Level with speed/distance/wait sliders and
+  a bob toggle. All sentries in the scene respond to `DevMenu.sentry_param_changed`.
+Alternatives considered:
+- Static kill zone only (Option A from research): rejected — already represented by
+  IndustrialPress and RotatingHazard; doesn't meet "archetype" intent.
+- Full patroller with detection radius and speed variation (Gate 2 spec): rejected —
+  requires on-device tuning of detection range vs player correction latency; too much
+  surface for Gate 1.
+- Kenney Factory Kit robot mesh as visual body: held in reserve — the Cube Pets chick
+  establishes the visual idiom and an enemy from the same Kenney low-poly set would
+  reinforce it. Deferred to art pass when the human reviews the kit assets on device.
+Consequences: Gate 1 Gate checklist "One enemy archetype" is now implementable.
+`patrol_speed`, `patrol_distance`, `wait_duration`, `bob_enabled` are all live-tunable
+from dev menu so the human can calibrate speed vs level pacing on first device run.
+JUICE.md: "Sentry bob" logged as prototype. On-device pending — speed/distance and
+bob amplitude need feel tuning before locking.
+
 ## 2026-05-15 — Distant-atmosphere layer revision: BoxMesh primitives, not Modular Buildings
 
 Status: accepted (supersedes the C4 Modular Buildings selection in the earlier 2026-05-15

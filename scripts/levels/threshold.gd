@@ -45,6 +45,7 @@ func _ready() -> void:
 		Game.start_run()
 	_results_panel = ResultsPanel.new()
 	add_child(_results_panel)
+	_spawn_sentries()
 	_connect_zone_triggers()
 	_apply_zone_env(1)
 	if has_node("/root/DevMenu"):
@@ -99,3 +100,16 @@ func _on_atmosphere_param_changed(param: StringName, value: Variant) -> void:
 	elif param == &"skyline_visible":
 		if _skyline != null:
 			_skyline.visible = bool(value)
+
+
+func _spawn_sentries() -> void:
+	# Gate 1 first encounter: one slow patrol sentry crosses Zone 1 plaza.
+	# Placed at mid-plaza (z≈16) at standing height (y=1.2) patrolling the
+	# X-axis so it blocks the floor-walk route without sealing all three routes.
+	var ps_script := load("res://scripts/enemies/patrol_sentry.gd")
+	if ps_script == null:
+		return
+	var sentry: AnimatableBody3D = ps_script.new()
+	sentry.name = &"PatrolSentryZ1"
+	sentry.position = Vector3(0.0, 1.2, 16.0)
+	add_child(sentry)
