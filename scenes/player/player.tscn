@@ -1,34 +1,13 @@
-[gd_scene load_steps=11 format=3]
+[gd_scene load_steps=6 format=3]
 
 [ext_resource type="Script" path="res://scripts/player/player.gd" id="1_player"]
 [ext_resource type="Resource" path="res://resources/profiles/snappy.tres" id="2_snappy"]
 [ext_resource type="Script" path="res://scripts/player/blob_shadow.gd" id="3_blobshadow"]
+[ext_resource type="PackedScene" path="res://assets/art/character/animal-chick.glb" id="4_chick"]
 
 [sub_resource type="CapsuleShape3D" id="Shape_PlayerCapsule"]
 radius = 0.28
 height = 0.9
-
-[sub_resource type="StandardMaterial3D" id="Mat_StrayBody"]
-albedo_color = Color(0.78, 0.78, 0.82, 1)
-roughness = 0.55
-metallic = 0.2
-
-[sub_resource type="CapsuleMesh" id="Mesh_StrayBody"]
-material = SubResource("Mat_StrayBody")
-radius = 0.28
-height = 0.9
-
-[sub_resource type="StandardMaterial3D" id="Mat_StrayAccent"]
-albedo_color = Color(0.7, 0.05, 0.05, 1)
-roughness = 0.4
-metallic = 0.0
-emission_enabled = true
-emission = Color(1, 0.15, 0.15, 1)
-emission_energy_multiplier = 1.5
-
-[sub_resource type="BoxMesh" id="Mesh_StrayAccent"]
-material = SubResource("Mat_StrayAccent")
-size = Vector3(0.18, 0.12, 0.08)
 
 [node name="Player" type="CharacterBody3D" groups=["player"]]
 collision_layer = 2
@@ -44,14 +23,8 @@ shape = SubResource("Shape_PlayerCapsule")
 
 [node name="Visual" type="Node3D" parent="."]
 
-[node name="Body" type="MeshInstance3D" parent="Visual"]
-transform = Transform3D(1, 0, 0, 0, 1, 0, 0, 0, 1, 0, 0.45, 0)
-mesh = SubResource("Mesh_StrayBody")
-
-[node name="Accent" type="MeshInstance3D" parent="Visual"]
-transform = Transform3D(1, 0, 0, 0, 1, 0, 0, 0, 1, 0, 0.55, 0.27)
-mesh = SubResource("Mesh_StrayAccent")
+[node name="Chick" parent="Visual" instance=ExtResource("4_chick")]
+transform = Transform3D(0.8, 0, 0, 0, 0.8, 0, 0, 0, 0.8, 0, 0, 0)
 
 [node name="BlobShadow" type="Node3D" parent="."]
 script = ExtResource("3_blobshadow")
-

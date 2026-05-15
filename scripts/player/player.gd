@@ -75,7 +75,9 @@ var _footstep_dust_interval: float = 0.15
 const _LAND_IMPACT_THRESHOLD := 0.15
 
 @onready var _visual: Node3D = $Visual
-@onready var _body_mesh: MeshInstance3D = $Visual/Body
+# Null after the chick mesh swap (Body node removed); emission flash is
+# temporarily inert. Wire to a specific chick sub-mesh in the art-pass iter.
+@onready var _body_mesh: MeshInstance3D = get_node_or_null("Visual/Body") as MeshInstance3D
 
 
 func _ready() -> void:

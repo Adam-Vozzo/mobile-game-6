@@ -5,10 +5,10 @@ A mobile 3D platformer. Brutalist megastructure inspired by *BLAME!*. Controller
 ## Status
 
 Current gate: **Gate 0 — Feel Lab** (closing out; Gate 1 prep in flight)
-Last activity: 2026-05-15 — iter 87: DistantSkyline BoxMesh layer + Zone 3 back vista (HallBackWall removed)
+Last activity: 2026-05-15 — iter 88: Kenney asset acquisition — chick GLB wired as Stray, Factory Kit + Space Station Kit copied
 Test device build: ✅ verified 2026-05-12 — runs in Godot 4.6 on PC and on Nothing Phone 4(a) Pro
-Performance: 144 fps / 6.9 ms in editor at 1920×1080 (Feel Lab); +11 draw calls from DistantSkyline (fog-attenuated, negligible); on-device TBD
-Throttle level: **🟢 normal** (1 iteration since 2026-05-15 direction session)
+Performance: 144 fps / 6.9 ms in editor at 1920×1080 (Feel Lab); no regression from asset acquisition (GLB + arch kits are file copies, zero runtime cost until placed); on-device TBD
+Throttle level: **🟢 normal** (2 iterations since 2026-05-15 direction session)
 
 If you only read one section, read **Open questions waiting on you** below.
 
@@ -18,13 +18,14 @@ Things Claude can't decide alone, or where it's stalled and needs direction.
 
 > **🟢 THROTTLE RESET — 2026-05-15 direction session.** Kenney asset direction confirmed,
 > Stray re-framed as yellow bird. Throttle cleared; feature work resumed from iter 87.
-> Iter 87: DistantSkyline BoxMesh layer done (PLAN.md item 0b ✅). Next: Kenney asset
-> downloads (item 0a).
+> Iter 87: DistantSkyline BoxMesh layer done (PLAN.md item 0b ✅).
+> Iter 88: Kenney asset acquisition done (PLAN.md item 0a ✅) — chick GLB wired as Stray.
+> Next: Factory Kit / Space Station Kit architecture dressing in Threshold zones.
 
 **What's still waiting for your read:**
 1. **Hold-jump+swipe air dash — two modes to compare.** (iter 67) Dev menu Touch section has "Buffer dash cam" toggle. Try both, or say "always buffer" / "drop the option" and we'll clean it up.
 2. **Industrial press.** Still at x=8 (decorative). Move to critical path, or leave it as atmosphere?
-3. **Kenney asset downloads.** Three CC0 packs approved (Cube Pets / Factory Kit / Space Station Kit). The autonomous loop needs to run `wget` or equivalent to pull the ZIPs — if the iteration environment has no internet, point the loop at a pre-downloaded folder or the Kenney URLs. This is the Gate 1 art-direction blocker.
+3. **Stray chick scale on device.** `animal-chick.glb` wired at scale 0.8 under `Visual`. The pivot is assumed to be at the chick's feet (standard Kenney). On first device run: does the chick sit correctly on platforms, or does it float/clip? Adjust scale and y-offset if needed — feed back the corrected values.
 4. **On-device DistantSkyline tuning.** After Threshold loads on device: do the tower silhouettes read well at Zone 1 plaza distance? Is the fog density right, or do the buildings feel too close / too far? Tune fog_density and tower positions from what you see.
 5. **`pitch_min_degrees` (negative pitch)?** Pitch lower bound is hard-clamped at 0 (horizontal). If you ever want to look *up* at the megastructure from below, say so and we'll add the export + slider.
 
@@ -96,6 +97,40 @@ Goal: store-ready build.
 The full iteration log lives here, newest first. Every iteration appends an entry. Skim the dates to find where you last left off.
 
 <!-- ITERATION ENTRIES BELOW — DO NOT REMOVE OLDER ENTRIES -->
+
+### [2026-05-15] — iter 88 — Kenney asset acquisition: chick GLB wired as Stray
+
+Branch: `iter/kenney-assets`
+Throttle: 🟢 normal (2 iterations since 2026-05-15 direction session)
+Gate: Gate 1 — Vertical Slice prep
+
+**Primary: Kenney CC0 asset acquisition (PLAN.md item 0a).**
+
+Downloaded all three approved Kenney packs:
+- **Cube Pets v1.0** (CC0) — `animal-chick.glb` + colormap copied to `assets/art/character/`.
+- **Factory Kit v3.0** (CC0) — 143 GLBs copied to `assets/art/architecture/factory-kit/`.
+  Conveyors, pipes, cranes, catwalks, cogs, machines, barrels — Zone 2/3 set-dressing stock.
+- **Space Station Kit** (CC0) — 97 GLBs copied to `assets/art/architecture/space-station-kit/`.
+  Modular floors, wall panels, doors, consoles, structural columns — Zone 1/2 geometry stock.
+
+**Stray mesh swap:**
+- `player.tscn`: `Body` (CapsuleMesh grey) + `Accent` (BoxMesh red) removed. `Chick` instance
+  (PackedScene from `animal-chick.glb`, scale=0.8) added under `Visual`. Collider unchanged
+  (CapsuleShape3D 0.28r × 0.9h, centered at y=0.45).
+- `player.gd`: `_body_mesh` @onready changed from `$Visual/Body` to
+  `get_node_or_null("Visual/Body") as MeshInstance3D` — returns null cleanly; existing null
+  guards in `_set_emission` / `_clear_emission` prevent crash. Reboot emission flash is
+  temporarily inert (deferred to art-pass iteration).
+- `assets/ASSETS.md`: three CC0 pack entries added.
+
+**Not this iteration:** Architecture dressing (Factory/Space Station Kit pieces placed in
+Threshold zones), emission flash wired to chick sub-mesh, audio SFX wired.
+
+Perf: no runtime delta — GLB + arch kit files are unloaded until instanced in a scene.
+Frametime unchanged (144 fps / 6.9 ms). On-device pending — chick scale 0.8 and pivot
+alignment need device confirmation.
+
+---
 
 ### [2026-05-15] — iter 87 — DistantSkyline BoxMesh layer + Zone 3 back vista
 
