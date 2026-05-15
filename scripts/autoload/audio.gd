@@ -1,11 +1,12 @@
 extends Node
-## Audio autoload. Manages the bus hierarchy, one-shot SFX dispatch, and
-## the sound_layers juice-toggle mute gate.
+## Audio autoload. Manages the bus hierarchy, one-shot SFX dispatch, the
+## sound_layers juice-toggle mute gate, and the looping ambient layer.
 ##
 ## Bus layout (created at runtime if absent):
 ##   Master ─┬─ Music        (background music — not muted by sound_layers)
 ##            ├─ SFX_Player  (player actions: jump, land, dash, respawn)
-##            └─ SFX_World   (world / hazard events; muted by sound_layers)
+##            ├─ SFX_World   (world / hazard events; muted by sound_layers)
+##            └─ Ambient     (looping ambient bed — not muted by sound_layers)
 ##
 ## All stream vars default null (no assets yet). play_sfx(null, …) is a safe
 ## no-op, so every dispatch point is hot-wired and ready to accept a real
@@ -17,31 +18,45 @@ extends Node
 ##   on_collect_shard()     — data_shard._collect()
 ##   on_respawn_start()     — player.respawn()
 ##
-## Kenney Sci-Fi Sounds assets (CC0) are loaded from res://assets/audio/sfx/
-## by _load_sfx_streams() inside _ready(). If a file has not been imported
-## yet (first Godot open after commit), load() returns null and every
-## dispatch is a silent no-op — same safe-null path as before assets landed.
+## Kenney Sci-Fi Sounds (CC0) are loaded from res://assets/audio/sfx/ by
+## _load_sfx_streams() inside _ready(). If a file has not been imported yet
+## (first Godot open after commit), load() returns null and every dispatch is
+## a silent no-op — same safe-null path as before assets landed.
 ##
-## SFX volume (0.0–2.0 linear, default 1.0) is tunable from the dev menu
-## Juice → Audio — SFX section via DevMenu.audio_param_changed.
+## Ambient layers are loaded from res://assets/audio/ambient/ by
+## _load_ambient_streams(). Looping is set programmatically on each
+## AudioStreamOGGVorbis resource. set_ambient_zone(zone_id) controls which
+## layers are active:
+##   zones 1, 3 — global industrial hum only  (B1 AlaskaRobotics CC0)
+##   zone  2    — global hum + zone2 fans layer (B2 IanStarGem CC0)
+## Files are CC0 freesound picks; manual download required (see ASSETS.md).
 
 const BUS_MASTER     := &"Master"
 const BUS_SFX_PLAYER := &"SFX_Player"
 const BUS_SFX_WORLD  := &"SFX_World"
 const BUS_MUSIC      := &"Music"
+const BUS_AMBIENT    := &"Ambient"
 
 ## Impact threshold separating a light land (below) from a heavy clank (above).
 ## Mirrors the 0-to-1 impact scale from player._tick_timers.
 const LAND_HEAVY_THRESHOLD := 0.25
 
-# One AudioStream per event — null at declaration, populated in _ready()
-# via _load_sfx_streams(). play_sfx(null) is a safe no-op so headless tests
-# and pre-import first-runs remain silent rather than erroring.
+# SFX streams — null at declaration, populated in _ready() via
+# _load_sfx_streams(). play_sfx(null) is a safe no-op.
 var _sfx_jump:          AudioStream = null
 var _sfx_land_light:    AudioStream = null
 var _sfx_land_heavy:    AudioStream = null
 var _sfx_collect_shard: AudioStream = null
 var _sfx_respawn_start: AudioStream = null
+
+# Ambient streams — null until _load_ambient_streams() populates them.
+# Looping is set on the resource after load.
+var _ambient_global: AudioStream = null
+var _ambient_zone2:  AudioStream = null
+
+# Persistent looping players owned by this node; created in _setup_ambient_players().
+var _ambient_global_player: AudioStreamPlayer
+var _ambient_zone2_player:  AudioStreamPlayer
 
 
 func _ready() -> void:
@@ -49,7 +64,10 @@ func _ready() -> void:
 	_ensure_bus(BUS_MUSIC,      BUS_MASTER)
 	_ensure_bus(BUS_SFX_PLAYER, BUS_MASTER)
 	_ensure_bus(BUS_SFX_WORLD,  BUS_MASTER)
+	_ensure_bus(BUS_AMBIENT,    BUS_MASTER)
 	_load_sfx_streams()
+	_setup_ambient_players()
+	_load_ambient_streams()
 	if has_node("/root/DevMenu"):
 		DevMenu.juice_toggle_changed.connect(_on_juice_toggle)
 		_apply_sound_layers(DevMenu.is_juice_on(&"sound_layers"))
@@ -62,6 +80,42 @@ func _load_sfx_streams() -> void:
 	_sfx_land_heavy    = load("res://assets/audio/sfx/land_heavy.ogg")
 	_sfx_collect_shard = load("res://assets/audio/sfx/collect_shard.ogg")
 	_sfx_respawn_start = load("res://assets/audio/sfx/respawn_start.ogg")
+
+
+func _setup_ambient_players() -> void:
+	_ambient_global_player = AudioStreamPlayer.new()
+	_ambient_global_player.bus = BUS_AMBIENT
+	add_child(_ambient_global_player)
+
+	_ambient_zone2_player = AudioStreamPlayer.new()
+	_ambient_zone2_player.bus = BUS_AMBIENT
+	_ambient_zone2_player.volume_db = -4.0  # fan layer sits slightly under the hum
+	add_child(_ambient_zone2_player)
+
+
+func _load_ambient_streams() -> void:
+	var g := load("res://assets/audio/ambient/ambient_global.ogg")
+	var z := load("res://assets/audio/ambient/ambient_zone2.ogg")
+	if g is AudioStreamOGGVorbis:
+		(g as AudioStreamOGGVorbis).loop = true
+		_ambient_global = g
+		_ambient_global_player.stream = g
+	if z is AudioStreamOGGVorbis:
+		(z as AudioStreamOGGVorbis).loop = true
+		_ambient_zone2 = z
+		_ambient_zone2_player.stream = z
+
+
+## Starts or stops ambient layers to match the given zone.
+## Zones 1 and 3 play the global hum only.
+## Zone 2 adds the industrial-fans layer on top.
+## Call from the level when the player enters a zone trigger.
+func set_ambient_zone(zone_id: int) -> void:
+	_resume_layer(_ambient_global_player)
+	if zone_id == 2:
+		_resume_layer(_ambient_zone2_player)
+	else:
+		_ambient_zone2_player.stop()
 
 
 ## Creates a bus if it doesn't already exist and routes it to parent_name.
@@ -100,6 +154,13 @@ func play_sfx(stream: AudioStream, bus: StringName = BUS_SFX_PLAYER) -> void:
 	player.finished.connect(player.queue_free)
 
 
+# ── ambient helpers ─────────────────────────────────────────────────────────
+
+func _resume_layer(player: AudioStreamPlayer) -> void:
+	if player.stream != null and not player.is_playing():
+		player.play()
+
+
 # ── event dispatch ─────────────────────────────────────────────────────────
 
 func on_jump() -> void:
@@ -127,5 +188,9 @@ func _on_audio_param_changed(param: StringName, value: float) -> void:
 	match param:
 		&"sfx_volume":
 			var idx := AudioServer.get_bus_index(BUS_SFX_PLAYER)
+			if idx >= 0:
+				AudioServer.set_bus_volume_db(idx, linear_to_db(value))
+		&"ambient_volume":
+			var idx := AudioServer.get_bus_index(BUS_AMBIENT)
 			if idx >= 0:
 				AudioServer.set_bus_volume_db(idx, linear_to_db(value))

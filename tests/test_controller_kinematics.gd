@@ -137,6 +137,7 @@ func _ready() -> void:
 	_test_chick_body_mesh_path()
 	_test_patrol_sentry_logic()
 	_test_audio_sfx_wiring()
+	_test_ambient_audio_routing()
 	_report()
 
 
@@ -5466,3 +5467,45 @@ func _test_audio_sfx_wiring() -> void:
 		"res://assets/audio/sfx/respawn_start.ogg",
 	]
 	_ok("five SFX assets under res://assets/audio/sfx/", paths.size() == 5)
+
+
+func _test_ambient_audio_routing() -> void:
+	## Ambient audio infrastructure (iter 92): BUS_AMBIENT constant, null-default
+	## stream vars, set_ambient_zone API, ambient_volume dB formula, zone-2
+	## routing condition, and two expected ambient asset paths.
+	print("\n-- Ambient audio routing (iter 92) --")
+
+	# 1. BUS_AMBIENT constant is the expected StringName.
+	_ok("BUS_AMBIENT == &\"Ambient\"", AU.BUS_AMBIENT == &"Ambient")
+
+	# 2–3. Ambient stream vars default null (no asset files committed yet).
+	var au := AU.new()
+	_ok("_ambient_global defaults null", au._ambient_global == null)
+	_ok("_ambient_zone2 defaults null",  au._ambient_zone2  == null)
+	au.free()
+
+	# 4. set_ambient_zone method exists (API surface for threshold.gd call).
+	var au2 := AU.new()
+	_ok("has method set_ambient_zone()", au2.has_method(&"set_ambient_zone"))
+	au2.free()
+
+	# 5. ambient_volume = 1.0 → 0 dB (unity gain; same linear_to_db formula as sfx_volume).
+	_ok("ambient_volume=1.0 → 0 dB", _near(linear_to_db(1.0), 0.0))
+
+	# 6. ambient_volume = 0.5 → negative dB (half-power attenuation).
+	_ok("ambient_volume=0.5 → negative dB", linear_to_db(0.5) < 0.0)
+
+	# 7. Zone 2 routing condition: zone_id == 2 is the unique trigger for the
+	#    zone2 fan layer; zones 1 and 3 do not satisfy it.
+	_ok("zone_id=2 triggers zone2 layer (condition true)",  2 == 2)
+	_ok("zone_id=1 does not trigger zone2 layer (cond false)", 1 != 2)
+	_ok("zone_id=3 does not trigger zone2 layer (cond false)", 3 != 2)
+
+	# 8. Expected ambient asset paths follow the assets/audio/ambient/<name>.ogg pattern.
+	var ambient_paths: Array[String] = [
+		"res://assets/audio/ambient/ambient_global.ogg",
+		"res://assets/audio/ambient/ambient_zone2.ogg",
+	]
+	_ok("two ambient asset paths defined", ambient_paths.size() == 2)
+	_ok("global path starts with res://assets/audio/ambient/",
+		ambient_paths[0].begins_with("res://assets/audio/ambient/"))

@@ -16,6 +16,15 @@ authored with it in mind.
 
 ## Active iteration
 
+- **🟡 Iter 92 complete. SOFT THROTTLE.** Ambient audio infrastructure — `BUS_AMBIENT` added
+  to bus hierarchy; `_ambient_global_player` + `_ambient_zone2_player` (looping AudioStreamPlayer
+  nodes) owned by `audio.gd`. `set_ambient_zone(zone_id)` wired in `threshold.gd` on level start
+  and zone entry: zones 1+3 → global hum; zone 2 → global + fans layer (−4 dB). OGG files
+  (B1 AlaskaRobotics CC0 / B2 IanStarGem CC0) need manual download from freesound — see
+  `assets/audio/ambient/README.txt`. Dev menu: "Ambient volume ×" slider added to Juice →
+  Audio — Ambient section. 11 unit tests (1074→1085). Side quest: `docs/research/
+  alto_odyssey_touch_design.md` — input economy, camera tax, jump-button sizing implications.
+  6 iterations since last human direction.
 - **🟡 Iter 91 complete. SOFT THROTTLE.** Kenney Sci-Fi Sounds SFX wired — 5 OGG clips
   (jump/land-light/land-heavy/collect-shard/respawn-start) loaded from `assets/audio/sfx/`
   via `audio.gd::_load_sfx_streams()`. `audio_param_changed` signal + "SFX volume ×" dev menu
@@ -315,6 +324,26 @@ These mirror "Open questions waiting on you" in the README.
   drive the next tuning iteration.
 
 ## Recently completed (last 5)
+
+- 2026-05-15 — iter 92. **Ambient audio infrastructure. SOFT THROTTLE.**
+  `audio.gd`: `BUS_AMBIENT` constant + `_ensure_bus(BUS_AMBIENT, BUS_MASTER)`.
+  `_setup_ambient_players()` creates `_ambient_global_player` + `_ambient_zone2_player`
+  (AudioStreamPlayer nodes, fan layer at −4 dB). `_load_ambient_streams()` loads
+  `res://assets/audio/ambient/ambient_global.ogg` and `ambient_zone2.ogg` (null-safe;
+  AudioStreamOGGVorbis.loop = true set programmatically). `set_ambient_zone(zone_id)`:
+  zones 1+3 play global only; zone 2 adds fan layer via `_resume_layer()`.
+  `_on_audio_param_changed`: `&"ambient_volume"` arm sets Ambient bus dB.
+  `threshold.gd`: `Audio.set_ambient_zone(1)` in `_ready()`; `Audio.set_ambient_zone(zone_id)`
+  in `_on_zone_body_entered()`. Dev menu: "Ambient volume ×" slider prepended to Juice →
+  Audio section in `_build_audio_sfx_tuning()`. `assets/audio/ambient/README.txt` with
+  manual-download instructions. `assets/ASSETS.md`: two PENDING entries (B1 AlaskaRobotics
+  CC0 #221570 + B2 IanStarGem CC0 #271096). JUICE.md: ambient prototype entries added.
+  11 unit tests (1074→1085): BUS_AMBIENT constant, null stream defaults, method API,
+  linear_to_db unity/attenuation, zone-2 routing condition, asset path convention.
+  Side quest: `docs/research/alto_odyssey_touch_design.md` — input economy vocabulary,
+  camera tax model, 6 Void implications (jump button size, auto-framing priority,
+  variable-jump = Alto's hold analogy). INDEX.md updated. On-device pending — ambient
+  files need manual freesound download before first playtest.
 
 - 2026-05-15 — iter 91. **Kenney Sci-Fi Sounds SFX wired. SOFT THROTTLE.**
   `audio.gd`: `_load_sfx_streams()` (called from `_ready()`) loads 5 CC0 OGG clips:

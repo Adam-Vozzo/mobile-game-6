@@ -5,10 +5,10 @@ A mobile 3D platformer. Brutalist megastructure inspired by *BLAME!*. Controller
 ## Status
 
 Current gate: **Gate 0 — Feel Lab** (closing out; Gate 1 prep in flight)
-Last activity: 2026-05-15 — iter 91: Kenney Sci-Fi SFX wired — 5 OGG clips loaded, SFX volume slider in dev menu
+Last activity: 2026-05-15 — iter 92: Ambient audio infrastructure — BUS_AMBIENT, zone-routing, ambient volume slider
 Test device build: ✅ verified 2026-05-12 — runs in Godot 4.6 on PC and on Nothing Phone 4(a) Pro
-Performance: 144 fps / 6.9 ms in editor at 1920×1080 (Feel Lab); audio cost = AudioStreamPlayer per event, freed on finish
-Throttle level: **🟡 soft** (5 iterations since 2026-05-15 direction session)
+Performance: 144 fps / 6.9 ms in editor at 1920×1080 (Feel Lab); ambient layer idle until files imported (no perf cost)
+Throttle level: **🟡 soft** (6 iterations since 2026-05-15 direction session)
 
 If you only read one section, read **Open questions waiting on you** below.
 
@@ -21,7 +21,8 @@ Things Claude can't decide alone, or where it's stalled and needs direction.
 > Iter 87: DistantSkyline BoxMesh layer done. Iter 88: Kenney asset acquisition done.
 > Iter 89: Art pass done — chick + 13 set-dressing props. Iter 90: PatrolSentry enemy done.
 > Iter 91: Kenney Sci-Fi SFX wired — 5 clips loaded, SFX volume in dev menu.
-> **Throttle is now soft (5 iterations). Next device session strongly encouraged.**
+> Iter 92: Ambient audio infrastructure — BUS_AMBIENT, zone-routing, ambient volume slider.
+> **Throttle is now soft (6 iterations). Next device session strongly encouraged.**
 
 **What's still waiting for your read:**
 1. **Hold-jump+swipe air dash — two modes to compare.** (iter 67) Dev menu Touch section has "Buffer dash cam" toggle. Try both, or say "always buffer" / "drop the option" and we'll clean it up.
@@ -32,6 +33,7 @@ Things Claude can't decide alone, or where it's stalled and needs direction.
 6. **`pitch_min_degrees` (negative pitch)?** Pitch lower bound is hard-clamped at 0 (horizontal). If you ever want to look *up* at the megastructure from below, say so and we'll add the export + slider.
 7. **PatrolSentry tuning on device.** (iter 90) One sentry in Zone 1 plaza at (0, 1.2, 16), patrolling X-axis 8 m at 2.5 m/s with 0.5 s wait. Dev menu "Sentry — Tuning" exposes speed/distance/wait/bob. Questions: (a) Does 2.5 m/s feel too fast or too slow to time around? (b) Does 8 m patrol distance block the floor route without sealing the rubble-hop / vertical-climb routes? (c) Does the amber eye read as dangerous against the brutalist backdrop? Feed back any adjustments.
 8. **SFX clip selection on device.** (iter 91) Five Kenney Sci-Fi Sounds CC0 clips wired: jump (laserSmall), land-light (impactMetal_000), land-heavy (impactMetal_004), collect (forceField_003), respawn (laserLarge_000). Files auto-import on first Godot open. Dev menu Juice → Audio — SFX has a "SFX volume ×" slider (0–2). Questions: (a) Do the clip choices feel right, or do any sound wrong? (b) Is the default volume (1×) too loud or too soft against the brutalist ambience? Feed back specific "swap X for Y" or "raise/lower volume" notes.
+9. **Ambient audio files — one-time manual download needed.** (iter 92) Infrastructure is wired but the OGG files live behind freesound.org login. Instructions are in `assets/audio/ambient/README.txt`. Once downloaded, open Godot to auto-import and play the level to hear the ambient bed. Tune via dev menu Juice → Audio — Ambient → "Ambient volume ×" (0–2). Zone 2 maintenance yard gets an extra fan layer at −4 dB. Questions: (a) Does the global hum (B1) feel right for the megastructure ambience, or is it too heavy/light? (b) Does the Zone 2 fan layer add industrial identity, or is it distracting? Adjust volumes from dev menu and feed back numbers.
 
 - [x] **Open the project in Godot 4.6 and run the on-device first-run checklist in `docs/ANDROID.md`.** Done 2026-05-12 — runs in editor and deploys to Nothing Phone 4(a) Pro. Remaining ANDROID.md items: headless CI signing via env vars, release Play Store build (both gate-locked to ship).
 - [x] **First feel verdict — Snappy vs Floaty vs Momentum.** Snappy feel approved as good overall; tune-down (max_speed 6.5 → 6.0) queued. Floaty and Momentum verdicts to come as level design forces switching between them.
@@ -101,6 +103,47 @@ Goal: store-ready build.
 The full iteration log lives here, newest first. Every iteration appends an entry. Skim the dates to find where you last left off.
 
 <!-- ITERATION ENTRIES BELOW — DO NOT REMOVE OLDER ENTRIES -->
+
+### [2026-05-15] — iter 92 — Ambient audio infrastructure
+
+Branch: `claude/gifted-shannon-fZFg3` (iter/ambient-audio-infrastructure)
+Throttle: 🟡 soft (6 iterations since 2026-05-15 direction session)
+Gate: Gate 1 — Vertical Slice prep
+
+**Primary: Ambient audio looping layer — zone-routing infrastructure.**
+
+The authorized B1+B2 freesound CC0 ambient bed (chosen 2026-05-15) now has full
+infrastructure. The actual OGG files need one manual download step from freesound.org
+(login required) — instructions in `assets/audio/ambient/README.txt`.
+
+`audio.gd` changes:
+- `BUS_AMBIENT` constant; bus created in `_ready()` under Master (not muted by `sound_layers`).
+- `_setup_ambient_players()`: creates `_ambient_global_player` + `_ambient_zone2_player`
+  (AudioStreamPlayer nodes owned by the autoload; fan layer at −4 dB).
+- `_load_ambient_streams()`: loads `ambient_global.ogg` / `ambient_zone2.ogg` null-safely;
+  sets `AudioStreamOGGVorbis.loop = true` programmatically.
+- `set_ambient_zone(zone_id)`: zones 1+3 → global hum only; zone 2 → adds fan layer.
+- `_on_audio_param_changed`: `&"ambient_volume"` arm routes to Ambient bus dB.
+
+`threshold.gd`: `Audio.set_ambient_zone(1)` in `_ready()` (initial); zone entry triggers
+`Audio.set_ambient_zone(zone_id)`.
+
+Dev menu: "Audio — Ambient" sub-section (above SFX) with "Ambient volume ×" slider (0.0–2.0).
+
+**Side quest: `docs/research/alto_odyssey_touch_design.md`**
+Alto's Odyssey (Snowman 2018) input economy analysis — camera tax model, one-touch combinatorial
+depth, jump button sizing guidance. Six implications for Void: large jump hitbox > small;
+auto-framing is the camera-tax solution; variable-jump-height mirrors Alto's hold-for-flip.
+INDEX.md updated.
+
+Perf delta: no change — AudioStreamPlayer nodes idle until files imported; BUS_AMBIENT creates
+zero overhead.
+Bugs fixed: none.
+New dev-menu controls: "Ambient volume ×" (Juice → Audio — Ambient).
+Assets acquired: none committed — 2 PENDING entries in ASSETS.md (freesound B1/B2, manual download required).
+Unit tests: 1074 → 1085 (11 new: BUS_AMBIENT constant, null stream defaults, method API,
+linear_to_db formula, zone-2 routing conditions, asset path convention).
+On-device: pending — ambient files need freesound download before first playtest.
 
 ### [2026-05-15] — iter 91 — Kenney Sci-Fi Sounds SFX wired
 

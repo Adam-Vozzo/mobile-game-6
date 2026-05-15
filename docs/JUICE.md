@@ -82,6 +82,15 @@ aren't imported yet (safe for headless/test environments). SFX volume tunable fr
 dev menu Juice → Audio — SFX ("SFX volume ×", 0.0–2.0). On-device pending — final
 clip selection and volume calibration after first device playtest.
 
+**Ambient loop layer infrastructure wired (iter 92):** `BUS_AMBIENT` added to bus
+hierarchy (under Master, not muted by `sound_layers` toggle — treated like Music).
+Two looping `AudioStreamPlayer` nodes owned by `audio.gd`. `set_ambient_zone(zone_id)`
+called from `threshold.gd` on level start and zone entry: zones 1+3 play global hum
+only; zone 2 adds the industrial-fans layer at −4 dB. OGG files are CC0 freesound
+picks (B1 AlaskaRobotics #221570 / B2 IanStarGem #271096) — **needs manual
+download** (see `assets/audio/ambient/README.txt`). Ambient volume tunable from dev
+menu Juice → Audio — Ambient ("Ambient volume ×", 0.0–2.0). On-device pending.
+
 | element | status | notes |
 |---------|--------|-------|
 | Jump SFX (`on_jump`) | prototype | `assets/audio/sfx/jump.ogg` (Kenney laserSmall_000 CC0); short sci-fi "bwoop" for wing-flap takeoff |
@@ -89,6 +98,8 @@ clip selection and volume calibration after first device playtest.
 | Land SFX — heavy (`on_land`, impact ≥ 0.25) | prototype | `assets/audio/sfx/land_heavy.ogg` (Kenney impactMetal_004 CC0); heavier clank for hard landings |
 | Collect shard SFX (`on_collect_shard`) | prototype | `assets/audio/sfx/collect_shard.ogg` (Kenney forceField_003 CC0); energy activation for data shard pick-up |
 | Respawn start SFX (`on_respawn_start`) | prototype | `assets/audio/sfx/respawn_start.ogg` (Kenney laserLarge_000 CC0); brief sci-fi burst for reboot sequence |
+| Ambient global hum (`set_ambient_zone`) | prototype | `assets/audio/ambient/ambient_global.ogg` pending manual download (B1 AlaskaRobotics CC0); plays in all zones |
+| Ambient zone-2 fan layer (`set_ambient_zone(2)`) | prototype | `assets/audio/ambient/ambient_zone2.ogg` pending manual download (B2 IanStarGem CC0); −4 dB under global hum in maintenance yard only |
 | Servo whir under run | idea | looped, pitch-modulated by speed |
 | Footstep impacts | idea | layered under whir |
 | Jump anticipation hum | idea | starts in buffer window, fades out at apex |
