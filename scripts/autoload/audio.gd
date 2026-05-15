@@ -25,7 +25,7 @@ extends Node
 ##
 ## Ambient layers are loaded from res://assets/audio/ambient/ by
 ## _load_ambient_streams(). Looping is set programmatically on each
-## AudioStreamOGGVorbis resource. set_ambient_zone(zone_id) controls which
+## AudioStreamOggVorbis resource. set_ambient_zone(zone_id) controls which
 ## layers are active:
 ##   zones 1, 3 — global industrial hum only  (B1 AlaskaRobotics CC0)
 ##   zone  2    — global hum + zone2 fans layer (B2 IanStarGem CC0)
@@ -96,12 +96,12 @@ func _setup_ambient_players() -> void:
 func _load_ambient_streams() -> void:
 	var g := load("res://assets/audio/ambient/ambient_global.ogg")
 	var z := load("res://assets/audio/ambient/ambient_zone2.ogg")
-	if g is AudioStreamOGGVorbis:
-		(g as AudioStreamOGGVorbis).loop = true
+	if g is AudioStreamOggVorbis:
+		(g as AudioStreamOggVorbis).loop = true
 		_ambient_global = g
 		_ambient_global_player.stream = g
-	if z is AudioStreamOGGVorbis:
-		(z as AudioStreamOGGVorbis).loop = true
+	if z is AudioStreamOggVorbis:
+		(z as AudioStreamOggVorbis).loop = true
 		_ambient_zone2 = z
 		_ambient_zone2_player.stream = z
 

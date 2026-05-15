@@ -9,7 +9,7 @@ Download steps:
      Log in, click Download OGG. Save as assets/audio/ambient/ambient_global.ogg
   2. Visit https://freesound.org/people/IanStarGem/sounds/271096/
      Log in, click Download OGG. Save as assets/audio/ambient/ambient_zone2.ogg
-  3. Open Godot — both files auto-import as AudioStreamOGGVorbis.
+  3. Open Godot — both files auto-import as AudioStreamOggVorbis.
   4. Looping is set programmatically in audio.gd::_load_ambient_streams()
      (no import settings change needed).
 

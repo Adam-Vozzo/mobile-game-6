@@ -107,7 +107,7 @@ func _physics_process(delta: float) -> void:
 	_bob_t += delta
 	_tick_patrol(delta)
 	var ax := patrol_axis.normalized()
-	var bob_y := sinf(_bob_t * TAU / BOB_PERIOD) * BOB_AMPLITUDE if bob_enabled else 0.0
+	var bob_y := sin(_bob_t * TAU / BOB_PERIOD) * BOB_AMPLITUDE if bob_enabled else 0.0
 	position = _origin + ax * _offset + Vector3.UP * bob_y
 
 

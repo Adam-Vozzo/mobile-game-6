@@ -5,10 +5,10 @@ A mobile 3D platformer. Brutalist megastructure inspired by *BLAME!*. Controller
 ## Status
 
 Current gate: **Gate 0 — Feel Lab** (closing out; Gate 1 prep in flight)
-Last activity: 2026-05-15 — iter 96: `_attract_to_ledge` refactor + sentry instant-reversal tests (1116→1131 assertions)
+Last activity: 2026-05-16 — direction session: post-pull repair (parser errors, chick wiring) + Threshold rebuild per quality-bar feedback
 Test device build: ✅ verified 2026-05-12 — runs in Godot 4.6 on PC and on Nothing Phone 4(a) Pro
-Performance: 144 fps / 6.9 ms in editor at 1920×1080 (Feel Lab); no perf delta this iteration
-Throttle level: **🔴 hard** (10 iterations since 2026-05-15 direction session)
+Performance: 144 fps / 6.9 ms in editor at 1920×1080 (Feel Lab); Threshold perf TBD after rebuild
+Throttle level: **🟢 unblocked** — direction session 2026-05-16
 
 If you only read one section, read **Open questions waiting on you** below.
 
@@ -115,6 +115,51 @@ Goal: store-ready build.
 The full iteration log lives here, newest first. Every iteration appends an entry. Skim the dates to find where you last left off.
 
 <!-- ITERATION ENTRIES BELOW — DO NOT REMOVE OLDER ENTRIES -->
+
+### [2026-05-16] — direction session — post-pull repair + Threshold redesign
+
+Branch: `direction/threshold-rebuild-2026-05-16`
+Throttle: 🟢 unblocked
+Gate: Gate 1 — Vertical Slice prep
+
+**Primary: human session repairing two parser errors landed from autonomous iters, fixing the chick visuals, and rebuilding Threshold per a comprehensive quality-bar critique.**
+
+**Parser-error fix-up (iter 92 + iter 90 fallout):**
+- `audio.gd`: `AudioStreamOGGVorbis` → `AudioStreamOggVorbis` (the Godot 3 spelling doesn't exist in Godot 4 — caused the level to fail loading on the human's first post-pull open).
+- `patrol_sentry.gd:110` and two test lines: `sinf(` → `sin(` (C math.h `*f` suffix doesn't exist in GDScript).
+- Doc fixes in ASSETS.md / PLAN.md / ambient README / README.md to match.
+
+**Chick wiring repair (iter 88/89 fallout — the human screenshot showed grey, backward-facing, T-pose chick):**
+- Moved `assets/art/character/colormap-cube-pets.png` → `assets/art/character/Textures/colormap.png` so the GLB's relative URI `Textures/colormap.png` resolves. ASSETS.md `Notes` field corrected — earlier autonomous note incorrectly claimed the GLB embedded the texture; it doesn't.
+- `player.tscn`: rotated `Visual/Chick` 180° around Y (Kenney Cube Pets are modelled +Z forward; Godot convention is -Z forward — character was facing the camera before).
+- `player.gd`: added `_anim_player @onready` wiring `Visual/Chick/AnimationPlayer`. New `_update_anim_state()` picks `idle` / `walk` / `run` from the GLB's 8 anims based on horizontal speed (0.4 / 2.5 m/s thresholds). Airborne falls back to `idle` since pack has no jump anim. Null-safe.
+
+**Threshold redesign — quality bar critique addressed:**
+
+Human flagged Threshold for: floating-prop dressing (no collision), endless void (no fog/skybox), thin distant towers reading as humanoid/crane silhouettes, extreme linearity, no architectural vision. Critique saved to memory as `feedback_level_design_quality_bar.md` so the autonomous loop has it as a quality bar going forward.
+
+Rebuild executed in the same session:
+- **Approach corridor (NEW, z=0..5):** Tight low-ceilinged spawn space with walls + lintel. First frame of the level no longer reveals the whole world; the chick walks out of an enclosed space into the plaza.
+- **Zone 1 — Habitation (z=5..35):** Open plaza with full enclosing walls, a central vision pillar (3×6×3 at x=2.5) blocking line-of-sight from the spawn-side, dual elevated routes (left stair-stepping up to a high lookout hosting Shard #1, right rising platforms), and load-bearing Kenney dressing (container-tall stacks against the left wall, computer-system + container-flat units integrated into the right wall — every dressing piece is wrapped in a StaticBody3D with a collision shape).
+- **Z1 → Z2 transition (z=35..38):** Lintel overhead at y=5 hides Z2 until the player drops through, then a Drop Platform at y=-2.75 catches them at the Z2 entry level.
+- **Zone 2 — Maintenance (z=38..66):** Tightly-enclosed corridor with full walls + ceiling (no more "void on the sides"). Ground route preserves the ServiceCart + MaintArm rotating hazard, with new ledges + entry steps. Overhead pipe-bridge route added (rise → bridge1 → bridge2 → drop) as an alternative high path skipping the cart. Kenney machine-bed, cog-a stacks, and pipe-large-long pieces integrated as wall-mounted architecture with collision. Z2 shard suspended at the upper pipe-bridge level.
+- **Alcove Checkpoint (z=66..72):** Preserved — small enclosed pause space with checkpoint orb and warm overhead light. New `AlcoveLintel` closes the top so the alcove reads as truly enclosed before the Z3 reveal.
+- **Zone 3 — Industrial (z=72..140):** The big reveal moment. Player exits the alcove and drops into a vast vertical chamber: full Z3 walls (1×36×72) and back wall (34×36×1) enclosing the space, DeepFloor at y=-22 establishing scale. Six descending gantries (G1..G6) thread down through the chamber past the relocated IndustrialPress. Z3 dressing scaled 1.4–2× and wrapped in colliders: a big back-wall crane, two oversized hopper-rounds at floor level, pipe-large-long horizontal pipes, structure-wall pieces. Shard #3 on a side ledge requiring detour from G2.
+- **Beat4 Ketsu (z=110..134):** Tightened down to be reachable from the gantry sequence — K1/K2/K3 at y=-14 / -14.75 / -15.5, Terminal at y=-16. Shard #2 in Beat4 at y=-13.25.
+- **Distant Skyline:** Replaced 11 thin tower silhouettes (5×150×5, 8×110×8 — these read as humanoid figures / cranes) with 10 broader masses — slabs (60×35×30, 50×40×35), bunkers (55×25×35), and a 80×50×60 megablock. Aspect ratios closer to architecture; placed both ahead (z=200..320) and behind (z=-80) plus flanking (x=±75).
+- **Atmosphere:** Fog density 0.01 → 0.030 / 0.035 / 0.045 / 0.030 per zone (default / Z1 / Z2 / Z3). `fog_aerial_perspective` 0.5 → 0.7 so distant geometry blends into the sky tint. Background colors slightly warmer per zone palette so the void reads as atmosphere instead of pure black.
+
+**Memory updates:**
+- `feedback_godot4_naming.md` — recurring Godot 3 / C-math spelling trap.
+- `feedback_level_design_quality_bar.md` — comprehensive level-design quality bar (architectural vision, props as architecture, void atmosphere, silhouettes as buildings).
+
+**Validation:** Headless `--check-only` on threshold.tscn loads with no scene-level errors (only the pre-existing missing-ambient-OGG warnings from iter 92). Pre-existing strict-warning parse errors in `test_controller_kinematics.gd` lines 2042 / 4446 / 4455 noted — untyped Variant inferences treated as errors under headless parse; tests still run via editor F5. Should be fixed in a future iter.
+
+**On-device pending:** Threshold playtest on Nothing Phone 4(a) Pro to validate: jumpability of the new G4 → G5 → press → K1 chain, Z3 vertical scale read, fog density on mobile screen, shard accessibility from G2 side-route, sentry placement in the new Z1 plaza layout.
+
+**Mid-session direction pivot.** Human looked at the rebuild and called it: still a straight line with random blocks around. The corridor shape-family isn't going to survive playtest no matter how much we polish it. Pivoted instead to a *direction-finding* strategy — added a new section to `docs/CLAUDE.md` ("Gate 1 — level direction is direction-finding, not polish") instructing the autonomous loop to seed many distinct shape-families (plaza hub, vertical tower, cavern, rooftop, etc.) with a `level_select.tscn` for playtest jump-around, until the human picks a survivor. Re-iterating on Threshold is now explicitly *not* the next move — the loop must pick an unrepresented shape next. Saved as `feedback_level_breadth_over_depth.md` memory so the directive sticks across iters.
+
+This Threshold rebuild stays in the repo as the corridor representative. Its collision-on-dressing, fog density, and skyline silhouettes are still real improvements over iter 89's pass; they just don't fix the underlying shape problem.
 
 ### [2026-05-15] — iter 96 — `_attract_to_ledge` refactor + sentry instant-reversal tests
 
@@ -261,7 +306,7 @@ infrastructure. The actual OGG files need one manual download step from freesoun
 - `_setup_ambient_players()`: creates `_ambient_global_player` + `_ambient_zone2_player`
   (AudioStreamPlayer nodes owned by the autoload; fan layer at −4 dB).
 - `_load_ambient_streams()`: loads `ambient_global.ogg` / `ambient_zone2.ogg` null-safely;
-  sets `AudioStreamOGGVorbis.loop = true` programmatically.
+  sets `AudioStreamOggVorbis.loop = true` programmatically.
 - `set_ambient_zone(zone_id)`: zones 1+3 → global hum only; zone 2 → adds fan layer.
 - `_on_audio_param_changed`: `&"ambient_volume"` arm routes to Ambient bus dB.
 

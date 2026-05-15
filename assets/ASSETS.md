@@ -25,14 +25,17 @@ do not commit the asset.
 ## Entries
 
 - assets/art/character/animal-chick.glb
-  assets/art/character/colormap-cube-pets.png
+  assets/art/character/Textures/colormap.png
   Source: https://kenney.nl/assets/cube-pets (v1.0)
   Author: Kenney (kenney.nl)
   Licence: CC0 1.0 Universal
   Date acquired: 2026-05-15
   Notes: Yellow chick model used as the Stray protagonist. Part of the Cube
-  Pets pack (24 animated 3D pets). GLB embeds the colormap texture; colormap.png
-  copy kept alongside for reference. No attribution required (CC0).
+  Pets pack (24 animated 3D pets). GLB references the colormap atlas via the
+  relative URI `Textures/colormap.png`, so the PNG must live in a sibling
+  `Textures/` directory next to the .glb for Godot's importer to resolve it.
+  GLB ships with 8 TRS animations (static, idle, walk, run, eat, dance,
+  gesture-positive, gesture-negative). No attribution required (CC0).
 
 - assets/art/architecture/factory-kit/ (143 GLB files + colormap-factory-kit.png)
   Source: https://kenney.nl/assets/factory-kit (v3.0)
@@ -75,7 +78,7 @@ do not commit the asset.
   Date acquired: pending
   Notes: "Ambient spacecraft hum" — deep bass-heavy industrial hum, 17.8 s
   loopable. Selected as B1 in ASSET_OPTIONS.md. Looping set programmatically
-  via AudioStreamOGGVorbis.loop = true in audio.gd::_load_ambient_streams().
+  via AudioStreamOggVorbis.loop = true in audio.gd::_load_ambient_streams().
   Plays on Ambient bus for all zones. No attribution required (CC0).
   Download: visit the freesound URL above, log in, click Download OGG, save
   as assets/audio/ambient/ambient_global.ogg, then reopen Godot to import.
