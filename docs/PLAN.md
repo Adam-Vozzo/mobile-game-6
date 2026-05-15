@@ -16,6 +16,15 @@ authored with it in mind.
 
 ## Active iteration
 
+- **🟢 Iter 88 complete.** Kenney asset acquisition — chick GLB wired as Stray, Factory Kit + Space
+  Station Kit copied. `animal-chick.glb` → `assets/art/character/` (CC0). 143 Factory Kit GLBs →
+  `assets/art/architecture/factory-kit/`. 97 Space Station Kit GLBs → `assets/art/architecture/
+  space-station-kit/`. `player.tscn`: Body (CapsuleMesh) + Accent (BoxMesh) replaced with Chick
+  instance (GLB packed scene, scale 0.8 under Visual). `player.gd`: `_body_mesh` @onready changed
+  to `get_node_or_null("Visual/Body") as MeshInstance3D` — null-safe, emission flash inert until
+  wired to chick mesh sub-tree in art-pass iter. `assets/ASSETS.md`: three CC0 pack entries.
+  Architecture dressing (Factory Kit in Zone 2/3, Space Station Kit in Zone 1/2) deferred to next
+  iteration. On-device pending — chick scale (0.8) and pivot alignment need device confirmation.
 - **🟢 Iter 87 complete.** DistantSkyline BoxMesh layer + Zone 3 back wall vista.
   `threshold.tscn`: 11 BoxMesh buildings (TowerA/B/D/F/H/J, SlabC/G/I/K, BunkerE)
   grouped under `DistantSkyline` Node3D — towers/slabs/bunkers at varied scales with
@@ -85,23 +94,21 @@ The next iteration should pull from the top of this list. Items marked
    12.0 + air_jumps=1 feels right at the new platform spacings. Outcomes feed back into the
    next tuning iteration.
 
-0a. **Kenney asset acquisition + Stray re-frame (Cube Pets bird).** Direction confirmed
-    2026-05-15 (see DECISIONS.md). Download three Kenney CC0 packs: Cube Pets
-    (<https://kenney.nl/assets/cube-pets>), Factory Kit (<https://kenney.nl/assets/factory-kit>),
-    Space Station Kit (<https://kenney.nl/assets/space-station-kit>). Log entries in
-    `assets/ASSETS.md`. Extract the yellow chick from Cube Pets, import into Godot 4
-    (FBX/GLTF), wire as the player Stray mesh, re-skin/animate as needed (idle / run / jump /
-    land / respawn). Existing `player.gd` `_run_reboot_effect` (squash/grow) maps cleanly to
-    feather-poof → settle → flap with no script changes. Audio dispatch stubs from iter 80
-    (`Audio.on_jump`, `on_land`, `on_respawn_start`) get bird SFX wired once B1+B2+B5 ambient
-    + Sci-Fi packs land. Architecture: drop Factory Kit set-dressing into Zone 2/3, Space
-    Station Kit pieces for Zone 1/2 modular geometry, existing flat-colour concrete materials
-    stay (no PBR pass needed for Gate 1).
+~~0a. **Kenney asset acquisition + Stray re-frame (Cube Pets bird).** Done iter 88.~~
+    ~~All three Kenney CC0 packs downloaded and extracted. `animal-chick.glb` wired in
+    `player.tscn` under `Visual/Chick` (scale 0.8, pivot at feet). 143 Factory Kit GLBs
+    in `assets/art/architecture/factory-kit/`. 97 Space Station Kit GLBs in
+    `assets/art/architecture/space-station-kit/`. `assets/ASSETS.md` updated with all
+    three entries.~~
+    **Next (art pass iter):** (a) Confirm chick scale + pivot on device; adjust 0.8× if
+    needed. (b) Wire `_body_mesh` to a specific chick sub-mesh for reboot emission flash.
+    (c) Drop Factory Kit catwalk/pipe/crane pieces into Zone 2/3 as set-dressing.
+    (d) Drop Space Station Kit floor/wall panels into Zone 1/2 geometry for modular feel.
+    (e) Wire Audio dispatch stubs (on_jump, on_land, on_respawn_start) to B5 Kenney Sci-Fi
+    SFX once acquired.
     ~~**Distant atmosphere layer** (iter 87 complete): `DistantSkyline` Node3D with 11
     BoxMesh primitives at far Z/rear/flanks added to `threshold.tscn`. HallBackWall removed
     to open Zone 3 vista. Toggle in dev menu Level → Zone Atmosphere section.~~
-    Remaining: Kenney model downloads (chick, Factory Kit, Space Station Kit), ASSETS.md
-    entries, art pass wiring. On-device fidelity check before each commit.
 
 ~~0b. **Threshold view-openings (level-design follow-up).** Done iter 87.~~
     ~~Zone 1 plaza north edge: already open (no wall), DistantSkyline towers at z=200–260
@@ -291,6 +298,14 @@ These mirror "Open questions waiting on you" in the README.
 
 ## Recently completed (last 5)
 
+- 2026-05-15 — iter 88. **Kenney asset acquisition — chick GLB wired as Stray.**
+  Downloaded Cube Pets v1.0 + Factory Kit v3.0 + Space Station Kit (all CC0). `animal-chick.glb`
+  copied to `assets/art/character/`; wired in `player.tscn` as a PackedScene instance under
+  `Visual/Chick` (scale=0.8, y=0). Body (CapsuleMesh) + Accent (BoxMesh) sub_resources removed.
+  `player.gd`: `_body_mesh` onready changed to `get_node_or_null("Visual/Body") as MeshInstance3D`
+  (null-safe; emission flash inert until chick sub-mesh wired). 143 Factory Kit GLBs + 97 Space
+  Station Kit GLBs copied to `assets/art/architecture/`. `assets/ASSETS.md`: three CC0 entries.
+  No unit test changes (no logic change). On-device pending — chick scale 0.8 and pivot TBD.
 - 2026-05-14 — iter 85. **Depth perception research + `_tick_footstep_dust` refactor. HARD THROTTLE.**
   `player.gd`: `_tick_footstep_dust(on_floor, just_landed, delta)` extracted from `_tick_timers`
   (41 → 33 lines). 10 new assertions `_test_footstep_dust_state_machine` (1020 → 1030).
