@@ -16,6 +16,16 @@ authored with it in mind.
 
 ## Active iteration
 
+- **🟡 Iter 94 complete. SOFT THROTTLE.** Trail recording lifecycle hardening tests +
+  Sky: Children of the Light touch design research. `_test_trail_lifecycle()` — 8 new
+  assertions in `tests/test_controller_kinematics.gd`: start_run() clears trail_history
+  and arms _recording; level_complete() disarms _recording; reset_run() clears trail_history;
+  _on_player_respawned() with empty _current_trail leaves history unchanged but still resets
+  _sample_accum; first non-empty respawn grows history to 1 without pop_back; _current_trail
+  cleared after archive. 1100→1108 assertions. Side quest:
+  `docs/research/sky_touch_design.md` — direct-manipulation input, tap-debt model, two-touch
+  ceiling, 15% dead zone validation, Gate 2 tap-to-move option. Closes open INDEX.md item.
+  INDEX.md updated. 8 iterations since last human direction.
 - **🟡 Iter 93 complete. SOFT THROTTLE.** PatrolSentry hardening tests + Kenney kit
   material-override research note. Two new test functions in
   `tests/test_controller_kinematics.gd`: `_test_sentry_param_dispatch` (11 assertions —
@@ -334,6 +344,19 @@ These mirror "Open questions waiting on you" in the README.
   drive the next tuning iteration.
 
 ## Recently completed (last 5)
+
+- 2026-05-15 — iter 94. **Trail lifecycle hardening tests + Sky touch design research. SOFT THROTTLE.**
+  `tests/test_controller_kinematics.gd`: `_test_trail_lifecycle()` (8 assertions):
+  start_run() clears trail_history + sets _recording=true; level_complete() sets
+  _recording=false; reset_run() clears trail_history; _on_player_respawned() with empty
+  _current_trail leaves history unchanged AND resets _sample_accum; first non-empty
+  respawn grows history to 1 without pop_back (below MAX_TRAIL_DEPTH); _current_trail
+  cleared after archive. 1100→1108 assertions. Side quest:
+  `docs/research/sky_touch_design.md` — Sky: Children of the Light gesture/input model.
+  Direct-manipulation input, tap-debt analysis, two-touch ceiling validated for current
+  air-dash design, 15% dead zone confirmed, affordance-over-text principle reinforced,
+  Gate 2 tap-to-move audience-broadening option documented. Closes open INDEX.md item.
+  INDEX.md updated with new entry.
 
 - 2026-05-15 — iter 93. **PatrolSentry hardening tests + Kenney kit material-override research. SOFT THROTTLE.**
   `tests/test_controller_kinematics.gd`: `_test_sentry_param_dispatch` (11 assertions: 4

@@ -5,10 +5,10 @@ A mobile 3D platformer. Brutalist megastructure inspired by *BLAME!*. Controller
 ## Status
 
 Current gate: **Gate 0 — Feel Lab** (closing out; Gate 1 prep in flight)
-Last activity: 2026-05-15 — iter 93: PatrolSentry hardening tests + Kenney kit material-override research
+Last activity: 2026-05-15 — iter 94: trail lifecycle hardening tests + Sky touch design research
 Test device build: ✅ verified 2026-05-12 — runs in Godot 4.6 on PC and on Nothing Phone 4(a) Pro
 Performance: 144 fps / 6.9 ms in editor at 1920×1080 (Feel Lab); no perf delta this iteration
-Throttle level: **🟡 soft** (7 iterations since 2026-05-15 direction session)
+Throttle level: **🟡 soft** (8 iterations since 2026-05-15 direction session)
 
 If you only read one section, read **Open questions waiting on you** below.
 
@@ -103,6 +103,40 @@ Goal: store-ready build.
 The full iteration log lives here, newest first. Every iteration appends an entry. Skim the dates to find where you last left off.
 
 <!-- ITERATION ENTRIES BELOW — DO NOT REMOVE OLDER ENTRIES -->
+
+### [2026-05-15] — iter 94 — Trail lifecycle hardening tests + Sky touch design research
+
+Branch: `iter/trail-lifecycle-tests-sky-research`
+Throttle: 🟡 soft (8 iterations since 2026-05-15 direction session)
+Gate: Gate 1 — Vertical Slice prep
+
+**Primary: `_test_trail_lifecycle()` — 8 hardening assertions for `game.gd` trail recording.**
+
+Covered invariants NOT in the existing `_test_ghost_trail_recording()` or `_test_game_gate1_api()`:
+- `start_run()` clears `trail_history` (prior-run ghosts purged on replay)
+- `start_run()` sets `_recording = true` (sampler armed)
+- `level_complete()` sets `_recording = false` (post-win movement not recorded)
+- `reset_run()` clears `trail_history` (clean slate for fresh game)
+- `_on_player_respawned()` with empty `_current_trail` stays at `trail_history.size() == 0`
+  (the `if size > 0` guard prevents fast-death empty entries corrupting the archive)
+- Empty-trail respawn still resets `_sample_accum` to 0 (next attempt's first sample times correctly)
+- First non-empty respawn: `trail_history` grows to 1, no `pop_back` (below `MAX_TRAIL_DEPTH`)
+- `_current_trail` cleared after archiving (next attempt records a fresh path)
+
+1100 → 1108 assertions.
+
+**Side quest: `docs/research/sky_touch_design.md` — Sky: Children of the Light.**
+
+Direct-manipulation input model, input-economy (tap-debt) analysis, two-simultaneous-touch ceiling,
+15% dead zone validation, no-tutorial affordance vocabulary, and Gate 2 tap-to-move option.
+6 concrete Void implications. Closes the open INDEX.md item for Sky.
+
+Perf: no change (tests/research only, no scene modifications).
+Bugs fixed: none.
+New dev-menu controls: none.
+Assets acquired: none.
+Research added: `docs/research/sky_touch_design.md`.
+On-device: pending (all recent features remain on-device pending).
 
 ### [2026-05-15] — iter 93 — PatrolSentry hardening tests + Kenney kit material-override research
 
