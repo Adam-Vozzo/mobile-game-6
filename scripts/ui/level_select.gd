@@ -35,6 +35,11 @@ const _LEVELS: Array[Dictionary] = [
 		"path": "res://scenes/levels/cavern.tscn",
 		"desc": "Maze with branches, low ceilings (shape family 5)",
 	},
+	{
+		"name": "DESCENT",
+		"path": "res://scenes/levels/descent.tscn",
+		"desc": "Inverted descent — fall through a dead lift shaft (shape family 6)",
+	},
 ]
 
 const _BTN_MIN  := Vector2(520.0, 88.0)

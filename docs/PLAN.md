@@ -48,6 +48,19 @@ authored with it in mind.
   the human picks a survivor. Threshold rebuild kept in repo as the corridor representative;
   next level-touching iter MUST pick an unrepresented shape-family, not iterate on Threshold.
 
+- **🟢 Iter 101 complete.** Descent level (inverted descent, shape-family 6).
+  `scenes/levels/descent.tscn` + `scripts/levels/descent.gd`: "Dead Lift Shaft" —
+  descent through a decommissioned elevator column. 7 platforms arranged in an
+  offset zigzag (TopSlab → LedgeA east → LedgeB [CP] → LedgeC east → BasePad WIN).
+  2 shard ledges off the critical path (ShardLedge1 west of TopSlab, ShardLedge2 east
+  of LedgeC — each a 1m horizontal gap jump). Expert line: skip LedgeA+LedgeC by
+  falling from TopSlab center → LedgeB → straight drop to BasePad. Four atmospheric
+  column pillars suggest shaft geometry without enclosing walls. Lighting gradient:
+  dim amber at top (old industrial) → biolume cyan at bottom (still-active reactor
+  floor — the double-reading: the shaft is dead, the destination is alive). Fog
+  density 0.065 (between rooftop clear and cavern dense — visible 2–3 floors ahead).
+  Level selector + dev menu Load Level updated. On-device pending.
+
 - **🟢 Iter 100 complete.** Cavern level (maze with branches, shape-family 5).
   `scenes/levels/cavern.tscn` + `scripts/levels/cavern.gd`: conduit-network layout,
   9 floor platforms (EntryFloor → NorthPass → JunctionRoom → WestPass+WestSpur /
@@ -224,16 +237,17 @@ The next iteration should pull from the top of this list. Items marked
 - ~~Shape 3: Open-air rooftop → Rooftop~~ ✅ exists (iter 98)
 - ~~Shape 4: Plaza hub with radiating spokes → Plaza~~ ✅ exists (iter 99)
 - ~~Shape 5: Cavern / maze with branches → Cavern~~ ✅ exists (iter 100)
-- Shape 6: Inverted descent (climbing down) — queue
+- ~~Shape 6: Inverted descent (climbing down) → Descent~~ ✅ exists (iter 101)
 - Shape 7: Enclosed obstacle gauntlet — queue
 - Shape 8: Exposed bridge crossing with vertical void below — queue
 
 Each shape needs: spawn → win state, Player/CameraRig/TouchOverlay wiring, lives in `scenes/levels/`.
 Do not iterate on an existing shape until the human picks a survivor.
 
-**Next shape to build: inverted descent (climbing down)** — player starts high and descends
-through floors/shafts, possibly with branching drops. Distinct shape: floor plan reads as a
-series of descending sub-levels visible below, not a flat maze or vertical climb upward.
+**Next shape to build: enclosed obstacle gauntlet** — tight enclosed space (no free-roaming),
+obstacles must be timed or dodged in sequence. Distinct shape: no branching, no open voids,
+each beat is a distinct mechanical obstacle separated by narrow connectors. Floor plan reads
+as a single forced corridor of hazards — but the hazards are the shapes, not the path.
 
 Boot selector and dev-menu Load Level entry already in place.
 
