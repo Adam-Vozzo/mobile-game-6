@@ -5,10 +5,10 @@ A mobile 3D platformer. Brutalist megastructure inspired by *BLAME!*. Controller
 ## Status
 
 Current gate: **Gate 0 — Feel Lab** (closing out; Gate 1 prep in flight)
-Last activity: 2026-05-15 — iter 100: Cavern level (maze with branches, shape-family 5)
+Last activity: 2026-05-15 — iter 101: Descent level (inverted descent, shape-family 6)
 Test device build: ✅ verified 2026-05-12 — runs in Godot 4.6 on PC and on Nothing Phone 4(a) Pro
 Performance: 144 fps / 6.9 ms in editor at 1920×1080 (Feel Lab); Threshold perf TBD after rebuild
-Throttle level: **🟢 normal** — 4 iters since 2026-05-16 direction session
+Throttle level: **🟡 soft** — 5 iters since 2026-05-16 direction session (overridden: active breadth-pass directive)
 
 If you only read one section, read **Open questions waiting on you** below.
 
@@ -115,6 +115,38 @@ Goal: store-ready build.
 The full iteration log lives here, newest first. Every iteration appends an entry. Skim the dates to find where you last left off.
 
 <!-- ITERATION ENTRIES BELOW — DO NOT REMOVE OLDER ENTRIES -->
+
+### [2026-05-15] — iter 101 — Descent level (inverted descent, shape-family 6)
+
+Branch: `claude/gifted-shannon-pByE1`
+Throttle: 🟡 soft (5 iters since 2026-05-16 direction session — overridden: active breadth directive)
+Gate: Gate 1 — direction-finding breadth pass
+
+**Primary: new level `scenes/levels/descent.tscn` (inverted descent, shape-family 6).**
+
+Shape-family premise: "Dead Lift Shaft" — a decommissioned elevator column bored through
+multiple floor plates. Player spawns at the TOP and descends to WIN at the bottom.
+The primary mechanic is controlled falling rather than jumping up.
+
+**Layout (Snappy-profile-calibrated, 22m total descent):**
+- **Platforms:** TopSlab (10×6 m, spawn y=0) → LedgeA (6×6 m, east offset, y=-5) → LedgeB (10×6 m, center, y=-11, CHECKPOINT) → LedgeC (6×6 m, east offset, y=-16) → BasePad (12×12 m, win, y=-22)
+- **Shard ledges:** ShardLedge1 (4×4 m, west of TopSlab, 1m gap jump) — Shard 1; ShardLedge2 (4×4 m, east of LedgeC, 1m gap jump) — Shard 2
+- **Zigzag drops:** TopSlab east edge → LedgeA (5m); LedgeA west edge → LedgeB (6m); LedgeB east edge → LedgeC (5m); LedgeC west edge → BasePad (6m). No jump required — controlled steps off edges.
+- **Expert line:** fall from TopSlab center straight to LedgeB (CP), then straight drop to BasePad — skips both LedgeA and LedgeC but also misses both shards.
+
+**Atmosphere:** Fog density 0.065 (player can see 2–3 floors ahead, building anticipation). 4 OmniLights — amber at top (old industrial rust), cold blue at LedgeA level, dim amber at LedgeB, biolume cyan at BasePad (win beacon — something still active at the bottom). Double-reading: the shaft is dead; the destination is alive. 4 decorative structural columns at corners suggest shaft geometry without wall enclosure.
+
+**Level selector + dev menu:** Descent entry added to both `level_select.gd` and `dev_menu_overlay.gd` → Load Level.
+
+Perf delta: unknown (on-device pending). No moving platforms; 7 StaticBody3D platforms + 4 visual columns — lightest structural count of all levels.
+Bugs fixed: none.
+New dev-menu controls: Load Level → Descent (inverted).
+Assets: none acquired.
+On-device: pending (drop-gap calibration, fog density at bottom, camera behaviour pointing downward).
+
+**Needs human attention:** 6 shape families now seeded (Threshold, Spire, Rooftop, Plaza, Cavern, Descent). level_select.tscn lists all six. Pick a survivor and the loop pivots to depth. Or say "keep seeding" and the next iteration adds Shape 7 (enclosed obstacle gauntlet — forced corridor of timed/dodged hazards, distinct from all current shapes).
+
+---
 
 ### [2026-05-15] — iter 100 — Cavern level (maze with branches, shape-family 5)
 
