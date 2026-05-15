@@ -5,10 +5,10 @@ A mobile 3D platformer. Brutalist megastructure inspired by *BLAME!*. Controller
 ## Status
 
 Current gate: **Gate 0 — Feel Lab** (closing out; Gate 1 prep in flight)
-Last activity: 2026-05-15 — iter 94: trail lifecycle hardening tests + Sky touch design research
+Last activity: 2026-05-15 — iter 95: threshold level lifecycle hardening tests (1108→1116 assertions)
 Test device build: ✅ verified 2026-05-12 — runs in Godot 4.6 on PC and on Nothing Phone 4(a) Pro
 Performance: 144 fps / 6.9 ms in editor at 1920×1080 (Feel Lab); no perf delta this iteration
-Throttle level: **🟡 soft** (8 iterations since 2026-05-15 direction session)
+Throttle level: **🔴 hard** (9 iterations since 2026-05-15 direction session)
 
 If you only read one section, read **Open questions waiting on you** below.
 
@@ -16,13 +16,24 @@ If you only read one section, read **Open questions waiting on you** below.
 
 Things Claude can't decide alone, or where it's stalled and needs direction.
 
-> **🟢 THROTTLE RESET — 2026-05-15 direction session.** Kenney asset direction confirmed,
-> Stray re-framed as yellow bird. Throttle cleared; feature work resumed from iter 87.
-> Iter 87: DistantSkyline BoxMesh layer done. Iter 88: Kenney asset acquisition done.
-> Iter 89: Art pass done — chick + 13 set-dressing props. Iter 90: PatrolSentry enemy done.
-> Iter 91: Kenney Sci-Fi SFX wired — 5 clips loaded, SFX volume in dev menu.
-> Iter 92: Ambient audio infrastructure — BUS_AMBIENT, zone-routing, ambient volume slider.
-> **Throttle is now soft (6 iterations). Next device session strongly encouraged.**
+> **🔴 HARD THROTTLE — stalled at iter 95 (9 iterations since 2026-05-15 direction session).**
+> Feature work suspended. Recent hardening: iter 93 PatrolSentry tests, iter 94 trail lifecycle
+> tests + Sky touch research, iter 95 threshold level lifecycle tests. The P0 queue is fully
+> blocked on device feel — on-device verification is the only meaningful unlocker.
+>
+> **Suggested next directions (pick one or more):**
+> 1. **Device session** — open Threshold on the Nothing Phone 4(a) Pro. Even 15 minutes of
+>    play generates enough feedback to unblock: Snappy tuning, sentry speed/patrol calibration,
+>    chick scale + pivot check, DistantSkyline fog density, SFX clip selection. This is the
+>    single highest-leverage action.
+> 2. **Air-dash verdict** — try both modes in the dev menu (Touch → "Buffer dash cam") and
+>    pick one or say "drop the feature entirely." Closes the last open mechanic question.
+> 3. **Industrial press routing** — say "critical path" or "atmosphere only." One sentence
+>    unblocks the level-flow work.
+> 4. **Gate 1 art style approval** — if the Kenney chick + factory kit reads well on device,
+>    say so and we'll proceed with the Poly Haven concrete texture pass (E from ASSET_OPTIONS.md).
+>
+> Until one of these arrives, iterations remain in hardening-only mode.
 
 **What's still waiting for your read:**
 1. **Hold-jump+swipe air dash — two modes to compare.** (iter 67) Dev menu Touch section has "Buffer dash cam" toggle. Try both, or say "always buffer" / "drop the option" and we'll clean it up.
@@ -103,6 +114,31 @@ Goal: store-ready build.
 The full iteration log lives here, newest first. Every iteration appends an entry. Skim the dates to find where you last left off.
 
 <!-- ITERATION ENTRIES BELOW — DO NOT REMOVE OLDER ENTRIES -->
+
+### [2026-05-15] — iter 95 — Threshold level lifecycle hardening tests
+
+Branch: `claude/gifted-shannon-2t6nG`
+Throttle: 🔴 hard (9 iterations since 2026-05-15 direction session)
+Gate: Gate 1 — Vertical Slice prep
+
+**Primary: `_test_threshold_level_lifecycle()` — 8 hardening assertions for `threshold.gd`.**
+
+Three invariant gaps covered (not tested by `_test_zone_env_bounds_and_disabled` or `_test_threshold_skyline_param`):
+
+**A. `zone_atmosphere_enabled` field state** — the existing skyline test calls `_on_atmosphere_param_changed(&"zone_atmo_enabled", false)` but only checks the skyline.visible side-effect, not whether the field itself is mutated. New assertions: field defaults to `true`; `zone_atmo_enabled=false` writes `false`; `zone_atmo_enabled=true` restores `true`; unknown param leaves field unchanged.
+
+**B. `_on_zone_body_entered` non-Player body filter** — `_active_zone` defaults to 1; a plain `Node3D` body (sentry, crate) passed with `zone_id=2` must not change `_active_zone` (early-return guard `if not body is Player`).
+
+**C. `get_spawn_transform()` null guard** — when `PlayerSpawn` marker is absent from the scene (`_spawn` is null, `_ready()` never fires in test context), method must return `Transform3D.IDENTITY` not crash.
+
+1108 → 1116 assertions.
+
+Perf: no change (tests only, no scene modifications).
+Bugs fixed: none.
+New dev-menu controls: none.
+Assets acquired: none.
+Research added: none.
+On-device: pending (all recent features remain on-device pending).
 
 ### [2026-05-15] — iter 94 — Trail lifecycle hardening tests + Sky touch design research
 
