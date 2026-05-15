@@ -138,6 +138,8 @@ func _ready() -> void:
 	_test_patrol_sentry_logic()
 	_test_audio_sfx_wiring()
 	_test_ambient_audio_routing()
+	_test_sentry_param_dispatch()
+	_test_sentry_initial_state()
 	_report()
 
 
@@ -5509,3 +5511,68 @@ func _test_ambient_audio_routing() -> void:
 	_ok("two ambient asset paths defined", ambient_paths.size() == 2)
 	_ok("global path starts with res://assets/audio/ambient/",
 		ambient_paths[0].begins_with("res://assets/audio/ambient/"))
+
+
+func _test_sentry_param_dispatch() -> void:
+	## Mirrors patrol_sentry.gd::_on_sentry_param_changed which uses GDScript
+	## self.set(prop, value) to route dev-menu slider changes to sentry properties.
+	## Tests that all four dev-menu-exposed params accept their expected types and
+	## values, and that an unknown param is a silent no-op for existing props.
+	##
+	## Uses PatrolSentry.new() without scene-tree insertion so _ready() is not
+	## called — this exercises the dispatch method in isolation.
+	print("\n-- Patrol sentry param dispatch (_on_sentry_param_changed) --")
+
+	var ps := PatrolSentry.new()
+
+	# Default export values — a silent change to a default would drift the
+	# dev-menu initial slider position and go unnoticed on device without this.
+	_ok("sentry patrol_speed default 2.5",    _near(ps.patrol_speed,    2.5))
+	_ok("sentry patrol_distance default 8.0", _near(ps.patrol_distance, 8.0))
+	_ok("sentry wait_duration default 0.5",   _near(ps.wait_duration,   0.5))
+	_ok("sentry bob_enabled default true",    ps.bob_enabled == true)
+
+	# Float dispatch — dev-menu sliders emit float values via sentry_param_changed.
+	ps._on_sentry_param_changed(&"patrol_speed",    4.0)
+	_ok("patrol_speed dispatch sets 4.0",    _near(ps.patrol_speed,    4.0))
+
+	ps._on_sentry_param_changed(&"patrol_distance", 12.0)
+	_ok("patrol_distance dispatch sets 12.0", _near(ps.patrol_distance, 12.0))
+
+	ps._on_sentry_param_changed(&"wait_duration",   1.5)
+	_ok("wait_duration dispatch sets 1.5",   _near(ps.wait_duration,   1.5))
+
+	# Bool dispatch — the bob toggle emits bool through sentry_param_changed.
+	ps._on_sentry_param_changed(&"bob_enabled", false)
+	_ok("bob_enabled dispatch → false", ps.bob_enabled == false)
+
+	ps._on_sentry_param_changed(&"bob_enabled", true)
+	_ok("bob_enabled dispatch → true",  ps.bob_enabled == true)
+
+	# Unknown property: GDScript set() on a non-existent key adds an instance
+	# variable but leaves known @export properties untouched. A dev-menu typo
+	# must never corrupt patrol_speed.
+	var speed_snap := ps.patrol_speed
+	ps._on_sentry_param_changed(&"nonexistent_sentry_param", 999.0)
+	_ok("unknown param leaves patrol_speed unchanged (GDScript set is silent no-op)",
+		_near(ps.patrol_speed, speed_snap))
+
+	ps.free()
+
+
+func _test_sentry_initial_state() -> void:
+	## Guards the five private tick-state vars that drive the patrol algorithm.
+	## PatrolSentry.new() without scene-tree insertion skips _ready(), so
+	## _origin, visual mesh, and kill-zone are absent — but the tick vars must
+	## start at their declared defaults so _tick_patrol's first frame is correct.
+	print("\n-- Patrol sentry initial state (tick vars at declaration defaults) --")
+
+	var ps := PatrolSentry.new()
+
+	_ok("_offset starts 0.0 — patrol begins at spawn origin",     _near(ps._offset,  0.0))
+	_ok("_dir starts +1.0 — first move is in the +axis direction", _near(ps._dir,    1.0))
+	_ok("_waiting starts false — not paused at startup",           ps._waiting == false)
+	_ok("_wait_t starts 0.0 — wait timer not yet running",         _near(ps._wait_t, 0.0))
+	_ok("_bob_t starts 0.0 — bob phase at sin(0) = 0 on frame 1", _near(ps._bob_t,  0.0))
+
+	ps.free()

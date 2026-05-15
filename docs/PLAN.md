@@ -16,6 +16,16 @@ authored with it in mind.
 
 ## Active iteration
 
+- **🟡 Iter 93 complete. SOFT THROTTLE.** PatrolSentry hardening tests + Kenney kit
+  material-override research note. Two new test functions in
+  `tests/test_controller_kinematics.gd`: `_test_sentry_param_dispatch` (11 assertions —
+  default-export guards for all 4 dev-menu params, float dispatch, bool dispatch, unknown-param
+  no-op) + `_test_sentry_initial_state` (5 assertions — tick-state vars at declaration
+  defaults pre-_ready). 1085→1100 assertions. Side quest:
+  `docs/research/kenney_kit_material_override.md` — two-class override rule (body →
+  mat_concrete_dark.tres, emissive detail → zone palette), PatrolSentry as reference
+  implementation, per-zone Threshold advice, Poly Haven texture-pass prereqs. INDEX.md
+  updated. 7 iterations since last human direction.
 - **🟡 Iter 92 complete. SOFT THROTTLE.** Ambient audio infrastructure — `BUS_AMBIENT` added
   to bus hierarchy; `_ambient_global_player` + `_ambient_zone2_player` (looping AudioStreamPlayer
   nodes) owned by `audio.gd`. `set_ambient_zone(zone_id)` wired in `threshold.gd` on level start
@@ -324,6 +334,17 @@ These mirror "Open questions waiting on you" in the README.
   drive the next tuning iteration.
 
 ## Recently completed (last 5)
+
+- 2026-05-15 — iter 93. **PatrolSentry hardening tests + Kenney kit material-override research. SOFT THROTTLE.**
+  `tests/test_controller_kinematics.gd`: `_test_sentry_param_dispatch` (11 assertions: 4
+  default-export guards, 3 float-property dispatch, 2 bool dispatch, 1 unknown-param no-op) +
+  `_test_sentry_initial_state` (5 assertions: _offset=0, _dir=+1, _waiting=false, _wait_t=0,
+  _bob_t=0). 1085→1100. Both tests use PatrolSentry.new() without scene tree — exercises
+  declaration defaults and direct dispatch without physics or DevMenu. Side quest:
+  `docs/research/kenney_kit_material_override.md` — two-class rule (body → mat_concrete_dark,
+  emissive detail → zone palette), PatrolSentry reference implementation, per-zone Threshold
+  prop advice, Poly Haven texture-pass prereqs, 5 implications. INDEX.md updated (new
+  "Gate 1 — art direction and kit dressing" section). 7 iterations since last human direction.
 
 - 2026-05-15 — iter 92. **Ambient audio infrastructure. SOFT THROTTLE.**
   `audio.gd`: `BUS_AMBIENT` constant + `_ensure_bus(BUS_AMBIENT, BUS_MASTER)`.
