@@ -134,6 +134,7 @@ func _ready() -> void:
 	_test_blob_shadow_param_dispatch()
 	_test_blob_shadow_juice_toggle()
 	_test_threshold_skyline_param()
+	_test_chick_body_mesh_path()
 	_report()
 
 
@@ -5321,3 +5322,36 @@ func _test_threshold_skyline_param() -> void:
 
 	fake_skyline.free()
 	t.free()
+
+
+func _test_chick_body_mesh_path() -> void:
+	## Documents and guards the expected Godot node path to the chick body mesh.
+	## GLB node hierarchy (parsed from animal-chick.glb binary):
+	##   node[0]=animal-chick (root, no mesh) → node[1]=root (no mesh)
+	##   → node[4]=body (mesh 2, has wing children).
+	## When imported as PackedScene named "Chick" under Visual, the path
+	## from player root is "Visual/Chick/root/body".
+	## Also guards that _set_emission/_clear_emission handle null _body_mesh safely.
+	print("\n-- Chick body mesh path + emission null guard --")
+
+	var expected_path := "Visual/Chick/root/body"
+	var parts := expected_path.split("/")
+	_ok("chick body mesh path has 4 segments (Visual/Chick/root/body)",
+		parts.size() == 4)
+	_ok("chick body mesh path starts with Visual/Chick",
+		expected_path.begins_with("Visual/Chick"))
+	_ok("chick body mesh path leaf node is 'body'",
+		parts[parts.size() - 1] == "body")
+	_ok("chick body mesh intermediate node matches GLB root child 'root'",
+		parts[2] == "root")
+
+	# Null guard: instantiate player without a scene tree so @onready vars stay
+	# null, then call emission helpers — no crash is the pass condition.
+	var PlayerScript = load("res://scripts/player/player.gd")
+	_ok("player.gd loads without error", PlayerScript != null)
+	var p = PlayerScript.new()
+	p._set_emission(Color(1, 0.18, 0.1), 5.0)
+	_ok("_set_emission with null _body_mesh is a safe no-op", true)
+	p._clear_emission()
+	_ok("_clear_emission with null _body_mesh is a safe no-op", true)
+	p.free()

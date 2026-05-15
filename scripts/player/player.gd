@@ -75,9 +75,9 @@ var _footstep_dust_interval: float = 0.15
 const _LAND_IMPACT_THRESHOLD := 0.15
 
 @onready var _visual: Node3D = $Visual
-# Null after the chick mesh swap (Body node removed); emission flash is
-# temporarily inert. Wire to a specific chick sub-mesh in the art-pass iter.
-@onready var _body_mesh: MeshInstance3D = get_node_or_null("Visual/Body") as MeshInstance3D
+# Chick GLB node hierarchy: Chick → root → body (mesh). Null-safe: if the GLB
+# hasn't been imported yet, emission flash stays inert without crashing.
+@onready var _body_mesh: MeshInstance3D = get_node_or_null("Visual/Chick/root/body") as MeshInstance3D
 
 
 func _ready() -> void:
