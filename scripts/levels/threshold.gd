@@ -27,6 +27,7 @@ var zone_atmosphere_enabled: bool = true
 
 @onready var _spawn: Marker3D = get_node_or_null(spawn_marker_path) as Marker3D
 @onready var _world_env: WorldEnvironment = get_node_or_null(^"WorldEnv") as WorldEnvironment
+@onready var _skyline: Node3D = get_node_or_null(^"DistantSkyline") as Node3D
 
 var _results_panel: ResultsPanel = null
 var _active_zone: int = 1
@@ -95,3 +96,6 @@ func _on_atmosphere_param_changed(param: StringName, value: Variant) -> void:
 	if param == &"zone_atmo_enabled":
 		zone_atmosphere_enabled = bool(value)
 		_apply_zone_env(_active_zone)
+	elif param == &"skyline_visible":
+		if _skyline != null:
+			_skyline.visible = bool(value)

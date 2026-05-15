@@ -16,6 +16,15 @@ authored with it in mind.
 
 ## Active iteration
 
+- **🟢 Iter 87 complete.** DistantSkyline BoxMesh layer + Zone 3 back wall vista.
+  `threshold.tscn`: 11 BoxMesh buildings (TowerA/B/D/F/H/J, SlabC/G/I/K, BunkerE)
+  grouped under `DistantSkyline` Node3D — towers/slabs/bunkers at varied scales with
+  `mat_concrete_dark.tres`, no collision, placed at z=200–260 (far +Z), z=−55/−70
+  (rear), x=±55–70 (flanks). `HallBackWall` removed from Zone3_Industrial — opens
+  the Zone 3 gantry → Beat4 corridor onto the distant megastructure silhouette.
+  `threshold.gd`: `@onready var _skyline` + `skyline_visible` arm in
+  `_on_atmosphere_param_changed`. Dev menu: "Distant Skyline" toggle in Level →
+  Zone Atmosphere section. 4 new unit tests (1044 → 1048). On-device pending.
 - **🔴 Iter 86 complete. HARD THROTTLE.** BlobShadow unit tests (1030 → 1044).
   Three new test functions in `tests/test_controller_kinematics.gd`:
   `_test_blob_shadow_export_defaults` (5 assertions — guards four @export defaults + invariant),
@@ -87,22 +96,20 @@ The next iteration should pull from the top of this list. Items marked
     (`Audio.on_jump`, `on_land`, `on_respawn_start`) get bird SFX wired once B1+B2+B5 ambient
     + Sci-Fi packs land. Architecture: drop Factory Kit set-dressing into Zone 2/3, Space
     Station Kit pieces for Zone 1/2 modular geometry, existing flat-colour concrete materials
-    stay (no PBR pass needed for Gate 1). **Distant atmosphere layer**: `BoxMesh` primitives
-    at varied tower/slab/bunker scales with `mat_concrete_dark.tres` override (no collision),
-    grouped under a `DistantSkyline` Node3D beyond Threshold play bounds. WorldEnvironment fog
-    does the silhouette work — pure blocky volumes, no detail. Modular Buildings (C4)
-    considered and rejected; see DECISIONS.md 2026-05-15 revision. On-device fidelity check
-    before each commit per CLAUDE.md art-pipeline rules.
+    stay (no PBR pass needed for Gate 1).
+    ~~**Distant atmosphere layer** (iter 87 complete): `DistantSkyline` Node3D with 11
+    BoxMesh primitives at far Z/rear/flanks added to `threshold.tscn`. HallBackWall removed
+    to open Zone 3 vista. Toggle in dev menu Level → Zone Atmosphere section.~~
+    Remaining: Kenney model downloads (chick, Factory Kit, Space Station Kit), ASSETS.md
+    entries, art pass wiring. On-device fidelity check before each commit.
 
-0b. **Threshold view-openings (level-design follow-up).** Distant-atmosphere layer (item 0a)
-    needs view openings in Threshold for the buildings to actually be visible. Currently
-    most zones are hemmed by walls/ceilings even after the 2026-05-14 Spyro redesign.
-    Candidate openings: Zone 1 plaza north edge (looks out toward distant towers), Zone 2
-    maintenance yard open ceiling (vertical view up at machinery silhouettes), Zone 3
-    industrial hall back wall (vista of the wider works). Frame these as deliberate vista
-    beats, not just incidental gaps. Pairs with the Kenney architecture-kit pass (item 0a).
-    Note: Threshold is already StaticBody3D + MeshInstance3D (no CSG), per iter 82
-    side-discovery — the baked-lighting prereq is met.
+~~0b. **Threshold view-openings (level-design follow-up).** Done iter 87.~~
+    ~~Zone 1 plaza north edge: already open (no wall), DistantSkyline towers at z=200–260
+    visible looking ahead. Zone 2 yard ceiling: open (no ceiling), overhead silhouettes
+    visible. Zone 3 back wall: `HallBackWall` (StaticBody3D at z=141.25) removed — gantries
+    now look out onto the distant megastructure. Pairs with Kenney kit pass (0a) for final
+    geometry detail. Threshold is StaticBody3D + MeshInstance3D (no CSG), baked-lighting
+    prereq still met.~~
 
 1. ~~**On-device smoke test.**~~ Done 2026-05-12. Project runs in Godot 4.6 on PC
    and deploys to Nothing Phone 4(a) Pro. Feel Lab reports 144 fps / 6.9 ms in

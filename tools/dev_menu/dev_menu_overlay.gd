@@ -358,6 +358,8 @@ func _build_atmosphere_section(vbox: VBoxContainer) -> void:
 	vbox.add_child(_make_label("Zone Atmosphere", SECTION_FONT_SIZE, false))
 	_make_toggle(vbox, "Zone atmo", true,
 		func(v: bool) -> void: DevMenu.atmosphere_param_changed.emit(&"zone_atmo_enabled", v))
+	_make_toggle(vbox, "Distant Skyline", true,
+		func(v: bool) -> void: DevMenu.atmosphere_param_changed.emit(&"skyline_visible", v))
 
 
 func _build_touch_section(vbox: VBoxContainer) -> void:

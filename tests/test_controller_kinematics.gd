@@ -133,6 +133,7 @@ func _ready() -> void:
 	_test_blob_shadow_export_defaults()
 	_test_blob_shadow_param_dispatch()
 	_test_blob_shadow_juice_toggle()
+	_test_threshold_skyline_param()
 	_report()
 
 
@@ -5290,3 +5291,33 @@ func _test_blob_shadow_juice_toggle() -> void:
 	_ok("unrelated key squash_stretch does not disable blob shadow", bs._enabled == true)
 
 	bs.free()
+
+
+func _test_threshold_skyline_param() -> void:
+	## Mirrors threshold.gd::_on_atmosphere_param_changed — skyline_visible arm.
+	## Null guard must hold when _skyline is absent (no scene tree), and the
+	## visible property must toggle when a Node3D is wired directly.
+	print("\n-- Threshold skyline param --")
+
+	var ThresholdScript = load("res://scripts/levels/threshold.gd")
+	var t = ThresholdScript.new()
+	# _ready() never fires without a scene tree; _skyline stays null.
+	# Null guard must prevent crash — reaching the next line is the pass condition.
+	t._on_atmosphere_param_changed(&"skyline_visible", true)
+	_ok("skyline_visible with null _skyline is a safe no-op", true)
+
+	# Wire a real Node3D and confirm visible is toggled.
+	var fake_skyline := Node3D.new()
+	fake_skyline.visible = true
+	t._skyline = fake_skyline
+	t._on_atmosphere_param_changed(&"skyline_visible", false)
+	_ok("skyline_visible=false hides the DistantSkyline node", fake_skyline.visible == false)
+	t._on_atmosphere_param_changed(&"skyline_visible", true)
+	_ok("skyline_visible=true shows the DistantSkyline node", fake_skyline.visible == true)
+
+	# Unrelated param must leave skyline visibility unchanged.
+	t._on_atmosphere_param_changed(&"zone_atmo_enabled", false)
+	_ok("zone_atmo_enabled param does not touch skyline visibility", fake_skyline.visible == true)
+
+	fake_skyline.free()
+	t.free()

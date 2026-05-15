@@ -1,4 +1,4 @@
-[gd_scene load_steps=80 format=3]
+[gd_scene load_steps=89 format=3]
 
 [ext_resource type="Script" path="res://scripts/levels/threshold.gd" id="1_thresh"]
 [ext_resource type="Script" path="res://scripts/levels/rotating_hazard.gd" id="2_roth"]
@@ -258,13 +258,6 @@ size = Vector3(0.5, 50, 68)
 [sub_resource type="BoxShape3D" id="Shape_IndustrialWall"]
 size = Vector3(0.5, 50, 68)
 
-[sub_resource type="BoxMesh" id="Mesh_IndustrialBack"]
-material = ExtResource("12_matCd")
-size = Vector3(28, 50, 0.5)
-
-[sub_resource type="BoxShape3D" id="Shape_IndustrialBack"]
-size = Vector3(28, 50, 0.5)
-
 [sub_resource type="BoxMesh" id="Mesh_IndustrialFloor"]
 material = ExtResource("12_matCd")
 size = Vector3(28, 1, 68)
@@ -316,6 +309,50 @@ size = Vector3(0.06, 0.06, 20.0)
 [sub_resource type="BoxMesh" id="Mesh_CartIndicator"]
 material = SubResource("Mat_Emissive_Cold")
 size = Vector3(0.3, 0.06, 0.3)
+
+[sub_resource type="BoxMesh" id="DSky_TowerA"]
+material = ExtResource("12_matCd")
+size = Vector3(12, 80, 12)
+
+[sub_resource type="BoxMesh" id="DSky_TowerB"]
+material = ExtResource("12_matCd")
+size = Vector3(8, 110, 8)
+
+[sub_resource type="BoxMesh" id="DSky_SlabC"]
+material = ExtResource("12_matCd")
+size = Vector3(50, 20, 12)
+
+[sub_resource type="BoxMesh" id="DSky_TowerD"]
+material = ExtResource("12_matCd")
+size = Vector3(5, 150, 5)
+
+[sub_resource type="BoxMesh" id="DSky_BunkerE"]
+material = ExtResource("12_matCd")
+size = Vector3(35, 15, 20)
+
+[sub_resource type="BoxMesh" id="DSky_TowerF"]
+material = ExtResource("12_matCd")
+size = Vector3(10, 70, 10)
+
+[sub_resource type="BoxMesh" id="DSky_SlabG"]
+material = ExtResource("12_matCd")
+size = Vector3(40, 12, 15)
+
+[sub_resource type="BoxMesh" id="DSky_TowerH"]
+material = ExtResource("12_matCd")
+size = Vector3(12, 90, 12)
+
+[sub_resource type="BoxMesh" id="DSky_SlabI"]
+material = ExtResource("12_matCd")
+size = Vector3(15, 8, 40)
+
+[sub_resource type="BoxMesh" id="DSky_TowerJ"]
+material = ExtResource("12_matCd")
+size = Vector3(10, 75, 10)
+
+[sub_resource type="BoxMesh" id="DSky_SlabK"]
+material = ExtResource("12_matCd")
+size = Vector3(20, 10, 30)
 
 [node name="Threshold" type="Node3D"]
 script = ExtResource("1_thresh")
@@ -713,16 +750,6 @@ mesh = SubResource("Mesh_IndustrialWall")
 [node name="Collider" type="CollisionShape3D" parent="Zone3_Industrial/HallWallRight"]
 shape = SubResource("Shape_IndustrialWall")
 
-[node name="HallBackWall" type="StaticBody3D" parent="Zone3_Industrial"]
-transform = Transform3D(1, 0, 0, 0, 1, 0, 0, 0, 1, 0, -10, 141.25)
-collision_layer = 65
-
-[node name="Mesh" type="MeshInstance3D" parent="Zone3_Industrial/HallBackWall"]
-mesh = SubResource("Mesh_IndustrialBack")
-
-[node name="Collider" type="CollisionShape3D" parent="Zone3_Industrial/HallBackWall"]
-shape = SubResource("Shape_IndustrialBack")
-
 [node name="G1" type="StaticBody3D" parent="Zone3_Industrial"]
 transform = Transform3D(1, 0, 0, 0, 1, 0, 0, 0, 1, 0, -5.25, 81)
 
@@ -898,3 +925,49 @@ transform = Transform3D(1, 0, 0, 0, 1, 0, 0, 0, 1, -5, -18.5, 119)
 
 [node name="GhostTrailRenderer" type="Node3D" parent="."]
 script = ExtResource("16_ghost")
+
+[node name="DistantSkyline" type="Node3D" parent="."]
+
+[node name="TowerA" type="MeshInstance3D" parent="DistantSkyline"]
+transform = Transform3D(1, 0, 0, 0, 1, 0, 0, 0, 1, -30, 40, 215)
+mesh = SubResource("DSky_TowerA")
+
+[node name="TowerB" type="MeshInstance3D" parent="DistantSkyline"]
+transform = Transform3D(1, 0, 0, 0, 1, 0, 0, 0, 1, 25, 55, 240)
+mesh = SubResource("DSky_TowerB")
+
+[node name="SlabC" type="MeshInstance3D" parent="DistantSkyline"]
+transform = Transform3D(1, 0, 0, 0, 1, 0, 0, 0, 1, 0, 10, 200)
+mesh = SubResource("DSky_SlabC")
+
+[node name="TowerD" type="MeshInstance3D" parent="DistantSkyline"]
+transform = Transform3D(1, 0, 0, 0, 1, 0, 0, 0, 1, -55, 75, 260)
+mesh = SubResource("DSky_TowerD")
+
+[node name="BunkerE" type="MeshInstance3D" parent="DistantSkyline"]
+transform = Transform3D(1, 0, 0, 0, 1, 0, 0, 0, 1, 45, 7.5, 210)
+mesh = SubResource("DSky_BunkerE")
+
+[node name="TowerF" type="MeshInstance3D" parent="DistantSkyline"]
+transform = Transform3D(1, 0, 0, 0, 1, 0, 0, 0, 1, -25, 35, -70)
+mesh = SubResource("DSky_TowerF")
+
+[node name="SlabG" type="MeshInstance3D" parent="DistantSkyline"]
+transform = Transform3D(1, 0, 0, 0, 1, 0, 0, 0, 1, 15, 6, -55)
+mesh = SubResource("DSky_SlabG")
+
+[node name="TowerH" type="MeshInstance3D" parent="DistantSkyline"]
+transform = Transform3D(1, 0, 0, 0, 1, 0, 0, 0, 1, 70, 45, 55)
+mesh = SubResource("DSky_TowerH")
+
+[node name="SlabI" type="MeshInstance3D" parent="DistantSkyline"]
+transform = Transform3D(1, 0, 0, 0, 1, 0, 0, 0, 1, 60, 4, 100)
+mesh = SubResource("DSky_SlabI")
+
+[node name="TowerJ" type="MeshInstance3D" parent="DistantSkyline"]
+transform = Transform3D(1, 0, 0, 0, 1, 0, 0, 0, 1, -70, 37.5, 40)
+mesh = SubResource("DSky_TowerJ")
+
+[node name="SlabK" type="MeshInstance3D" parent="DistantSkyline"]
+transform = Transform3D(1, 0, 0, 0, 1, 0, 0, 0, 1, -58, 5, 90)
+mesh = SubResource("DSky_SlabK")

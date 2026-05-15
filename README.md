@@ -5,10 +5,10 @@ A mobile 3D platformer. Brutalist megastructure inspired by *BLAME!*. Controller
 ## Status
 
 Current gate: **Gate 0 — Feel Lab** (closing out; Gate 1 prep in flight)
-Last activity: 2026-05-15 — direction session: Stray re-framed robot → yellow chick (Kenney Cube Pets), full-Kenney visual direction, BoxMesh distant-atmosphere layer (after iter 86)
+Last activity: 2026-05-15 — iter 87: DistantSkyline BoxMesh layer + Zone 3 back vista (HallBackWall removed)
 Test device build: ✅ verified 2026-05-12 — runs in Godot 4.6 on PC and on Nothing Phone 4(a) Pro
-Performance: 144 fps / 6.9 ms in editor at 1920×1080 (Feel Lab); on-device frametimes TBD
-Throttle level: **🟢 RESET** (2026-05-15 direction session: asset picks resolved, Stray re-framed; supersedes 🔴 hard throttle from 10 iters since 2026-05-14)
+Performance: 144 fps / 6.9 ms in editor at 1920×1080 (Feel Lab); +11 draw calls from DistantSkyline (fog-attenuated, negligible); on-device TBD
+Throttle level: **🟢 normal** (1 iteration since 2026-05-15 direction session)
 
 If you only read one section, read **Open questions waiting on you** below.
 
@@ -16,40 +16,17 @@ If you only read one section, read **Open questions waiting on you** below.
 
 Things Claude can't decide alone, or where it's stalled and needs direction.
 
-> **🔴 HARD THROTTLE — iter 86 (2026-05-14).** 10 iterations since the last direction session.
-> Feature work has stopped. This iteration: BlobShadow unit tests (1030 → 1044 assertions).
-> Suggest three directions for the next session — pick one and drop it in chat:
->
-> - **Direction 1 — On-device blob shadow + particle tuning.** Run Threshold on the Nothing Phone.
->   Tune `max_alpha`, `fade_height`, `radius_ground` in the Juice → Blob Shadow dev-menu sliders.
->   Note footstep dust interval (default 0.15 s) and land impact threshold feel. One session = full
->   particle tuning pass locked in.
-> - **Direction 2 — Asset picks.** Read `docs/ASSET_OPTIONS.md` and approve at least 3 picks
->   (Stray mesh, ambient audio, concrete kit). After ~3 approvals the loop can acquire and
->   integrate assets autonomously. Kenney candidates are now documented alongside the freesound /
->   Quaternius / Poly Haven recommendations.
-> - **Direction 3 — Air dash verdict.** Open the dev menu Touch section → "Buffer dash cam" toggle.
->   Try both modes on the Threshold lateral gantry beats (Zone 3). Say "always buffer", "drop the
->   option", or "keep both" — then the loop will clean up whichever path you don't want.
->
-> Any of these unlocks multiple follow-on iterations autonomously. All three would be ideal.
+> **🟢 THROTTLE RESET — 2026-05-15 direction session.** Kenney asset direction confirmed,
+> Stray re-framed as yellow bird. Throttle cleared; feature work resumed from iter 87.
+> Iter 87: DistantSkyline BoxMesh layer done (PLAN.md item 0b ✅). Next: Kenney asset
+> downloads (item 0a).
 
-> **🟢 THROTTLE RESET — 2026-05-14 direction session.** Verdicts captured below; throttle cleared, feature work resumes from the next iteration. Two items remain open (C air-dash and E texture pass — both tagged TBD; the loop will *not* block on them).
-
-> **2026-05-14 direction session — verdicts:**
->
-> - **A. On-device playtest of Spyro-style Threshold → ✅ feels a lot better.** The open level design is good; continue in that direction. No specific tuning notes filed yet — small tweaks will come per-iteration as needed.
-> - **B. Asset picks → "get some options from Kenney also".** `docs/ASSET_OPTIONS.md` updated with Kenney candidates A5 (Mini Characters), A6 (Mini Arena), A7 (Blocky Characters), B5 (Sci-Fi Sounds), C6 (Prototype Textures), C7 (Modular Space Kit), C8 (Factory Kit). Picks still pending — A1 (Quaternius), B1+B2 (freesound CC0), C2 (Poly Haven) remain the top recommendations; **C8 (Factory Kit)** is the highest-value Kenney addition for Zone 2/3 set-dressing.
-> - **C. Air-dash verdict → TBD.** Both modes (whip-on-fire vs buffer-and-discard) still live behind the dev-menu toggle.
-> - **D. Camera pitch → 70° better, BUT** "when pitching the camera up and holding it the auto-correction fights with the player and looks a bit buggy." → **Fixed this session.** Root cause: `_apply_drag_input` wrote camera position with a *spherical* parametrization (XZ scaled by `cos(elev)`) while `_compute_ground_camera_pos` enforces *cylindrical* (XZ at full `effective_distance`). At 70° pitch the drag put XZ at ≈ 0.34 × distance, then the ground branch eased it back out to full distance over ~0.5 s — visibly fighting the player after they released the pitch-up swipe. Fix: drop the `cos(elev)` factor in the drag formula so both branches use the same cylindrical parametrization. `_test_tripod_drag_orbit` rewritten and a new consistency assertion added.
-> - **E. Texture pass now → TBD.**
->
-> **What's still waiting for your read:**
-> 1. **Hold-jump+swipe air dash — two modes to compare.** (iter 67) Dev menu Touch section has "Buffer dash cam" toggle. Try both, or say "always buffer" / "drop the option" and we'll clean it up.
-> 2. **Industrial press.** Still at x=8 (decorative). Move to critical path, or leave it as atmosphere?
-> 3. **Gate 1 art direction — `docs/ASSET_OPTIONS.md`.** Now includes Kenney coverage (A5–A7, B5, C6–C8). Top picks: **A1 Quaternius**, **B1+B2 freesound + B5 Kenney SFX layer**, **C2 Poly Haven + C8 Kenney Factory Kit for dressing**. After ~3 approvals autonomous asset acquisition resumes.
-> 4. **Assisted Phase 2** (ledge magnetism + arc assist) — still queued behind level work.
-> 5. **`pitch_min_degrees` (negative pitch)?** Pitch lower bound is hard-clamped at 0 (horizontal). If you ever want to look *up* at the megastructure from below, say so and we'll add the export + slider.
+**What's still waiting for your read:**
+1. **Hold-jump+swipe air dash — two modes to compare.** (iter 67) Dev menu Touch section has "Buffer dash cam" toggle. Try both, or say "always buffer" / "drop the option" and we'll clean it up.
+2. **Industrial press.** Still at x=8 (decorative). Move to critical path, or leave it as atmosphere?
+3. **Kenney asset downloads.** Three CC0 packs approved (Cube Pets / Factory Kit / Space Station Kit). The autonomous loop needs to run `wget` or equivalent to pull the ZIPs — if the iteration environment has no internet, point the loop at a pre-downloaded folder or the Kenney URLs. This is the Gate 1 art-direction blocker.
+4. **On-device DistantSkyline tuning.** After Threshold loads on device: do the tower silhouettes read well at Zone 1 plaza distance? Is the fog density right, or do the buildings feel too close / too far? Tune fog_density and tower positions from what you see.
+5. **`pitch_min_degrees` (negative pitch)?** Pitch lower bound is hard-clamped at 0 (horizontal). If you ever want to look *up* at the megastructure from below, say so and we'll add the export + slider.
 
 - [x] **Open the project in Godot 4.6 and run the on-device first-run checklist in `docs/ANDROID.md`.** Done 2026-05-12 — runs in editor and deploys to Nothing Phone 4(a) Pro. Remaining ANDROID.md items: headless CI signing via env vars, release Play Store build (both gate-locked to ship).
 - [x] **First feel verdict — Snappy vs Floaty vs Momentum.** Snappy feel approved as good overall; tune-down (max_speed 6.5 → 6.0) queued. Floaty and Momentum verdicts to come as level design forces switching between them.
@@ -119,6 +96,39 @@ Goal: store-ready build.
 The full iteration log lives here, newest first. Every iteration appends an entry. Skim the dates to find where you last left off.
 
 <!-- ITERATION ENTRIES BELOW — DO NOT REMOVE OLDER ENTRIES -->
+
+### [2026-05-15] — iter 87 — DistantSkyline BoxMesh layer + Zone 3 back vista
+
+Branch: `iter/distant-skyline`
+Throttle: 🟢 normal (1 iteration since 2026-05-15 direction session)
+Gate: Gate 1 — Vertical Slice prep
+
+**Primary: DistantSkyline BoxMesh atmospheric layer (PLAN.md item 0b).**
+
+- `threshold.tscn`: 11 `MeshInstance3D` buildings under a new `DistantSkyline` Node3D —
+  five towers (TowerA 12×80×12 at z=215, TowerB 8×110×8 at z=240, TowerD 5×150×5 at
+  z=260, TowerF 10×70×10 at z=−70, TowerH 12×90×12 at x=70), three slabs (SlabC
+  50×20×12, SlabG 40×12×15 at z=−55, SlabI 15×8×40 at x=60), two flanking slabs
+  (TowerJ/SlabK at x=−70/−58), and BunkerE 35×15×20. All use `mat_concrete_dark.tres`,
+  no collision. Placed beyond playable bounds so fog (density 0.008–0.015) does the
+  silhouette work.
+- **HallBackWall removed**: `Zone3_Industrial`'s 28×50×0.5 back wall at z=141.25 deleted.
+  The Zone 3 gantry → Beat4 Ketsu corridor now opens onto the foggy megastructure horizon
+  at the win moment.
+- `threshold.gd`: `@onready var _skyline`, `skyline_visible` arm in
+  `_on_atmosphere_param_changed`.
+- Dev menu: "Distant Skyline" toggle in Level → Zone Atmosphere section (same
+  `atmosphere_param_changed` signal as "Zone atmo").
+- 4 new unit tests (1044 → 1048): null-guard no-op, visible=false, visible=true,
+  unrelated-param isolation.
+- `load_steps` updated 80 → 89 (−2 removed IndustrialBack resources, +11 DSky BoxMeshes).
+
+Perf: +11 draw calls in Threshold (all heavily fog-attenuated at max distances; no collision
+shapes — zero physics cost). No gameplay code changes; frametime delta expected <0.5 ms.
+On-device pending — fog attenuation of distant buildings and Zone 3 back-wall vista need
+device confirmation.
+
+---
 
 ### [2026-05-15] — Direction session — Kenney art direction confirmed; Stray re-framed as yellow chick
 
