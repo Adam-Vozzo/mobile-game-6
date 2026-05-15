@@ -5,10 +5,10 @@ A mobile 3D platformer. Brutalist megastructure inspired by *BLAME!*. Controller
 ## Status
 
 Current gate: **Gate 0 — Feel Lab** (closing out; Gate 1 prep in flight)
-Last activity: 2026-05-15 — iter 92: Ambient audio infrastructure — BUS_AMBIENT, zone-routing, ambient volume slider
+Last activity: 2026-05-15 — iter 93: PatrolSentry hardening tests + Kenney kit material-override research
 Test device build: ✅ verified 2026-05-12 — runs in Godot 4.6 on PC and on Nothing Phone 4(a) Pro
-Performance: 144 fps / 6.9 ms in editor at 1920×1080 (Feel Lab); ambient layer idle until files imported (no perf cost)
-Throttle level: **🟡 soft** (6 iterations since 2026-05-15 direction session)
+Performance: 144 fps / 6.9 ms in editor at 1920×1080 (Feel Lab); no perf delta this iteration
+Throttle level: **🟡 soft** (7 iterations since 2026-05-15 direction session)
 
 If you only read one section, read **Open questions waiting on you** below.
 
@@ -103,6 +103,45 @@ Goal: store-ready build.
 The full iteration log lives here, newest first. Every iteration appends an entry. Skim the dates to find where you last left off.
 
 <!-- ITERATION ENTRIES BELOW — DO NOT REMOVE OLDER ENTRIES -->
+
+### [2026-05-15] — iter 93 — PatrolSentry hardening tests + Kenney kit material-override research
+
+Branch: `claude/gifted-shannon-ZktUZ`
+Throttle: 🟡 soft (7 iterations since 2026-05-15 direction session)
+Gate: Gate 1 — Vertical Slice prep
+
+**Primary: Hardening unit tests for PatrolSentry param dispatch and initial state.**
+
+Two new test functions in `tests/test_controller_kinematics.gd` (1085→1100 assertions):
+
+- `_test_sentry_param_dispatch` (11 assertions): Guards the `_on_sentry_param_changed`
+  dispatch which uses GDScript `self.set(prop, value)` — more flexible than a match
+  statement but silent about errors. Tests: 4 default-export guards (patrol_speed=2.5,
+  patrol_distance=8.0, wait_duration=0.5, bob_enabled=true); 3 float-property dispatch
+  verifications; 2 bool-dispatch verifications (bob_enabled toggle); 1 unknown-param
+  no-op assertion (typo in dev menu must not corrupt patrol_speed).
+- `_test_sentry_initial_state` (5 assertions): Guards tick-state vars at their
+  declaration defaults (`_offset=0.0, _dir=+1.0, _waiting=false, _wait_t=0.0,
+  _bob_t=0.0`) — tested pre-`_ready()` so physics and DevMenu are absent.
+
+Both tests use `PatrolSentry.new()` without scene-tree insertion, following the same
+pattern as `_test_blob_shadow_export_defaults` / `_test_blob_shadow_param_dispatch`.
+
+**Side quest: `docs/research/kenney_kit_material_override.md`**
+
+Synthesis note documenting the override pattern established in iters 89–90. Covers:
+two-class rule (override body with `mat_concrete_dark.tres`; keep/tune emissive detail
+strips to zone palette), PatrolSentry as canonical reference implementation, per-zone
+Threshold advice for all 13 placed props, material-slot lookup approach for Kenney GLBs,
+and what blocks the full Poly Haven texture pass (E — TBD). 5 concrete implications.
+INDEX.md updated with a new "Gate 1 — art direction and kit dressing" section.
+
+Perf: no change (tests only; no scene modifications).
+Bugs fixed: none.
+New dev-menu controls: none.
+Assets acquired: none.
+Research added: `kenney_kit_material_override.md`.
+On-device: pending (all recent features).
 
 ### [2026-05-15] — iter 92 — Ambient audio infrastructure
 

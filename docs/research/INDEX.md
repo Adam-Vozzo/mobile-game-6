@@ -188,6 +188,10 @@ Suggested:
 
 - [`audio_placeholder.md`](audio_placeholder.md) — Placeholder SFX strategy for Gate 1. Bus hierarchy (Master → Music / SFX_Player / SFX_World) implemented in `audio.gd`; dispatch points wired (jump, land, collect, respawn). Four options surveyed: silence (current, recommended), Kenney B5, individual freesound CC0 clips, procedural. Recommendation: stay silent until human confirms sound direction pick from ASSET_OPTIONS.md. `LAND_HEAVY_THRESHOLD = 0.25` documented and tested. AudioStreamRandomizer pattern for post-direction variation included.
 
+## Gate 1 — art direction and kit dressing
+
+- [`kenney_kit_material_override.md`](kenney_kit_material_override.md) — Pattern for making Kenney Factory Kit + Space Station Kit pieces read as brutalist megastructure. Two-class rule: override structural bodies with `mat_concrete_dark.tres`; keep emissive detail strips and tune them to zone palette (sodium amber Z1 / cold blue-white Z2 / amber-orange Z3). PatrolSentry (`patrol_sentry.gd`) is the canonical reference implementation. Per-zone advice for all 13 Threshold props. Notes on what blocks the full Poly Haven texture pass (E — TBD, human-gated). 5 concrete implications.
+
 ## Gate 1 — level hazard design
 
 - [`machinery_hazards.md`](machinery_hazards.md) — Industrial machinery as platformer
