@@ -48,6 +48,17 @@ authored with it in mind.
   the human picks a survivor. Threshold rebuild kept in repo as the corridor representative;
   next level-touching iter MUST pick an unrepresented shape-family, not iterate on Threshold.
 
+- **🟢 Iter 102 complete.** Filterbank level (enclosed obstacle gauntlet, shape-family 7).
+  `scenes/levels/gauntlet.tscn` + `scripts/levels/gauntlet.gd`: "The Filterbank" —
+  a sequence of decommissioned industrial processing chambers. Hazard sequence:
+  Beat 1 (Press1, 1.5 s dormant, 3.5 m stroke) → Beat 2 (PatrolSentry ±3 m X,
+  2.0 m/s) → Beat 3 (MovingPlatform over 8 m void, 4 s period) → Beat 4 (Press2
+  1.2 s dormant + Sentry 2.5 m/s combined). Two shard shelves off-path. Checkpoint
+  after sentry, before void gap. KillZone on each press is full room width (10 m) —
+  player cannot dodge around the press during stroke. Lighting arc: amber → red-amber
+  → cold blue → amber → biolume cyan. Fog 0.080. Level selector + dev menu updated.
+  On-device pending: timing windows, platform feel, combined beat difficulty.
+
 - **🟢 Iter 101 complete.** Descent level (inverted descent, shape-family 6).
   `scenes/levels/descent.tscn` + `scripts/levels/descent.gd`: "Dead Lift Shaft" —
   descent through a decommissioned elevator column. 7 platforms arranged in an
@@ -238,16 +249,17 @@ The next iteration should pull from the top of this list. Items marked
 - ~~Shape 4: Plaza hub with radiating spokes → Plaza~~ ✅ exists (iter 99)
 - ~~Shape 5: Cavern / maze with branches → Cavern~~ ✅ exists (iter 100)
 - ~~Shape 6: Inverted descent (climbing down) → Descent~~ ✅ exists (iter 101)
-- Shape 7: Enclosed obstacle gauntlet — queue
+- ~~Shape 7: Enclosed obstacle gauntlet → Filterbank~~ ✅ exists (iter 102)
 - Shape 8: Exposed bridge crossing with vertical void below — queue
 
 Each shape needs: spawn → win state, Player/CameraRig/TouchOverlay wiring, lives in `scenes/levels/`.
 Do not iterate on an existing shape until the human picks a survivor.
 
-**Next shape to build: enclosed obstacle gauntlet** — tight enclosed space (no free-roaming),
-obstacles must be timed or dodged in sequence. Distinct shape: no branching, no open voids,
-each beat is a distinct mechanical obstacle separated by narrow connectors. Floor plan reads
-as a single forced corridor of hazards — but the hazards are the shapes, not the path.
+**Next shape to build: exposed bridge crossing** — narrow path or walkway spanning a wide void,
+with vertical depth visible below all edges. Distinct from Rooftop (Rooftop is a surface,
+bridge is a path over emptiness) and from Descent (Descent controls the fall, bridge requires
+not falling). Floor plan from above: a single line or branching line across a chasm — the void
+IS the spatial grammar.
 
 Boot selector and dev-menu Load Level entry already in place.
 

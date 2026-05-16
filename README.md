@@ -5,10 +5,10 @@ A mobile 3D platformer. Brutalist megastructure inspired by *BLAME!*. Controller
 ## Status
 
 Current gate: **Gate 0 — Feel Lab** (closing out; Gate 1 prep in flight)
-Last activity: 2026-05-15 — iter 101: Descent level (inverted descent, shape-family 6)
+Last activity: 2026-05-16 — iter 102: Filterbank level (enclosed obstacle gauntlet, shape-family 7)
 Test device build: ✅ verified 2026-05-12 — runs in Godot 4.6 on PC and on Nothing Phone 4(a) Pro
 Performance: 144 fps / 6.9 ms in editor at 1920×1080 (Feel Lab); Threshold perf TBD after rebuild
-Throttle level: **🟡 soft** — 5 iters since 2026-05-16 direction session (overridden: active breadth-pass directive)
+Throttle level: **🟡 soft** — 6 iters since 2026-05-16 direction session (overridden: active breadth-pass directive)
 
 If you only read one section, read **Open questions waiting on you** below.
 
@@ -116,6 +116,46 @@ The full iteration log lives here, newest first. Every iteration appends an entr
 
 <!-- ITERATION ENTRIES BELOW — DO NOT REMOVE OLDER ENTRIES -->
 
+### [2026-05-16] — iter 102 — Filterbank level (enclosed obstacle gauntlet, shape-family 7)
+
+Branch: `iter/gauntlet-level`
+Throttle: 🟡 soft (6 iters since 2026-05-16 direction session — overridden: active breadth directive)
+Gate: Gate 1 — direction-finding breadth pass
+
+**Primary: new level `scenes/levels/gauntlet.tscn` (enclosed obstacle gauntlet, shape-family 7).**
+
+Shape-family premise: "The Filterbank" — a sequence of sealed industrial processing chambers
+connected by a single forced corridor. Each chamber houses one surviving mechanical hazard.
+Distinct from all six existing shapes: no branching, no open voids, no exploration.
+The machines ARE the spatial grammar.
+
+**Hazard sequence (introduce then combine):**
+- **Beat 1 — Press1:** Industrial press at z=16, 8×2×6 m body, dormant 1.5 s, stroke 3.5 m.
+  KillZone is 10 m wide (full room width) — zero side passage during stroke. After timing,
+  optional ShardShelf1 east side (jump up, 2 m height).
+- **Beat 2 — Sentry Corridor:** PatrolSentry spawned at z=28, X-axis ±3 m at 2.0 m/s.
+  Optional ShardShelf2 east side (collect while sentry is at west end). Checkpoint here.
+- **Beat 3 — Moving Platform:** 8 m void gap (z=38–46). Platform travels ±2 m from z=40 to z=44
+  (0.5 m clearance from each floor edge). KillFloor under gap. Player must jump on, ride, jump off.
+- **Beat 4 — Combined:** Press2 (1.2 s dormant, harder) at z=56 + Sentry B4 (2.5 m/s) at z=62.
+  Both rhythms active simultaneously in the same 18 m chamber.
+
+**Atmosphere:** Fog 0.080. Ceiling + side walls (MeshInstance3D) enclose all bays.
+Lighting arc: amber (entry) → red-amber (press beats) → cold blue (sentry) → amber (void) →
+biolume cyan exit. Total level length 76 m.
+
+Perf delta: unknown (on-device pending). No CSG; StaticBody3D floors + AnimatableBody3D hazards.
+Bugs fixed: none.
+New dev-menu controls: Load Level → Filterbank (gauntlet).
+Assets: none.
+On-device pending: press timing windows, sentry speeds, platform ride feel, combined beat difficulty.
+
+**Needs human attention:** 7 shape families now seeded (Threshold, Spire, Rooftop, Plaza, Cavern,
+Descent, Filterbank). level_select.tscn lists all seven. Pick a survivor and the loop pivots to
+depth. Or say "keep seeding" — next iter adds Shape 8 (exposed bridge crossing over vertical void).
+
+---
+
 ### [2026-05-15] — iter 101 — Descent level (inverted descent, shape-family 6)
 
 Branch: `claude/gifted-shannon-pByE1`
@@ -144,7 +184,7 @@ New dev-menu controls: Load Level → Descent (inverted).
 Assets: none acquired.
 On-device: pending (drop-gap calibration, fog density at bottom, camera behaviour pointing downward).
 
-**Needs human attention:** 6 shape families now seeded (Threshold, Spire, Rooftop, Plaza, Cavern, Descent). level_select.tscn lists all six. Pick a survivor and the loop pivots to depth. Or say "keep seeding" and the next iteration adds Shape 7 (enclosed obstacle gauntlet — forced corridor of timed/dodged hazards, distinct from all current shapes).
+**Needs human attention:** 7 shape families now seeded (Threshold, Spire, Rooftop, Plaza, Cavern, Descent, Filterbank). level_select.tscn lists all seven. **Pick a survivor and the loop pivots to depth on that shape.** Or say "keep seeding" — next iter adds Shape 8 (exposed bridge crossing over vertical void, distinct from Rooftop which is a surface).
 
 ---
 
