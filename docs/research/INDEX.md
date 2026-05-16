@@ -140,6 +140,21 @@ Suggested (still open):
 - ~~Mark Brown / Game Maker's Toolkit — specific 3D platformer level-design episodes.~~ Covered above (holistic_level_design.md).
 - ~~Steve Lee (doublefunction.co.uk) — GDC talk "An Approach to Holistic Level Design."~~ Done (iter 17, holistic_level_design.md).
 
+## Gate 1 — ghost trail visual design
+
+- [`ghost_trail_visual.md`](ghost_trail_visual.md) — Visual design for
+  the SMB-style ghost trail in Void's brutalist grey-concrete palette.
+  Key findings: (1) the current grey trail colour (`0.55, 0.55, 0.60`)
+  is invisible against concrete — cold blue `Color(0.40, 0.55, 0.95)` has
+  the contrast needed (complements sodium amber, echoes biolume palette,
+  does not dilute Stray yellow); (2) `attempt_alpha_max` should be 0.50
+  (was 0.35) with the corrected colour; (3) **point_t bug fixed** in
+  `ghost_trail_renderer.gd`: short trails now normalise over their actual
+  length (newest point always reaches full attempt_alpha, not 0.023);
+  (4) default `visible_window_s = 3.0 s` recommended for depth pass;
+  (5) keep juice toggle OFF by default until on-device frametime is
+  measured. Written iter 110.
+
 ## Gate 1 — shape selection
 
 - [`camera_per_shape.md`](camera_per_shape.md) — Per-shape-family camera tuning guide.

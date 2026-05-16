@@ -5,10 +5,10 @@ A mobile 3D platformer. Brutalist megastructure inspired by *BLAME!*. Controller
 ## Status
 
 Current gate: **Gate 0 — Feel Lab** (closing out; Gate 1 prep in flight)
-Last activity: 2026-05-16 — iter 109: camera per-shape research note
+Last activity: 2026-05-16 — iter 110: ghost trail visual design + point_t bug fix
 Test device build: ✅ verified 2026-05-12 — runs in Godot 4.6 on PC and on Nothing Phone 4(a) Pro
 Performance: 144 fps / 6.9 ms in editor at 1920×1080 (Feel Lab); Threshold perf TBD after rebuild
-Throttle level: **🔴 hard** — 13 iters since 2026-05-16 direction session; FULLY STALLED — awaiting shape-family pick
+Throttle level: **🔴 hard** — 14 iters since 2026-05-16 direction session; FULLY STALLED — awaiting shape-family pick
 
 If you only read one section, read **Open questions waiting on you** below.
 
@@ -16,7 +16,7 @@ If you only read one section, read **Open questions waiting on you** below.
 
 Things Claude can't decide alone, or where it's stalled and needs direction.
 
-> **🔴 FULLY STALLED — 12 iterations since 2026-05-16 direction session.**
+> **🔴 FULLY STALLED — 14 iterations since 2026-05-16 direction session.**
 > The breadth directive is complete: all 9 shape-families from `docs/CLAUDE.md` are built and
 > now all on main. Shape inventory: Threshold (corridor), Spire (tower), Rooftop, Plaza (hub),
 > Cavern (maze), Descent (inverted), Filterbank (gauntlet), Viaduct (bridge crossing), Arena (ringed).
@@ -120,6 +120,35 @@ Goal: store-ready build.
 The full iteration log lives here, newest first. Every iteration appends an entry. Skim the dates to find where you last left off.
 
 <!-- ITERATION ENTRIES BELOW — DO NOT REMOVE OLDER ENTRIES -->
+
+### [2026-05-16] — iter 110 — Ghost trail visual design + point_t bug fix
+
+Branch: `claude/gifted-shannon-3naGI`
+Throttle: 🔴 hard (14 iters since 2026-05-16 direction session; FULLY STALLED)
+Gate: Gate 1 — direction-finding breadth pass (awaiting human shape pick)
+
+**Primary:** `docs/research/ghost_trail_visual.md` written — visual design for
+SMB-style ghost trails against the brutalist grey-concrete palette. Key findings:
+(1) Current grey trail colour (`0.55, 0.55, 0.60`) is invisible on concrete — cold
+blue `Color(0.40, 0.55, 0.95)` has the contrast needed (complements sodium amber,
+echoes biolume palette, does not dilute Stray yellow). (2) `attempt_alpha_max`
+raised to 0.50 (was 0.35) to match corrected colour. (3) Default `visible_window_s`
+recommendation: 3.0 s for depth pass. (4) Keep juice toggle OFF by default until
+on-device frametime is measured. Both colour and alpha changes applied to
+`ghost_trail_renderer.gd`.
+
+**Side quest (bug fix):** `point_t` normalization bug in `ghost_trail_renderer.gd`.
+The original formula `p_idx / visible_pts` made short trails (early in a fresh
+attempt) nearly invisible — a 5-sample trail's newest point had alpha ≈ 0.023.
+Fix: divide by `max(range_len - 1, 1)` so the newest point always reaches full
+`attempt_alpha` regardless of trail length. 3 unit tests added (1033 → 1036
+assertions) documenting short-trail, single-point, and full-window invariants.
+
+Perf: unchanged (code path only; ghost trails are OFF by default).
+Bugs fixed: ghost trail point_t normalization (short trails visible immediately).
+New dev-menu controls: none.
+Research added: `docs/research/ghost_trail_visual.md`.
+Assets acquired: none.
 
 ### [2026-05-16] — iter 109 — Camera per-shape-family research
 
