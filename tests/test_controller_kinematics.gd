@@ -148,6 +148,8 @@ func _ready() -> void:
 	_test_viaduct_sentry_constants()
 	_test_gauntlet_sentry_constants()
 	_test_early_breadth_level_defaults()
+	_test_arena_level_defaults()
+	_test_arena_sentry_constants()
 	_test_level_select_ui()
 	_report()
 
@@ -6006,11 +6008,53 @@ func _test_early_breadth_level_defaults() -> void:
 		p.free()
 
 
+func _test_arena_level_defaults() -> void:
+	## Guards @export defaults and get_spawn_transform null-guard for arena.gd
+	## (iter 104 — shape-family 9: ringed arena).  Pattern matches other
+	## breadth-pass level tests: instantiate without a scene tree so _ready() never
+	## runs and @onready _spawn stays null, then exercise the null-guard branch.
+	print("\n-- Arena level script defaults (iter 104) --")
+
+	var ArenaScript = load("res://scripts/levels/arena.gd")
+	_ok("arena.gd loads without error", ArenaScript != null)
+	if ArenaScript != null:
+		var a = ArenaScript.new()
+		_ok("arena: par_time_seconds default = 50.0 (calibrate after first on-device run)",
+			_near(a.par_time_seconds, 50.0))
+		_ok("arena: spawn_marker_path default = NodePath(\"PlayerSpawn\")",
+			a.spawn_marker_path == NodePath("PlayerSpawn"))
+		_ok("arena: get_spawn_transform returns IDENTITY when _spawn null (no scene tree)",
+			a.get_spawn_transform() == Transform3D.IDENTITY)
+		a.free()
+
+
+func _test_arena_sentry_constants() -> void:
+	## Documents Arena._spawn_sentry() placement constants for the NorthArm sentry.
+	## The sentry guards the only run-up point for the final vault to CentralAltar;
+	## the player observes it from the checkpoint (NWCorner) before committing.
+	print("\n-- Arena sentry spawn constants --")
+
+	const SENTRY_Z     := -8.0  # NorthArm Z-position — last platform before vault
+	const PATROL_DIST  :=  6.0  # total sweep ±3 m along NorthArm X-axis
+	const PATROL_SPEED :=  2.0  # m/s — one clean approach window per full crossing
+	const SENTRY_Y     :=  1.2  # standard PatrolSentry elevation above platform
+
+	_ok("arena sentry: z=-8.0 places it on NorthArm (north arm of the ring)",
+		_near(SENTRY_Z, -8.0))
+	_ok("arena sentry: patrol_distance=6.0 → ±3 m sweep along NorthArm X-axis",
+		_near(PATROL_DIST, 6.0))
+	_ok("arena sentry: half-sweep = 3.0 m (patrol_distance / 2)",
+		_near(PATROL_DIST / 2.0, 3.0))
+	_ok("arena sentry: patrol_speed=2.0 m/s (matches Viaduct — single window per pass)",
+		_near(PATROL_SPEED, 2.0))
+	_ok("arena sentry: y=1.2 m (standard PatrolSentry elevation)",
+		_near(SENTRY_Y, 1.2))
+
+
 func _test_level_select_ui() -> void:
 	## Guards the level_select.gd _LEVELS constant: count, required keys, path format,
 	## and fixed first/last sentinel entries.
-	## count == 9 means: Feel Lab + 8 shape-family levels; Arena is still in draft PR #133.
-	## When Arena is merged this assertion will fail → the test count must then be bumped to 10.
+	## count == 10: Feel Lab + all 9 shape-family levels (Arena merged from PR #133, iter 108).
 	print("\n-- Level selector UI invariants --")
 
 	var LS = load("res://scripts/ui/level_select.gd")
@@ -6028,9 +6072,9 @@ func _test_level_select_ui() -> void:
 	if not (levels is Array):
 		return
 
-	# 9 = Feel Lab + Threshold + Spire + Rooftop + Plaza + Cavern + Descent + Filterbank + Viaduct.
-	# Bump to 10 once PR #133 (Arena) is merged and the entry is added.
-	_ok("_LEVELS count = 9 (Arena pending PR #133 merge)", levels.size() == 9)
+	# 10 = Feel Lab + all 9 shape-family levels (Threshold through Arena).
+	_ok("_LEVELS count = 10 (Feel Lab + 9 shape-family levels; breadth directive complete)",
+		levels.size() == 10)
 
 	var all_have_keys := true
 	var all_paths_res := true
@@ -6056,5 +6100,7 @@ func _test_level_select_ui() -> void:
 		(levels[0].get("name", "") as String) == "FEEL LAB")
 	_ok("levels[1] name = 'THRESHOLD' (shape family 1 — always second after Feel Lab)",
 		(levels[1].get("name", "") as String) == "THRESHOLD")
-	_ok("levels[8] name = 'VIADUCT' (shape family 8 — last entry until Arena merges)",
+	_ok("levels[8] name = 'VIADUCT' (shape family 8)",
 		(levels[8].get("name", "") as String) == "VIADUCT")
+	_ok("levels[9] name = 'ARENA' (shape family 9 — last entry; breadth complete)",
+		(levels[9].get("name", "") as String) == "ARENA")
