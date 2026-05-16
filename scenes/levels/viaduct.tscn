@@ -1,0 +1,276 @@
+[gd_scene load_steps=35 format=3]
+
+[ext_resource type="Script" path="res://scripts/levels/viaduct.gd" id="1_viag"]
+[ext_resource type="Script" path="res://scripts/levels/checkpoint.gd" id="2_cp"]
+[ext_resource type="Script" path="res://scripts/levels/win_state.gd" id="3_win"]
+[ext_resource type="PackedScene" path="res://scenes/player/player.tscn" id="4_player"]
+[ext_resource type="PackedScene" path="res://scenes/player/camera_rig.tscn" id="5_camrig"]
+[ext_resource type="PackedScene" path="res://scenes/ui/touch_overlay.tscn" id="6_touch"]
+[ext_resource type="Material" path="res://resources/materials/mat_concrete.tres" id="7_matC"]
+[ext_resource type="Material" path="res://resources/materials/mat_concrete_dark.tres" id="8_matCd"]
+[ext_resource type="Script" path="res://scripts/levels/ghost_trail_renderer.gd" id="9_ghost"]
+[ext_resource type="Script" path="res://tools/debug/player_debug_draw.gd" id="10_dbg"]
+[ext_resource type="PackedScene" path="res://scenes/levels/data_shard.tscn" id="11_shard"]
+[ext_resource type="Script" path="res://scripts/levels/moving_platform.gd" id="12_movp"]
+[ext_resource type="Script" path="res://scripts/levels/hazard_body.gd" id="13_hazard"]
+
+[sub_resource type="Environment" id="E_env"]
+background_mode = 1
+background_color = Color(0.02, 0.02, 0.03, 1)
+ambient_light_source = 2
+ambient_light_color = Color(0.06, 0.08, 0.14, 1)
+ambient_light_energy = 0.12
+tonemap_mode = 2
+fog_enabled = true
+fog_light_color = Color(0.02, 0.03, 0.06, 1)
+fog_light_energy = 1.0
+fog_density = 0.045
+fog_aerial_perspective = 0.25
+fog_sky_affect = 0.0
+
+[sub_resource type="BoxMesh" id="M_abut"]
+material = ExtResource("8_matCd")
+size = Vector3(8, 0.5, 8)
+
+[sub_resource type="BoxShape3D" id="S_abut"]
+size = Vector3(8, 0.5, 8)
+
+[sub_resource type="BoxMesh" id="M_span1"]
+material = ExtResource("8_matCd")
+size = Vector3(2, 0.5, 14)
+
+[sub_resource type="BoxShape3D" id="S_span1"]
+size = Vector3(2, 0.5, 14)
+
+[sub_resource type="BoxMesh" id="M_pier1"]
+material = ExtResource("7_matC")
+size = Vector3(8, 0.5, 6)
+
+[sub_resource type="BoxShape3D" id="S_pier1"]
+size = Vector3(8, 0.5, 6)
+
+[sub_resource type="BoxMesh" id="M_spur"]
+material = ExtResource("8_matCd")
+size = Vector3(1.5, 0.5, 4)
+
+[sub_resource type="BoxShape3D" id="S_spur"]
+size = Vector3(1.5, 0.5, 4)
+
+[sub_resource type="BoxMesh" id="M_s3"]
+material = ExtResource("7_matC")
+size = Vector3(3, 0.5, 3)
+
+[sub_resource type="BoxShape3D" id="S_s3"]
+size = Vector3(3, 0.5, 3)
+
+[sub_resource type="BoxMesh" id="M_span2"]
+material = ExtResource("8_matCd")
+size = Vector3(1.5, 0.5, 10)
+
+[sub_resource type="BoxShape3D" id="S_span2"]
+size = Vector3(1.5, 0.5, 10)
+
+[sub_resource type="BoxMesh" id="M_span3"]
+material = ExtResource("8_matCd")
+size = Vector3(2, 0.5, 16)
+
+[sub_resource type="BoxShape3D" id="S_span3"]
+size = Vector3(2, 0.5, 16)
+
+[sub_resource type="BoxMesh" id="M_arriv"]
+material = ExtResource("7_matC")
+size = Vector3(8, 0.5, 10)
+
+[sub_resource type="BoxShape3D" id="S_arriv"]
+size = Vector3(8, 0.5, 10)
+
+[sub_resource type="BoxMesh" id="M_col1"]
+material = ExtResource("8_matCd")
+size = Vector3(2, 30, 2)
+
+[sub_resource type="BoxMesh" id="M_col2"]
+material = ExtResource("8_matCd")
+size = Vector3(1.5, 30, 1.5)
+
+[sub_resource type="BoxShape3D" id="S_cp"]
+size = Vector3(7, 4, 5)
+
+[sub_resource type="BoxShape3D" id="S_win"]
+size = Vector3(7, 4, 9)
+
+[sub_resource type="BoxShape3D" id="S_kill"]
+size = Vector3(80, 4, 120)
+
+[node name="Viaduct" type="Node3D"]
+script = ExtResource("1_viag")
+
+[node name="WorldEnv" type="WorldEnvironment" parent="."]
+environment = SubResource("E_env")
+
+[node name="KeyLight" type="DirectionalLight3D" parent="."]
+transform = Transform3D(1, 0, 0, 0, 0.940, 0.342, 0, -0.342, 0.940, 0, 20, 0)
+light_color = Color(0.28, 0.34, 0.58, 1)
+light_energy = 0.06
+shadow_enabled = false
+
+[node name="Lights" type="Node3D" parent="."]
+
+[node name="EntryLight" type="OmniLight3D" parent="Lights"]
+transform = Transform3D(1, 0, 0, 0, 1, 0, 0, 0, 1, 0, 4, 4)
+light_color = Color(0.85, 0.60, 0.25, 1)
+light_energy = 2.0
+omni_range = 12.0
+
+[node name="Span1Light" type="OmniLight3D" parent="Lights"]
+transform = Transform3D(1, 0, 0, 0, 1, 0, 0, 0, 1, 0, 4, 15)
+light_color = Color(0.35, 0.45, 0.80, 1)
+light_energy = 1.5
+omni_range = 14.0
+
+[node name="PierLight" type="OmniLight3D" parent="Lights"]
+transform = Transform3D(1, 0, 0, 0, 1, 0, 0, 0, 1, 0, 6, 29)
+light_color = Color(0.30, 0.40, 0.85, 1)
+light_energy = 2.0
+omni_range = 12.0
+
+[node name="Span2Light" type="OmniLight3D" parent="Lights"]
+transform = Transform3D(1, 0, 0, 0, 1, 0, 0, 0, 1, 0, 4, 51)
+light_color = Color(0.40, 0.50, 0.90, 1)
+light_energy = 1.8
+omni_range = 12.0
+
+[node name="FinalLight" type="OmniLight3D" parent="Lights"]
+transform = Transform3D(1, 0, 0, 0, 1, 0, 0, 0, 1, 0, 5, 68)
+light_color = Color(0.25, 0.82, 0.70, 1)
+light_energy = 2.5
+omni_range = 14.0
+
+[node name="ArrivalLight" type="OmniLight3D" parent="Lights"]
+transform = Transform3D(1, 0, 0, 0, 1, 0, 0, 0, 1, 0, 5, 81)
+light_color = Color(0.20, 0.88, 0.75, 1)
+light_energy = 3.0
+omni_range = 12.0
+
+[node name="PlayerSpawn" type="Marker3D" parent="."]
+transform = Transform3D(1, 0, 0, 0, 1, 0, 0, 0, 1, 0, 1, 4)
+
+[node name="Player" parent="." instance=ExtResource("4_player")]
+transform = Transform3D(1, 0, 0, 0, 1, 0, 0, 0, 1, 0, 1, 4)
+
+[node name="CameraRig" parent="." instance=ExtResource("5_camrig")]
+target_path = NodePath("../Player")
+
+[node name="TouchOverlay" parent="." instance=ExtResource("6_touch")]
+
+[node name="PlayerDebugDraw" type="MeshInstance3D" parent="."]
+script = ExtResource("10_dbg")
+
+[node name="GhostTrailRenderer" type="Node3D" parent="."]
+script = ExtResource("9_ghost")
+
+[node name="Platforms" type="Node3D" parent="."]
+
+[node name="EntryAbutment" type="StaticBody3D" parent="Platforms"]
+transform = Transform3D(1, 0, 0, 0, 1, 0, 0, 0, 1, 0, -0.25, 4)
+[node name="Mesh" type="MeshInstance3D" parent="Platforms/EntryAbutment"]
+mesh = SubResource("M_abut")
+[node name="Collider" type="CollisionShape3D" parent="Platforms/EntryAbutment"]
+shape = SubResource("S_abut")
+
+[node name="Span1" type="StaticBody3D" parent="Platforms"]
+transform = Transform3D(1, 0, 0, 0, 1, 0, 0, 0, 1, 0, -0.25, 15)
+[node name="Mesh" type="MeshInstance3D" parent="Platforms/Span1"]
+mesh = SubResource("M_span1")
+[node name="Collider" type="CollisionShape3D" parent="Platforms/Span1"]
+shape = SubResource("S_span1")
+
+[node name="PierHead1" type="StaticBody3D" parent="Platforms"]
+transform = Transform3D(1, 0, 0, 0, 1, 0, 0, 0, 1, 0, -0.25, 29)
+[node name="Mesh" type="MeshInstance3D" parent="Platforms/PierHead1"]
+mesh = SubResource("M_pier1")
+[node name="Collider" type="CollisionShape3D" parent="Platforms/PierHead1"]
+shape = SubResource("S_pier1")
+
+[node name="ShardSpur" type="StaticBody3D" parent="Platforms"]
+transform = Transform3D(1, 0, 0, 0, 1, 0, 0, 0, 1, 6.25, -0.25, 29)
+[node name="Mesh" type="MeshInstance3D" parent="Platforms/ShardSpur"]
+mesh = SubResource("M_spur")
+[node name="Collider" type="CollisionShape3D" parent="Platforms/ShardSpur"]
+shape = SubResource("S_spur")
+
+[node name="ShardPlatform" type="StaticBody3D" parent="Platforms"]
+transform = Transform3D(1, 0, 0, 0, 1, 0, 0, 0, 1, 10, -0.25, 29)
+[node name="Mesh" type="MeshInstance3D" parent="Platforms/ShardPlatform"]
+mesh = SubResource("M_s3")
+[node name="Collider" type="CollisionShape3D" parent="Platforms/ShardPlatform"]
+shape = SubResource("S_s3")
+
+[node name="Span2" type="StaticBody3D" parent="Platforms"]
+transform = Transform3D(1, 0, 0, 0, 1, 0, 0, 0, 1, 0, -0.25, 51)
+[node name="Mesh" type="MeshInstance3D" parent="Platforms/Span2"]
+mesh = SubResource("M_span2")
+[node name="Collider" type="CollisionShape3D" parent="Platforms/Span2"]
+shape = SubResource("S_span2")
+
+[node name="Span3Final" type="StaticBody3D" parent="Platforms"]
+transform = Transform3D(1, 0, 0, 0, 1, 0, 0, 0, 1, 0, -0.25, 68)
+[node name="Mesh" type="MeshInstance3D" parent="Platforms/Span3Final"]
+mesh = SubResource("M_span3")
+[node name="Collider" type="CollisionShape3D" parent="Platforms/Span3Final"]
+shape = SubResource("S_span3")
+
+[node name="ArrivalAbutment" type="StaticBody3D" parent="Platforms"]
+transform = Transform3D(1, 0, 0, 0, 1, 0, 0, 0, 1, 0, -0.25, 81)
+[node name="Mesh" type="MeshInstance3D" parent="Platforms/ArrivalAbutment"]
+mesh = SubResource("M_arriv")
+[node name="Collider" type="CollisionShape3D" parent="Platforms/ArrivalAbutment"]
+shape = SubResource("S_arriv")
+
+[node name="PierColumns" type="Node3D" parent="."]
+
+[node name="PierColumn1" type="MeshInstance3D" parent="PierColumns"]
+transform = Transform3D(1, 0, 0, 0, 1, 0, 0, 0, 1, 0, -15.25, 29)
+mesh = SubResource("M_col1")
+
+[node name="PierColumn2" type="MeshInstance3D" parent="PierColumns"]
+transform = Transform3D(1, 0, 0, 0, 1, 0, 0, 0, 1, 0, -15.25, 68)
+mesh = SubResource("M_col2")
+
+[node name="MovingPlatforms" type="Node3D" parent="."]
+
+[node name="MovPlatBridge" type="AnimatableBody3D" parent="MovingPlatforms"]
+transform = Transform3D(1, 0, 0, 0, 1, 0, 0, 0, 1, 0, -0.25, 34)
+script = ExtResource("12_movp")
+travel = Vector3(0, 0, 10)
+period_seconds = 4.0
+[node name="Mesh" type="MeshInstance3D" parent="MovingPlatforms/MovPlatBridge"]
+mesh = SubResource("M_s3")
+[node name="Collider" type="CollisionShape3D" parent="MovingPlatforms/MovPlatBridge"]
+shape = SubResource("S_s3")
+
+[node name="KillFloor" type="Area3D" parent="."]
+transform = Transform3D(1, 0, 0, 0, 1, 0, 0, 0, 1, 0, -22, 43)
+script = ExtResource("13_hazard")
+collision_layer = 0
+collision_mask = 2
+[node name="Collider" type="CollisionShape3D" parent="KillFloor"]
+shape = SubResource("S_kill")
+
+[node name="DataShard1" parent="." instance=ExtResource("11_shard")]
+transform = Transform3D(1, 0, 0, 0, 1, 0, 0, 0, 1, 10, 0.75, 29)
+
+[node name="Checkpoint1" type="Area3D" parent="."]
+transform = Transform3D(1, 0, 0, 0, 1, 0, 0, 0, 1, 0, 0.5, 29)
+script = ExtResource("2_cp")
+collision_layer = 0
+collision_mask = 2
+[node name="Collider" type="CollisionShape3D" parent="Checkpoint1"]
+shape = SubResource("S_cp")
+
+[node name="WinZone" type="Area3D" parent="."]
+transform = Transform3D(1, 0, 0, 0, 1, 0, 0, 0, 1, 0, 0.5, 81)
+script = ExtResource("3_win")
+collision_layer = 0
+collision_mask = 2
+[node name="Collider" type="CollisionShape3D" parent="WinZone"]
+shape = SubResource("S_win")
