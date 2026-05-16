@@ -40,6 +40,11 @@ const _LEVELS: Array[Dictionary] = [
 		"path": "res://scenes/levels/descent.tscn",
 		"desc": "Inverted descent — fall through a dead lift shaft (shape family 6)",
 	},
+	{
+		"name": "FILTERBANK",
+		"path": "res://scenes/levels/gauntlet.tscn",
+		"desc": "Enclosed obstacle gauntlet — timed hazard chambers (shape family 7)",
+	},
 ]
 
 const _BTN_MIN  := Vector2(520.0, 88.0)
