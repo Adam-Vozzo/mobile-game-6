@@ -48,6 +48,13 @@ authored with it in mind.
   the human picks a survivor. Threshold rebuild kept in repo as the corridor representative;
   next level-touching iter MUST pick an unrepresented shape-family, not iterate on Threshold.
 
+- **🔴 Iter 116 complete. HARD THROTTLE.** Breadth-pass PR landing (20 iters since 2026-05-16
+  direction session). Branch `claude/gifted-shannon-KYqiK` had 19 commits (iters 97–115) ahead
+  of `main` with no open PR. Oriented, diagnosed, opened PR, added `auto-merge` label, merged.
+  All 9 shape-family levels + level_select + 1078 unit tests + ghost trail fix + WinState beacon
+  + breadth-pass research now on `main`. No new code this iteration — gap was in PR hygiene.
+  HARD STALL continues — awaiting shape pick.
+
 - **🔴 Iter 115 complete. HARD THROTTLE.** MovingPlatform + RotatingHazard export-defaults tests
   (19 iters since 2026-05-16 direction session). `tests/test_controller_kinematics.gd`: added
   `MP`/`RH` preloads + `_test_moving_platform_defaults()` (9 assertions) +
@@ -615,6 +622,15 @@ These mirror "Open questions waiting on you" in the README.
   drive the next tuning iteration.
 
 ## Recently completed (last 5)
+
+- 2026-05-16 — iter 116. **Breadth-pass PR landing. HARD THROTTLE.**
+  Branch `claude/gifted-shannon-KYqiK` had 19 commits (iters 97–115) ahead of `main`
+  with no open PR. This iteration opened and merged the PR, landing all 9 shape-family
+  levels, level_select.tscn, 1 078 unit tests, ghost trail fix, WinState beacon,
+  and all breadth-pass research onto `main`. No new code — gap was in PR hygiene.
+
+- 2026-05-16 — iter 115. **MovingPlatform + RotatingHazard export-defaults tests. HARD THROTTLE.**
+  `_test_moving_platform_defaults()` (9) + `_test_rotating_hazard_defaults()` (8). 1061→1078.
 
 - 2026-05-16 — iter 114. **Ghost trail defaults test. HARD THROTTLE.**
   `_test_ghost_trail_defaults()`: 5 assertions (1056→1061). Reads `GTR.MAX_DEPTH` and
