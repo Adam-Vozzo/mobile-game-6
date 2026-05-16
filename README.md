@@ -5,10 +5,10 @@ A mobile 3D platformer. Brutalist megastructure inspired by *BLAME!*. Controller
 ## Status
 
 Current gate: **Gate 0 — Feel Lab** (closing out; Gate 1 prep in flight)
-Last activity: 2026-05-16 — iter 113: WinState beacon enabled on all 9 levels
+Last activity: 2026-05-16 — iter 114: ghost trail defaults test (MAX_DEPTH/SAMPLE_HZ coverage)
 Test device build: ✅ verified 2026-05-12 — runs in Godot 4.6 on PC and on Nothing Phone 4(a) Pro
 Performance: 144 fps / 6.9 ms in editor at 1920×1080 (Feel Lab); Threshold perf TBD after rebuild
-Throttle level: **🔴 hard** — 17 iters since 2026-05-16 direction session; FULLY STALLED — awaiting shape-family pick
+Throttle level: **🔴 hard** — 18 iters since 2026-05-16 direction session; FULLY STALLED — awaiting shape-family pick
 
 If you only read one section, read **Open questions waiting on you** below.
 
@@ -16,7 +16,7 @@ If you only read one section, read **Open questions waiting on you** below.
 
 Things Claude can't decide alone, or where it's stalled and needs direction.
 
-> **🔴 FULLY STALLED — 17 iterations since 2026-05-16 direction session.**
+> **🔴 FULLY STALLED — 18 iterations since 2026-05-16 direction session.**
 > The breadth directive is complete: all 9 shape-families from `docs/CLAUDE.md` are built and
 > now all on main. Shape inventory: Threshold (corridor), Spire (tower), Rooftop, Plaza (hub),
 > Cavern (maze), Descent (inverted), Filterbank (gauntlet), Viaduct (bridge crossing), Arena (ringed).
@@ -120,6 +120,32 @@ Goal: store-ready build.
 The full iteration log lives here, newest first. Every iteration appends an entry. Skim the dates to find where you last left off.
 
 <!-- ITERATION ENTRIES BELOW — DO NOT REMOVE OLDER ENTRIES -->
+
+### [2026-05-16] — iter 114 — Ghost trail defaults test (MAX_DEPTH/SAMPLE_HZ constant coverage gap)
+
+Branch: `claude/gifted-shannon-qGP1X`
+Throttle: 🔴 hard (18 iters since 2026-05-16 direction session; FULLY STALLED)
+Gate: Gate 1 — direction-finding breadth pass (awaiting human shape pick)
+
+**Primary:** Added `_test_ghost_trail_defaults()` to `tests/test_controller_kinematics.gd`.
+Closes a genuine test gap: the existing `_test_ghost_trail_resize_math()` and
+`_test_ghost_trail_disable_and_resize_semantics()` tests duplicate `MAX_DEPTH`/`SAMPLE_HZ`
+as local constants (`MAX_D = 5`, `SAMPLE = 30.0`), so a constant change in
+`ghost_trail_renderer.gd` would not be caught. The new test reads `GTR.MAX_DEPTH` and
+`GTR.SAMPLE_HZ` directly, pinning the implementation values. Also adds the first tests
+for `visible_window_s` export default (= 2.0, must match the dev-menu slider `default_val`)
+and `_enabled` initial value (= false, ghost trail is OFF until the level accumulates trail
+data). 5 new assertions (1056 → 1061).
+
+**Side quest:** None. No genuinely useful side quest found; 18 iterations since direction
+session — choosing correctness over fabricating work.
+
+Perf: no change.
+Bugs fixed: none (no bugs found — test adds coverage of existing correct behavior).
+New dev-menu controls: none.
+Research added: none.
+Assets acquired: none.
+Assertions: 1056 → 1061 (+5).
 
 ### [2026-05-16] — iter 113 — WinState beacon enabled on all 9 levels + beacon runtime test
 
