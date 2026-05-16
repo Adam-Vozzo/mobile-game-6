@@ -48,6 +48,17 @@ authored with it in mind.
   the human picks a survivor. Threshold rebuild kept in repo as the corridor representative;
   next level-touching iter MUST pick an unrepresented shape-family, not iterate on Threshold.
 
+- **🟢 Iter 103 complete.** Viaduct level (exposed bridge crossing, shape-family 8).
+  `scenes/levels/viaduct.tscn` + `scripts/levels/viaduct.gd`: "The Viaduct" — suspended
+  concrete spans over a deep industrial void. Layout: EntryAbutment (8 m) → Span1 (2 m
+  wide, 14 m long) → 4 m gap → PierHead1 (CP) → [MovPlatBridge, 14 m gap, 4 s period]
+  → Span2 (1.5 m wide, 10 m long) → 4 m gap → Span3Final (2 m wide, 16 m, sentry) →
+  ArrivalAbutment (WIN). One DataShard on ShardPlatform east of PierHead1 (1.5+1.5 m
+  jump). Fog 0.045, cold blue-grey ambient, sodium amber → cold blue → biolume cyan
+  lighting arc. Two visual-only pier columns (30 m tall) descend into void. KillFloor
+  Area3D covers Y=-22, 80×120 m. PatrolSentry spawned programmatically on Span3Final
+  (X-axis ±1.5 m, 2.0 m/s). Level selector + dev menu Load Level updated.
+  On-device pending: span-width feel, moving-platform timing, sentry spacing.
 - **🟢 Iter 102 complete.** Filterbank level (enclosed obstacle gauntlet, shape-family 7).
   `scenes/levels/gauntlet.tscn` + `scripts/levels/gauntlet.gd`: "The Filterbank" —
   a sequence of decommissioned industrial processing chambers. Hazard sequence:
@@ -250,16 +261,18 @@ The next iteration should pull from the top of this list. Items marked
 - ~~Shape 5: Cavern / maze with branches → Cavern~~ ✅ exists (iter 100)
 - ~~Shape 6: Inverted descent (climbing down) → Descent~~ ✅ exists (iter 101)
 - ~~Shape 7: Enclosed obstacle gauntlet → Filterbank~~ ✅ exists (iter 102)
-- Shape 8: Exposed bridge crossing with vertical void below — queue
+- ~~Shape 8: Exposed bridge crossing → Viaduct~~ ✅ exists (iter 103)
+- Shape 9: Ringed arena — circular or polygonal perimeter ring, platforming on the outer
+  band, center void or landmark. Last unbuilt example from CLAUDE.md list.
 
 Each shape needs: spawn → win state, Player/CameraRig/TouchOverlay wiring, lives in `scenes/levels/`.
 Do not iterate on an existing shape until the human picks a survivor.
 
-**Next shape to build: exposed bridge crossing** — narrow path or walkway spanning a wide void,
-with vertical depth visible below all edges. Distinct from Rooftop (Rooftop is a surface,
-bridge is a path over emptiness) and from Descent (Descent controls the fall, bridge requires
-not falling). Floor plan from above: a single line or branching line across a chasm — the void
-IS the spatial grammar.
+**Next shape to build: ringed arena** — closed ring of platforms around a central void or
+landmark. Floor plan from above: a ring or polygon. Player traverses the perimeter (clockwise
+or with jumps across the ring). Distinct from Plaza (hub radiates outward; arena loops back
+on itself) and from all other shapes. This is the last example from the CLAUDE.md list.
+After this, if no survivor is picked, escalate to human for direction.
 
 Boot selector and dev-menu Load Level entry already in place.
 

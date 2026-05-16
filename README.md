@@ -5,10 +5,10 @@ A mobile 3D platformer. Brutalist megastructure inspired by *BLAME!*. Controller
 ## Status
 
 Current gate: **Gate 0 — Feel Lab** (closing out; Gate 1 prep in flight)
-Last activity: 2026-05-16 — iter 102: Filterbank level (enclosed obstacle gauntlet, shape-family 7)
+Last activity: 2026-05-16 — iter 103: Viaduct level (exposed bridge crossing, shape-family 8)
 Test device build: ✅ verified 2026-05-12 — runs in Godot 4.6 on PC and on Nothing Phone 4(a) Pro
 Performance: 144 fps / 6.9 ms in editor at 1920×1080 (Feel Lab); Threshold perf TBD after rebuild
-Throttle level: **🟡 soft** — 6 iters since 2026-05-16 direction session (overridden: active breadth-pass directive)
+Throttle level: **🟡 soft** — 7 iters since 2026-05-16 direction session (overridden: active breadth-pass directive)
 
 If you only read one section, read **Open questions waiting on you** below.
 
@@ -16,25 +16,17 @@ If you only read one section, read **Open questions waiting on you** below.
 
 Things Claude can't decide alone, or where it's stalled and needs direction.
 
-> **🔴 HARD THROTTLE — stalled at iter 96 (10 iterations since 2026-05-15 direction session).**
-> Feature work suspended. Recent hardening: iter 94 trail lifecycle tests + Sky touch research,
-> iter 95 threshold level lifecycle tests, iter 96 `_attract_to_ledge` refactor + sentry
-> instant-reversal geometry tests. The P0 queue is fully blocked on device feel —
-> on-device verification is the only meaningful unlocker.
+> **🟡 SOFT THROTTLE (overridden: active breadth directive)**
+> 7 iterations since 2026-05-16 direction session. Feature work ongoing under the
+> "build many shape-families" directive from `docs/CLAUDE.md`. Shapes so far: Threshold
+> (corridor), Spire (tower), Rooftop, Plaza (hub), Cavern (maze), Descent (inverted),
+> Filterbank (gauntlet), Viaduct (bridge crossing) — 8 families. One CLAUDE.md example
+> remains unbuilt: **ringed arena**. After that, all listed examples will be covered
+> and Claude will escalate for direction on whether to add more or move to depth.
 >
-> **Suggested next directions (pick one or more):**
-> 1. **Device session** — open Threshold on the Nothing Phone 4(a) Pro. Even 15 minutes of
->    play generates enough feedback to unblock: Snappy tuning, sentry speed/patrol calibration,
->    chick scale + pivot check, DistantSkyline fog density, SFX clip selection. This is the
->    single highest-leverage action.
-> 2. **Air-dash verdict** — try both modes in the dev menu (Touch → "Buffer dash cam") and
->    pick one or say "drop the feature entirely." Closes the last open mechanic question.
-> 3. **Industrial press routing** — say "critical path" or "atmosphere only." One sentence
->    unblocks the level-flow work.
-> 4. **Gate 1 art style approval** — if the Kenney chick + factory kit reads well on device,
->    say so and we'll proceed with the Poly Haven concrete texture pass (E from ASSET_OPTIONS.md).
->
-> Until one of these arrives, iterations remain in hardening-only mode.
+> **Highest-leverage action:** a device session (see item 1 below). Even 15 minutes on
+> the Nothing Phone 4(a) Pro generates enough feedback to pick a shape-family survivor
+> and unblock the entire depth-pass phase.
 
 **What's still waiting for your read:**
 1. **Hold-jump+swipe air dash — two modes to compare.** (iter 67) Dev menu Touch section has "Buffer dash cam" toggle. Try both, or say "always buffer" / "drop the option" and we'll clean it up.
@@ -115,6 +107,40 @@ Goal: store-ready build.
 The full iteration log lives here, newest first. Every iteration appends an entry. Skim the dates to find where you last left off.
 
 <!-- ITERATION ENTRIES BELOW — DO NOT REMOVE OLDER ENTRIES -->
+
+### [2026-05-16] — iter 103 — Viaduct level (exposed bridge crossing, shape-family 8)
+
+Branch: `iter/bridge-crossing`
+Throttle: 🟡 soft (7 iters since 2026-05-16 direction session — overridden: active breadth directive)
+Gate: Gate 1 — direction-finding breadth pass
+
+**Primary: new level `scenes/levels/viaduct.tscn` (exposed bridge crossing, shape-family 8).**
+
+Shape-family premise: "The Viaduct" — a series of suspended concrete spans crossing a deep
+industrial void. The spatial grammar is: stay on the path or fall. Unlike Rooftop (large
+surfaces, void at the margin), every span IS the path — narrow, exposed, void present on
+both sides at all times. Distinct from all seven prior shapes.
+
+**Layout (primary axis Z, 86 m total):**
+- **EntryAbutment (8 m)** — safe spawn landing
+- **Span1 (2 m wide, 14 m long)** — introduces void below; first narrow bridge
+- **4 m gap** — running jump required
+- **PierHead1 (8 m wide)** — checkpoint breathing platform; side spur east (1.5 m jump) → ShardSpur → ShardPlatform (DataShard 1)
+- **14 m gap** — bridged by MovPlatBridge (3×3 m, 4 s period, travels 10 m Z)
+- **Span2 (1.5 m wide, 10 m long)** — narrower; ride platform then step off
+- **4 m gap** — running jump
+- **Span3Final (2 m wide, 16 m long)** — PatrolSentry sweeps the span; read rhythm, slip past
+- **ArrivalAbutment (8 m)** — WIN (flush with Span3, relief after sentry)
+
+**Atmosphere:** Fog 0.045 (lighter — far shore visible through haze; tension from distance not blindness).
+Cold blue-grey ambient. Lighting arc: sodium amber (entry) → cold blue (spans) → biolume cyan (arrival).
+Two visual-only pier columns descend 30 m into the void below PierHead1 and Span3Final.
+KillFloor Area3D covers the entire void at Y=-22.
+
+Perf delta: unknown (on-device pending). 8 platforms, 1 moving platform, 1 sentry, 6 OmniLights.
+No CSG; all StaticBody3D. On-device pending: span-width feel, moving-platform timing, sentry spacing.
+New dev-menu controls: Load Level → Viaduct (bridge).
+Assets: none.
 
 ### [2026-05-16] — iter 102 — Filterbank level (enclosed obstacle gauntlet, shape-family 7)
 
