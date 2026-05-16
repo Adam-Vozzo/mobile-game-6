@@ -142,6 +142,15 @@ Suggested (still open):
 
 ## Gate 1 — shape selection
 
+- [`camera_per_shape.md`](camera_per_shape.md) — Per-shape-family camera tuning guide.
+  For each of the 9 level shapes: risk level, specific dev-menu parameters to dial first,
+  expected failure modes, and recommended starting values. Cross-cutting notes on
+  CameraOccluder layer 7 setup and SpringArm3D child-camera transform. Written iter 109
+  to accelerate the first depth-pass day after the human's pick. **Implications:** Cavern
+  is highest-risk (distance 4.0, pitch 15 first); Descent needs higher vertical_pull
+  (0.28–0.35) and floor_smoothing (10–14); Spire needs apex_height_multiplier ≥ 1.5;
+  Rooftop/Filterbank/Viaduct/Arena can start at defaults.
+
 - [`gate1_shape_comparison.md`](gate1_shape_comparison.md) — Per-shape-family
   breakdown for the human's survivor pick. For each of the 9 shapes: what it is,
   camera/control demand, current art infrastructure, remaining Gate 1 work, and

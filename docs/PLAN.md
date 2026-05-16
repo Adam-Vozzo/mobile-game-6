@@ -48,6 +48,15 @@ authored with it in mind.
   the human picks a survivor. Threshold rebuild kept in repo as the corridor representative;
   next level-touching iter MUST pick an unrepresented shape-family, not iterate on Threshold.
 
+- **🔴 Iter 109 complete. HARD THROTTLE.** Camera per-shape-family research note (13 iters since
+  2026-05-16 direction session). `docs/research/camera_per_shape.md` written: per-shape camera
+  tuning guide for all 9 level families. For each shape: risk level, first dev-menu parameters
+  to dial, expected failure modes, recommended starting values. Concrete numbers: Cavern →
+  distance 4.0 + pitch 15°; Descent → vertical_pull 0.28–0.35 + floor_smoothing 10–14; Spire →
+  apex_height_multiplier ≥ 1.5; Rooftop/Filterbank/Viaduct/Arena → defaults safe. Cross-cutting:
+  CameraOccluder layer 7 setup reminder, SpringArm3D child-camera transform fix, Godot 4.5
+  camera note (no relevant changes). INDEX.md updated. HARD STALL continues — awaiting shape pick.
+
 - **🔴 Iter 108 complete. HARD THROTTLE.** Arena cherry-pick + arena unit tests (12 iters since
   2026-05-16 direction session). Cherry-picked Arena (iter 104) from `iter/ringed-arena` onto
   current branch; PR #133 superseded. `scenes/levels/arena.tscn` + `scripts/levels/arena.gd` +

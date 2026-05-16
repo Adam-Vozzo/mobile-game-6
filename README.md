@@ -5,10 +5,10 @@ A mobile 3D platformer. Brutalist megastructure inspired by *BLAME!*. Controller
 ## Status
 
 Current gate: **Gate 0 — Feel Lab** (closing out; Gate 1 prep in flight)
-Last activity: 2026-05-16 — iter 108: Arena merged (all 9 shapes now on main), arena unit tests
+Last activity: 2026-05-16 — iter 109: camera per-shape research note
 Test device build: ✅ verified 2026-05-12 — runs in Godot 4.6 on PC and on Nothing Phone 4(a) Pro
 Performance: 144 fps / 6.9 ms in editor at 1920×1080 (Feel Lab); Threshold perf TBD after rebuild
-Throttle level: **🔴 hard** — 12 iters since 2026-05-16 direction session; FULLY STALLED — awaiting shape-family pick
+Throttle level: **🔴 hard** — 13 iters since 2026-05-16 direction session; FULLY STALLED — awaiting shape-family pick
 
 If you only read one section, read **Open questions waiting on you** below.
 
@@ -120,6 +120,29 @@ Goal: store-ready build.
 The full iteration log lives here, newest first. Every iteration appends an entry. Skim the dates to find where you last left off.
 
 <!-- ITERATION ENTRIES BELOW — DO NOT REMOVE OLDER ENTRIES -->
+
+### [2026-05-16] — iter 109 — Camera per-shape-family research
+
+Branch: `claude/gifted-shannon-iP2Zx`
+Throttle: 🔴 hard (13 iters since 2026-05-16 direction session; FULLY STALLED)
+Gate: Gate 1 — direction-finding breadth pass (awaiting human shape pick)
+
+**Primary:** `docs/research/camera_per_shape.md` written — per-shape camera tuning guide
+for all 9 level families. For each shape: risk level, first dev-menu parameters to dial,
+expected failure modes, and concrete starting values. Key findings: Cavern is highest-risk
+(reduce distance to 4.0, pitch to 15 before running); Descent needs higher vertical_pull
+(0.28–0.35) and floor_smoothing (10–14) to show landing surfaces during freefall; Spire
+benefits from apex_height_multiplier ≥ 1.5 to suppress per-hop noise during ascent;
+Rooftop, Filterbank, Viaduct, Arena can start at camera defaults. Cross-cutting: CameraOccluder
+layer 7 setup reminder (architectural walls only, not small platforms); SpringArm3D child
+camera must be at (0,0,0) or spring length reads wrong; Godot 4.5 has no relevant
+SpringArm3D changes. `docs/research/INDEX.md` updated.
+
+Perf: unchanged (research-only).
+Bugs fixed: none.
+New dev-menu controls: none.
+Research added: `docs/research/camera_per_shape.md`.
+Assets acquired: none.
 
 ### [2026-05-16] — iter 108 — Arena merged + arena unit tests
 
