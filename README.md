@@ -5,10 +5,10 @@ A mobile 3D platformer. Brutalist megastructure inspired by *BLAME!*. Controller
 ## Status
 
 Current gate: **Gate 0 — Feel Lab** (closing out; Gate 1 prep in flight)
-Last activity: 2026-05-16 — iter 112: wayfinding research + WinState beacon export
+Last activity: 2026-05-16 — iter 113: WinState beacon enabled on all 9 levels
 Test device build: ✅ verified 2026-05-12 — runs in Godot 4.6 on PC and on Nothing Phone 4(a) Pro
 Performance: 144 fps / 6.9 ms in editor at 1920×1080 (Feel Lab); Threshold perf TBD after rebuild
-Throttle level: **🔴 hard** — 16 iters since 2026-05-16 direction session; FULLY STALLED — awaiting shape-family pick
+Throttle level: **🔴 hard** — 17 iters since 2026-05-16 direction session; FULLY STALLED — awaiting shape-family pick
 
 If you only read one section, read **Open questions waiting on you** below.
 
@@ -16,7 +16,7 @@ If you only read one section, read **Open questions waiting on you** below.
 
 Things Claude can't decide alone, or where it's stalled and needs direction.
 
-> **🔴 FULLY STALLED — 14 iterations since 2026-05-16 direction session.**
+> **🔴 FULLY STALLED — 17 iterations since 2026-05-16 direction session.**
 > The breadth directive is complete: all 9 shape-families from `docs/CLAUDE.md` are built and
 > now all on main. Shape inventory: Threshold (corridor), Spire (tower), Rooftop, Plaza (hub),
 > Cavern (maze), Descent (inverted), Filterbank (gauntlet), Viaduct (bridge crossing), Arena (ringed).
@@ -120,6 +120,32 @@ Goal: store-ready build.
 The full iteration log lives here, newest first. Every iteration appends an entry. Skim the dates to find where you last left off.
 
 <!-- ITERATION ENTRIES BELOW — DO NOT REMOVE OLDER ENTRIES -->
+
+### [2026-05-16] — iter 113 — WinState beacon enabled on all 9 levels + beacon runtime test
+
+Branch: `iter/win-state-beacons`
+Throttle: 🔴 hard (17 iters since 2026-05-16 direction session; FULLY STALLED)
+Gate: Gate 1 — direction-finding breadth pass (awaiting human shape pick)
+
+**Primary:** Playtest-readiness hardening — enabled `add_beacon = true` on the `WinState`/`WinZone`
+node in all 9 level `.tscn` files (Threshold, Spire, Rooftop, Plaza, Cavern, Descent, Gauntlet,
+Viaduct, Arena). The beacon (biolume cyan OmniLight3D, range 14 m, shadow OFF) was added to
+`win_state.gd` in iter 112 but left disabled by default pending per-level depth-pass enables.
+Enabling it now on all 9 makes the upcoming human device session more successful: fog-dense
+levels (Cavern 0.090, Gauntlet 0.080, Descent 0.065) require a visible goal marker to be
+navigable during a first-time playthrough on device.
+
+**Side quest:** `_test_win_state_beacon_runtime()` — 7 new assertions (1049 → 1056) testing
+`_build_beacon()` directly: child count = 1, child is OmniLight3D, biolume-cyan colour R ≈ 0.12,
+energy = beacon_energy default, range = beacon_range default, shadow_enabled = false.
+
+Perf: +1 OmniLight3D (shadow OFF) per level at runtime. Mobile cost: one additional tile-split
+per OmniLight is ~0.05 ms on Adreno 710; negligible. Shadow-disabled keeps it within budget.
+Bugs fixed: none.
+New dev-menu controls: none.
+Research added: none.
+Assets acquired: none.
+Assertions: 1049 → 1056 (+7).
 
 ### [2026-05-16] — iter 112 — Wayfinding research + WinState beacon export
 

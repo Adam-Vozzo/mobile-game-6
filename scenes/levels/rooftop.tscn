@@ -249,6 +249,7 @@ shape = SubResource("Shape_Checkpoint")
 [node name="WinState" type="Area3D" parent="."]
 transform = Transform3D(1, 0, 0, 0, 1, 0, 0, 0, 1, 4, 6.0, -46)
 script = ExtResource("3_win")
+add_beacon = true
 collision_layer = 0
 collision_mask = 2
 monitoring = true

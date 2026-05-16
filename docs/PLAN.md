@@ -48,6 +48,15 @@ authored with it in mind.
   the human picks a survivor. Threshold rebuild kept in repo as the corridor representative;
   next level-touching iter MUST pick an unrepresented shape-family, not iterate on Threshold.
 
+- **🔴 Iter 113 complete. HARD THROTTLE.** WinState beacon enabled on all 9 levels + beacon runtime
+  test (17 iters since 2026-05-16 direction session). All 9 level `.tscn` files updated:
+  `add_beacon = true` on `WinStateTrigger`/`WinState`/`WinZone` nodes (Threshold, Spire, Rooftop,
+  Plaza, Cavern, Descent, Gauntlet, Viaduct, Arena). Directly addresses the cross-cutting gap from
+  iter 112 wayfinding research — fog-dense levels (Cavern 0.090, Gauntlet 0.080, Descent 0.065)
+  are now navigable during first-time device testing. Side quest: `_test_win_state_beacon_runtime()`
+  — 7 new assertions (1049 → 1056): child count, OmniLight3D type, biolume cyan colour, energy,
+  range, shadow-disabled flag. HARD STALL continues — awaiting shape pick.
+
 - **🔴 Iter 112 complete. HARD THROTTLE.** Wayfinding research + WinState beacon export (16 iters
   since 2026-05-16 direction session). `docs/research/wayfinding_design.md` written: Kevin Lynch
   5-element vocabulary applied to Void; goal-visibility audit for all 9 shapes; cross-cutting gap
@@ -587,6 +596,10 @@ These mirror "Open questions waiting on you" in the README.
   drive the next tuning iteration.
 
 ## Recently completed (last 5)
+
+- 2026-05-16 — iter 113. **WinState beacon enabled on all 9 levels. HARD THROTTLE.**
+  All 9 level `.tscn` files: `add_beacon = true` on WinState/WinZone nodes.
+  `_test_win_state_beacon_runtime()`: 7 assertions (1049→1056).
 
 - 2026-05-16 — iter 111. **Ghost trail constant extraction + stale test fix. HARD THROTTLE.**
   `ghost_trail_renderer.gd`: 3 named consts extracted (`TRAIL_COLOUR`, `ATTEMPT_ALPHA_MAX`,
