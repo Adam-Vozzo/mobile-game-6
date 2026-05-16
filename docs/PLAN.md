@@ -48,6 +48,14 @@ authored with it in mind.
   the human picks a survivor. Threshold rebuild kept in repo as the corridor representative;
   next level-touching iter MUST pick an unrepresented shape-family, not iterate on Threshold.
 
+- **🔴 Iter 115 complete. HARD THROTTLE.** MovingPlatform + RotatingHazard export-defaults tests
+  (19 iters since 2026-05-16 direction session). `tests/test_controller_kinematics.gd`: added
+  `MP`/`RH` preloads + `_test_moving_platform_defaults()` (9 assertions) +
+  `_test_rotating_hazard_defaults()` (8 assertions). Both classes had formula-only coverage
+  using hardcoded local constants — the new tests read actual class properties so a default-value
+  change (e.g. `ease_in_out` → false, `paused` → true, `rotation_axis` → non-UP) is caught even
+  if the formula tests still pass. 1061 → 1078 assertions. HARD STALL continues.
+
 - **🔴 Iter 114 complete. HARD THROTTLE.** Ghost trail defaults test — MAX_DEPTH/SAMPLE_HZ constant
   coverage gap closed (18 iters since 2026-05-16 direction session). `tests/test_controller_kinematics.gd`:
   `_test_ghost_trail_defaults()` — 5 new assertions (1056 → 1061): (1) `GTR.MAX_DEPTH == 5` — reads

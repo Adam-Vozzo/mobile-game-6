@@ -5,10 +5,10 @@ A mobile 3D platformer. Brutalist megastructure inspired by *BLAME!*. Controller
 ## Status
 
 Current gate: **Gate 0 — Feel Lab** (closing out; Gate 1 prep in flight)
-Last activity: 2026-05-16 — iter 114: ghost trail defaults test (MAX_DEPTH/SAMPLE_HZ coverage)
+Last activity: 2026-05-16 — iter 115: MovingPlatform + RotatingHazard export-defaults tests (1061→1078)
 Test device build: ✅ verified 2026-05-12 — runs in Godot 4.6 on PC and on Nothing Phone 4(a) Pro
 Performance: 144 fps / 6.9 ms in editor at 1920×1080 (Feel Lab); Threshold perf TBD after rebuild
-Throttle level: **🔴 hard** — 18 iters since 2026-05-16 direction session; FULLY STALLED — awaiting shape-family pick
+Throttle level: **🔴 hard** — 19 iters since 2026-05-16 direction session; FULLY STALLED — awaiting shape-family pick
 
 If you only read one section, read **Open questions waiting on you** below.
 
@@ -120,6 +120,39 @@ Goal: store-ready build.
 The full iteration log lives here, newest first. Every iteration appends an entry. Skim the dates to find where you last left off.
 
 <!-- ITERATION ENTRIES BELOW — DO NOT REMOVE OLDER ENTRIES -->
+
+### [2026-05-16] — iter 115 — MovingPlatform + RotatingHazard export-defaults tests
+
+Branch: `claude/gifted-shannon-qFcGf`
+Throttle: 🔴 hard (19 iters since 2026-05-16 direction session; FULLY STALLED)
+Gate: Gate 1 — direction-finding breadth pass (awaiting human shape pick)
+
+**Primary:** Added `_test_moving_platform_defaults()` and `_test_rotating_hazard_defaults()` to
+`tests/test_controller_kinematics.gd`. Added `MP` and `RH` preloads at top of file.
+
+Both classes had formula-only coverage (`_test_moving_platform_math` and `_test_rotating_hazard_math`
+use hardcoded local constants, not the actual class properties). If someone changes `ease_in_out`,
+`paused`, `travel`, `rotation_axis`, or `_elapsed` defaults in either class, the formula tests still
+pass — these new tests read the live class properties and will fail on regression.
+
+`MovingPlatform` (9 assertions): travel defaults to `Vector3(6,0,0)` (X-lateral swing axis),
+`period_seconds == 4.0` (matches formula-test constant), `ease_in_out == true` (smoothstep on by
+default — prevents jarring reversal), `paused == false`, `_elapsed == 0.0`, `period_seconds > 0.0`.
+
+`RotatingHazard` (8 assertions): `rotation_axis == Vector3.UP` (Y-axis by default), unit-length
+guard for `Basis()` safety, `period_seconds == 4.0` (matches formula-test constant, within
+`@export_range(0.5, 20.0)`), `paused == false`, `_elapsed == 0.0`, `period_seconds > 0.0`.
+
+Total: 17 new assertions (1061 → 1078).
+
+**Side quest:** None.
+
+Perf: no change.
+Bugs fixed: none.
+New dev-menu controls: none.
+Research added: none.
+Assets acquired: none.
+Assertions: 1061 → 1078 (+17).
 
 ### [2026-05-16] — iter 114 — Ghost trail defaults test (MAX_DEPTH/SAMPLE_HZ constant coverage gap)
 

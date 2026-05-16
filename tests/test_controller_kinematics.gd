@@ -25,6 +25,8 @@ const CKP := preload("res://scripts/levels/checkpoint.gd")
 const DS  := preload("res://scripts/levels/data_shard.gd")
 const CH  := preload("res://scripts/levels/camera_hint.gd")
 const GTR := preload("res://scripts/levels/ghost_trail_renderer.gd")
+const MP  := preload("res://scripts/levels/moving_platform.gd")
+const RH  := preload("res://scripts/levels/rotating_hazard.gd")
 
 var _pass_count := 0
 var _fail_count := 0
@@ -157,6 +159,8 @@ func _ready() -> void:
 	_test_ghost_trail_defaults()
 	_test_win_state_beacon_defaults()
 	_test_win_state_beacon_runtime()
+	_test_moving_platform_defaults()
+	_test_rotating_hazard_defaults()
 	_report()
 
 
@@ -6258,3 +6262,99 @@ func _test_win_state_beacon_runtime() -> void:
 	_ok("shadow disabled — one OmniLight3D with shadows is ~2× draw cost on Mobile",
 		light.shadow_enabled == false)
 	ws.free()
+
+
+func _test_moving_platform_defaults() -> void:
+	## Guards MovingPlatform @export defaults.
+	## _test_moving_platform_math tests the formula with hardcoded constants;
+	## this test reads the actual class properties so a default-value change
+	## in moving_platform.gd is caught even if the formula test still passes.
+	print("\n-- MovingPlatform @export defaults --")
+
+	var mp := MP.new()
+	_ok("MovingPlatform instantiates", mp != null)
+	if mp == null:
+		return
+
+	# travel = Vector3(6,0,0): levels that override travel still depend on the
+	# axis convention (X = lateral swing, Y = lift, Z = depth). The default
+	# documents which axis is "primary" for platform motion.
+	_ok("travel.x default 6.0 m (lateral swing axis)",  is_equal_approx(mp.travel.x, 6.0))
+	_ok("travel.y default 0.0 (no vertical component)",  is_equal_approx(mp.travel.y, 0.0))
+	_ok("travel.z default 0.0 (no depth component)",     is_equal_approx(mp.travel.z, 0.0))
+
+	# period_seconds must match the hardcoded `var period := 4.0` in
+	# _test_moving_platform_math — if the default changes that formula test
+	# becomes a stale stub that no longer covers the live default.
+	_ok("period_seconds default 4.0 s (matches formula-test constant)",
+		is_equal_approx(mp.period_seconds, 4.0))
+
+	# ease_in_out = true: smoothstep softens the velocity spike at platform
+	# reversal — the jarring stop-and-restart is the Achilles heel of ping-pong
+	# platforms on mobile.
+	_ok("ease_in_out defaults true (smoothstep active, reversal is smooth)",
+		mp.ease_in_out == true)
+
+	# paused = false: a platform that spawns paused looks correct in the editor
+	# but doesn't move at runtime — silent regression.
+	_ok("paused defaults false (platform moves from spawn)", mp.paused == false)
+
+	# _elapsed starts at 0 so every platform begins at its origin position.
+	_ok("_elapsed starts 0.0 (origin position at scene load)",
+		is_equal_approx(mp._elapsed, 0.0))
+
+	# Division guard: the formula uses (_elapsed / period_seconds), so period ≤ 0
+	# triggers the early-return guard. Default must be strictly positive.
+	_ok("period_seconds > 0.0 (division-safe default)", mp.period_seconds > 0.0)
+
+	mp.free()
+
+
+func _test_rotating_hazard_defaults() -> void:
+	## Guards RotatingHazard @export defaults.
+	## _test_rotating_hazard_math tests the angle formula with local constants;
+	## this test reads the actual class properties so a default-value change
+	## in rotating_hazard.gd is caught even if the formula test still passes.
+	print("\n-- RotatingHazard @export defaults --")
+
+	var rh := RH.new()
+	_ok("RotatingHazard instantiates", rh != null)
+	if rh == null:
+		return
+
+	# rotation_axis = Vector3.UP: overhead fans, spinning floor-plates, and
+	# maintenance arms all rotate around the Y-axis by default.
+	_ok("rotation_axis defaults to Vector3.UP (Y-axis rotation)",
+		rh.rotation_axis == Vector3.UP)
+
+	# Basis(ax, angle) in _physics_process requires ax to be normalized.
+	# Vector3.UP is a unit vector, so the default needs no explicit .normalized()
+	# call. Test confirms the default is already unit length.
+	_ok("rotation_axis default is unit length (Basis() safe)",
+		is_equal_approx(rh.rotation_axis.length(), 1.0))
+
+	# period_seconds must match the hardcoded `var period := 4.0` in
+	# _test_rotating_hazard_math — same rationale as the moving-platform test.
+	_ok("period_seconds default 4.0 s (matches formula-test constant)",
+		is_equal_approx(rh.period_seconds, 4.0))
+
+	# @export_range(0.5, 20.0, 0.25): the default must sit within the declared
+	# range or the inspector hint is misleading.
+	_ok("period_seconds within @export_range [0.5, 20.0]",
+		rh.period_seconds >= 0.5 and rh.period_seconds <= 20.0)
+
+	# paused = false: same rationale as MovingPlatform — spawning paused is an
+	# invisible runtime regression that the editor doesn't flag.
+	_ok("paused defaults false (hazard rotates from spawn)", rh.paused == false)
+
+	# _elapsed starts at 0 so every RotatingHazard begins at angle 0 (the
+	# orientation set in the scene), giving consistent start-phase across levels.
+	_ok("_elapsed starts 0.0 (angle 0 at scene load)",
+		is_equal_approx(rh._elapsed, 0.0))
+
+	# Division guard: formula uses (_elapsed / period_seconds); default > 0 keeps
+	# the guard inactive on startup (the guard fires only if a level author sets
+	# period_seconds to 0 deliberately to freeze the hazard).
+	_ok("period_seconds > 0.0 (division-safe default)", rh.period_seconds > 0.0)
+
+	rh.free()
