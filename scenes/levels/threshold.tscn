@@ -1124,6 +1124,7 @@ transform = Transform3D(1, 0, 0, 0, 1, 0, 0, 0, 1, -5, -13.25, 118)
 [node name="WinStateTrigger" type="Area3D" parent="Beat4_Ketsu"]
 transform = Transform3D(1, 0, 0, 0, 1, 0, 0, 0, 1, 0, -15.5, 134)
 script = ExtResource("6_win")
+add_beacon = true
 [node name="Shape" type="CollisionShape3D" parent="Beat4_Ketsu/WinStateTrigger"]
 shape = SubResource("Shape_WinState")
 

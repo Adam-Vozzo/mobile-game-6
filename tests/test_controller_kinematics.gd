@@ -155,6 +155,7 @@ func _ready() -> void:
 	_test_ghost_trail_point_t_normalization()
 	_test_ghost_trail_colour_constants()
 	_test_win_state_beacon_defaults()
+	_test_win_state_beacon_runtime()
 	_report()
 
 
@@ -6189,4 +6190,35 @@ func _test_win_state_beacon_defaults() -> void:
 		ws.has_method("_build_beacon"))
 	_ok("_triggered regression: still defaults false after beacon export additions",
 		ws._triggered == false)
+	ws.free()
+
+
+func _test_win_state_beacon_runtime() -> void:
+	## Guards the _build_beacon() implementation: calling it directly must create
+	## an OmniLight3D child with the correct biolume colour, energy, range, and
+	## shadow-disabled flag (Mobile renderer cost guard).
+	print("\n-- WinState beacon runtime creation --")
+
+	var ws := WS.new()
+	_ok("WinState instantiates for runtime test", ws != null)
+	if ws == null:
+		return
+
+	ws._build_beacon()
+	_ok("_build_beacon adds exactly one child", ws.get_child_count() == 1)
+
+	var light: OmniLight3D = ws.get_child(0) as OmniLight3D
+	_ok("beacon child is OmniLight3D", light != null)
+	if light == null:
+		ws.free()
+		return
+
+	# Biolume cyan: Color(0.12, 0.90, 0.95) — matches DataShard glow, signals "goal".
+	_ok("beacon colour R ≈ 0.12 (biolume cyan)",   is_equal_approx(light.light_color.r, 0.12))
+	_ok("beacon energy equals beacon_energy default (2.0)",
+		is_equal_approx(light.light_energy, ws.beacon_energy))
+	_ok("beacon range equals beacon_range default (14.0 m)",
+		is_equal_approx(light.omni_range, ws.beacon_range))
+	_ok("shadow disabled — one OmniLight3D with shadows is ~2× draw cost on Mobile",
+		light.shadow_enabled == false)
 	ws.free()
