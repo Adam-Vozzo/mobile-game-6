@@ -148,6 +148,7 @@ func _ready() -> void:
 	_test_viaduct_sentry_constants()
 	_test_gauntlet_sentry_constants()
 	_test_early_breadth_level_defaults()
+	_test_level_select_ui()
 	_report()
 
 
@@ -6003,3 +6004,57 @@ func _test_early_breadth_level_defaults() -> void:
 		_ok("plaza: get_spawn_transform returns IDENTITY when _spawn null (no scene tree)",
 			p.get_spawn_transform() == Transform3D.IDENTITY)
 		p.free()
+
+
+func _test_level_select_ui() -> void:
+	## Guards the level_select.gd _LEVELS constant: count, required keys, path format,
+	## and fixed first/last sentinel entries.
+	## count == 9 means: Feel Lab + 8 shape-family levels; Arena is still in draft PR #133.
+	## When Arena is merged this assertion will fail → the test count must then be bumped to 10.
+	print("\n-- Level selector UI invariants --")
+
+	var LS = load("res://scripts/ui/level_select.gd")
+	_ok("level_select.gd loads without error", LS != null)
+	if LS == null:
+		return
+
+	var cmap: Dictionary = LS.get_script_constant_map()
+	_ok("_LEVELS constant accessible via get_script_constant_map()", cmap.has("_LEVELS"))
+	if not cmap.has("_LEVELS"):
+		return
+
+	var levels = cmap.get("_LEVELS")
+	_ok("_LEVELS is an Array", levels is Array)
+	if not (levels is Array):
+		return
+
+	# 9 = Feel Lab + Threshold + Spire + Rooftop + Plaza + Cavern + Descent + Filterbank + Viaduct.
+	# Bump to 10 once PR #133 (Arena) is merged and the entry is added.
+	_ok("_LEVELS count = 9 (Arena pending PR #133 merge)", levels.size() == 9)
+
+	var all_have_keys := true
+	var all_paths_res := true
+	var all_paths_tscn := true
+	var all_nonempty := true
+	for entry: Dictionary in levels:
+		if not (entry.has("name") and entry.has("path") and entry.has("desc")):
+			all_have_keys = false
+		var path: String = entry.get("path", "")
+		if not path.begins_with("res://"):
+			all_paths_res = false
+		if not path.ends_with(".tscn"):
+			all_paths_tscn = false
+		if path.is_empty() or (entry.get("name", "") as String).is_empty() \
+				or (entry.get("desc", "") as String).is_empty():
+			all_nonempty = false
+
+	_ok("every entry has name/path/desc keys", all_have_keys)
+	_ok("every path starts with 'res://'", all_paths_res)
+	_ok("every path ends with '.tscn'", all_paths_tscn)
+	_ok("no entry has an empty name, path, or desc", all_nonempty)
+	_ok("levels[0] name = 'FEEL LAB' (tuning sandbox is always first — not a level)",
+		(levels[0].get("name", "") as String) == "FEEL LAB")
+	_ok("levels[1] name = 'THRESHOLD' (shape family 1 — always second after Feel Lab)",
+		(levels[1].get("name", "") as String) == "THRESHOLD")
+	_ok("levels[8] name = 'VIADUCT' (shape family 8 — last entry until Arena merges)",
+		(levels[8].get("name", "") as String) == "VIADUCT")

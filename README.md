@@ -5,10 +5,10 @@ A mobile 3D platformer. Brutalist megastructure inspired by *BLAME!*. Controller
 ## Status
 
 Current gate: **Gate 0 — Feel Lab** (closing out; Gate 1 prep in flight)
-Last activity: 2026-05-16 — iter 106: early-breadth level tests + shape-comparison research
+Last activity: 2026-05-16 — iter 107: Gate 1 depth-pass plan research + level-select UI tests
 Test device build: ✅ verified 2026-05-12 — runs in Godot 4.6 on PC and on Nothing Phone 4(a) Pro
 Performance: 144 fps / 6.9 ms in editor at 1920×1080 (Feel Lab); Threshold perf TBD after rebuild
-Throttle level: **🔴 hard** — 10 iters since 2026-05-16 direction session; FULLY STALLED — no further autonomous progress possible
+Throttle level: **🔴 hard** — 11 iters since 2026-05-16 direction session; FULLY STALLED — no further autonomous progress possible
 
 If you only read one section, read **Open questions waiting on you** below.
 
@@ -120,6 +120,37 @@ Goal: store-ready build.
 The full iteration log lives here, newest first. Every iteration appends an entry. Skim the dates to find where you last left off.
 
 <!-- ITERATION ENTRIES BELOW — DO NOT REMOVE OLDER ENTRIES -->
+
+### [2026-05-16] — iter 107 — Gate 1 depth-pass plan + level-select UI tests
+
+Branch: `claude/gifted-shannon-Rq7Go`
+Throttle: 🔴 hard (11 iters since 2026-05-16 direction session; FULLY STALLED)
+Gate: Gate 1 — direction-finding breadth pass (all 9 shapes seeded, awaiting human pick)
+
+**Primary: `docs/research/gate1_depth_pass_plan.md`** — concrete Gate 1 depth-pass checklist,
+actionable the moment the human picks a shape-family. Covers: what the breadth pass already
+wired (no re-doing needed); cross-cutting items (par-time calibration table for all 9 levels,
+ghost trail renderer wiring, art pass pattern, level-length audit, DataShard audit per level,
+enemy/hazard audit per level); per-level specific notes (Spire: missing shards + sentry; Rooftop:
+blob shadow priority; Plaza: pillar art + sentry on one arm; Cavern: nav legibility + camera
+risk; Descent: ratchet direction test; Filterbank: art-only pass; Viaduct: sentry patrol_distance
+tuning). Includes a copy-pasteable completion checklist for PLAN.md and a "Gate 2 only" list.
+
+**Side quest: `_test_level_select_ui()`** — 10 new assertions (1171 → 1181) guarding the
+`level_select.gd` `_LEVELS` constant: script loads, constant accessible via
+`get_script_constant_map()`, count = 9 (with note that Arena merge bumps it to 10), every entry
+has name/path/desc keys, all paths start with `res://` and end with `.tscn`, no empty strings,
+spot checks on `[0]` = FEEL LAB, `[1]` = THRESHOLD, `[8]` = VIADUCT.
+
+Perf: unchanged (no scene changes).
+Bugs fixed: none.
+New dev-menu controls: none.
+Research added: `gate1_depth_pass_plan.md` (INDEX.md updated).
+Assets acquired: none.
+
+**Needs human attention:** same as iter 106 — pick a shape-family survivor.
+
+---
 
 ### [2026-05-16] — iter 106 — Early-breadth level tests + shape-comparison research note
 
