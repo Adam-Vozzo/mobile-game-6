@@ -5,10 +5,10 @@ A mobile 3D platformer. Brutalist megastructure inspired by *BLAME!*. Controller
 ## Status
 
 Current gate: **Gate 0 — Feel Lab** (closing out; Gate 1 prep in flight)
-Last activity: 2026-05-16 — iter 105: breadth-pass level tests + strict-warning parse fixes
+Last activity: 2026-05-16 — iter 106: early-breadth level tests + shape-comparison research
 Test device build: ✅ verified 2026-05-12 — runs in Godot 4.6 on PC and on Nothing Phone 4(a) Pro
 Performance: 144 fps / 6.9 ms in editor at 1920×1080 (Feel Lab); Threshold perf TBD after rebuild
-Throttle level: **🔴 hard** — 9 iters since 2026-05-16 direction session; breadth directive complete, awaiting human choice
+Throttle level: **🔴 hard** — 10 iters since 2026-05-16 direction session; FULLY STALLED — no further autonomous progress possible
 
 If you only read one section, read **Open questions waiting on you** below.
 
@@ -16,15 +16,16 @@ If you only read one section, read **Open questions waiting on you** below.
 
 Things Claude can't decide alone, or where it's stalled and needs direction.
 
-> **🔴 HARD THROTTLE — 9 iterations since 2026-05-16 direction session.**
+> **🔴 FULLY STALLED — 10 iterations since 2026-05-16 direction session.**
 > The breadth directive is complete: all 9 shape-families from `docs/CLAUDE.md` are built.
 > Shape inventory: Threshold (corridor), Spire (tower), Rooftop, Plaza (hub), Cavern (maze),
 > Descent (inverted), Filterbank (gauntlet), Viaduct (bridge crossing), Arena (ringed) —
-> see PR #133 for Arena (draft, awaiting your pick).
+> see PR #133 for Arena (draft, not yet on main, awaiting your pick).
 >
-> **No new feature work until you pick a shape-family survivor.** Current iters are hardening-only
-> (tests, bug fixes, parse fixes). The loop can do one more hardening pass at most before it
-> fully stalls.
+> **The autonomous loop is fully stalled.** No more hardening passes remain — tests are complete
+> for all 9 shape-family scripts, research is written. The next useful thing the loop can do
+> requires your pick. A new research note `docs/research/gate1_shape_comparison.md` summarises
+> each shape's infrastructure state and camera/control demands to help you choose.
 >
 > **Highest-leverage action: pick a shape-family.** Even a 15-minute device session on the
 > Nothing Phone 4(a) Pro running the level selector (`level_select.tscn`) gives you enough
@@ -119,6 +120,46 @@ Goal: store-ready build.
 The full iteration log lives here, newest first. Every iteration appends an entry. Skim the dates to find where you last left off.
 
 <!-- ITERATION ENTRIES BELOW — DO NOT REMOVE OLDER ENTRIES -->
+
+### [2026-05-16] — iter 106 — Early-breadth level tests + shape-comparison research note
+
+Branch: `claude/gifted-shannon-rdiRE`
+Throttle: 🔴 hard (10 iters since 2026-05-16 direction session; FULLY STALLED)
+Gate: Gate 1 — direction-finding breadth pass (all 9 shapes seeded, awaiting human pick)
+
+**Primary: 12 new unit tests for the three level scripts from iters 97–99 (Spire, Rooftop, Plaza).**
+
+Iter 105's `_test_breadth_level_defaults()` covered iters 100–103 (cavern/descent/gauntlet/viaduct)
+but inadvertently skipped the three earlier level scripts. New function
+`_test_early_breadth_level_defaults()` adds the missing coverage:
+
+- **Spire (iter 97):** load guard + par_time_seconds=50.0 + spawn_marker_path="PlayerSpawn" +
+  get_spawn_transform() → IDENTITY when _spawn null.
+- **Rooftop (iter 98):** load guard + par_time_seconds=45.0 + spawn_marker_path + null-guard.
+- **Plaza (iter 99):** load guard + par_time_seconds=40.0 + spawn_marker_path + null-guard.
+
+**1159 → 1171 assertions.** All 9 breadth-pass level scripts now have default-export and
+null-guard coverage.
+
+**Side quest: `docs/research/gate1_shape_comparison.md`** — per-shape breakdown for the human's
+survivor pick. For each of the 9 shapes: what it is, camera/control demand, current art
+infrastructure, remaining Gate 1 work, and a strengths note. Summary table: skilled par,
+mechanical depth, art done, sentry/press, camera risk. Implications: Filterbank is mechanically
+most complete; Plaza is safest for mobile camera; Viaduct has strongest BLAME! identity;
+Cavern + Arena carry the highest camera risk and should not be picked without a device session.
+`docs/research/INDEX.md` updated.
+
+Perf delta: none (test-only + doc changes, no scene changes).
+Bugs fixed: none.
+New dev-menu controls: none.
+Assets acquired: none.
+Research added: `gate1_shape_comparison.md`.
+
+**FULLY STALLED.** No further autonomous progress possible. Tests are complete for all 9 shape-
+family scripts, research is written, all breadth work is done. The next useful action requires
+a human pick. See "Open questions waiting on you" above.
+
+---
 
 ### [2026-05-16] — iter 105 — Breadth-pass level tests + strict-warning parse fixes
 
