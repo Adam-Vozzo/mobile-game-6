@@ -14,6 +14,14 @@ class_name GhostTrailRenderer
 const MAX_DEPTH  := 5
 const SAMPLE_HZ  := 30.0
 
+## Cold blue: complements sodium amber, echoes biolume palette, contrasts
+## concrete grey. Chosen in iter 110 after contrast analysis vs the brutalist palette.
+const TRAIL_COLOUR      := Color(0.40, 0.55, 0.95)
+## Newest attempt (a_idx=0) starts at this alpha, older attempts decay by ALPHA_DECAY.
+const ATTEMPT_ALPHA_MAX := 0.50
+## Per-attempt fade multiplier. At 5 trails: alpha[4] ≈ 0.033 × alpha[0].
+const ATTEMPT_ALPHA_DECAY := 0.55
+
 ## Seconds of each attempt's trail that are visible. At 30 samples/s:
 ##   2 s = 60 points, 4 s = 120 points.
 @export_range(1.0, 5.0, 0.5) var visible_window_s: float = 2.0
@@ -70,8 +78,8 @@ func _process(_delta: float) -> void:
 	for a_idx: int in Game.trail_history.size():
 		var trail: PackedVector3Array = Game.trail_history[a_idx]
 		var start := maxi(0, trail.size() - visible_pts)
-		# Newest attempt is brightest; each older attempt fades by ×0.55.
-		var attempt_alpha := 0.50 * pow(0.55, float(a_idx))
+		# Newest attempt is brightest; each older attempt fades by ×ATTEMPT_ALPHA_DECAY.
+		var attempt_alpha := ATTEMPT_ALPHA_MAX * pow(ATTEMPT_ALPHA_DECAY, float(a_idx))
 		var range_len := trail.size() - start
 		for p_idx: int in range_len:
 			# Oldest visible point fades to 0; newest is full attempt_alpha.
@@ -79,7 +87,8 @@ func _process(_delta: float) -> void:
 			# fresh attempt) are visible — dividing by visible_pts made
 			# a 5-point trail's newest sample appear at 0.023 alpha.
 			var point_t := float(p_idx) / float(maxi(range_len - 1, 1))
-			var col := Color(0.40, 0.55, 0.95, attempt_alpha * point_t)
+			var col := TRAIL_COLOUR
+			col.a = attempt_alpha * point_t
 			_mmesh.multimesh.set_instance_transform(inst,
 				Transform3D(Basis(), trail[start + p_idx]))
 			_mmesh.multimesh.set_instance_color(inst, col)

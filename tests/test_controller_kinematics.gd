@@ -24,6 +24,7 @@ const WS  := preload("res://scripts/levels/win_state.gd")
 const CKP := preload("res://scripts/levels/checkpoint.gd")
 const DS  := preload("res://scripts/levels/data_shard.gd")
 const CH  := preload("res://scripts/levels/camera_hint.gd")
+const GTR := preload("res://scripts/levels/ghost_trail_renderer.gd")
 
 var _pass_count := 0
 var _fail_count := 0
@@ -152,6 +153,7 @@ func _ready() -> void:
 	_test_arena_sentry_constants()
 	_test_level_select_ui()
 	_test_ghost_trail_point_t_normalization()
+	_test_ghost_trail_colour_constants()
 	_report()
 
 
@@ -4320,11 +4322,12 @@ func _test_ghost_trail_recording() -> void:
 	_ok("ghost trail: oldest retained attempt at history[4]",
 		_near(trail_history[MAX_DEPTH - 1][0].x, 2.0))  # attempt 2 (7-MAX_DEPTH=2)
 
-	# Alpha formula: attempt 0 = 0.35, each subsequent × 0.55.
-	var alpha0 := 0.35 * pow(0.55, 0.0)
-	var alpha1 := 0.35 * pow(0.55, 1.0)
-	_ok("ghost trail: alpha[0] = 0.35 (newest, brightest)",
-		_near(alpha0, 0.35))
+	# Alpha formula: attempt 0 = ATTEMPT_ALPHA_MAX (0.50), each subsequent × ATTEMPT_ALPHA_DECAY (0.55).
+	# Updated iter 110: was 0.35 before cold-blue colour redesign raised alpha for contrast.
+	var alpha0 := 0.50 * pow(0.55, 0.0)
+	var alpha1 := 0.50 * pow(0.55, 1.0)
+	_ok("ghost trail: alpha[0] = 0.50 (newest, brightest — updated iter 110)",
+		_near(alpha0, 0.50))
 	_ok("ghost trail: alpha[1] = alpha[0] × 0.55 (each attempt fades)",
 		_near(alpha1, alpha0 * 0.55))
 
@@ -4394,6 +4397,33 @@ func _test_ghost_trail_point_t_normalization() -> void:
 	var new_full := float(full_range_len - 1) / float(maxi(full_range_len - 1, 1))
 	_ok("full-window trail: newest point_t = 1.0 (old formula gave 59/60 ≈ 0.983)",
 		_near(new_full, 1.0))
+
+
+func _test_ghost_trail_colour_constants() -> void:
+	## Guards the visual constants set in iter 110.
+	## TRAIL_COLOUR: cold blue chosen for contrast against concrete grey;
+	##   complements sodium amber, echoes biolume palette, does not dilute Stray yellow.
+	## ATTEMPT_ALPHA_MAX: raised 0.35→0.50 with the colour change (cold blue needs more
+	##   opacity to read on grey concrete than the old warm grey did).
+	## ATTEMPT_ALPHA_DECAY: per-attempt fade so trail[4] ≈ 0.033 × trail[0] (barely visible).
+	print("\n-- Ghost trail colour constants (iter 110) --")
+
+	_ok("TRAIL_COLOUR.r = 0.40 (cold blue, low red component)",
+		_near(GTR.TRAIL_COLOUR.r, 0.40))
+	_ok("TRAIL_COLOUR.g = 0.55 (cold blue, mid green component)",
+		_near(GTR.TRAIL_COLOUR.g, 0.55))
+	_ok("TRAIL_COLOUR.b = 0.95 (cold blue, high blue component)",
+		_near(GTR.TRAIL_COLOUR.b, 0.95))
+	_ok("ATTEMPT_ALPHA_MAX = 0.50 (raised from 0.35 for contrast against concrete)",
+		_near(GTR.ATTEMPT_ALPHA_MAX, 0.50))
+	_ok("ATTEMPT_ALPHA_DECAY = 0.55 (oldest of 5 trails at ~3% of newest)",
+		_near(GTR.ATTEMPT_ALPHA_DECAY, 0.55))
+
+	# Decay is monotone: each successive attempt is strictly dimmer.
+	var a0 := GTR.ATTEMPT_ALPHA_MAX * pow(GTR.ATTEMPT_ALPHA_DECAY, 0.0)
+	var a4 := GTR.ATTEMPT_ALPHA_MAX * pow(GTR.ATTEMPT_ALPHA_DECAY, 4.0)
+	_ok("ATTEMPT_ALPHA_DECAY: trail[4] < trail[0] (decay is monotone over 5 attempts)",
+		a4 < a0)
 
 
 func _test_camera_occlusion_defaults() -> void:
