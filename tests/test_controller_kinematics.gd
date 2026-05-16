@@ -144,6 +144,9 @@ func _ready() -> void:
 	_test_threshold_level_lifecycle()
 	_test_ledge_pull_geometry()
 	_test_sentry_instant_reversal()
+	_test_breadth_level_defaults()
+	_test_viaduct_sentry_constants()
+	_test_gauntlet_sentry_constants()
 	_report()
 
 
@@ -1917,7 +1920,7 @@ func _test_tripod_horiz_distance_correction() -> void:
 
 	# Already at desired: zero movement.
 	var at_dist := Vector3(0.0, 2.0, 5.0)
-	var at_result := _correct.call(at_dist, 5.0)
+	var at_result: Vector3 = _correct.call(at_dist, 5.0) as Vector3
 	_ok("tripod: camera at correct dist → no XZ movement (dist_err == 0)",
 		_near(at_result.x, at_dist.x) and _near(at_result.z, at_dist.z))
 
@@ -1927,21 +1930,21 @@ func _test_tripod_horiz_distance_correction() -> void:
 
 	# Horizontal direction preserved: camera stays on same ray from target after correction.
 	var cam_diag := Vector3(4.0, 2.0, 6.0)
-	var res_diag := _correct.call(cam_diag, 5.0)
+	var res_diag: Vector3 = _correct.call(cam_diag, 5.0) as Vector3
 	var dir_before := Vector2(cam_diag.x, cam_diag.z).normalized()
 	var dir_after  := Vector2(res_diag.x,  res_diag.z).normalized()
 	_ok("tripod: horizontal direction preserved (camera stays on same radial line from target)",
 		_near(dir_before.dot(dir_after), 1.0, 1e-4))
 
 	# Single-step convergence: applying the correction twice gives same result.
-	var once  := _correct.call(Vector3(0, 2, 10), 5.0)
-	var twice := _correct.call(once, 5.0)
+	var once: Vector3  = _correct.call(Vector3(0, 2, 10), 5.0) as Vector3
+	var twice: Vector3 = _correct.call(once, 5.0) as Vector3
 	_ok("tripod: correction converges in exactly one step (second pass is a no-op)",
 		_near(_hd.call(twice), 5.0) and _near(once.x, twice.x) and _near(once.z, twice.z))
 
 	# Correction direction: moves toward target when too far, away when too close.
-	var res_far   := _correct.call(Vector3(0.0, 0.0, 8.0), 5.0)
-	var res_close := _correct.call(Vector3(0.0, 0.0, 2.0), 5.0)
+	var res_far: Vector3   = _correct.call(Vector3(0.0, 0.0, 8.0), 5.0) as Vector3
+	var res_close: Vector3 = _correct.call(Vector3(0.0, 0.0, 2.0), 5.0) as Vector3
 	_ok("tripod: correction moves camera toward target when too far (+Z cam → smaller Z after)",
 		res_far.z < 8.0)
 	_ok("tripod: correction moves camera away from target when too close (+Z cam → larger Z after)",
@@ -2027,19 +2030,19 @@ func _test_camera_pub_yaw_formula() -> void:
 		_near(_yaw.call(Vector3(-DIST, 0.0, 0.0)), -PI / 2.0))
 
 	# Diagonal camera (+X+Z at 45°) → yaw in (0, PI/2).
-	var diag_yaw := _yaw.call(Vector3(DIST, 0.0, DIST))
+	var diag_yaw: float = _yaw.call(Vector3(DIST, 0.0, DIST)) as float
 	_ok("pub_yaw: diagonal camera (+X+Z at 45°) → yaw in (0, PI/2)",
 		diag_yaw > 0.0 and diag_yaw < PI / 2.0)
 
 	# Y component does not affect published yaw (it's a horizontal angle only).
-	var yaw_low  := _yaw.call(Vector3(0.0, 1.0, DIST))
-	var yaw_high := _yaw.call(Vector3(0.0, 8.0, DIST))
+	var yaw_low: float  = _yaw.call(Vector3(0.0, 1.0, DIST)) as float
+	var yaw_high: float = _yaw.call(Vector3(0.0, 8.0, DIST)) as float
 	_ok("pub_yaw: camera Y does not affect published yaw (angle is purely horizontal)",
 		_near(yaw_low, yaw_high))
 
 	# Distance does not affect yaw direction — only angle matters.
-	var yaw_near := _yaw.call(Vector3(0.0, 0.0, 2.0))
-	var yaw_far  := _yaw.call(Vector3(0.0, 0.0, 10.0))
+	var yaw_near: float = _yaw.call(Vector3(0.0, 0.0, 2.0)) as float
+	var yaw_far: float  = _yaw.call(Vector3(0.0, 0.0, 10.0)) as float
 	_ok("pub_yaw: camera distance does not change yaw (scaling the offset preserves angle)",
 		_near(yaw_near, yaw_far))
 
@@ -4443,7 +4446,7 @@ func _test_zone_env_bounds_and_disabled() -> void:
 
 	# zone_id=0 with enabled=true: null sentinel blocks the swap (first condition false).
 	# This prevents an accidental off-by-one from reaching zone1_env via the enabled path.
-	var zone_id_0_slot := _slot.call(0)
+	var zone_id_0_slot: int = _slot.call(0) as int
 	_ok("zone env: zone_id=0 enabled → no swap (null slot, enabled branch requires target != null)",
 		not (true and zone_id_0_slot != -1))
 
@@ -4452,7 +4455,7 @@ func _test_zone_env_bounds_and_disabled() -> void:
 	# of which zone the player is in — providing a clean A/B reference frame.
 	var _disabled_result := func(atmo_on: bool, z1_present: bool, zone_id: int) -> int:
 		# Returns: -1 = no swap, 1 = zone1 fallback/slot, 2/3 = target slot
-		var slot := _slot.call(zone_id)
+		var slot: int = _slot.call(zone_id) as int
 		if atmo_on and slot != -1:
 			return slot
 		elif not atmo_on and z1_present:
@@ -5829,3 +5832,124 @@ func _test_sentry_instant_reversal() -> void:
 	var new_offset_c := offset + dir * PATROL_SPEED * delta   # = 4.0 + (−1)×2.5×0.016 = 3.96 m
 	_ok("sentry instant-rev: post-reversal offset decreases immediately (no pause)",
 		new_offset_c < half)
+
+
+func _test_breadth_level_defaults() -> void:
+	## Guards @export defaults and get_spawn_transform null-guard for the four
+	## breadth-pass level scripts (cavern, descent, gauntlet, viaduct), added in
+	## iters 100–103 without dedicated unit tests.
+	##
+	## Pattern: load script, instantiate (no scene tree → _ready() never runs →
+	## @onready _spawn stays null), verify export defaults and null-guard branch.
+	print("\n-- Breadth-pass level script defaults (iters 100–103) --")
+
+	# ── Cavern (iter 100) ────────────────────────────────────────────────────
+	var CavernScript = load("res://scripts/levels/cavern.gd")
+	_ok("cavern.gd loads without error", CavernScript != null)
+	if CavernScript != null:
+		var c = CavernScript.new()
+		_ok("cavern: par_time_seconds default = 45.0 (calibrate after first device run)",
+			_near(c.par_time_seconds, 45.0))
+		_ok("cavern: spawn_marker_path default = NodePath(\"PlayerSpawn\")",
+			c.spawn_marker_path == NodePath("PlayerSpawn"))
+		_ok("cavern: get_spawn_transform returns IDENTITY when _spawn null",
+			c.get_spawn_transform() == Transform3D.IDENTITY)
+		c.free()
+
+	# ── Descent (iter 101) ───────────────────────────────────────────────────
+	var DescentScript = load("res://scripts/levels/descent.gd")
+	_ok("descent.gd loads without error", DescentScript != null)
+	if DescentScript != null:
+		var d = DescentScript.new()
+		_ok("descent: par_time_seconds default = 40.0 (shorter — fewer beats than cavern)",
+			_near(d.par_time_seconds, 40.0))
+		_ok("descent: spawn_marker_path default = NodePath(\"PlayerSpawn\")",
+			d.spawn_marker_path == NodePath("PlayerSpawn"))
+		_ok("descent: get_spawn_transform returns IDENTITY when _spawn null",
+			d.get_spawn_transform() == Transform3D.IDENTITY)
+		d.free()
+
+	# ── Gauntlet (iter 102) ──────────────────────────────────────────────────
+	var GauntletScript = load("res://scripts/levels/gauntlet.gd")
+	_ok("gauntlet.gd loads without error", GauntletScript != null)
+	if GauntletScript != null:
+		var g = GauntletScript.new()
+		_ok("gauntlet: par_time_seconds default = 45.0",
+			_near(g.par_time_seconds, 45.0))
+		_ok("gauntlet: spawn_marker_path default = NodePath(\"PlayerSpawn\")",
+			g.spawn_marker_path == NodePath("PlayerSpawn"))
+		_ok("gauntlet: get_spawn_transform returns IDENTITY when _spawn null",
+			g.get_spawn_transform() == Transform3D.IDENTITY)
+		g.free()
+
+	# ── Viaduct (iter 103) ───────────────────────────────────────────────────
+	var ViaductScript = load("res://scripts/levels/viaduct.gd")
+	_ok("viaduct.gd loads without error", ViaductScript != null)
+	if ViaductScript != null:
+		var v = ViaductScript.new()
+		_ok("viaduct: par_time_seconds default = 45.0",
+			_near(v.par_time_seconds, 45.0))
+		_ok("viaduct: spawn_marker_path default = NodePath(\"PlayerSpawn\")",
+			v.spawn_marker_path == NodePath("PlayerSpawn"))
+		_ok("viaduct: get_spawn_transform returns IDENTITY when _spawn null",
+			v.get_spawn_transform() == Transform3D.IDENTITY)
+		v.free()
+
+
+func _test_viaduct_sentry_constants() -> void:
+	## Documents Viaduct._spawn_sentry() placement constants.
+	## Viaduct has one sentry on Span3Final — the narrowest, most exposed span.
+	## Pure-maths guards: no scene instantiation needed.
+	print("\n-- Viaduct sentry spawn constants --")
+
+	const SENTRY_Z     := 68.0   # Span3Final: far end of the crossing
+	const PATROL_DIST  := 3.0    # total sweep: ±1.5 m from centre
+	const PATROL_SPEED := 2.0    # m/s — readable approach window on 2 m-wide span
+	const SENTRY_Y     := 1.2    # standard PatrolSentry elevation above span surface
+
+	# Span is 2 m wide (half = 1.0 m from centre).  Sentry body BoxShape half = 0.4 m.
+	# At half-sweep (1.5 m), body edge reaches 1.5 + 0.4 = 1.9 m from centre → 0.1 m
+	# clearance to span edge.  Player (capsule r = 0.28 m) must slip past within ≤ 0.7 m.
+	const BODY_HALF := 0.4
+	const SPAN_HALF := 1.0
+	var edge_clearance: float = SPAN_HALF - (PATROL_DIST * 0.5) - BODY_HALF
+	_ok("viaduct sentry: half-sweep + body_half leaves 0.1 m to span edge (tight, non-clipping)",
+		_near(edge_clearance, 0.1))
+	_ok("viaduct sentry: spawn Z=68 is on Span3Final (last span before ArrivalAbutment)",
+		_near(SENTRY_Z, 68.0))
+	_ok("viaduct sentry: patrol_distance=3.0 m → ±1.5 m across 2 m span",
+		_near(PATROL_DIST, 3.0))
+	_ok("viaduct sentry: patrol_speed=2.0 m/s (one crossing per 3 s — one approach window)",
+		_near(PATROL_SPEED, 2.0))
+	_ok("viaduct sentry: y=1.2 m (standard PatrolSentry elevation)",
+		_near(SENTRY_Y, 1.2))
+
+
+func _test_gauntlet_sentry_constants() -> void:
+	## Documents Gauntlet._spawn_sentries() constants for both sentry beats.
+	## Beat 2 introduces the sentry solo; Beat 4 combines it with Press2.
+	## Speed escalates 25% between beats to increase pressure in the combined room.
+	print("\n-- Gauntlet sentry spawn constants --")
+
+	const B2_Z     := 28.0   # Beat 2: sentry corridor (after press, before void gap)
+	const B2_DIST  := 6.0    # ±3 m sweep across 8 m corridor
+	const B2_SPEED := 2.0    # m/s — comfortable first-encounter window
+	const B4_Z     := 62.0   # Beat 4: combined chamber after Press2 at z≈56
+	const B4_DIST  := 6.0    # same lateral reach as B2
+	const B4_SPEED := 2.5    # m/s — 25% faster for combined-hazard pressure
+	const SENTRY_Y := 1.2    # standard elevation
+
+	_ok("gauntlet beat2 sentry: patrol_distance=6 → ±3 m sweep across 8 m corridor",
+		_near(B2_DIST * 0.5, 3.0))
+	_ok("gauntlet beat2 sentry: z=28 (between Beat1 press exit and Beat3 void)",
+		_near(B2_Z, 28.0))
+	_ok("gauntlet beat2 sentry: speed=2.0 m/s (calibrated for first-encounter legibility)",
+		_near(B2_SPEED, 2.0))
+	_ok("gauntlet beat4 sentry: z=62 (combined chamber, after Press2 at z≈56)",
+		_near(B4_Z, 62.0))
+	_ok("gauntlet beat4 sentry: speed=2.5 m/s = B2 × 1.25 (25% escalation for combined beat)",
+		_near(B4_SPEED, B2_SPEED * 1.25))
+	_ok("gauntlet beat4 sentry: patrol_distance=6 m (same corridor-blocking width as Beat2)",
+		_near(B4_DIST, B2_DIST))
+	_ok("gauntlet sentries: both at y=1.2 m (standard PatrolSentry elevation)",
+		_near(SENTRY_Y, 1.2))

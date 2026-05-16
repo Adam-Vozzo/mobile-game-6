@@ -5,10 +5,10 @@ A mobile 3D platformer. Brutalist megastructure inspired by *BLAME!*. Controller
 ## Status
 
 Current gate: **Gate 0 — Feel Lab** (closing out; Gate 1 prep in flight)
-Last activity: 2026-05-16 — iter 103: Viaduct level (exposed bridge crossing, shape-family 8)
+Last activity: 2026-05-16 — iter 105: breadth-pass level tests + strict-warning parse fixes
 Test device build: ✅ verified 2026-05-12 — runs in Godot 4.6 on PC and on Nothing Phone 4(a) Pro
 Performance: 144 fps / 6.9 ms in editor at 1920×1080 (Feel Lab); Threshold perf TBD after rebuild
-Throttle level: **🟡 soft** — 7 iters since 2026-05-16 direction session (overridden: active breadth-pass directive)
+Throttle level: **🔴 hard** — 9 iters since 2026-05-16 direction session; breadth directive complete, awaiting human choice
 
 If you only read one section, read **Open questions waiting on you** below.
 
@@ -16,17 +16,29 @@ If you only read one section, read **Open questions waiting on you** below.
 
 Things Claude can't decide alone, or where it's stalled and needs direction.
 
-> **🟡 SOFT THROTTLE (overridden: active breadth directive)**
-> 7 iterations since 2026-05-16 direction session. Feature work ongoing under the
-> "build many shape-families" directive from `docs/CLAUDE.md`. Shapes so far: Threshold
-> (corridor), Spire (tower), Rooftop, Plaza (hub), Cavern (maze), Descent (inverted),
-> Filterbank (gauntlet), Viaduct (bridge crossing) — 8 families. One CLAUDE.md example
-> remains unbuilt: **ringed arena**. After that, all listed examples will be covered
-> and Claude will escalate for direction on whether to add more or move to depth.
+> **🔴 HARD THROTTLE — 9 iterations since 2026-05-16 direction session.**
+> The breadth directive is complete: all 9 shape-families from `docs/CLAUDE.md` are built.
+> Shape inventory: Threshold (corridor), Spire (tower), Rooftop, Plaza (hub), Cavern (maze),
+> Descent (inverted), Filterbank (gauntlet), Viaduct (bridge crossing), Arena (ringed) —
+> see PR #133 for Arena (draft, awaiting your pick).
 >
-> **Highest-leverage action:** a device session (see item 1 below). Even 15 minutes on
-> the Nothing Phone 4(a) Pro generates enough feedback to pick a shape-family survivor
-> and unblock the entire depth-pass phase.
+> **No new feature work until you pick a shape-family survivor.** Current iters are hardening-only
+> (tests, bug fixes, parse fixes). The loop can do one more hardening pass at most before it
+> fully stalls.
+>
+> **Highest-leverage action: pick a shape-family.** Even a 15-minute device session on the
+> Nothing Phone 4(a) Pro running the level selector (`level_select.tscn`) gives you enough
+> feel to choose. Once you pick, the loop pivots to depth on that one level for Gate 1.
+>
+> **Suggested next directions (pick one):**
+> - **A. Play the level selector.** Run the project (opens to `level_select.tscn`), try each
+>   shape, say which one you want to go deep on. Done — the loop has its target.
+> - **B. Go straight to Threshold or Spire** (both have the most infrastructure). Say "depth
+>   on Threshold" or "depth on Spire" without a device session and the loop starts the art /
+>   hazard / polish pass immediately.
+> - **C. Add a shape-family not on the CLAUDE.md list.** If none of the 9 families grabs you,
+>   name a new one (e.g. "half-pipe ramp", "suspended cage network", "staircase tower") and
+>   the next iter seeds it. Then pick from the expanded set.
 
 **What's still waiting for your read:**
 1. **Hold-jump+swipe air dash — two modes to compare.** (iter 67) Dev menu Touch section has "Buffer dash cam" toggle. Try both, or say "always buffer" / "drop the option" and we'll clean it up.
@@ -107,6 +119,51 @@ Goal: store-ready build.
 The full iteration log lives here, newest first. Every iteration appends an entry. Skim the dates to find where you last left off.
 
 <!-- ITERATION ENTRIES BELOW — DO NOT REMOVE OLDER ENTRIES -->
+
+### [2026-05-16] — iter 105 — Breadth-pass level tests + strict-warning parse fixes
+
+Branch: `claude/gifted-shannon-uL0Em`
+Throttle: 🔴 hard (9 iters since 2026-05-16 direction session; breadth directive complete)
+Gate: Gate 1 — direction-finding breadth pass (all 9 shapes seeded, awaiting human choice)
+
+**Primary: 28 new unit tests for the four level scripts added in iters 100–103 without tests.**
+
+Three new test functions in `tests/test_controller_kinematics.gd`:
+
+- **`_test_breadth_level_defaults()` — 16 assertions.** Loads cavern.gd, descent.gd, gauntlet.gd,
+  viaduct.gd via `load()`. Verifies: each script loads without error; par_time_seconds export
+  defaults (cavern 45.0, descent 40.0, gauntlet 45.0, viaduct 45.0); spawn_marker_path default
+  = `NodePath("PlayerSpawn")` on all four; `get_spawn_transform()` returns `Transform3D.IDENTITY`
+  when the PlayerSpawn Marker3D is absent (null `_spawn` — no scene tree in test context).
+  Mirrors the pattern from `_test_threshold_level_lifecycle()` (iter 95).
+
+- **`_test_viaduct_sentry_constants()` — 5 assertions.** Documents Viaduct._spawn_sentry():
+  spawn Z=68 (Span3Final), patrol_distance=3.0 m (±1.5 m), patrol_speed=2.0 m/s, y=1.2 m.
+  Key invariant: SPAN_HALF(1.0) − patrol_dist/2(1.5) − BODY_HALF(0.4) = 0.1 m edge clearance
+  — sentry body almost reaches the 2 m-wide span edge, forcing the player to slip past precisely.
+
+- **`_test_gauntlet_sentry_constants()` — 7 assertions.** Documents both Gauntlet sentries.
+  Beat2 at z=28, ±3 m, 2.0 m/s (solo introduction). Beat4 at z=62, ±3 m, 2.5 m/s
+  (B2_SPEED × 1.25 — 25% escalation for the combined press+sentry chamber). Both at y=1.2 m.
+
+**1131 → 1159 assertions.**
+
+**Side quest: fixed 13 strict-warning parse errors** (`var x := callable.call()` → `var x: Type = callable.call() as Type`).
+Affected call sites: `_correct.call()` (→ Vector3, 6 occurrences), `_yaw.call()` (→ float, 5),
+`_slot.call()` (→ int, 2 — one inside a lambda). Previously flagged at lines 2042/4446/4455
+by the 2026-05-16 direction session; all 13 instances are now fixed.
+
+Perf delta: none (test-only changes, no scene changes).
+Bugs fixed: 13 strict-warning parse errors in test file.
+New dev-menu controls: none.
+Assets acquired: none.
+Research added: none.
+
+**Needs human attention: pick a shape-family survivor.** All 9 CLAUDE.md shapes are seeded
+(Threshold, Spire, Rooftop, Plaza, Cavern, Descent, Filterbank, Viaduct, Arena [PR #133 draft]).
+The autonomous loop cannot advance Gate 1 without your pick. See "Open questions" above.
+
+---
 
 ### [2026-05-16] — iter 103 — Viaduct level (exposed bridge crossing, shape-family 8)
 
