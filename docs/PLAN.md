@@ -48,6 +48,17 @@ authored with it in mind.
   the human picks a survivor. Threshold rebuild kept in repo as the corridor representative;
   next level-touching iter MUST pick an unrepresented shape-family, not iterate on Threshold.
 
+- **🔴 Iter 114 complete. HARD THROTTLE.** Ghost trail defaults test — MAX_DEPTH/SAMPLE_HZ constant
+  coverage gap closed (18 iters since 2026-05-16 direction session). `tests/test_controller_kinematics.gd`:
+  `_test_ghost_trail_defaults()` — 5 new assertions (1056 → 1061): (1) `GTR.MAX_DEPTH == 5` — reads
+  from the class directly, unlike prior resize/disable tests which use local copy constants
+  (`MAX_D = 5`) that would not catch a source change; (2) `GTR.SAMPLE_HZ == 30.0` — same reason;
+  (3) `visible_window_s` export default = 2.0 from a `GTR.new()` instance — first test of this
+  default, must match dev-menu slider `default_val` or slider silently overwrites the value on
+  `_build_ui`; (4) derived pool formula: `MAX_DEPTH × visible_pts(2.0) = 300` instances;
+  (5) `_enabled` starts false — ghost trail must be OFF until `Game.trail_history` is populated.
+  HARD STALL continues — awaiting shape pick.
+
 - **🔴 Iter 113 complete. HARD THROTTLE.** WinState beacon enabled on all 9 levels + beacon runtime
   test (17 iters since 2026-05-16 direction session). All 9 level `.tscn` files updated:
   `add_beacon = true` on `WinStateTrigger`/`WinState`/`WinZone` nodes (Threshold, Spire, Rooftop,
@@ -596,6 +607,12 @@ These mirror "Open questions waiting on you" in the README.
   drive the next tuning iteration.
 
 ## Recently completed (last 5)
+
+- 2026-05-16 — iter 114. **Ghost trail defaults test. HARD THROTTLE.**
+  `_test_ghost_trail_defaults()`: 5 assertions (1056→1061). Reads `GTR.MAX_DEPTH` and
+  `GTR.SAMPLE_HZ` directly from the class (prior tests use local copy-constants that
+  would not catch a source change). First tests for `visible_window_s` export default (2.0)
+  and `_enabled` initial value (false).
 
 - 2026-05-16 — iter 113. **WinState beacon enabled on all 9 levels. HARD THROTTLE.**
   All 9 level `.tscn` files: `add_beacon = true` on WinState/WinZone nodes.

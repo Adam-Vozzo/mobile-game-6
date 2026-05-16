@@ -154,6 +154,7 @@ func _ready() -> void:
 	_test_level_select_ui()
 	_test_ghost_trail_point_t_normalization()
 	_test_ghost_trail_colour_constants()
+	_test_ghost_trail_defaults()
 	_test_win_state_beacon_defaults()
 	_test_win_state_beacon_runtime()
 	_report()
@@ -4426,6 +4427,41 @@ func _test_ghost_trail_colour_constants() -> void:
 	var a4 := GTR.ATTEMPT_ALPHA_MAX * pow(GTR.ATTEMPT_ALPHA_DECAY, 4.0)
 	_ok("ATTEMPT_ALPHA_DECAY: trail[4] < trail[0] (decay is monotone over 5 attempts)",
 		a4 < a0)
+
+
+func _test_ghost_trail_defaults() -> void:
+	## Guards GhostTrailRenderer constants and the visible_window_s export
+	## default (iter 114).
+	##
+	## Prior resize-math and disable-semantics tests copy MAX_DEPTH/SAMPLE_HZ
+	## as local constants (MAX_D=5, SAMPLE=30.0), so a change in the source
+	## file would not be caught by those tests.  Reading GTR.MAX_DEPTH and
+	## GTR.SAMPLE_HZ directly here pins the implementation values.
+	##
+	## visible_window_s default and _enabled initial value are untested by any
+	## other function; they matter for the first device session because:
+	##   - visible_window_s default must match the dev-menu slider default_val (2.0),
+	##     or the slider will silently override the script value on _build_ui.
+	##   - _enabled must start false so no MultiMesh draw happens before the first
+	##     respawn populates Game.trail_history.
+	print("\n-- GhostTrailRenderer defaults (iter 114) --")
+
+	# Constants read from GTR directly (not local copies).
+	_ok("MAX_DEPTH = 5 (5 concurrent attempt trails in the MultiMesh pool)",
+		GTR.MAX_DEPTH == 5)
+	_ok("SAMPLE_HZ = 30.0 (trail recording rate — 30 position samples per second)",
+		is_equal_approx(GTR.SAMPLE_HZ, 30.0))
+
+	# Export default and derived pool size.  GTR.new() without a scene tree means
+	# _ready() / _build_multimesh() do NOT run — tests pure script-declared state.
+	var gtr := GTR.new()
+	_ok("visible_window_s default = 2.0 (must match dev-menu slider default_val)",
+		is_equal_approx(gtr.visible_window_s, 2.0))
+	_ok("initial pool = MAX_DEPTH × visible_pts(2.0) = 5 × 60 = 300 instances",
+		GTR.MAX_DEPTH * roundi(gtr.visible_window_s * GTR.SAMPLE_HZ) == 300)
+	_ok("_enabled starts false (ghost trail OFF until level has meaningful data)",
+		gtr._enabled == false)
+	gtr.free()
 
 
 func _test_camera_occlusion_defaults() -> void:
