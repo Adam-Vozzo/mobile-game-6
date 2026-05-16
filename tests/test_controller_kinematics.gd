@@ -147,6 +147,7 @@ func _ready() -> void:
 	_test_breadth_level_defaults()
 	_test_viaduct_sentry_constants()
 	_test_gauntlet_sentry_constants()
+	_test_early_breadth_level_defaults()
 	_report()
 
 
@@ -5953,3 +5954,52 @@ func _test_gauntlet_sentry_constants() -> void:
 		_near(B4_DIST, B2_DIST))
 	_ok("gauntlet sentries: both at y=1.2 m (standard PatrolSentry elevation)",
 		_near(SENTRY_Y, 1.2))
+
+
+func _test_early_breadth_level_defaults() -> void:
+	## Guards @export defaults and get_spawn_transform null-guard for the three
+	## level scripts from iters 97–99 (Spire, Rooftop, Plaza) — seeded before
+	## _test_breadth_level_defaults() was written in iter 105, so they were
+	## inadvertently skipped. Pattern is identical: load script, instantiate
+	## without scene tree (_ready never runs → _spawn stays null), verify
+	## export defaults and null-guard branch.  12 assertions total.
+	print("\n-- Early breadth-pass level script defaults (iters 97–99) --")
+
+	# ── Spire (iter 97) ──────────────────────────────────────────────────────
+	var SpireScript = load("res://scripts/levels/spire.gd")
+	_ok("spire.gd loads without error", SpireScript != null)
+	if SpireScript != null:
+		var s = SpireScript.new()
+		_ok("spire: par_time_seconds default = 50.0 (calibrate after first device run)",
+			_near(s.par_time_seconds, 50.0))
+		_ok("spire: spawn_marker_path default = NodePath(\"PlayerSpawn\")",
+			s.spawn_marker_path == NodePath("PlayerSpawn"))
+		_ok("spire: get_spawn_transform returns IDENTITY when _spawn null (no scene tree)",
+			s.get_spawn_transform() == Transform3D.IDENTITY)
+		s.free()
+
+	# ── Rooftop (iter 98) ────────────────────────────────────────────────────
+	var RooftopScript = load("res://scripts/levels/rooftop.gd")
+	_ok("rooftop.gd loads without error", RooftopScript != null)
+	if RooftopScript != null:
+		var r = RooftopScript.new()
+		_ok("rooftop: par_time_seconds default = 45.0 (calibrate after first device run)",
+			_near(r.par_time_seconds, 45.0))
+		_ok("rooftop: spawn_marker_path default = NodePath(\"PlayerSpawn\")",
+			r.spawn_marker_path == NodePath("PlayerSpawn"))
+		_ok("rooftop: get_spawn_transform returns IDENTITY when _spawn null (no scene tree)",
+			r.get_spawn_transform() == Transform3D.IDENTITY)
+		r.free()
+
+	# ── Plaza (iter 99) ──────────────────────────────────────────────────────
+	var PlazaScript = load("res://scripts/levels/plaza.gd")
+	_ok("plaza.gd loads without error", PlazaScript != null)
+	if PlazaScript != null:
+		var p = PlazaScript.new()
+		_ok("plaza: par_time_seconds default = 40.0 (hub is faster-paced — fewer lateral beats)",
+			_near(p.par_time_seconds, 40.0))
+		_ok("plaza: spawn_marker_path default = NodePath(\"PlayerSpawn\")",
+			p.spawn_marker_path == NodePath("PlayerSpawn"))
+		_ok("plaza: get_spawn_transform returns IDENTITY when _spawn null (no scene tree)",
+			p.get_spawn_transform() == Transform3D.IDENTITY)
+		p.free()

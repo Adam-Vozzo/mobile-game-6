@@ -140,6 +140,18 @@ Suggested (still open):
 - ~~Mark Brown / Game Maker's Toolkit — specific 3D platformer level-design episodes.~~ Covered above (holistic_level_design.md).
 - ~~Steve Lee (doublefunction.co.uk) — GDC talk "An Approach to Holistic Level Design."~~ Done (iter 17, holistic_level_design.md).
 
+## Gate 1 — shape selection
+
+- [`gate1_shape_comparison.md`](gate1_shape_comparison.md) — Per-shape-family
+  breakdown for the human's survivor pick. For each of the 9 shapes: what it is,
+  camera/control demand, current art infrastructure, remaining Gate 1 work, and
+  a notes on strengths. Summary table: skilled par, mechanical depth, art done,
+  sentry/press presence, camera risk. **Implications for Void:** Filterbank
+  (mechanically most complete), Plaza (best for player agency + camera safety),
+  Viaduct (strongest BLAME! visual identity), Spire (best camera-ratchet test),
+  Cavern + Arena (highest camera risk — device session required before picking).
+  Written iter 106 to prepare the human for the pick decision.
+
 ## Gate 1 — implementation
 
 - [`gate1_scene_lifecycle.md`](gate1_scene_lifecycle.md) — Godot 4 implementation

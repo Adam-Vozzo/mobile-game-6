@@ -48,6 +48,19 @@ authored with it in mind.
   the human picks a survivor. Threshold rebuild kept in repo as the corridor representative;
   next level-touching iter MUST pick an unrepresented shape-family, not iterate on Threshold.
 
+- **🔴 Iter 106 complete. HARD THROTTLE.** Early-breadth level tests + shape-comparison research
+  (10 iters since 2026-05-16 direction session). 12 new unit tests in
+  `tests/test_controller_kinematics.gd` for the three level scripts from iters 97–99 (Spire,
+  Rooftop, Plaza) that were inadvertently skipped by the iter 105 breadth sweep:
+  `_test_early_breadth_level_defaults()` (12 assertions — load guards + par_time_seconds defaults
+  [spire 50.0 / rooftop 45.0 / plaza 40.0] + spawn_marker_path defaults ["PlayerSpawn"] +
+  get_spawn_transform null-guard [→ IDENTITY] for all three). 1159→1171 assertions.
+  Side quest: `docs/research/gate1_shape_comparison.md` — per-shape breakdown for human pick:
+  current infrastructure, camera/control demand, remaining Gate 1 work, strengths. Summary
+  table covers all 9 shapes. Implications: Filterbank (mechanically most complete), Plaza (best
+  agency + camera safety), Viaduct (strongest BLAME! identity), Cavern+Arena (highest camera risk).
+  Research INDEX updated. HARD STALL: no further autonomous progress possible without human pick.
+
 - **🔴 Iter 105 complete. HARD THROTTLE.** Breadth-pass level tests + strict-warning parse fixes
   (9 iters since 2026-05-16 direction session). 28 new unit tests in
   `tests/test_controller_kinematics.gd` for the four level scripts added in iters 100–103
