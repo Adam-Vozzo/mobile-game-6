@@ -48,6 +48,15 @@ authored with it in mind.
   the human picks a survivor. Threshold rebuild kept in repo as the corridor representative;
   next level-touching iter MUST pick an unrepresented shape-family, not iterate on Threshold.
 
+- **🔴 Iter 111 complete. HARD THROTTLE.** Ghost trail constant extraction + stale test fix (15 iters
+  since 2026-05-16 direction session). `ghost_trail_renderer.gd`: extracted 3 named constants
+  (`TRAIL_COLOUR = Color(0.40, 0.55, 0.95)`, `ATTEMPT_ALPHA_MAX = 0.50`, `ATTEMPT_ALPHA_DECAY = 0.55`)
+  from magic numbers in `_process()`. Comment updated. `tests/test_controller_kinematics.gd`:
+  fixed stale assertion in `_test_ghost_trail_recording()` (alpha[0] label 0.35→0.50 to match
+  iter 110 renderer update); added `GTR` preload; added `_test_ghost_trail_colour_constants()`
+  (6 assertions guarding all 3 constants + monotone decay property). 1037→1043 assertions.
+  HARD STALL continues — awaiting shape pick.
+
 - **🔴 Iter 110 complete. HARD THROTTLE.** Ghost trail visual design + point_t bug fix (14 iters since
   2026-05-16 direction session). `docs/research/ghost_trail_visual.md` written: visual contrast
   analysis for ghost trails against brutalist grey-concrete — current grey trail colour is invisible;
@@ -568,6 +577,12 @@ These mirror "Open questions waiting on you" in the README.
   drive the next tuning iteration.
 
 ## Recently completed (last 5)
+
+- 2026-05-16 — iter 111. **Ghost trail constant extraction + stale test fix. HARD THROTTLE.**
+  `ghost_trail_renderer.gd`: 3 named consts extracted (`TRAIL_COLOUR`, `ATTEMPT_ALPHA_MAX`,
+  `ATTEMPT_ALPHA_DECAY`); `_process()` comment + code updated to use them.
+  `tests/test_controller_kinematics.gd`: stale alpha assertion fixed (0.35→0.50);
+  `_test_ghost_trail_colour_constants()` added (6 assertions, 1037→1043).
 
 - 2026-05-16 — iter 105. **Breadth-pass level tests + strict-warning parse fixes. HARD THROTTLE.**
   28 new assertions (1131→1159): `_test_breadth_level_defaults()` + `_test_viaduct_sentry_constants()`

@@ -5,10 +5,10 @@ A mobile 3D platformer. Brutalist megastructure inspired by *BLAME!*. Controller
 ## Status
 
 Current gate: **Gate 0 — Feel Lab** (closing out; Gate 1 prep in flight)
-Last activity: 2026-05-16 — iter 110: ghost trail visual design + point_t bug fix
+Last activity: 2026-05-16 — iter 111: ghost trail constant extraction + stale test fix
 Test device build: ✅ verified 2026-05-12 — runs in Godot 4.6 on PC and on Nothing Phone 4(a) Pro
 Performance: 144 fps / 6.9 ms in editor at 1920×1080 (Feel Lab); Threshold perf TBD after rebuild
-Throttle level: **🔴 hard** — 14 iters since 2026-05-16 direction session; FULLY STALLED — awaiting shape-family pick
+Throttle level: **🔴 hard** — 15 iters since 2026-05-16 direction session; FULLY STALLED — awaiting shape-family pick
 
 If you only read one section, read **Open questions waiting on you** below.
 
@@ -120,6 +120,31 @@ Goal: store-ready build.
 The full iteration log lives here, newest first. Every iteration appends an entry. Skim the dates to find where you last left off.
 
 <!-- ITERATION ENTRIES BELOW — DO NOT REMOVE OLDER ENTRIES -->
+
+### [2026-05-16] — iter 111 — Ghost trail constant extraction + stale test fix
+
+Branch: `iter/ghost-trail-constant-extraction`
+Throttle: 🔴 hard (15 iters since 2026-05-16 direction session; FULLY STALLED)
+Gate: Gate 1 — direction-finding breadth pass (awaiting human shape pick)
+
+**Primary:** Hardening — extracted 3 named constants from `ghost_trail_renderer.gd`
+(`TRAIL_COLOUR`, `ATTEMPT_ALPHA_MAX`, `ATTEMPT_ALPHA_DECAY`) eliminating magic numbers
+from the script body per CLAUDE.md convention. Code in `_process()` updated to use them.
+Fixed a stale test in `_test_ghost_trail_recording()` that still documented
+`attempt_alpha_max = 0.35` (the old value) despite iter 110 updating it to `0.50` in
+the renderer — the test was internally consistent but mismatched the actual code.
+Added `_test_ghost_trail_colour_constants()`: 6 assertions guarding the new constants
+directly from the `GTR` preload so any accidental change is caught immediately.
+`GTR` preload added to test file header.
+
+Side quest: none.
+
+Perf: no change (pure constant extraction, no new logic).
+Bugs fixed: stale `attempt_alpha_max = 0.35` documentation in `_test_ghost_trail_recording`.
+New dev-menu controls: none.
+Research added: none.
+Assets acquired: none.
+Assertions: 1037 → 1043 (+6).
 
 ### [2026-05-16] — iter 110 — Ghost trail visual design + point_t bug fix
 
