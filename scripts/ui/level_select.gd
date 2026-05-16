@@ -50,6 +50,11 @@ const _LEVELS: Array[Dictionary] = [
 		"path": "res://scenes/levels/viaduct.tscn",
 		"desc": "Exposed bridge crossing — narrow spans over a deep void (shape family 8)",
 	},
+	{
+		"name": "ARENA",
+		"path": "res://scenes/levels/arena.tscn",
+		"desc": "Ringed arena — broken pressure ring, circle the void, vault the altar (shape family 9)",
+	},
 ]
 
 const _BTN_MIN  := Vector2(520.0, 88.0)

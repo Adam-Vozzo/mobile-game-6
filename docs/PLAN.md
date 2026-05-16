@@ -48,6 +48,16 @@ authored with it in mind.
   the human picks a survivor. Threshold rebuild kept in repo as the corridor representative;
   next level-touching iter MUST pick an unrepresented shape-family, not iterate on Threshold.
 
+- **🟢 Iter 104 complete.** Arena level (ringed arena, shape-family 9). BREADTH DIRECTIVE FULFILLED.
+  `scenes/levels/arena.tscn` + `scripts/levels/arena.gd`: "The Annulus" — decommissioned
+  pressure containment ring, eastern arc collapsed. Layout: SpawnSlab → SWCorner → WestArm →
+  [MovPlatArena, 9 m void, 4.5 s period, 0.5 m clearances both ends] → NWCorner (CP) →
+  NorthArm [PatrolSentry ±3 m X, 2.0 m/s] → [3.5 m + 4 m vault] → CentralAltar (WIN, Y=4.0).
+  ShardPedestal at (-3, Z=-2) in void, 2.5 m south jump from NorthArm inner edge. KillFloor
+  at Y=-22. Sodium amber → cold blue → biolume cyan lighting arc. Fog 0.055. Level selector
+  + dev menu Load Level updated. All 9 CLAUDE.md shape families now exist; escalating to
+  human for survivor pick.
+
 - **🟢 Iter 103 complete.** Viaduct level (exposed bridge crossing, shape-family 8).
   `scenes/levels/viaduct.tscn` + `scripts/levels/viaduct.gd`: "The Viaduct" — suspended
   concrete spans over a deep industrial void. Layout: EntryAbutment (8 m) → Span1 (2 m
@@ -262,19 +272,18 @@ The next iteration should pull from the top of this list. Items marked
 - ~~Shape 6: Inverted descent (climbing down) → Descent~~ ✅ exists (iter 101)
 - ~~Shape 7: Enclosed obstacle gauntlet → Filterbank~~ ✅ exists (iter 102)
 - ~~Shape 8: Exposed bridge crossing → Viaduct~~ ✅ exists (iter 103)
-- Shape 9: Ringed arena — circular or polygonal perimeter ring, platforming on the outer
-  band, center void or landmark. Last unbuilt example from CLAUDE.md list.
+- ~~Shape 9: Ringed arena → Arena~~ ✅ exists (iter 104)
 
 Each shape needs: spawn → win state, Player/CameraRig/TouchOverlay wiring, lives in `scenes/levels/`.
 Do not iterate on an existing shape until the human picks a survivor.
 
-**Next shape to build: ringed arena** — closed ring of platforms around a central void or
-landmark. Floor plan from above: a ring or polygon. Player traverses the perimeter (clockwise
-or with jumps across the ring). Distinct from Plaza (hub radiates outward; arena loops back
-on itself) and from all other shapes. This is the last example from the CLAUDE.md list.
-After this, if no survivor is picked, escalate to human for direction.
+**BREADTH DIRECTIVE COMPLETE.** All 9 shape families from `docs/CLAUDE.md` are built and
+playable via `level_select.tscn`. The loop must now escalate to the human for direction:
+pick a survivor shape to develop into the Gate 1 vertical slice. Once picked, update
+`docs/CLAUDE.md` "Gate 1 direction" section with the chosen shape and begin depth-pass work
+(proper art dressing, additional beats, par-time calibration, on-device verification).
 
-Boot selector and dev-menu Load Level entry already in place.
+Boot selector and dev-menu Load Level entry already in place for all 9 shapes.
 
 **Device test (still blocked on human):** Threshold / Spire on Nothing Phone 4(a) Pro — see Open
 questions in README. Even one device session unblocks the largest feedback queue.

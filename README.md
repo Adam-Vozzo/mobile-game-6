@@ -5,10 +5,10 @@ A mobile 3D platformer. Brutalist megastructure inspired by *BLAME!*. Controller
 ## Status
 
 Current gate: **Gate 0 — Feel Lab** (closing out; Gate 1 prep in flight)
-Last activity: 2026-05-16 — iter 103: Viaduct level (exposed bridge crossing, shape-family 8)
+Last activity: 2026-05-16 — iter 104: Arena level (ringed arena, shape-family 9) — breadth directive COMPLETE
 Test device build: ✅ verified 2026-05-12 — runs in Godot 4.6 on PC and on Nothing Phone 4(a) Pro
 Performance: 144 fps / 6.9 ms in editor at 1920×1080 (Feel Lab); Threshold perf TBD after rebuild
-Throttle level: **🟡 soft** — 7 iters since 2026-05-16 direction session (overridden: active breadth-pass directive)
+Throttle level: **🟡 soft** — 8 iters since 2026-05-16 direction session (breadth directive fulfilled — all 9 shape families built)
 
 If you only read one section, read **Open questions waiting on you** below.
 
@@ -16,17 +16,20 @@ If you only read one section, read **Open questions waiting on you** below.
 
 Things Claude can't decide alone, or where it's stalled and needs direction.
 
-> **🟡 SOFT THROTTLE (overridden: active breadth directive)**
-> 7 iterations since 2026-05-16 direction session. Feature work ongoing under the
-> "build many shape-families" directive from `docs/CLAUDE.md`. Shapes so far: Threshold
-> (corridor), Spire (tower), Rooftop, Plaza (hub), Cavern (maze), Descent (inverted),
-> Filterbank (gauntlet), Viaduct (bridge crossing) — 8 families. One CLAUDE.md example
-> remains unbuilt: **ringed arena**. After that, all listed examples will be covered
-> and Claude will escalate for direction on whether to add more or move to depth.
+> **🟡 SOFT THROTTLE — BREADTH DIRECTIVE FULFILLED**
+> 8 iterations since 2026-05-16 direction session. All 9 shape families from `docs/CLAUDE.md`
+> are now built and playable: Threshold (corridor), Spire (tower), Rooftop, Plaza (hub),
+> Cavern (maze), Descent (inverted), Filterbank (gauntlet), Viaduct (bridge crossing),
+> **Arena (ringed arena)**. The breadth directive is complete.
 >
-> **Highest-leverage action:** a device session (see item 1 below). Even 15 minutes on
-> the Nothing Phone 4(a) Pro generates enough feedback to pick a shape-family survivor
-> and unblock the entire depth-pass phase.
+> **Next required action: pick a survivor.** Load the level selector, play each shape
+> for 5–10 minutes, and tell Claude which one to develop into the Gate 1 vertical slice.
+> Once a survivor is picked the autonomous loop pivots to depth on that shape — the
+> directive in `docs/CLAUDE.md` gets revised and depth-pass work begins.
+>
+> **Highest-leverage action:** a device session on the Nothing Phone 4(a) Pro with the
+> level selector. Even 15 minutes generates enough feedback to pick a survivor and
+> unblock the entire depth-pass phase.
 
 **What's still waiting for your read:**
 1. **Hold-jump+swipe air dash — two modes to compare.** (iter 67) Dev menu Touch section has "Buffer dash cam" toggle. Try both, or say "always buffer" / "drop the option" and we'll clean it up.
@@ -107,6 +110,40 @@ Goal: store-ready build.
 The full iteration log lives here, newest first. Every iteration appends an entry. Skim the dates to find where you last left off.
 
 <!-- ITERATION ENTRIES BELOW — DO NOT REMOVE OLDER ENTRIES -->
+
+### [2026-05-16] — iter 104 — Arena level (ringed arena, shape-family 9) — breadth directive complete
+
+Branch: `iter/ringed-arena`
+Throttle: 🟡 soft (8 iters since 2026-05-16 direction session — breadth directive now FULFILLED)
+Gate: Gate 1 — direction-finding breadth pass (final shape)
+
+**Primary: new level `scenes/levels/arena.tscn` (ringed arena, shape-family 9).**
+
+Shape-family premise: "The Annulus" — a decommissioned megastructure pressure containment ring.
+The ring's eastern arc has collapsed into the void. The Stray enters through a breach in the
+southern wall, circuits the intact western arc on a moving platform, and vaults to a control
+node floating at the ring's centre. The floor plan from above is a three-quarter square frame
+around a central open void — distinct from all eight prior shapes.
+
+**Layout (ring inner void ±6 m, ring width 4 m, outer boundary ±10 m):**
+- **SpawnSlab (12×4 m)** at Z=8 — safe spawn landing, amber lit
+- **SWCorner (4×4 m)** at (-8, Z=8) — turn west
+- **WestArm south (4×3 m)** at (-8, Z=4.5) — walk north along west wall
+- **Moving platform (3×3 m)** rest Z=1, travel -6 m, period 4.5 s — crosses the 9 m void gap (0.5 m clearance both ends)
+- **NWCorner (4×4 m)** at (-8, Z=-8) — CHECKPOINT; landing pad after crossing
+- **NorthArm (12×4 m)** at Z=-8 — sentry sweeps X ±3 m at 2.0 m/s; player must time the gap
+- **[3.5 m horizontal + 4 m vertical vault]** → CentralAltar surface Y=4.0 — requires running double-jump
+- **CentralAltar (5×5 m)** at (0, Y=3.75, 0) — WIN ZONE, biolume cyan lit
+- **Side: ShardPedestal (3×3 m)** at (-3, Z=-2) in void — 2.5 m south jump from NorthArm inner edge
+
+**Other:**
+- KillFloor Area3D at Y=-22 (36 m wide) catches all falls
+- Dressing: two visual stumps (east side, showing collapse), four 48 m atmospheric columns at void corners
+- Lighting arc: sodium amber at spawn → warm amber west → cold blue NW → cold blue north → biolume cyan altar
+- Fog 0.055, dark void background (OLED-friendly)
+
+**Breadth directive status:** All 9 shape families from `docs/CLAUDE.md` are now playable.
+Human review of `level_select.tscn` needed to pick a survivor for the depth pass.
 
 ### [2026-05-16] — iter 103 — Viaduct level (exposed bridge crossing, shape-family 8)
 
