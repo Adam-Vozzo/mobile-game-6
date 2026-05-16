@@ -154,6 +154,7 @@ func _ready() -> void:
 	_test_level_select_ui()
 	_test_ghost_trail_point_t_normalization()
 	_test_ghost_trail_colour_constants()
+	_test_win_state_beacon_defaults()
 	_report()
 
 
@@ -6165,3 +6166,27 @@ func _test_level_select_ui() -> void:
 		(levels[8].get("name", "") as String) == "VIADUCT")
 	_ok("levels[9] name = 'ARENA' (shape family 9 — last entry; breadth complete)",
 		(levels[9].get("name", "") as String) == "ARENA")
+
+
+func _test_win_state_beacon_defaults() -> void:
+	## Guards the WinState beacon @export defaults added in iter 112.
+	## beacon is OFF by default (backwards-compatible with all existing .tscn files).
+	## Also verifies _triggered regression — our edit must not have disturbed it.
+	print("\n-- WinState wayfinding beacon defaults --")
+
+	var ws := WS.new()
+	_ok("WinState script loads", ws != null)
+	if ws == null:
+		return
+
+	_ok("add_beacon defaults false (existing .tscn files unaffected)",
+		ws.add_beacon == false)
+	_ok("beacon_range defaults 14.0 m (readable through fog density ≤ 0.065 at ~20 m)",
+		is_equal_approx(ws.beacon_range, 14.0))
+	_ok("beacon_energy defaults 2.0 (legible at distance without washing nearby surfaces)",
+		is_equal_approx(ws.beacon_energy, 2.0))
+	_ok("_build_beacon method exists (callable on the instance)",
+		ws.has_method("_build_beacon"))
+	_ok("_triggered regression: still defaults false after beacon export additions",
+		ws._triggered == false)
+	ws.free()
