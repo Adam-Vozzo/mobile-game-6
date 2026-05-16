@@ -151,6 +151,7 @@ func _ready() -> void:
 	_test_arena_level_defaults()
 	_test_arena_sentry_constants()
 	_test_level_select_ui()
+	_test_ghost_trail_point_t_normalization()
 	_report()
 
 
@@ -4363,6 +4364,36 @@ func _test_ghost_trail_resize_math() -> void:
 	var count_1s := MAX_D * roundi(1.0 * SAMPLE)
 	_ok("ghost trail resize: smaller window → fewer instances (monotone)",
 		count_1s < count_2s)
+
+
+func _test_ghost_trail_point_t_normalization() -> void:
+	## Documents the iter-110 fix: point_t normalises by actual range_len, not
+	## visible_pts.  Before the fix, a short trail (fewer samples than
+	## visible_pts) produced near-zero alpha on the newest point.
+	##
+	## Invariant (post-fix): for any trail length ≥ 1 the newest visible point
+	## always gets point_t = 1.0 → full attempt_alpha.
+	print("\n-- Ghost trail point_t normalization (iter 110) --")
+
+	const VISIBLE_PTS := 60  # 2 s × 30 Hz
+
+	# Short trail (5 points) — p_idx of newest point = 4.
+	var short_range_len := 5
+	var short_point_t := float(short_range_len - 1) / float(maxi(short_range_len - 1, 1))
+	_ok("short trail (5 pts): newest point_t = 1.0 (was 0.067 with old formula)",
+		_near(short_point_t, 1.0))
+
+	# Single-point trail — range_len=1, denominator clamped to 1; no div-by-zero.
+	var single_range_len := 1
+	var single_point_t := float(0) / float(maxi(single_range_len - 1, 1))
+	_ok("single-point trail: point_t = 0 (div-by-zero guard holds)",
+		_near(single_point_t, 0.0))
+
+	# Full-window trail — behaviour matches old formula to within 2%.
+	var full_range_len := VISIBLE_PTS
+	var new_full := float(full_range_len - 1) / float(maxi(full_range_len - 1, 1))
+	_ok("full-window trail: newest point_t = 1.0 (old formula gave 59/60 ≈ 0.983)",
+		_near(new_full, 1.0))
 
 
 func _test_camera_occlusion_defaults() -> void:

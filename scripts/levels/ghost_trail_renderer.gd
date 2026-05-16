@@ -71,11 +71,15 @@ func _process(_delta: float) -> void:
 		var trail: PackedVector3Array = Game.trail_history[a_idx]
 		var start := maxi(0, trail.size() - visible_pts)
 		# Newest attempt is brightest; each older attempt fades by ×0.55.
-		var attempt_alpha := 0.35 * pow(0.55, float(a_idx))
-		for p_idx: int in (trail.size() - start):
+		var attempt_alpha := 0.50 * pow(0.55, float(a_idx))
+		var range_len := trail.size() - start
+		for p_idx: int in range_len:
 			# Oldest visible point fades to 0; newest is full attempt_alpha.
-			var point_t := float(p_idx) / float(visible_pts)
-			var col := Color(0.55, 0.55, 0.60, attempt_alpha * point_t)
+			# Normalize by actual range length so short trails (early in a
+			# fresh attempt) are visible — dividing by visible_pts made
+			# a 5-point trail's newest sample appear at 0.023 alpha.
+			var point_t := float(p_idx) / float(maxi(range_len - 1, 1))
+			var col := Color(0.40, 0.55, 0.95, attempt_alpha * point_t)
 			_mmesh.multimesh.set_instance_transform(inst,
 				Transform3D(Basis(), trail[start + p_idx]))
 			_mmesh.multimesh.set_instance_color(inst, col)

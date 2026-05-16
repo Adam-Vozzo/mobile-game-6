@@ -48,6 +48,18 @@ authored with it in mind.
   the human picks a survivor. Threshold rebuild kept in repo as the corridor representative;
   next level-touching iter MUST pick an unrepresented shape-family, not iterate on Threshold.
 
+- **🔴 Iter 110 complete. HARD THROTTLE.** Ghost trail visual design + point_t bug fix (14 iters since
+  2026-05-16 direction session). `docs/research/ghost_trail_visual.md` written: visual contrast
+  analysis for ghost trails against brutalist grey-concrete — current grey trail colour is invisible;
+  cold blue `Color(0.40, 0.55, 0.95)` chosen (complements sodium amber, echoes biolume palette,
+  doesn't dilute Stray yellow); `attempt_alpha_max` raised 0.35→0.50; `visible_window_s` default 3.0 s
+  recommended for depth pass. Bug fix: `point_t` normalization in `ghost_trail_renderer.gd` — old
+  formula `p_idx / visible_pts` made a 5-sample trail's newest point appear at alpha 0.023 (nearly
+  invisible); fix uses `p_idx / max(range_len - 1, 1)` so newest point always reaches full
+  `attempt_alpha`. Colour and alpha changes applied to `ghost_trail_renderer.gd`. 3 unit tests
+  (1033→1036) documenting short-trail, single-point, and full-window normalization invariants.
+  HARD STALL continues — awaiting shape pick.
+
 - **🔴 Iter 109 complete. HARD THROTTLE.** Camera per-shape-family research note (13 iters since
   2026-05-16 direction session). `docs/research/camera_per_shape.md` written: per-shape camera
   tuning guide for all 9 level families. For each shape: risk level, first dev-menu parameters
