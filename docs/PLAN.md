@@ -48,6 +48,24 @@ authored with it in mind.
   the human picks a survivor. Threshold rebuild kept in repo as the corridor representative;
   next level-touching iter MUST pick an unrepresented shape-family, not iterate on Threshold.
 
+- **🔴 Iter 105 complete. HARD THROTTLE.** Breadth-pass level tests + strict-warning parse fixes
+  (9 iters since 2026-05-16 direction session). 28 new unit tests in
+  `tests/test_controller_kinematics.gd` for the four level scripts added in iters 100–103
+  without tests: `_test_breadth_level_defaults()` (16 assertions — load guards + par_time_seconds
+  defaults [cavern 45.0 / descent 40.0 / gauntlet 45.0 / viaduct 45.0] + spawn_marker_path
+  defaults ["PlayerSpawn"] + get_spawn_transform null-guard [→ IDENTITY] for all four),
+  `_test_viaduct_sentry_constants()` (5 assertions — edge-clearance 0.1 m, Z=68, dist=3.0,
+  speed=2.0, y=1.2), `_test_gauntlet_sentry_constants()` (7 assertions — beat2 z=28/2.0 m/s,
+  beat4 z=62/2.5 m/s = B2×1.25, both dist=6.0, y=1.2). 1131→1159 assertions. Side quest:
+  fixed 13 strict-warning parse errors (`var x := callable.call()` → `var x: Type = ... as Type`)
+  in `_correct.call()` / `_yaw.call()` / `_slot.call()` scopes — previously noted at lines
+  2042/4446/4455 by the 2026-05-16 direction session.
+
+- **🔴 Iter 104 pending review. HARD THROTTLE.** Arena level (ringed arena, shape-family 9).
+  `scenes/levels/arena.tscn` + `scripts/levels/arena.gd`: PR #133 open as draft on
+  `iter/ringed-arena`. All 9 CLAUDE.md shape-families now seeded. Breadth directive fulfilled.
+  Awaiting human direction on shape-family survivor selection.
+
 - **🟢 Iter 103 complete.** Viaduct level (exposed bridge crossing, shape-family 8).
   `scenes/levels/viaduct.tscn` + `scripts/levels/viaduct.gd`: "The Viaduct" — suspended
   concrete spans over a deep industrial void. Layout: EntryAbutment (8 m) → Span1 (2 m
@@ -497,6 +515,11 @@ These mirror "Open questions waiting on you" in the README.
   drive the next tuning iteration.
 
 ## Recently completed (last 5)
+
+- 2026-05-16 — iter 105. **Breadth-pass level tests + strict-warning parse fixes. HARD THROTTLE.**
+  28 new assertions (1131→1159): `_test_breadth_level_defaults()` + `_test_viaduct_sentry_constants()`
+  + `_test_gauntlet_sentry_constants()`. Fixed 13 `var x := callable.call()` strict-warning parse
+  errors across `_correct.call()`, `_yaw.call()`, `_slot.call()` scopes.
 
 - 2026-05-15 — iter 95. **Threshold level lifecycle hardening tests. HARD THROTTLE.**
   `tests/test_controller_kinematics.gd`: `_test_threshold_level_lifecycle()` (8 assertions):
