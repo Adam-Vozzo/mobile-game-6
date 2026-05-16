@@ -157,6 +157,15 @@ Suggested (still open):
 
 ## Gate 1 — shape selection
 
+- [`wayfinding_design.md`](wayfinding_design.md) — Wayfinding and goal-visibility design
+  for mobile 3D platformers. Kevin Lynch's 5-element vocabulary applied to Void; goal-visibility
+  audit for all 9 shapes (Spire/Plaza/Arena/Viaduct naturally legible; Cavern weakest); cross-cutting
+  depth-pass gap: WinState has no emissive beacon on 6 of 9 levels — concrete spec for adding
+  OmniLight3D child (cyan, range 14 m, shadow OFF). Mobile rules: fog density ceiling 0.065 for
+  goal visibility at 12+ m, no HUD markers ever, checkpoint-to-goal legibility chain, ascending vs
+  descending asymmetry. Recommended WinState `@export` approach to avoid per-tscn edits. Written
+  iter 112 — actionable for the first depth pass iteration on any chosen shape.
+
 - [`camera_per_shape.md`](camera_per_shape.md) — Per-shape-family camera tuning guide.
   For each of the 9 level shapes: risk level, specific dev-menu parameters to dial first,
   expected failure modes, and recommended starting values. Cross-cutting notes on

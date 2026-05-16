@@ -48,6 +48,16 @@ authored with it in mind.
   the human picks a survivor. Threshold rebuild kept in repo as the corridor representative;
   next level-touching iter MUST pick an unrepresented shape-family, not iterate on Threshold.
 
+- **🔴 Iter 112 complete. HARD THROTTLE.** Wayfinding research + WinState beacon export (16 iters
+  since 2026-05-16 direction session). `docs/research/wayfinding_design.md` written: Kevin Lynch
+  5-element vocabulary applied to Void; goal-visibility audit for all 9 shapes; cross-cutting gap
+  identified — WinState has no emissive beacon on 6 of 9 levels; concrete beacon spec (OmniLight3D
+  cyan, range 14 m, shadow OFF). Mobile rules: fog density ceiling 0.065 for 12+ m goal visibility;
+  no HUD markers; desire-line = par-route check; ascending vs descending legibility asymmetry.
+  `docs/research/INDEX.md` updated. Side quest: `win_state.gd` — `@export var add_beacon: bool = false`
+  + `beacon_range` (14.0 m) + `beacon_energy` (2.0); backwards-compatible; depth pass enables per-level.
+  6 new unit tests (`_test_win_state_beacon_defaults`). 1043 → 1049 assertions. HARD STALL continues.
+
 - **🔴 Iter 111 complete. HARD THROTTLE.** Ghost trail constant extraction + stale test fix (15 iters
   since 2026-05-16 direction session). `ghost_trail_renderer.gd`: extracted 3 named constants
   (`TRAIL_COLOUR = Color(0.40, 0.55, 0.95)`, `ATTEMPT_ALPHA_MAX = 0.50`, `ATTEMPT_ALPHA_DECAY = 0.55`)

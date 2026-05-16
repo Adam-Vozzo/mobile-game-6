@@ -5,10 +5,10 @@ A mobile 3D platformer. Brutalist megastructure inspired by *BLAME!*. Controller
 ## Status
 
 Current gate: **Gate 0 — Feel Lab** (closing out; Gate 1 prep in flight)
-Last activity: 2026-05-16 — iter 111: ghost trail constant extraction + stale test fix
+Last activity: 2026-05-16 — iter 112: wayfinding research + WinState beacon export
 Test device build: ✅ verified 2026-05-12 — runs in Godot 4.6 on PC and on Nothing Phone 4(a) Pro
 Performance: 144 fps / 6.9 ms in editor at 1920×1080 (Feel Lab); Threshold perf TBD after rebuild
-Throttle level: **🔴 hard** — 15 iters since 2026-05-16 direction session; FULLY STALLED — awaiting shape-family pick
+Throttle level: **🔴 hard** — 16 iters since 2026-05-16 direction session; FULLY STALLED — awaiting shape-family pick
 
 If you only read one section, read **Open questions waiting on you** below.
 
@@ -120,6 +120,34 @@ Goal: store-ready build.
 The full iteration log lives here, newest first. Every iteration appends an entry. Skim the dates to find where you last left off.
 
 <!-- ITERATION ENTRIES BELOW — DO NOT REMOVE OLDER ENTRIES -->
+
+### [2026-05-16] — iter 112 — Wayfinding research + WinState beacon export
+
+Branch: `iter/wayfinding-research`
+Throttle: 🔴 hard (16 iters since 2026-05-16 direction session; FULLY STALLED)
+Gate: Gate 1 — direction-finding breadth pass (awaiting human shape pick)
+
+**Primary:** Research — `docs/research/wayfinding_design.md`. Mobile 3D platformer
+wayfinding: Kevin Lynch's 5-element vocabulary applied to Void; goal-visibility audit
+for all 9 shapes (Spire / Plaza / Arena / Viaduct naturally legible; Cavern weakest);
+cross-cutting gap: **WinState has no emissive beacon on 6 of 9 levels** — concrete
+beacon spec (OmniLight3D, biolume cyan, range 14 m, shadow OFF). Mobile rules: fog
+density ceiling 0.065 for goal visibility at 12+ m, no HUD markers ever, desire-line
+= par-route check. `docs/research/INDEX.md` updated. **Actionable in the first depth
+pass iteration on any chosen shape.**
+
+**Side quest:** `win_state.gd` — added `@export var add_beacon: bool = false` with
+`beacon_range` (14.0 m) and `beacon_energy` (2.0) exports. Backwards-compatible: all
+existing `.tscn` files work unchanged (beacon off by default). The depth pass iter
+can enable it per-level without editing `.tscn` files. 6 unit tests added
+(`_test_win_state_beacon_defaults`). 1043 → 1049 assertions.
+
+Perf: no change (research + backwards-compatible export addition).
+Bugs fixed: none.
+New dev-menu controls: none.
+Research added: `wayfinding_design.md` — wayfinding + goal-visibility audit for all 9 shapes.
+Assets acquired: none.
+Assertions: 1043 → 1049 (+6).
 
 ### [2026-05-16] — iter 111 — Ghost trail constant extraction + stale test fix
 
