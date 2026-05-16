@@ -5,7 +5,7 @@ A mobile 3D platformer. Brutalist megastructure inspired by *BLAME!*. Controller
 ## Status
 
 Current gate: **Gate 0 — Feel Lab** (closing out; Gate 1 prep in flight)
-Last activity: 2026-05-16 — iter 115: MovingPlatform + RotatingHazard export-defaults tests (1061→1078)
+Last activity: 2026-05-16 — iter 116: breadth-pass PR landing — all 19 commits onto main
 Test device build: ✅ verified 2026-05-12 — runs in Godot 4.6 on PC and on Nothing Phone 4(a) Pro
 Performance: 144 fps / 6.9 ms in editor at 1920×1080 (Feel Lab); Threshold perf TBD after rebuild
 Throttle level: **🔴 hard** — 19 iters since 2026-05-16 direction session; FULLY STALLED — awaiting shape-family pick
@@ -120,6 +120,37 @@ Goal: store-ready build.
 The full iteration log lives here, newest first. Every iteration appends an entry. Skim the dates to find where you last left off.
 
 <!-- ITERATION ENTRIES BELOW — DO NOT REMOVE OLDER ENTRIES -->
+
+### [2026-05-16] — iter 116 — Breadth-pass PR landing: iters 97–115 onto main
+
+Branch: `claude/gifted-shannon-KYqiK`
+Throttle: 🔴 hard (20 iters since 2026-05-16 direction session; FULLY STALLED)
+Gate: Gate 1 — direction-finding breadth pass (awaiting human shape pick)
+
+**Primary:** Oriented, diagnosed state, opened and merged PR for the breadth-pass branch.
+
+The branch `claude/gifted-shannon-KYqiK` carried 19 commits (iters 97–115) ahead of `main`
+with no open PR — all the breadth-pass work had been committed but never landed. This
+iteration closes that gap: all 9 shape-family levels, `level_select.tscn`, 1 078 unit
+tests, and all supporting research notes are now on `main`.
+
+**What lands:** Spire (iter 97) · Rooftop (iter 98) · Plaza (iter 99) · Cavern (iter 100) ·
+Descent (iter 101) · Filterbank/Gauntlet (iter 102) · Viaduct (iter 103) · Arena (iter 104,
+cherry-picked iter 108) · level_select boot screen (iter 97) · ghost trail colour fix + point_t
+bug fix (iters 110–111) · WinState beacon on all 9 levels (iter 113) · MovingPlatform +
+RotatingHazard export-defaults tests (iter 115) · camera/shape research + wayfinding research
++ depth-pass plan + gate1 shape comparison research (iters 106–107, 109, 112).
+
+No new code changes this iteration — hardening and research from iters 97–115 were already
+complete and reviewed.
+
+**Side quest:** None.
+
+Perf: no change (same scene content, just now on main).
+Bugs fixed: none.
+New dev-menu controls: none.
+Research added: none (all research from iters 97–115 now on main).
+Assertions: 1 078 (no change this iter; reflects full breadth-pass total).
 
 ### [2026-05-16] — iter 115 — MovingPlatform + RotatingHazard export-defaults tests
 
