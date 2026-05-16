@@ -48,6 +48,17 @@ authored with it in mind.
   the human picks a survivor. Threshold rebuild kept in repo as the corridor representative;
   next level-touching iter MUST pick an unrepresented shape-family, not iterate on Threshold.
 
+- **🔴 Iter 108 complete. HARD THROTTLE.** Arena cherry-pick + arena unit tests (12 iters since
+  2026-05-16 direction session). Cherry-picked Arena (iter 104) from `iter/ringed-arena` onto
+  current branch; PR #133 superseded. `scenes/levels/arena.tscn` + `scripts/levels/arena.gd` +
+  `level_select.gd` (count 9→10) + `dev_menu_overlay.gd` (Arena entry) all on branch now.
+  Two new test functions: `_test_arena_level_defaults()` (4 assertions — load, par_time=50.0,
+  spawn_marker_path, IDENTITY null-guard) + `_test_arena_sentry_constants()` (5 assertions —
+  NorthArm z=-8.0, patrol_distance=6.0, half-sweep=3.0, speed=2.0, y=1.2). Updated
+  `_test_level_select_ui()`: count 9→10, added levels[9]='ARENA' spot-check.
+  Assertion count audit: actual `_ok()` calls = 1033 (prior tracking was inflated; 1033 is
+  ground-truth going forward). 1023→1033. HARD STALL continues.
+
 - **🔴 Iter 107 complete. HARD THROTTLE.** Gate 1 depth-pass plan research + level-select UI tests
   (11 iters since 2026-05-16 direction session). `docs/research/gate1_depth_pass_plan.md` written:
   concrete checklist for the depth pass on any picked shape — what the breadth pass already wired,
@@ -86,10 +97,10 @@ authored with it in mind.
   in `_correct.call()` / `_yaw.call()` / `_slot.call()` scopes — previously noted at lines
   2042/4446/4455 by the 2026-05-16 direction session.
 
-- **🔴 Iter 104 pending review. HARD THROTTLE.** Arena level (ringed arena, shape-family 9).
-  `scenes/levels/arena.tscn` + `scripts/levels/arena.gd`: PR #133 open as draft on
-  `iter/ringed-arena`. All 9 CLAUDE.md shape-families now seeded. Breadth directive fulfilled.
-  Awaiting human direction on shape-family survivor selection.
+- **🔴 Iter 104 complete. HARD THROTTLE.** Arena level (ringed arena, shape-family 9).
+  `scenes/levels/arena.tscn` + `scripts/levels/arena.gd`. PR #133 (`iter/ringed-arena`)
+  cherry-picked onto current branch in iter 108 and merged; draft PR closed as superseded.
+  All 9 CLAUDE.md shape-families seeded. Breadth directive fulfilled.
 
 - **🟢 Iter 103 complete.** Viaduct level (exposed bridge crossing, shape-family 8).
   `scenes/levels/viaduct.tscn` + `scripts/levels/viaduct.gd`: "The Viaduct" — suspended
@@ -305,17 +316,13 @@ The next iteration should pull from the top of this list. Items marked
 - ~~Shape 6: Inverted descent (climbing down) → Descent~~ ✅ exists (iter 101)
 - ~~Shape 7: Enclosed obstacle gauntlet → Filterbank~~ ✅ exists (iter 102)
 - ~~Shape 8: Exposed bridge crossing → Viaduct~~ ✅ exists (iter 103)
-- Shape 9: Ringed arena — circular or polygonal perimeter ring, platforming on the outer
-  band, center void or landmark. Last unbuilt example from CLAUDE.md list.
+- ~~Shape 9: Ringed arena → Arena~~ ✅ exists (iter 104, merged iter 108)
 
-Each shape needs: spawn → win state, Player/CameraRig/TouchOverlay wiring, lives in `scenes/levels/`.
-Do not iterate on an existing shape until the human picks a survivor.
+All 9 shape-families are now on main. Breadth directive complete.
+Do not iterate on any existing shape until the human picks a survivor.
 
-**Next shape to build: ringed arena** — closed ring of platforms around a central void or
-landmark. Floor plan from above: a ring or polygon. Player traverses the perimeter (clockwise
-or with jumps across the ring). Distinct from Plaza (hub radiates outward; arena loops back
-on itself) and from all other shapes. This is the last example from the CLAUDE.md list.
-After this, if no survivor is picked, escalate to human for direction.
+**Breadth directive fulfilled.** All 9 CLAUDE.md shape-families are built and accessible from
+`level_select.tscn`. Awaiting human pick of a survivor for the Gate 1 depth pass.
 
 Boot selector and dev-menu Load Level entry already in place.
 

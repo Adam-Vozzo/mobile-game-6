@@ -290,6 +290,7 @@ func _build_level_select(vbox: VBoxContainer) -> void:
 		{"label": "Descent (inverted)", "path": "res://scenes/levels/descent.tscn"},
 		{"label": "Filterbank (gauntlet)", "path": "res://scenes/levels/gauntlet.tscn"},
 		{"label": "Viaduct (bridge)",    "path": "res://scenes/levels/viaduct.tscn"},
+		{"label": "Arena (ring)",        "path": "res://scenes/levels/arena.tscn"},
 		{"label": "Feel Lab",           "path": "res://scenes/levels/feel_lab.tscn"},
 	]
 	for entry: Dictionary in levels:

@@ -5,10 +5,10 @@ A mobile 3D platformer. Brutalist megastructure inspired by *BLAME!*. Controller
 ## Status
 
 Current gate: **Gate 0 — Feel Lab** (closing out; Gate 1 prep in flight)
-Last activity: 2026-05-16 — iter 107: Gate 1 depth-pass plan research + level-select UI tests
+Last activity: 2026-05-16 — iter 108: Arena merged (all 9 shapes now on main), arena unit tests
 Test device build: ✅ verified 2026-05-12 — runs in Godot 4.6 on PC and on Nothing Phone 4(a) Pro
 Performance: 144 fps / 6.9 ms in editor at 1920×1080 (Feel Lab); Threshold perf TBD after rebuild
-Throttle level: **🔴 hard** — 11 iters since 2026-05-16 direction session; FULLY STALLED — no further autonomous progress possible
+Throttle level: **🔴 hard** — 12 iters since 2026-05-16 direction session; FULLY STALLED — awaiting shape-family pick
 
 If you only read one section, read **Open questions waiting on you** below.
 
@@ -16,11 +16,11 @@ If you only read one section, read **Open questions waiting on you** below.
 
 Things Claude can't decide alone, or where it's stalled and needs direction.
 
-> **🔴 FULLY STALLED — 10 iterations since 2026-05-16 direction session.**
-> The breadth directive is complete: all 9 shape-families from `docs/CLAUDE.md` are built.
-> Shape inventory: Threshold (corridor), Spire (tower), Rooftop, Plaza (hub), Cavern (maze),
-> Descent (inverted), Filterbank (gauntlet), Viaduct (bridge crossing), Arena (ringed) —
-> see PR #133 for Arena (draft, not yet on main, awaiting your pick).
+> **🔴 FULLY STALLED — 12 iterations since 2026-05-16 direction session.**
+> The breadth directive is complete: all 9 shape-families from `docs/CLAUDE.md` are built and
+> now all on main. Shape inventory: Threshold (corridor), Spire (tower), Rooftop, Plaza (hub),
+> Cavern (maze), Descent (inverted), Filterbank (gauntlet), Viaduct (bridge crossing), Arena (ringed).
+> All are accessible from `level_select.tscn`. PR #133 closed (superseded by this branch).
 >
 > **The autonomous loop is fully stalled.** No more hardening passes remain — tests are complete
 > for all 9 shape-family scripts, research is written. The next useful thing the loop can do
@@ -120,6 +120,30 @@ Goal: store-ready build.
 The full iteration log lives here, newest first. Every iteration appends an entry. Skim the dates to find where you last left off.
 
 <!-- ITERATION ENTRIES BELOW — DO NOT REMOVE OLDER ENTRIES -->
+
+### [2026-05-16] — iter 108 — Arena merged + arena unit tests
+
+Branch: `claude/gifted-shannon-DZ4pD`
+Throttle: 🔴 hard (12 iters since 2026-05-16 direction session; FULLY STALLED)
+Gate: Gate 1 — direction-finding breadth pass (all 9 shapes now on main)
+
+**Primary:** Cherry-picked Arena (iter 104) from `iter/ringed-arena` onto this branch.
+All 9 shape-family levels are now on main: `scenes/levels/arena.tscn` + `scripts/levels/arena.gd`
+included. `level_select.gd` updated to 10 entries; `dev_menu_overlay.gd` gains Arena entry.
+PR #133 (draft `iter/ringed-arena`) superseded by this PR.
+
+**Tests (hardening):** Two new functions in `tests/test_controller_kinematics.gd`:
+`_test_arena_level_defaults()` (4 assertions — load, par_time=50.0, spawn_marker_path,
+IDENTITY null-guard) + `_test_arena_sentry_constants()` (5 assertions — NorthArm z=-8.0,
+patrol_distance=6.0, half-sweep=3.0, speed=2.0, y=1.2). `_test_level_select_ui()` count
+updated 9→10, Arena spot-check added. Assertion audit: actual `_ok()` count = 1033 (prior
+tracking was inflated; 1033 is the ground-truth baseline going forward). 1023→1033.
+
+Perf: unchanged (no scene changes).
+Bugs fixed: none.
+New dev-menu controls: none.
+Research added: none.
+Assets acquired: none.
 
 ### [2026-05-16] — iter 107 — Gate 1 depth-pass plan + level-select UI tests
 
