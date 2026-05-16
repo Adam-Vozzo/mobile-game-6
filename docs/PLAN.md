@@ -48,6 +48,18 @@ authored with it in mind.
   the human picks a survivor. Threshold rebuild kept in repo as the corridor representative;
   next level-touching iter MUST pick an unrepresented shape-family, not iterate on Threshold.
 
+- **🔴 Iter 107 complete. HARD THROTTLE.** Gate 1 depth-pass plan research + level-select UI tests
+  (11 iters since 2026-05-16 direction session). `docs/research/gate1_depth_pass_plan.md` written:
+  concrete checklist for the depth pass on any picked shape — what the breadth pass already wired,
+  par-time calibration table for all 9 levels, ghost trail renderer wiring, art pass pattern,
+  DataShard audit per level (Spire is missing shards — must add during depth pass), enemy/hazard
+  audit per level (Spire/Rooftop/Plaza/Cavern/Descent need a sentry), per-level specific notes.
+  Includes copy-pasteable Gate 1 completion checklist. Side quest: `_test_level_select_ui()` —
+  10 new assertions (1171→1181) guarding `level_select.gd::_LEVELS` constant: script loads,
+  constant accessible via `get_script_constant_map()`, count=9, all entries have name/path/desc,
+  all paths `res://`-prefixed and `.tscn`-suffixed, no empty strings, sentinel spot-checks.
+  INDEX.md updated. HARD STALL continues.
+
 - **🔴 Iter 106 complete. HARD THROTTLE.** Early-breadth level tests + shape-comparison research
   (10 iters since 2026-05-16 direction session). 12 new unit tests in
   `tests/test_controller_kinematics.gd` for the three level scripts from iters 97–99 (Spire,

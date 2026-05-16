@@ -152,6 +152,16 @@ Suggested (still open):
   Cavern + Arena (highest camera risk — device session required before picking).
   Written iter 106 to prepare the human for the pick decision.
 
+- [`gate1_depth_pass_plan.md`](gate1_depth_pass_plan.md) — Concrete checklist for
+  taking any shape-family prototype to Gate 1 completion. Covers: what the breadth
+  pass already wired (no re-doing needed), cross-cutting items (par-time calibration
+  formula + table, ghost trail renderer wiring, art pass pattern, level-length audit,
+  DataShard audit per level, enemy/hazard audit per level), per-level specific notes
+  (Spire: missing shards + sentry; Rooftop: blob shadow priority; Plaza: pillar art;
+  Cavern: nav legibility + camera risk; Descent: ratchet direction; Filterbank: art
+  only; Viaduct: sentry tuning). Includes copy-pasteable Gate 1 completion checklist
+  for PLAN.md and "Gate 2 only" exclusion list. Written iter 107.
+
 ## Gate 1 — implementation
 
 - [`gate1_scene_lifecycle.md`](gate1_scene_lifecycle.md) — Godot 4 implementation
