@@ -48,6 +48,19 @@ authored with it in mind.
   the human picks a survivor. Threshold rebuild kept in repo as the corridor representative;
   next level-touching iter MUST pick an unrepresented shape-family, not iterate on Threshold.
 
+- **🔴 Iter 127 complete. HARD THROTTLE.** PatrolSentry geometry constants + HazardBody class tests
+  (31 iters since 2026-05-16 direction session). `tests/test_controller_kinematics.gd`: added
+  `const PS := preload("res://scripts/enemies/patrol_sentry.gd")` and
+  `const HB := preload("res://scripts/levels/hazard_body.gd")` to the preload block.
+  `_test_sentry_geometry_constants()` — 5 assertions reading `BODY_HALF`, `KILL_HALF`,
+  `BOB_AMPLITUDE` from `PS.get_script_constant_map()` so source-value drift is caught (the prior
+  `_test_patrol_sentry_logic` asserted the `KILL > BODY` invariant with local copies only — same
+  class of gap fixed in iter 114 for GhostTrailRenderer).
+  `_test_hazard_body_class()` — 3 assertions: first-ever coverage for `hazard_body.gd`
+  (`extends Area3D` type contract, `_on_body_entered` method present, `HB.get_script_property_list()`
+  empty — zero-config kill trigger). Net: **1120 → 1128** assertions (+8).
+  HARD STALL continues — awaiting shape pick.
+
 - **🔴 Iter 126 complete. HARD THROTTLE.** `blend_time` removal + `_HINT_BLEND_RATE` constant
   (30 iters since 2026-05-16 direction session). `scripts/levels/camera_hint.gd`: removed
   `@export_range(0.1, 2.0, 0.1) var blend_time: float = 0.5` (was exported but never read by
@@ -744,6 +757,20 @@ These mirror "Open questions waiting on you" in the README.
 
 ## Recently completed (last 5)
 
+- 2026-05-17 — iter 127. **PatrolSentry geometry constants + HazardBody class tests. HARD THROTTLE.**
+  `tests/test_controller_kinematics.gd`: preloads `const PS` + `const HB` added.
+  `_test_sentry_geometry_constants()` — 5 assertions: reads `BODY_HALF`, `KILL_HALF`, `BOB_AMPLITUDE`
+  from `PS.get_script_constant_map()` — guards the `KILL_HALF > BODY_HALF` invariant from the
+  *source* (prior test used local copies that would not catch source drift; same class of bug
+  fixed for GhostTrailRenderer in iter 114).
+  `_test_hazard_body_class()` — 3 assertions: first-ever coverage for `hazard_body.gd` (type
+  contract `extends Area3D`, `_on_body_entered` method present, zero script properties).
+  1120 → **1128** assertions.
+
+- 2026-05-17 — iter 126. **`CameraHint.blend_time` removal + `_HINT_BLEND_RATE` constant. HARD THROTTLE.**
+  `blend_time` export removed from `camera_hint.gd`; `_HINT_BLEND_RATE := 3.0` named in
+  `camera_rig.gd`. `_test_hint_distance_blend` updated. 1119 → 1120.
+
 - 2026-05-17 — iter 125. **CameraHint authoring research + CheckPoint tests. HARD THROTTLE.**
   `docs/research/camera_hint_authoring.md`: CameraHint fully implemented (not stub); `blend_time`
   export not wired (hardcoded 3/sec) — depth-pass Option B: remove export. Per-shape placement
@@ -753,20 +780,9 @@ These mirror "Open questions waiting on you" in the README.
 - 2026-05-17 — iter 124. **`_build_touch_section` refactor + subsection test. HARD THROTTLE.**
   `_build_button_layout_subsection` extracted (52→33 lines). 2 assertions (1112→1114).
 
-- 2026-05-17 — iter 122. **ResultsPanel layout-constant tests + touch-button reposition research. HARD THROTTLE.**
-  `_test_results_panel_layout_constants()` — 7 assertions (1098→1105): `_FONT_SIZE` range,
-  `_BTN_FONT_SIZE > _FONT_SIZE`, `_BTN_MIN.x/y` Android HIG tap-target guards, `_PANEL_WIDTH`.
-  Side quest: `docs/research/touch_button_reposition.md` — two-stage reposition plan
-  (dev-menu sliders for Gate 1; configure mode + ConfigFile for Gate 3). INDEX.md updated.
-
-- 2026-05-17 — iter 121. **Spire DataShards added + presence test. HARD THROTTLE.**
-  `scenes/levels/spire.tscn`: Shard1 (2, 3.45, 0) + Shard2 (-2, 14.75, 0). Spire was the
-  only breadth-pass level missing collectibles. `_test_spire_shard_presence()` — 3 assertions
-  (1095→1098).
-
-- 2026-05-17 — iter 120. **Dev menu "← Level Selector" button. HARD THROTTLE.**
-  `_LEVEL_SELECT_SCENE` constant + button at top of Load Level section. 2 new test assertions
-  (1093→1095): `_LEVEL_SELECT_SCENE` value check via `get_script_constant_map()`.
+- 2026-05-17 — iter 123. **Touch button position sliders + stick radius in dev menu. HARD THROTTLE.**
+  Jump X/Y (px) and stick max radius sliders added to `_build_touch_section`. 7 assertions
+  (1105→1112).
 
 - 2026-05-17 — iter 119. **DataShard collision + respawn tests. HARD THROTTLE.**
   `_test_data_shard_collision_invariants()` — 9 assertions (1084→1093).
