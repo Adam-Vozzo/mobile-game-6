@@ -5,10 +5,10 @@ A mobile 3D platformer. Brutalist megastructure inspired by *BLAME!*. Controller
 ## Status
 
 Current gate: **Gate 0 — Feel Lab** (closing out; Gate 1 prep in flight)
-Last activity: 2026-05-17 — iter 119: DataShard collision + respawn tests (1084→1093 assertions)
+Last activity: 2026-05-17 — iter 120: dev menu "← Level Selector" button + path-constant test (1093→1095 assertions)
 Test device build: ✅ verified 2026-05-12 — runs in Godot 4.6 on PC and on Nothing Phone 4(a) Pro
 Performance: 144 fps / 6.9 ms in editor at 1920×1080 (Feel Lab); Threshold perf TBD after rebuild
-Throttle level: **🔴 hard** — 23 iters since 2026-05-16 direction session; FULLY STALLED — awaiting shape-family pick
+Throttle level: **🔴 hard** — 24 iters since 2026-05-16 direction session; FULLY STALLED — awaiting shape-family pick
 
 If you only read one section, read **Open questions waiting on you** below.
 
@@ -16,7 +16,7 @@ If you only read one section, read **Open questions waiting on you** below.
 
 Things Claude can't decide alone, or where it's stalled and needs direction.
 
-> **🔴 FULLY STALLED — 21 iterations since 2026-05-16 direction session.**
+> **🔴 FULLY STALLED — 24 iterations since 2026-05-16 direction session.**
 > The breadth directive is complete: all 9 shape-families from `docs/CLAUDE.md` are built and
 > now all on main. Shape inventory: Threshold (corridor), Spire (tower), Rooftop, Plaza (hub),
 > Cavern (maze), Descent (inverted), Filterbank (gauntlet), Viaduct (bridge crossing), Arena (ringed).
@@ -26,6 +26,8 @@ Things Claude can't decide alone, or where it's stalled and needs direction.
 > for all 9 shape-family scripts, research is written. The next useful thing the loop can do
 > requires your pick. A new research note `docs/research/gate1_shape_comparison.md` summarises
 > each shape's infrastructure state and camera/control demands to help you choose.
+> Dev menu (F1 / 3-finger tap) → Level → Load Level now has a "← Level Selector" button at the
+> top, so you can jump back to the boot selector from within any level without restarting.
 >
 > **Highest-leverage action: pick a shape-family.** Even a 15-minute device session on the
 > Nothing Phone 4(a) Pro running the level selector (`level_select.tscn`) gives you enough
@@ -120,6 +122,28 @@ Goal: store-ready build.
 The full iteration log lives here, newest first. Every iteration appends an entry. Skim the dates to find where you last left off.
 
 <!-- ITERATION ENTRIES BELOW — DO NOT REMOVE OLDER ENTRIES -->
+
+### [2026-05-17] — iter 120 — dev menu "← Level Selector" button
+
+Branch: `claude/gifted-shannon-htra6`
+Throttle: 🔴 hard (24 iters since 2026-05-16 direction session; FULLY STALLED)
+Gate: Gate 1 — direction-finding (awaiting human shape pick)
+
+**Primary:** Added `← Level Selector` button at the top of the dev menu's Load Level section
+(`tools/dev_menu/dev_menu_overlay.gd` → `_build_level_select`). During a device testing session,
+the human can now jump back to the boot selector from inside any level via dev menu (F1 / 3-finger
+tap) → Level → Load Level → `← Level Selector`, without restarting the game.
+
+The button destination is named constant `_LEVEL_SELECT_SCENE` rather than an inline string, so
+the path is testable. Two new test assertions in `_test_level_select_ui` (1093 → **1095**) verify
+that `dev_menu_overlay.gd` exposes `_LEVEL_SELECT_SCENE` and its value matches the expected path —
+if the constant is renamed or moved, the test catches the drift before a device session where the
+button would silently navigate to a missing scene.
+
+Perf: no change (test-only additions).
+Bugs fixed: none.
+New dev-menu controls: **Level → Load Level → ← Level Selector** (nav button, returns to boot selector).
+Research added: none.
 
 ### [2026-05-17] — iter 119 — DataShard collision shape + respawn reset tests
 

@@ -51,6 +51,8 @@ const BASE_FONT_SIZE := 24
 const SECTION_FONT_SIZE := 28
 ## Top-level "Dev Menu" title font size.
 const TITLE_FONT_SIZE := 36
+## Boot selector scene — used by the "← Level Selector" button in Load Level.
+const _LEVEL_SELECT_SCENE := "res://scenes/ui/level_select.tscn"
 
 func _build_ui() -> void:
 	var panel := PanelContainer.new()
@@ -281,6 +283,8 @@ func _build_level_section(vbox: VBoxContainer) -> void:
 
 func _build_level_select(vbox: VBoxContainer) -> void:
 	vbox.add_child(_make_label("Load Level", SECTION_FONT_SIZE, false))
+	_make_button(vbox, "← Level Selector", func() -> void:
+		get_tree().change_scene_to_file(_LEVEL_SELECT_SCENE))
 	var levels: Array[Dictionary] = [
 		{"label": "Threshold (Gate 1)", "path": "res://scenes/levels/threshold.tscn"},
 		{"label": "Spire (tower)",      "path": "res://scenes/levels/spire.tscn"},

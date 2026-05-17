@@ -6216,6 +6216,17 @@ func _test_level_select_ui() -> void:
 	_ok("levels[9] name = 'ARENA' (shape family 9 — last entry; breadth complete)",
 		(levels[9].get("name", "") as String) == "ARENA")
 
+	# Guard the "← Level Selector" button destination in dev_menu_overlay.gd.
+	# If the constant is renamed or the path changes, this catches the drift before
+	# a device session where the button silently navigates to a missing scene.
+	var DM = load("res://tools/dev_menu/dev_menu_overlay.gd")
+	_ok("dev_menu_overlay.gd loads for _LEVEL_SELECT_SCENE check", DM != null)
+	if DM != null:
+		var dm_cmap: Dictionary = DM.get_script_constant_map()
+		var sel_path: String = dm_cmap.get("_LEVEL_SELECT_SCENE", "") as String
+		_ok("_LEVEL_SELECT_SCENE is res://scenes/ui/level_select.tscn",
+			sel_path == "res://scenes/ui/level_select.tscn")
+
 
 func _test_win_state_beacon_defaults() -> void:
 	## Guards the WinState beacon @export defaults added in iter 112.
