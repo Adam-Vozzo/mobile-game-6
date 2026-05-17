@@ -5,10 +5,10 @@ A mobile 3D platformer. Brutalist megastructure inspired by *BLAME!*. Controller
 ## Status
 
 Current gate: **Gate 0 — Feel Lab** (closing out; Gate 1 prep in flight)
-Last activity: 2026-05-17 — iter 125: `camera_hint_authoring.md` research + stale docstring fix + 5 CheckPoint unit tests (1114→1119 assertions)
+Last activity: 2026-05-17 — iter 126: `CameraHint.blend_time` removed + `camera_rig._HINT_BLEND_RATE` named constant + 3 net-new test assertions (1119→1120)
 Test device build: ✅ verified 2026-05-12 — runs in Godot 4.6 on PC and on Nothing Phone 4(a) Pro
 Performance: 144 fps / 6.9 ms in editor at 1920×1080 (Feel Lab); Threshold perf TBD after rebuild
-Throttle level: **🔴 hard** — 29 iters since 2026-05-16 direction session; FULLY STALLED — awaiting shape-family pick
+Throttle level: **🔴 hard** — 30 iters since 2026-05-16 direction session; FULLY STALLED — awaiting shape-family pick
 
 If you only read one section, read **Open questions waiting on you** below.
 
@@ -16,15 +16,16 @@ If you only read one section, read **Open questions waiting on you** below.
 
 Things Claude can't decide alone, or where it's stalled and needs direction.
 
-> **🔴 FULLY STALLED — 26 iterations since 2026-05-16 direction session.**
+> **🔴 FULLY STALLED — 30 iterations since 2026-05-16 direction session.**
 > The breadth directive is complete: all 9 shape-families from `docs/CLAUDE.md` are built and
-> now all on main. Shape inventory: Threshold (corridor), Spire (tower), Rooftop, Plaza (hub),
+> on this branch. Shape inventory: Threshold (corridor), Spire (tower), Rooftop, Plaza (hub),
 > Cavern (maze), Descent (inverted), Filterbank (gauntlet), Viaduct (bridge crossing), Arena (ringed).
-> All are accessible from `level_select.tscn`. PR #133 closed (superseded by this branch).
+> All are accessible from `level_select.tscn`.
 >
-> **The autonomous loop is fully stalled.** No more hardening passes remain — tests are complete
-> for all 9 shape-family scripts, research is written. The next useful thing the loop can do
-> requires your pick. A new research note `docs/research/gate1_shape_comparison.md` summarises
+> **The autonomous loop is fully stalled.** Hardening work this iteration: removed the
+> unwired `blend_time` export from `CameraHint` and named the blend rate as `_HINT_BLEND_RATE`
+> in `camera_rig.gd`. Beyond tiny cleanup like this, the loop can't usefully advance without
+> your shape pick. A new research note `docs/research/gate1_shape_comparison.md` summarises
 > each shape's infrastructure state and camera/control demands to help you choose.
 > Dev menu (F1 / 3-finger tap) → Level → Load Level now has a "← Level Selector" button at the
 > top, so you can jump back to the boot selector from within any level without restarting.
@@ -122,6 +123,31 @@ Goal: store-ready build.
 The full iteration log lives here, newest first. Every iteration appends an entry. Skim the dates to find where you last left off.
 
 <!-- ITERATION ENTRIES BELOW — DO NOT REMOVE OLDER ENTRIES -->
+
+### [2026-05-17] — iter 126 — `CameraHint.blend_time` removal + `_HINT_BLEND_RATE` constant
+
+Branch: `claude/gifted-shannon-E75LT`
+Throttle: 🔴 hard (30 iters since 2026-05-16 direction session; FULLY STALLED)
+Gate: Gate 1 — direction-finding (awaiting human shape pick)
+
+**Primary:** `CameraHint.blend_time` was an `@export_range` property that `camera_rig.gd`
+never read — the blend rate was always `exp(-3.0 * delta)` regardless. Identified as a silent
+interface/behaviour discrepancy in iter 125 research; Option B (remove export, name the rate)
+executed this iter. `scripts/levels/camera_hint.gd`: `blend_time` export removed; docstring
+updated to reference `CameraRig._HINT_BLEND_RATE`. `scripts/camera/camera_rig.gd`:
+`const _HINT_BLEND_RATE := 3.0` added with rationale docstring; `_update_hint_distance` uses
+`exp(-_HINT_BLEND_RATE * delta)` in place of the bare literal. `DECISIONS.md` entry added.
+
+**Side quest:** Tests — `const CR := preload("res://scripts/camera/camera_rig.gd")` added to
+preloads. `_test_camera_hint_defaults`: removed 2 stale `blend_time` assertions, added 1 new
+assertion verifying the property is absent from `get_property_list()`. `_test_hint_distance_blend`:
+2 new assertions cross-checking `_HINT_BLEND_RATE` exists and == 3.0 via `get_script_constant_map()`.
+Net: **1119 → 1120** assertions (−2 stale +1 absence +2 constant guards).
+
+Perf: no change.
+Bugs fixed: stale `blend_time` interface/behaviour discrepancy closed.
+New dev-menu controls: none.
+Research added: `camera_hint_authoring.md` action items 1+2 marked resolved.
 
 ### [2026-05-17] — iter 125 — CameraHint authoring research + CheckPoint tests
 

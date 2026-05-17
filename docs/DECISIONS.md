@@ -15,6 +15,30 @@ Append, don't rewrite. Supersession adds a new entry referencing the old.
 
 ---
 
+## 2026-05-17 — CameraHint `blend_time` removed; rate named in `camera_rig._HINT_BLEND_RATE`
+
+Status: accepted
+Context: `CameraHint` had an `@export_range` property `blend_time: float = 0.5` that the
+camera rig ignored — `_update_hint_distance` always blended at 3 /sec (hardcoded `exp(-3.0 * delta)`)
+regardless of the value. This was identified in iter 125 research
+(`docs/research/camera_hint_authoring.md`, "Known gap: blend_time is not wired") as a silent
+discrepancy between the hint's interface and the rig's actual behaviour. Option A (wire the
+value as a per-frame rate) and Option B (remove the export, document 3 /sec as project standard)
+were both analysed.
+Decision: Option B. 3 /sec is the correct speed for all nine current shape families; per-hint
+rate control adds configuration surface with no current benefit. The magic `3.0` is named
+`camera_rig._HINT_BLEND_RATE` so the value is greppable and the intent is self-documenting.
+Alternatives considered: Option A (per-hint rate via `blend_time`) — rejected for Gate 1;
+per-hint rate variation is Gate 2+ complexity and the current uniform 3 /sec has not caused
+any camera complaint in design notes.
+Consequences: `CameraHint` has one fewer export. `.tscn` files that never set `blend_time`
+(threshold.tscn: all three CameraHint nodes leave it at default) are unaffected. The test
+`_test_camera_hint_defaults` now verifies absence of `blend_time` from `get_property_list()`.
+`camera_rig._HINT_BLEND_RATE` is cross-checked in `_test_hint_distance_blend` via
+`get_script_constant_map()`. Reference: `docs/research/camera_hint_authoring.md`.
+
+---
+
 ## 2026-05-15 — Gate 1 enemy archetype: PatrolSentry (slow linear patrol, zero AI)
 
 Status: accepted (on-device pending for speed / distance tuning)

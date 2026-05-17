@@ -27,36 +27,17 @@ overlapping hints don't stack additively, they compete.
 
 ---
 
-## Known gap: blend_time is not wired
+## ~~Known gap: blend_time is not wired~~ — resolved iter 126
 
-`CameraHint` exports `blend_time` (default 0.5 s, range 0.1–2.0 s), but `camera_rig.gd`
-ignores it — the blend rate is always 3 /sec regardless. The current test in
-`_test_hint_distance_blend()` documents this as `const RATE := 3.0` (hardcoded).
-
-**Depth-pass decision**: either
-
-A. Wire `blend_time` into the blend rate. The correct formula for "95 % blend reached
-   in `blend_time` seconds" is `rate = -log(0.05) / blend_time ≈ 3.0 / blend_time`.
-   With the default 0.5 s that gives rate = 6 /sec (snappier), with 2.0 s it gives 1.5 /sec
-   (very gradual). This makes `blend_time` meaningful per-hint.
-
-B. Remove `blend_time` from the export and document 3 /sec as the project-wide standard.
-   3 /sec is already slow enough to read as deliberate (≠ a cut) and fast enough to complete
-   within the approach zone before the player needs the extra frame. Removing the export
-   reduces configuration surface.
-
-**Recommendation for Gate 1**: Option B — remove `blend_time`. 3 /sec is the right speed
-for all nine current shape families; per-hint rate control is Gate 2+ complexity. Removing
-the export also fixes the silent discrepancy between the hint's self-description and the
-rig's actual behaviour.
+Option B executed: `blend_time` removed from `CameraHint`. The blend rate is now named
+`camera_rig._HINT_BLEND_RATE = 3.0` and referenced from `_update_hint_distance`. The
+`_test_camera_hint_defaults` test verifies the property is absent; `_test_hint_distance_blend`
+cross-checks `_HINT_BLEND_RATE == 3.0` via `get_script_constant_map()`. `DECISIONS.md`
+entry added. 1119 → 1120 assertions.
 
 ---
 
-## Stale docstring in camera_hint.gd
-
-The class comment still reads: "Stub for Gate 1: the camera rig will query active hints via
-`get_tree().get_nodes_in_group("camera_hints")` once the framing pass lands." The framing
-pass has landed. Fix this docstring in the same pass that wires or removes `blend_time`.
+## ~~Stale docstring in camera_hint.gd~~ — resolved iter 125
 
 ---
 
@@ -180,10 +161,9 @@ Tuning workflow:
 
 ## Implications for Void (concrete action items)
 
-1. **Fix the stale "Stub for Gate 1" docstring** in `camera_hint.gd` — it ships with the
-   code and is actively misleading.
-2. **Decide on `blend_time`**: recommended Option B (remove the export, 3 /sec is project
-   standard). A one-line change in `camera_hint.gd`. Log the decision in `DECISIONS.md`.
+1. ~~**Fix the stale "Stub for Gate 1" docstring** in `camera_hint.gd`~~ — done iter 125.
+2. ~~**Decide on `blend_time`**: Option B (remove the export, 3 /sec is project standard).~~
+   Done iter 126 — `blend_time` removed, `_HINT_BLEND_RATE` constant added to `camera_rig.gd`.
 3. **First hint placement**: add one hint to the chosen depth-pass level's most legibility-
    critical moment (see per-shape table above). Gate 1 target: 1–2 hints per level.
 4. **Camera per-shape compatibility**: all nine shapes' camera risk classifications in
