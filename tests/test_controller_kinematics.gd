@@ -175,6 +175,7 @@ func _ready() -> void:
 	_test_sentry_geometry_constants()
 	_test_hazard_body_class()
 	_test_arena_shard_presence()
+	_test_remaining_levels_shard_presence()
 	_report()
 
 
@@ -6710,3 +6711,39 @@ func _test_arena_shard_presence() -> void:
 		tscn_text.contains('[node name="DataShard1"'))
 	_ok("Arena: ShardPedestal platform present (side-path shelf for shard approach)",
 		tscn_text.contains('[node name="ShardPedestal"'))
+
+
+func _test_remaining_levels_shard_presence() -> void:
+	## Guards DataShard placement in the 7 breadth-pass levels that have shards
+	## but no shard presence test after iters 97–128.
+	## Covered: Threshold (4 DataShard nodes across 4 zone parents),
+	## Rooftop / Plaza / Cavern / Descent / Gauntlet (Shard1 + Shard2 each),
+	## Viaduct (DataShard1 singleton off PierHead1 eastern spur).
+	## Pattern: read .tscn source text — no scene-tree instantiation needed.
+	## A silent deletion of any shard node fails the corresponding _ok pair before
+	## Game.shards_total surfaces the mismatch at runtime.
+	print("\n-- Remaining levels DataShard presence (Threshold+Rooftop+Plaza+Cavern+Descent+Gauntlet+Viaduct) --")
+
+	# Threshold: 4 DataShard instances, one per zone parent + Beat4_Ketsu.
+	var th := FileAccess.get_file_as_string("res://scenes/levels/threshold.tscn")
+	_ok("threshold: data_shard.tscn registered as ext_resource",
+		th.contains("data_shard.tscn"))
+	_ok("threshold: exactly 4 DataShard instance nodes (Zone1+Zone2+Zone3+Beat4)",
+		th.count('[node name="DataShard"') == 4)
+
+	# Rooftop / Plaza / Cavern / Descent / Gauntlet — Shard1 + Shard2 under a Shards group.
+	for lvl: String in ["rooftop", "plaza", "cavern", "descent", "gauntlet"]:
+		var t := FileAccess.get_file_as_string("res://scenes/levels/" + lvl + ".tscn")
+		_ok(lvl + ": data_shard.tscn registered as ext_resource",
+			t.contains("data_shard.tscn"))
+		_ok(lvl + ": Shard1 node present",
+			t.contains('[node name="Shard1"'))
+		_ok(lvl + ": Shard2 node present",
+			t.contains('[node name="Shard2"'))
+
+	# Viaduct: singleton DataShard1 off the PierHead1 eastern spur.
+	var vi := FileAccess.get_file_as_string("res://scenes/levels/viaduct.tscn")
+	_ok("viaduct: data_shard.tscn registered as ext_resource",
+		vi.contains("data_shard.tscn"))
+	_ok("viaduct: DataShard1 node present (PierHead1 east spur, 1.5 m jump off-path)",
+		vi.contains('[node name="DataShard1"'))
