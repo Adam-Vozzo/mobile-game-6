@@ -16,7 +16,19 @@ authored with it in mind.
 
 ## Active iteration
 
-- **🟢 Direction session 2026-05-16 (post-pull repair + Threshold redesign).** Human
+- **🔴 Iter 128 complete. HARD THROTTLE.** PR hygiene (30 commits → main) + Arena shard
+  presence test (32 iters since 2026-05-16 direction session). Branch `claude/gifted-shannon-oL2yV`
+  had 30 commits (iters 97–127) never pushed to origin — prior iter entries referenced PR numbers
+  in their commit messages but GitHub's `main` was still at PR #125 (2026-05-16 direction session).
+  Pushed branch, opened PR, squash-merged onto `main`. All breadth-pass and hardening work (9
+  shape families, level_select, 1128 unit tests, ghost trail fix, WinState beacon, CameraHint
+  refactor) now on `main`. Side quest: `_test_arena_shard_presence()` — 3 new assertions
+  (1128→**1131**): `data_shard.tscn` registered as ext_resource, `DataShard1` node present,
+  `ShardPedestal` platform present. Arena was the only breadth-pass level with no shard presence
+  test. HARD STALL continues — awaiting shape pick.
+
+- **🔴 Iter 127 complete. HARD THROTTLE.** PatrolSentry geometry constants + HazardBody class tests
+  (31 iters since 2026-05-16 direction session). Human
   flagged two parser errors landing on `main` from autonomous iters: `AudioStreamOGGVorbis`
   → `AudioStreamOggVorbis` (Godot 3 → Godot 4 spelling, audio.gd) and `sinf(` → `sin(`
   (C math.h → GDScript, patrol_sentry.gd + 2 test sites). Saved as `feedback_godot4_naming.md`
