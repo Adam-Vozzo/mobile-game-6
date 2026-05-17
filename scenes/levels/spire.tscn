@@ -1,4 +1,4 @@
-[gd_scene load_steps=40 format=3]
+[gd_scene load_steps=41 format=3]
 
 [ext_resource type="Script" path="res://scripts/levels/spire.gd" id="1_spire"]
 [ext_resource type="Script" path="res://scripts/levels/checkpoint.gd" id="2_cp"]
@@ -11,6 +11,7 @@
 [ext_resource type="Script" path="res://scripts/levels/moving_platform.gd" id="9_movp"]
 [ext_resource type="Script" path="res://scripts/levels/ghost_trail_renderer.gd" id="10_ghost"]
 [ext_resource type="Script" path="res://tools/debug/player_debug_draw.gd" id="11_dbg"]
+[ext_resource type="PackedScene" path="res://scenes/levels/data_shard.tscn" id="12_shard"]
 
 [sub_resource type="Environment" id="Env_Spire"]
 background_mode = 1
@@ -269,6 +270,14 @@ transform = Transform3D(1, 0, 0, 0, 1, 0, 0, 0, 1, 0, 16.75, 0)
 mesh = SubResource("Mesh_Summit")
 [node name="Collider" type="CollisionShape3D" parent="Platforms/SummitFloor"]
 shape = SubResource("Shape_Summit")
+
+[node name="Shards" type="Node3D" parent="."]
+
+[node name="Shard1" parent="Shards" instance=ExtResource("12_shard")]
+transform = Transform3D(1, 0, 0, 0, 1, 0, 0, 0, 1, 2, 3.45, 0)
+
+[node name="Shard2" parent="Shards" instance=ExtResource("12_shard")]
+transform = Transform3D(1, 0, 0, 0, 1, 0, 0, 0, 1, -2, 14.75, 0)
 
 [node name="CheckPoint" type="Area3D" parent="."]
 transform = Transform3D(1, 0, 0, 0, 1, 0, 0, 0, 1, 0, 6.5, 0)

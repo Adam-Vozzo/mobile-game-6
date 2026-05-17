@@ -123,6 +123,30 @@ The full iteration log lives here, newest first. Every iteration appends an entr
 
 <!-- ITERATION ENTRIES BELOW — DO NOT REMOVE OLDER ENTRIES -->
 
+### [2026-05-17] — iter 121 — Spire DataShards added
+
+Branch: `claude/gifted-shannon-oNvsU`
+Throttle: 🔴 hard (25 iters since 2026-05-16 direction session; FULLY STALLED)
+Gate: Gate 1 — direction-finding (awaiting human shape pick)
+
+**Primary:** Added 2 DataShards to `scenes/levels/spire.tscn` — the only breadth-pass level
+that was missing collectibles (flagged in `docs/research/gate1_depth_pass_plan.md`).
+- `Shard1` at (2, 3.45, 0): 0.25 m above ShelfB surface, before the mid-shaft checkpoint.
+- `Shard2` at (-2, 14.75, 0): 0.25 m above PlatformG surface, near the summit.
+Both follow the rooftop.tscn placement pattern — walk-up collect while traversing the
+platform, visible glow marks position through the shaft fog.
+`Game.shards_total` in `spire.gd` already calls
+`get_tree().get_nodes_in_group("data_shard").size()`, so the count auto-updates.
+
+Side quest: `_test_spire_shard_presence()` — 3 new assertions (1095 → **1098**): reads
+`spire.tscn` source text and verifies `data_shard.tscn` is registered as an ext_resource
+and both `Shard1` / `Shard2` node names are present. Catches any future accidental deletion.
+
+Perf: no change (DataShard uses existing Area3D + programmatic mesh, zero new draw calls at rest).
+Bugs fixed: Spire missing DataShards (documented depth-pass gap).
+New dev-menu controls: none.
+Research added: none.
+
 ### [2026-05-17] — iter 120 — dev menu "← Level Selector" button
 
 Branch: `claude/gifted-shannon-htra6`
