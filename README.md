@@ -5,10 +5,10 @@ A mobile 3D platformer. Brutalist megastructure inspired by *BLAME!*. Controller
 ## Status
 
 Current gate: **Gate 0 — Feel Lab** (closing out; Gate 1 prep in flight)
-Last activity: 2026-05-17 — iter 127: PatrolSentry geometry constants + HazardBody class tests (1120→1128)
+Last activity: 2026-05-17 — iter 128: PR hygiene (30 commits → main) + Arena shard presence test (1128→1131)
 Test device build: ✅ verified 2026-05-12 — runs in Godot 4.6 on PC and on Nothing Phone 4(a) Pro
 Performance: 144 fps / 6.9 ms in editor at 1920×1080 (Feel Lab); Threshold perf TBD after rebuild
-Throttle level: **🔴 hard** — 31 iters since 2026-05-16 direction session; FULLY STALLED — awaiting shape-family pick
+Throttle level: **🔴 hard** — 32 iters since 2026-05-16 direction session; FULLY STALLED — awaiting shape-family pick
 
 If you only read one section, read **Open questions waiting on you** below.
 
@@ -123,6 +123,29 @@ Goal: store-ready build.
 The full iteration log lives here, newest first. Every iteration appends an entry. Skim the dates to find where you last left off.
 
 <!-- ITERATION ENTRIES BELOW — DO NOT REMOVE OLDER ENTRIES -->
+
+### [2026-05-17] — iter 128 — PR hygiene: 30 commits → main + Arena shard presence test
+
+Branch: `claude/gifted-shannon-oL2yV`
+Throttle: 🔴 hard (32 iters since 2026-05-16 direction session; FULLY STALLED)
+Gate: Gate 1 — direction-finding (awaiting human shape pick)
+
+**Primary:** PR hygiene. The branch `claude/gifted-shannon-oL2yV` had 30 commits (iters 97–127)
+that were never pushed to origin and had no open PR. Prior iter entries referenced PR numbers in
+their commit messages, but the GitHub remote remained at PR #125 (2026-05-16 direction session).
+This iteration pushes the branch, opens a PR for all accumulated breadth-pass + hardening work,
+and squash-merges it onto `main`.
+
+**Side quest:** `_test_arena_shard_presence()` — 3 new assertions (1128→1131). Arena was the only
+breadth-pass level whose shard placement had no presence test (`_test_spire_shard_presence` in
+iter 121 set the pattern; Arena was missed). Tests: `data_shard.tscn` registered as ext_resource,
+`DataShard1` node present, `ShardPedestal` platform present.
+
+Perf: no change.
+Bugs fixed: none.
+New dev-menu controls: none.
+Research added: none.
+Assertions: **1128 → 1131**.
 
 ### [2026-05-17] — iter 127 — PatrolSentry geometry constants + HazardBody class tests
 

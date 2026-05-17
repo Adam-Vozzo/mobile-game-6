@@ -174,6 +174,7 @@ func _ready() -> void:
 	_test_checkpoint_class()
 	_test_sentry_geometry_constants()
 	_test_hazard_body_class()
+	_test_arena_shard_presence()
 	_report()
 
 
@@ -6691,3 +6692,21 @@ func _test_hazard_body_class() -> void:
 	#    review — tunable kill zones belong in the level's Area3D export, not here.
 	_ok("HazardBody has no script-level properties (zero-config — no accidental exports)",
 		HB.get_script_property_list().is_empty())
+
+
+func _test_arena_shard_presence() -> void:
+	## Guards the DataShard placement in arena.tscn.
+	## Arena is the only breadth-pass level whose shard was never covered by a
+	## presence test (spire.tscn got one in iter 121; the others are implied by
+	## the ext_resource load_steps their level scripts require).
+	## Reads the .tscn source text directly — no scene-tree instantiation needed.
+	## DataShard1 sits on the ShardPedestal shelf, off the critical path.
+	print("\n-- Arena DataShard presence --")
+
+	var tscn_text := FileAccess.get_file_as_string("res://scenes/levels/arena.tscn")
+	_ok("Arena: data_shard.tscn registered as ext_resource (load_steps reflects shard)",
+		tscn_text.contains("data_shard.tscn"))
+	_ok("Arena: DataShard1 node present in scene (off-path ShardPedestal shelf)",
+		tscn_text.contains('[node name="DataShard1"'))
+	_ok("Arena: ShardPedestal platform present (side-path shelf for shard approach)",
+		tscn_text.contains('[node name="ShardPedestal"'))
