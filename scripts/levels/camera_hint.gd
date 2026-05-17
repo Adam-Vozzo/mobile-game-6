@@ -1,11 +1,12 @@
 extends Area3D
 class_name CameraHint
 ## Spatial marker that signals the camera rig to pull back and frame a vista.
-## Stub for Gate 1: the camera rig will query active hints via
-## get_tree().get_nodes_in_group("camera_hints") once the framing pass lands.
+## camera_rig.gd queries get_tree().get_nodes_in_group("camera_hints") every frame,
+## blending toward the max pull_back_amount among active hints at 3 /sec (95 % in ~1 s).
 ##
-## @export pull_back_amount: extra spring-arm distance (metres) while inside.
-## @export blend_time:       seconds to lerp in/out of the hint.
+## NOTE: blend_time is exported but not wired — blend rate is always 3 /sec.
+## Depth-pass action: remove blend_time (project standard is 3 /sec) or wire it.
+## See docs/research/camera_hint_authoring.md for placement guidance.
 
 @export_range(0.0, 10.0, 0.5) var pull_back_amount: float = 0.0
 @export_range(0.1, 2.0, 0.1) var blend_time: float = 0.5

@@ -168,6 +168,17 @@ Suggested (still open):
   descending asymmetry. Recommended WinState `@export` approach to avoid per-tscn edits. Written
   iter 112 — actionable for the first depth pass iteration on any chosen shape.
 
+- [`camera_hint_authoring.md`](camera_hint_authoring.md) — Authoring guide for
+  `CameraHint` node placement. System is fully implemented (not a stub): camera_rig.gd
+  queries the `camera_hints` group every frame and blends toward the max
+  `pull_back_amount` at 3 /sec. **Key finding:** the `blend_time` export on `CameraHint`
+  is not wired to the actual blend rate (hardcoded 3 /sec) — depth-pass decision is
+  to remove the export (Option B). Placement principles: use at vista reveals, complex
+  gap setups, directional junctions, hazard reveals — NOT in cramped shafts or fast-reflex
+  sequences. Per-shape recommendations for all 9 families, sizing table for pull_back_amount,
+  dev-menu proxy tuning workflow. **Concrete action items:** fix stale "Stub" docstring,
+  decide on blend_time, add 1–2 hints to chosen depth-pass level. Written iter 125.
+
 - [`camera_per_shape.md`](camera_per_shape.md) — Per-shape-family camera tuning guide.
   For each of the 9 level shapes: risk level, specific dev-menu parameters to dial first,
   expected failure modes, and recommended starting values. Cross-cutting notes on

@@ -168,6 +168,7 @@ func _ready() -> void:
 	_test_spire_shard_presence()
 	_test_touch_button_layout_params()
 	_test_button_layout_subsection_extraction()
+	_test_checkpoint_class()
 	_report()
 
 
@@ -6568,3 +6569,50 @@ func _test_button_layout_subsection_extraction() -> void:
 	_ok("_build_button_layout_subsection method exists (extracted from _build_touch_section)",
 		inst.has_method("_build_button_layout_subsection"))
 	inst.free()
+
+
+func _test_checkpoint_class() -> void:
+	## CheckPoint one-shot lock: _activated prevents duplicate triggers.
+	## Tests export default, initial state, reset(), non-Player guard, and
+	## the already-activated short-circuit — all without running the physics
+	## engine (no scene tree required; _on_body_entered is called directly).
+	print("\n-- CheckPoint class --")
+
+	var cp := CKP.new()
+
+	# 1. checkpoint_id export default — must match the StringName the level
+	#    scripts and Game.checkpoint_reached signal use by convention.
+	_ok("checkpoint_id defaults to &\"checkpoint_1\"",
+		cp.checkpoint_id == &"checkpoint_1")
+
+	# 2. _activated starts false — the trigger must fire on first contact.
+	_ok("_activated starts false (one-shot not yet triggered)",
+		cp._activated == false)
+
+	# 3. reset() clears _activated — used when the level restarts so the
+	#    checkpoint can fire again on the next run.
+	cp._activated = true
+	cp.reset()
+	_ok("reset() clears _activated (allows re-trigger on next run)",
+		cp._activated == false)
+
+	# 4. Non-Player body leaves _activated unchanged — physics objects such
+	#    as MovingPlatforms or enemy bodies must not trigger the checkpoint.
+	var non_player := Node3D.new()
+	cp._on_body_entered(non_player)
+	_ok("non-Player body_entered: _activated stays false",
+		cp._activated == false)
+	non_player.free()
+
+	# 5. Already-activated: body_entered is a no-op regardless of body type.
+	#    The first `if _activated: return` fires before the Player type-check,
+	#    so any subsequent entry (including from another physics body) is
+	#    silently dropped. _activated stays true — no double-emit.
+	cp._activated = true
+	var another_node := Node3D.new()
+	cp._on_body_entered(another_node)
+	_ok("already-activated: body_entered no-op (_activated stays true)",
+		cp._activated == true)
+	another_node.free()
+
+	cp.free()
