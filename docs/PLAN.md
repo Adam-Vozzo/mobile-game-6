@@ -48,6 +48,18 @@ authored with it in mind.
   the human picks a survivor. Threshold rebuild kept in repo as the corridor representative;
   next level-touching iter MUST pick an unrepresented shape-family, not iterate on Threshold.
 
+- **🔴 Iter 119 complete. HARD THROTTLE.** DataShard collision shape + respawn reset tests
+  (23 iters since 2026-05-16 direction session). `tests/test_controller_kinematics.gd`:
+  `_test_data_shard_collision_invariants()` — 9 new assertions (1084 → 1093).
+  Two `data_shard.gd` invariants documented in the class docstring but never tested:
+  (1) `SphereShape3D radius 0.6 m` — the mobile dead-zone contract; calls `_build_visual()`
+  directly and asserts `child[0]` is a `CollisionShape3D` with a `SphereShape3D` at 0.6 m.
+  Shrinking this value silently breaks shard collection on device (the docstring explains the
+  0.6 + 0.28 m capsule = 0.88 m overlap rule). (2) `respawn_shard()` reset — the dev-menu
+  "Respawn shard" button; test simulates post-collection state and asserts all four fields
+  restored: `_collected == false`, mesh visible, light visible, `light_energy == 1.4`.
+  HARD STALL continues — awaiting shape pick.
+
 - **🔴 Iter 118 complete. HARD THROTTLE.** Particle material helper refactor + property test
   (22 iters since 2026-05-16 direction session). `player.gd`: extracted `_make_particle_mat(color)`
   from 4 duplicate 6-line `StandardMaterial3D` setup blocks in `_spawn_sparks`, `_spawn_jump_puff`,
