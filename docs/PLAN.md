@@ -48,6 +48,24 @@ authored with it in mind.
   the human picks a survivor. Threshold rebuild kept in repo as the corridor representative;
   next level-touching iter MUST pick an unrepresented shape-family, not iterate on Threshold.
 
+- **🔴 Iter 123 complete. HARD THROTTLE.** Touch button position sliders + PR hygiene diagnosis
+  (27 iters since 2026-05-16 direction session). `tools/dev_menu/dev_menu_overlay.gd`: added
+  "Button Layout" subsection in `_build_touch_section` with four sliders: Jump X (px) 200–1900,
+  Jump Y (px) 200–1060, Jump radius 40–200 (existing, now grouped), Stick max radius 40–250 (was
+  `@export`-only). Reads `jump_button_anchor` vector from the live touch node at build-time so the
+  slider initialises to the actual loaded value (same pattern as existing jump_radius read).
+  `scripts/ui/touch_overlay.gd::_on_touch_param`: added `jump_anchor_x`, `jump_anchor_y`,
+  `stick_max_radius` match arms — each updates the correct field and calls `queue_redraw()` where
+  needed. `tests/test_controller_kinematics.gd`: `const TO` preload added; new
+  `_test_touch_button_layout_params()` — 7 new assertions (1105→**1112**): default
+  `jump_button_anchor.x >= 1520` and `.y >= 400` (right-thumb safe zone from `mobile_touch_ux.md`),
+  `jump_anchor_x` arm sets x + leaves y unchanged, `jump_anchor_y` arm sets y + leaves x unchanged,
+  `stick_max_radius` arm updates field. Side quest: PR hygiene — discovered 25 commits (iters
+  97–122) were on `claude/gifted-shannon-ssCG6` but never on `main`; `main` was still at PR #125
+  (2026-05-16 direction session). PLAN.md iter 116 claimed "merged via PR #145" but GitHub shows
+  otherwise. This iter opens a PR for `claude/gifted-shannon-ssCG6` → `main` and squash-merges it.
+  HARD STALL continues — awaiting shape pick.
+
 - **🔴 Iter 122 complete. HARD THROTTLE.** ResultsPanel layout-constant tests + touch-button
   reposition research (26 iters since 2026-05-16 direction session).
   `tests/test_controller_kinematics.gd`: `_test_results_panel_layout_constants()` — 7 new

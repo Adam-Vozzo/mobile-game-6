@@ -403,22 +403,43 @@ func _build_touch_section(vbox: VBoxContainer) -> void:
 	# including TouchOverlay._ready() → _load_layout() — has completed
 	# before this runs. Falls back to @export defaults if no overlay is
 	# found (e.g. editor scenes without touch UI).
-	var jump_radius := 95.0
+	var jump_radius := 115.0
+	var jump_anchor_x := 1750.0
+	var jump_anchor_y := 910.0
 	var stick_zone  := 0.5
+	var stick_max_r := 110.0
 	var touch_nodes := get_tree().get_nodes_in_group(&"touch_overlay")
 	var dash_px  := 40.0
 	var dash_t   := 0.20
 	var buf_cam  := false
 	if not touch_nodes.is_empty():
-		jump_radius = float(touch_nodes[0].get(&"jump_button_radius"))
-		stick_zone  = float(touch_nodes[0].get(&"stick_zone_ratio"))
-		dash_px     = float(touch_nodes[0].get(&"dash_px_threshold"))
-		dash_t      = float(touch_nodes[0].get(&"dash_time_threshold"))
-		buf_cam     = bool(touch_nodes[0].get(&"dash_buffer_camera"))
+		var tn := touch_nodes[0]
+		jump_radius   = float(tn.get(&"jump_button_radius"))
+		var anchor := tn.get(&"jump_button_anchor") as Vector2
+		jump_anchor_x = anchor.x
+		jump_anchor_y = anchor.y
+		stick_zone    = float(tn.get(&"stick_zone_ratio"))
+		stick_max_r   = float(tn.get(&"stick_max_radius"))
+		dash_px       = float(tn.get(&"dash_px_threshold"))
+		dash_t        = float(tn.get(&"dash_time_threshold"))
+		buf_cam       = bool(tn.get(&"dash_buffer_camera"))
+	vbox.add_child(_make_label("Button Layout", SECTION_FONT_SIZE, false))
+	_make_slider(vbox, "Jump X (px)",
+		200.0, 1900.0, 10.0,
+		func(v: float) -> void: DevMenu.touch_param_changed.emit(&"jump_anchor_x", v),
+		jump_anchor_x)
+	_make_slider(vbox, "Jump Y (px)",
+		200.0, 1060.0, 10.0,
+		func(v: float) -> void: DevMenu.touch_param_changed.emit(&"jump_anchor_y", v),
+		jump_anchor_y)
 	_make_slider(vbox, "Jump radius",
 		40.0, 200.0, 1.0,
 		func(v: float) -> void: DevMenu.touch_param_changed.emit(&"jump_radius", v),
 		jump_radius)
+	_make_slider(vbox, "Stick max radius",
+		40.0, 250.0, 5.0,
+		func(v: float) -> void: DevMenu.touch_param_changed.emit(&"stick_max_radius", v),
+		stick_max_r)
 	_make_slider(vbox, "Stick zone %",
 		0.30, 0.70, 0.01,
 		func(v: float) -> void: DevMenu.touch_param_changed.emit(&"stick_zone_ratio", v),

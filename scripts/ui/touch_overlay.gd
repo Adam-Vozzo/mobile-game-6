@@ -520,9 +520,17 @@ func _load_layout() -> void:
 
 func _on_touch_param(param: StringName, value: Variant) -> void:
 	match param:
+		&"jump_anchor_x":
+			jump_button_anchor.x = float(value)
+			queue_redraw()
+		&"jump_anchor_y":
+			jump_button_anchor.y = float(value)
+			queue_redraw()
 		&"jump_radius":
 			jump_button_radius = float(value)
 			queue_redraw()
+		&"stick_max_radius":
+			stick_max_radius = float(value)
 		&"stick_zone_ratio":
 			stick_zone_ratio = float(value)
 			queue_redraw()
