@@ -70,6 +70,8 @@ Suggested early reads (from CLAUDE.md) — now covered:
 
 - [`sky_touch_design.md`](sky_touch_design.md) — Sky: Children of the Light (thatgamecompany 2019): direct-manipulation input model, input-economy (tap-debt) analysis, two-simultaneous-touch ceiling, 15% dead zone validation, no-tutorial affordance vocabulary, and six concrete Void implications: auto-framing non-negotiable, right-side drag validated over Sky's own camera model, air-dash two-touch ceiling to watch on device, Gate 2 tap-to-move mode as audience-broadening option.
 
+- [`touch_button_reposition.md`](touch_button_reposition.md) — Repositionable/resizable button UI design and implementation plan (CLAUDE.md requirement). Reference survey: Genshin Impact configure mode (drag + size presets) is the established pattern; Dadish 3D never shipped it and users asked for it. Two-stage plan: (1) dev-menu sliders for Gate 1 on-device calibration (one iter, no approval needed); (2) dedicated configure mode + ConfigFile persistence for Gate 3. `ConfigFile` pattern included. **Key implication: Stage 1 dev-menu sliders are implementable in one iter without human input** — unblocks the CLAUDE.md "repositionable buttons" requirement for Gate 1. Written iter 122.
+
 Suggested:
 - ~~Genshin Impact touch layout postmortem (dead zone tuning specifics).~~ Done (iter 20, `touch_dead_zone_calibration.md`).
 - ~~Sky: Children of the Light gesture system.~~ Done (iter 94, `sky_touch_design.md`).
