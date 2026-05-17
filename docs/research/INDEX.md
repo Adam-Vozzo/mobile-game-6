@@ -195,6 +195,17 @@ Suggested (still open):
   only; Viaduct: sentry tuning). Includes copy-pasteable Gate 1 completion checklist
   for PLAN.md and "Gate 2 only" exclusion list. Written iter 107.
 
+- [`platform_gap_calibration.md`](platform_gap_calibration.md) — Jump-reach reference
+  for all four controller profiles. Physics model (3-phase gravity: rising/falling/apex),
+  per-profile statistics: t_apex, h_max, t_air, horizontal reach (Snappy 2.8 m,
+  Floaty 4.7 m, Momentum 7.1–11.6 m, Assisted 5.2 m; Snappy double-jump 4.6 m).
+  Cross-profile gap difficulty table (easy/medium/tight/impossible per gap size 1.5–7 m).
+  Height differential impact (1 m step-up costs ~15 % reach on Snappy). Existing level
+  calibration audit (Spire ✅, Viaduct flagged: 4 m static gaps require moving platform,
+  verify catch window ≥ 0.5 s). 7 depth-pass implications: double-jump must be taught
+  before any 3.0 m gap; height differences erode reach more than expected; ascending vs
+  descending asymmetry for Spire/Descent. Written iter 117.
+
 ## Gate 1 — implementation
 
 - [`gate1_scene_lifecycle.md`](gate1_scene_lifecycle.md) — Godot 4 implementation

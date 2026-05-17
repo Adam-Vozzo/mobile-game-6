@@ -5,10 +5,10 @@ A mobile 3D platformer. Brutalist megastructure inspired by *BLAME!*. Controller
 ## Status
 
 Current gate: **Gate 0 — Feel Lab** (closing out; Gate 1 prep in flight)
-Last activity: 2026-05-16 — iter 116: breadth-pass PR landing — all 19 commits onto main
+Last activity: 2026-05-17 — iter 117: platform gap calibration research + checkpoint_id test
 Test device build: ✅ verified 2026-05-12 — runs in Godot 4.6 on PC and on Nothing Phone 4(a) Pro
 Performance: 144 fps / 6.9 ms in editor at 1920×1080 (Feel Lab); Threshold perf TBD after rebuild
-Throttle level: **🔴 hard** — 19 iters since 2026-05-16 direction session; FULLY STALLED — awaiting shape-family pick
+Throttle level: **🔴 hard** — 21 iters since 2026-05-16 direction session; FULLY STALLED — awaiting shape-family pick
 
 If you only read one section, read **Open questions waiting on you** below.
 
@@ -16,7 +16,7 @@ If you only read one section, read **Open questions waiting on you** below.
 
 Things Claude can't decide alone, or where it's stalled and needs direction.
 
-> **🔴 FULLY STALLED — 18 iterations since 2026-05-16 direction session.**
+> **🔴 FULLY STALLED — 21 iterations since 2026-05-16 direction session.**
 > The breadth directive is complete: all 9 shape-families from `docs/CLAUDE.md` are built and
 > now all on main. Shape inventory: Threshold (corridor), Spire (tower), Rooftop, Plaza (hub),
 > Cavern (maze), Descent (inverted), Filterbank (gauntlet), Viaduct (bridge crossing), Arena (ringed).
@@ -120,6 +120,33 @@ Goal: store-ready build.
 The full iteration log lives here, newest first. Every iteration appends an entry. Skim the dates to find where you last left off.
 
 <!-- ITERATION ENTRIES BELOW — DO NOT REMOVE OLDER ENTRIES -->
+
+### [2026-05-17] — iter 117 — Platform gap calibration research + checkpoint_id test
+
+Branch: `claude/gifted-shannon-CiNWw`
+Throttle: 🔴 hard (21 iters since 2026-05-16 direction session; FULLY STALLED)
+Gate: Gate 1 — direction-finding (awaiting human shape pick)
+
+**Primary:** Research note `docs/research/platform_gap_calibration.md` — jump-reach
+reference for all four controller profiles. Fills a genuine gap in the research suite:
+the existing `_test_jump_arc_geometry` covers t_apex and terminal velocity ordering,
+but no note documents actual horizontal reach or cross-profile gap compatibility.
+
+Key findings:
+- Snappy single-jump reach: **2.8 m** · double-jump reach: **4.6 m**
+- Floaty: **4.7 m** · Momentum: **7.1 m** (11.6 m ramped) · Assisted: **5.2 m**
+- Any gap ≥ 3.0 m is beyond Snappy's single jump — double jump must be taught before it appears
+- A +1.0 m step-up costs ~15 % horizontal reach on Snappy
+- Viaduct flagged: 4 m static spans require moving platform; catch window needs device verification
+
+**Side quest:** 2 new assertions in `_test_win_state_one_shot_guard()` —
+`checkpoint_id` export default (`== &"checkpoint_1"`) and non-empty invariant.
+1078 → **1080** assertions.
+
+Perf: no change (no scene edits).
+Bugs fixed: none.
+New dev-menu controls: none.
+Research added: `platform_gap_calibration.md` (platform gap reference for depth pass).
 
 ### [2026-05-16] — iter 116 — Breadth-pass PR landing: iters 97–115 onto main
 

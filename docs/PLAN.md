@@ -48,6 +48,18 @@ authored with it in mind.
   the human picks a survivor. Threshold rebuild kept in repo as the corridor representative;
   next level-touching iter MUST pick an unrepresented shape-family, not iterate on Threshold.
 
+- **🔴 Iter 117 complete. HARD THROTTLE.** Platform gap calibration research + checkpoint_id
+  test (21 iters since 2026-05-16 direction session). `docs/research/platform_gap_calibration.md`
+  written: physics model (3-phase gravity), per-profile jump heights (Snappy 1.9 m / Floaty
+  2.5 m / Momentum 2.4 m / Assisted 3.3 m) and horizontal reach (Snappy 2.8 m single /
+  4.6 m double / Floaty 4.7 m / Momentum 7.1 m / Assisted 5.2 m), cross-profile gap table
+  (easy/medium/tight/impossible for 1.5–7 m gaps), height-differential formula (+1 m step-up
+  costs ~15 % reach for Snappy), existing level calibration audit (Spire ✅; Viaduct: 4 m
+  static gaps require moving platform — catch window should be verified ≥ 0.5 s), 7 depth-pass
+  implications. Side quest: `tests/test_controller_kinematics.gd` — 2 new assertions in
+  `_test_win_state_one_shot_guard()` for `checkpoint_id` export default (`== &"checkpoint_1"`)
+  and non-empty invariant. 1078→1080 assertions. HARD STALL continues — awaiting shape pick.
+
 - **🔴 Iter 116 complete. HARD THROTTLE.** Breadth-pass PR landing (20 iters since 2026-05-16
   direction session). Branch `claude/gifted-shannon-KYqiK` had 19 commits (iters 97–115) ahead
   of `main` with no open PR. Oriented, diagnosed, opened PR, added `auto-merge` label, merged.
@@ -622,6 +634,10 @@ These mirror "Open questions waiting on you" in the README.
   drive the next tuning iteration.
 
 ## Recently completed (last 5)
+
+- 2026-05-17 — iter 117. **Platform gap calibration research + checkpoint_id test. HARD THROTTLE.**
+  `platform_gap_calibration.md`: per-profile jump stats + cross-profile gap table + depth-pass
+  implications. 2 new test assertions (1078→1080). INDEX.md updated.
 
 - 2026-05-16 — iter 116. **Breadth-pass PR landing. HARD THROTTLE.**
   Branch `claude/gifted-shannon-KYqiK` had 19 commits (iters 97–115) ahead of `main`
