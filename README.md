@@ -5,10 +5,10 @@ A mobile 3D platformer. Brutalist megastructure inspired by *BLAME!*. Controller
 ## Status
 
 Current gate: **Gate 0 — Feel Lab** (closing out; Gate 1 prep in flight)
-Last activity: 2026-05-17 — iter 128: PR hygiene (30 commits → main) + Arena shard presence test (1128→1131)
+Last activity: 2026-05-17 — iter 129: `untyped_declaration` warning cleanup in test file (28 fixes)
 Test device build: ✅ verified 2026-05-12 — runs in Godot 4.6 on PC and on Nothing Phone 4(a) Pro
 Performance: 144 fps / 6.9 ms in editor at 1920×1080 (Feel Lab); Threshold perf TBD after rebuild
-Throttle level: **🔴 hard** — 32 iters since 2026-05-16 direction session; FULLY STALLED — awaiting shape-family pick
+Throttle level: **🔴 hard** — 33 iters since 2026-05-16 direction session; FULLY STALLED — awaiting shape-family pick
 
 If you only read one section, read **Open questions waiting on you** below.
 
@@ -16,7 +16,7 @@ If you only read one section, read **Open questions waiting on you** below.
 
 Things Claude can't decide alone, or where it's stalled and needs direction.
 
-> **🔴 FULLY STALLED — 30 iterations since 2026-05-16 direction session.**
+> **🔴 FULLY STALLED — 33 iterations since 2026-05-16 direction session.**
 > The breadth directive is complete: all 9 shape-families from `docs/CLAUDE.md` are built and
 > on this branch. Shape inventory: Threshold (corridor), Spire (tower), Rooftop, Plaza (hub),
 > Cavern (maze), Descent (inverted), Filterbank (gauntlet), Viaduct (bridge crossing), Arena (ringed).
@@ -123,6 +123,27 @@ Goal: store-ready build.
 The full iteration log lives here, newest first. Every iteration appends an entry. Skim the dates to find where you last left off.
 
 <!-- ITERATION ENTRIES BELOW — DO NOT REMOVE OLDER ENTRIES -->
+
+### [2026-05-17] — iter 129 — `untyped_declaration` warning cleanup in test file
+
+Branch: `claude/gifted-shannon-RlziQ`
+Throttle: 🔴 hard (33 iters since 2026-05-16 direction session; FULLY STALLED)
+Gate: Gate 1 — direction-finding (awaiting human shape pick)
+
+**Primary:** Fixed 28 `untyped_declaration` GDScript warnings in `tests/test_controller_kinematics.gd`.
+The breadth-pass test functions (iters 97–128) used `var X = load(...)` / `var x = Y.new()` with `=`
+(not `:=`), causing every such declaration to be inferred as `Variant` under Godot's strict-mode
+`gdscript/warnings/untyped_declaration=1`. PLAN.md noted these as "pre-existing strict-warning parse
+errors… should be fixed in a future iter" since iter 127. Changes: 26 `var X = ` → `var X := `
+(walrus inference; types resolve to `Resource` / `Object` as appropriate); one `var levels: Variant =`
+explicit annotation for `Dictionary.get()` which returns `Variant` by definition; two `var DM = load()`
+renamed to `var dmo := load()` to eliminate the shadow of the file-scope `const DM := preload("res://scripts/autoload/dev_menu.gd")`.
+
+Perf: no change.
+Bugs fixed: 28 `untyped_declaration` warnings in test file (pre-existing since iter 97).
+New dev-menu controls: none.
+Research added: none.
+Assertions: **1131** (unchanged — purely a warning fix, no new assertions).
 
 ### [2026-05-17] — iter 128 — PR hygiene: 30 commits → main + Arena shard presence test
 

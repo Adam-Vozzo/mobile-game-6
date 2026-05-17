@@ -16,6 +16,19 @@ authored with it in mind.
 
 ## Active iteration
 
+- **🔴 Iter 129 complete. HARD THROTTLE.** `untyped_declaration` warning cleanup in test file
+  (33 iters since 2026-05-16 direction session). `tests/test_controller_kinematics.gd`: breadth-pass
+  test functions (iters 97–128) used `var X = load(...)` / `var x = Y.new()` with bare `=` assignment,
+  causing each to be inferred as `Variant` under `gdscript/warnings/untyped_declaration=1`.
+  PLAN.md iter 127 noted these as "pre-existing strict-warning parse errors… should be fixed in a
+  future iter." Fixed: 26 `var X = ` → `var X := ` (walrus inference resolves to `Resource` /
+  `Object`); 1 `var levels: Variant = cmap.get(...)` explicit annotation (Dictionary.get returns
+  Variant by definition, `:=` would still infer Variant — explicit annotation is the idiomatic fix);
+  2 `var DM = load("res://tools/dev_menu/dev_menu_overlay.gd")` → `var dmo := load(...)` with
+  downstream rename in both functions (eliminates shadow of file-scope
+  `const DM := preload("res://scripts/autoload/dev_menu.gd")`). No new assertions; 1131 unchanged.
+  HARD STALL continues — awaiting shape pick.
+
 - **🔴 Iter 128 complete. HARD THROTTLE.** PR hygiene (30 commits → main) + Arena shard
   presence test (32 iters since 2026-05-16 direction session). Branch `claude/gifted-shannon-oL2yV`
   had 30 commits (iters 97–127) never pushed to origin — prior iter entries referenced PR numbers

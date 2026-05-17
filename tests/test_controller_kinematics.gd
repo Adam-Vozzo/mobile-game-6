@@ -5448,8 +5448,8 @@ func _test_threshold_skyline_param() -> void:
 	## visible property must toggle when a Node3D is wired directly.
 	print("\n-- Threshold skyline param --")
 
-	var ThresholdScript = load("res://scripts/levels/threshold.gd")
-	var t = ThresholdScript.new()
+	var ThresholdScript := load("res://scripts/levels/threshold.gd")
+	var t := ThresholdScript.new()
 	# _ready() never fires without a scene tree; _skyline stays null.
 	# Null guard must prevent crash — reaching the next line is the pass condition.
 	t._on_atmosphere_param_changed(&"skyline_visible", true)
@@ -5495,9 +5495,9 @@ func _test_chick_body_mesh_path() -> void:
 
 	# Null guard: instantiate player without a scene tree so @onready vars stay
 	# null, then call emission helpers — no crash is the pass condition.
-	var PlayerScript = load("res://scripts/player/player.gd")
+	var PlayerScript := load("res://scripts/player/player.gd")
 	_ok("player.gd loads without error", PlayerScript != null)
-	var p = PlayerScript.new()
+	var p := PlayerScript.new()
 	p._set_emission(Color(1, 0.18, 0.1), 5.0)
 	_ok("_set_emission with null _body_mesh is a safe no-op", true)
 	p._clear_emission()
@@ -5818,11 +5818,11 @@ func _test_threshold_level_lifecycle() -> void:
 	##      PlayerSpawn marker is absent from the scene).
 	print("\n-- Threshold level lifecycle (threshold.gd) --")
 
-	var ThresholdScript = load("res://scripts/levels/threshold.gd")
+	var ThresholdScript := load("res://scripts/levels/threshold.gd")
 	_ok("threshold.gd loads without error", ThresholdScript != null)
 	if ThresholdScript == null:
 		return
-	var t = ThresholdScript.new()
+	var t := ThresholdScript.new()
 
 	# ── A. zone_atmosphere_enabled field state ───────────────────────────────
 	# Atmosphere toggle must default to enabled so zone-identity fires on level
@@ -5981,10 +5981,10 @@ func _test_breadth_level_defaults() -> void:
 	print("\n-- Breadth-pass level script defaults (iters 100–103) --")
 
 	# ── Cavern (iter 100) ────────────────────────────────────────────────────
-	var CavernScript = load("res://scripts/levels/cavern.gd")
+	var CavernScript := load("res://scripts/levels/cavern.gd")
 	_ok("cavern.gd loads without error", CavernScript != null)
 	if CavernScript != null:
-		var c = CavernScript.new()
+		var c := CavernScript.new()
 		_ok("cavern: par_time_seconds default = 45.0 (calibrate after first device run)",
 			_near(c.par_time_seconds, 45.0))
 		_ok("cavern: spawn_marker_path default = NodePath(\"PlayerSpawn\")",
@@ -5994,10 +5994,10 @@ func _test_breadth_level_defaults() -> void:
 		c.free()
 
 	# ── Descent (iter 101) ───────────────────────────────────────────────────
-	var DescentScript = load("res://scripts/levels/descent.gd")
+	var DescentScript := load("res://scripts/levels/descent.gd")
 	_ok("descent.gd loads without error", DescentScript != null)
 	if DescentScript != null:
-		var d = DescentScript.new()
+		var d := DescentScript.new()
 		_ok("descent: par_time_seconds default = 40.0 (shorter — fewer beats than cavern)",
 			_near(d.par_time_seconds, 40.0))
 		_ok("descent: spawn_marker_path default = NodePath(\"PlayerSpawn\")",
@@ -6007,10 +6007,10 @@ func _test_breadth_level_defaults() -> void:
 		d.free()
 
 	# ── Gauntlet (iter 102) ──────────────────────────────────────────────────
-	var GauntletScript = load("res://scripts/levels/gauntlet.gd")
+	var GauntletScript := load("res://scripts/levels/gauntlet.gd")
 	_ok("gauntlet.gd loads without error", GauntletScript != null)
 	if GauntletScript != null:
-		var g = GauntletScript.new()
+		var g := GauntletScript.new()
 		_ok("gauntlet: par_time_seconds default = 45.0",
 			_near(g.par_time_seconds, 45.0))
 		_ok("gauntlet: spawn_marker_path default = NodePath(\"PlayerSpawn\")",
@@ -6020,10 +6020,10 @@ func _test_breadth_level_defaults() -> void:
 		g.free()
 
 	# ── Viaduct (iter 103) ───────────────────────────────────────────────────
-	var ViaductScript = load("res://scripts/levels/viaduct.gd")
+	var ViaductScript := load("res://scripts/levels/viaduct.gd")
 	_ok("viaduct.gd loads without error", ViaductScript != null)
 	if ViaductScript != null:
-		var v = ViaductScript.new()
+		var v := ViaductScript.new()
 		_ok("viaduct: par_time_seconds default = 45.0",
 			_near(v.par_time_seconds, 45.0))
 		_ok("viaduct: spawn_marker_path default = NodePath(\"PlayerSpawn\")",
@@ -6102,10 +6102,10 @@ func _test_early_breadth_level_defaults() -> void:
 	print("\n-- Early breadth-pass level script defaults (iters 97–99) --")
 
 	# ── Spire (iter 97) ──────────────────────────────────────────────────────
-	var SpireScript = load("res://scripts/levels/spire.gd")
+	var SpireScript := load("res://scripts/levels/spire.gd")
 	_ok("spire.gd loads without error", SpireScript != null)
 	if SpireScript != null:
-		var s = SpireScript.new()
+		var s := SpireScript.new()
 		_ok("spire: par_time_seconds default = 50.0 (calibrate after first device run)",
 			_near(s.par_time_seconds, 50.0))
 		_ok("spire: spawn_marker_path default = NodePath(\"PlayerSpawn\")",
@@ -6115,10 +6115,10 @@ func _test_early_breadth_level_defaults() -> void:
 		s.free()
 
 	# ── Rooftop (iter 98) ────────────────────────────────────────────────────
-	var RooftopScript = load("res://scripts/levels/rooftop.gd")
+	var RooftopScript := load("res://scripts/levels/rooftop.gd")
 	_ok("rooftop.gd loads without error", RooftopScript != null)
 	if RooftopScript != null:
-		var r = RooftopScript.new()
+		var r := RooftopScript.new()
 		_ok("rooftop: par_time_seconds default = 45.0 (calibrate after first device run)",
 			_near(r.par_time_seconds, 45.0))
 		_ok("rooftop: spawn_marker_path default = NodePath(\"PlayerSpawn\")",
@@ -6128,10 +6128,10 @@ func _test_early_breadth_level_defaults() -> void:
 		r.free()
 
 	# ── Plaza (iter 99) ──────────────────────────────────────────────────────
-	var PlazaScript = load("res://scripts/levels/plaza.gd")
+	var PlazaScript := load("res://scripts/levels/plaza.gd")
 	_ok("plaza.gd loads without error", PlazaScript != null)
 	if PlazaScript != null:
-		var p = PlazaScript.new()
+		var p := PlazaScript.new()
 		_ok("plaza: par_time_seconds default = 40.0 (hub is faster-paced — fewer lateral beats)",
 			_near(p.par_time_seconds, 40.0))
 		_ok("plaza: spawn_marker_path default = NodePath(\"PlayerSpawn\")",
@@ -6148,10 +6148,10 @@ func _test_arena_level_defaults() -> void:
 	## runs and @onready _spawn stays null, then exercise the null-guard branch.
 	print("\n-- Arena level script defaults (iter 104) --")
 
-	var ArenaScript = load("res://scripts/levels/arena.gd")
+	var ArenaScript := load("res://scripts/levels/arena.gd")
 	_ok("arena.gd loads without error", ArenaScript != null)
 	if ArenaScript != null:
-		var a = ArenaScript.new()
+		var a := ArenaScript.new()
 		_ok("arena: par_time_seconds default = 50.0 (calibrate after first on-device run)",
 			_near(a.par_time_seconds, 50.0))
 		_ok("arena: spawn_marker_path default = NodePath(\"PlayerSpawn\")",
@@ -6190,7 +6190,7 @@ func _test_level_select_ui() -> void:
 	## count == 10: Feel Lab + all 9 shape-family levels (Arena merged from PR #133, iter 108).
 	print("\n-- Level selector UI invariants --")
 
-	var LS = load("res://scripts/ui/level_select.gd")
+	var LS := load("res://scripts/ui/level_select.gd")
 	_ok("level_select.gd loads without error", LS != null)
 	if LS == null:
 		return
@@ -6200,7 +6200,7 @@ func _test_level_select_ui() -> void:
 	if not cmap.has("_LEVELS"):
 		return
 
-	var levels = cmap.get("_LEVELS")
+	var levels: Variant = cmap.get("_LEVELS")
 	_ok("_LEVELS is an Array", levels is Array)
 	if not (levels is Array):
 		return
@@ -6241,10 +6241,10 @@ func _test_level_select_ui() -> void:
 	# Guard the "← Level Selector" button destination in dev_menu_overlay.gd.
 	# If the constant is renamed or the path changes, this catches the drift before
 	# a device session where the button silently navigates to a missing scene.
-	var DM = load("res://tools/dev_menu/dev_menu_overlay.gd")
-	_ok("dev_menu_overlay.gd loads for _LEVEL_SELECT_SCENE check", DM != null)
-	if DM != null:
-		var dm_cmap: Dictionary = DM.get_script_constant_map()
+	var dmo := load("res://tools/dev_menu/dev_menu_overlay.gd")
+	_ok("dev_menu_overlay.gd loads for _LEVEL_SELECT_SCENE check", dmo != null)
+	if dmo != null:
+		var dm_cmap: Dictionary = dmo.get_script_constant_map()
 		var sel_path: String = dm_cmap.get("_LEVEL_SELECT_SCENE", "") as String
 		_ok("_LEVEL_SELECT_SCENE is res://scenes/ui/level_select.tscn",
 			sel_path == "res://scenes/ui/level_select.tscn")
@@ -6576,12 +6576,12 @@ func _test_button_layout_subsection_extraction() -> void:
 	## UI breaks silently on device.
 	print("\n-- Button layout subsection extraction (iter 124) --")
 
-	var DM = load("res://tools/dev_menu/dev_menu_overlay.gd")
-	_ok("dev_menu_overlay.gd loads for subsection extraction check", DM != null)
-	if DM == null:
+	var dmo := load("res://tools/dev_menu/dev_menu_overlay.gd")
+	_ok("dev_menu_overlay.gd loads for subsection extraction check", dmo != null)
+	if dmo == null:
 		return
 
-	var inst := DM.new()
+	var inst := dmo.new()
 	_ok("_build_button_layout_subsection method exists (extracted from _build_touch_section)",
 		inst.has_method("_build_button_layout_subsection"))
 	inst.free()
