@@ -3315,6 +3315,12 @@ func _test_win_state_one_shot_guard() -> void:
 	cp._activated = true
 	_ok("_activated locked true until reset() is called",
 		cp._activated == true)
+	# checkpoint_id export: must match the StringName Game.checkpoint_reached emits.
+	# Empty id would make two checkpoints collide in any group-based lookup.
+	_ok("checkpoint_id @export default == &\"checkpoint_1\"",
+		cp.checkpoint_id == &"checkpoint_1")
+	_ok("checkpoint_id is non-empty (no silent collision risk)",
+		cp.checkpoint_id != &"")
 	cp.free()
 
 
