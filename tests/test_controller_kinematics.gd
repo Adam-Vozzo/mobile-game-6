@@ -167,6 +167,7 @@ func _ready() -> void:
 	_test_data_shard_collision_invariants()
 	_test_spire_shard_presence()
 	_test_touch_button_layout_params()
+	_test_button_layout_subsection_extraction()
 	_report()
 
 
@@ -6549,3 +6550,21 @@ func _test_touch_button_layout_params() -> void:
 		_near(t.stick_max_radius, 150.0))
 
 	t.free()
+
+
+func _test_button_layout_subsection_extraction() -> void:
+	## Guards that _build_button_layout_subsection exists as a callable method
+	## in dev_menu_overlay.gd after the iter 124 refactor.  If the function is
+	## renamed or accidentally inlined back, this assertion fails before the live
+	## UI breaks silently on device.
+	print("\n-- Button layout subsection extraction (iter 124) --")
+
+	var DM = load("res://tools/dev_menu/dev_menu_overlay.gd")
+	_ok("dev_menu_overlay.gd loads for subsection extraction check", DM != null)
+	if DM == null:
+		return
+
+	var inst := DM.new()
+	_ok("_build_button_layout_subsection method exists (extracted from _build_touch_section)",
+		inst.has_method("_build_button_layout_subsection"))
+	inst.free()

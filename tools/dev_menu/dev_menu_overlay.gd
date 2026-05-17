@@ -423,28 +423,34 @@ func _build_touch_section(vbox: VBoxContainer) -> void:
 		dash_px       = float(tn.get(&"dash_px_threshold"))
 		dash_t        = float(tn.get(&"dash_time_threshold"))
 		buf_cam       = bool(tn.get(&"dash_buffer_camera"))
+	_build_button_layout_subsection(vbox, jump_anchor_x, jump_anchor_y, jump_radius, stick_max_r, stick_zone)
+	_build_dash_gesture_controls(vbox, dash_px, dash_t, buf_cam)
+
+
+func _build_button_layout_subsection(vbox: VBoxContainer,
+		jump_x: float, jump_y: float, jump_r: float,
+		stick_r: float, stick_z: float) -> void:
 	vbox.add_child(_make_label("Button Layout", SECTION_FONT_SIZE, false))
 	_make_slider(vbox, "Jump X (px)",
 		200.0, 1900.0, 10.0,
 		func(v: float) -> void: DevMenu.touch_param_changed.emit(&"jump_anchor_x", v),
-		jump_anchor_x)
+		jump_x)
 	_make_slider(vbox, "Jump Y (px)",
 		200.0, 1060.0, 10.0,
 		func(v: float) -> void: DevMenu.touch_param_changed.emit(&"jump_anchor_y", v),
-		jump_anchor_y)
+		jump_y)
 	_make_slider(vbox, "Jump radius",
 		40.0, 200.0, 1.0,
 		func(v: float) -> void: DevMenu.touch_param_changed.emit(&"jump_radius", v),
-		jump_radius)
+		jump_r)
 	_make_slider(vbox, "Stick max radius",
 		40.0, 250.0, 5.0,
 		func(v: float) -> void: DevMenu.touch_param_changed.emit(&"stick_max_radius", v),
-		stick_max_r)
+		stick_r)
 	_make_slider(vbox, "Stick zone %",
 		0.30, 0.70, 0.01,
 		func(v: float) -> void: DevMenu.touch_param_changed.emit(&"stick_zone_ratio", v),
-		stick_zone)
-	_build_dash_gesture_controls(vbox, dash_px, dash_t, buf_cam)
+		stick_z)
 
 
 func _build_dash_gesture_controls(vbox: VBoxContainer,
