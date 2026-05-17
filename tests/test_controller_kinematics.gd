@@ -27,6 +27,7 @@ const CH  := preload("res://scripts/levels/camera_hint.gd")
 const GTR := preload("res://scripts/levels/ghost_trail_renderer.gd")
 const MP  := preload("res://scripts/levels/moving_platform.gd")
 const RH  := preload("res://scripts/levels/rotating_hazard.gd")
+const TO  := preload("res://scripts/ui/touch_overlay.gd")
 
 var _pass_count := 0
 var _fail_count := 0
@@ -165,6 +166,7 @@ func _ready() -> void:
 	_test_particle_mat_properties()
 	_test_data_shard_collision_invariants()
 	_test_spire_shard_presence()
+	_test_touch_button_layout_params()
 	_report()
 
 
@@ -6511,3 +6513,39 @@ func _test_results_panel_layout_constants() -> void:
 	# row separation is 40 px → minimum content width ~388 px. 400 adds headroom.
 	_ok("_PANEL_WIDTH >= 400 (fits key-value rows without clipping '61:01.00')",
 		RP._PANEL_WIDTH >= 400.0)
+
+
+func _test_touch_button_layout_params() -> void:
+	## Guards jump_anchor_x/y and stick_max_radius match arms added in iter 123.
+	## Each arm must update the correct field; side-effect isolation confirms
+	## x/y arms don't bleed into each other. Default export values are checked
+	## against the right-thumb safe zone from mobile_touch_ux.md.
+	print("\n-- Touch button layout params (iter 123) --")
+
+	var t := TO.new()
+	# Not added to tree — avoids _ready() → _apply_bottom_right_default() viewport
+	# call in headless context. @export defaults are the values before _ready().
+	_ok("default jump_button_anchor.x >= 1520 (right-thumb zone, 1920x1080 landscape)",
+		t.jump_button_anchor.x >= 1520.0)
+	_ok("default jump_button_anchor.y >= 400 (bottom-half thumb reach)",
+		t.jump_button_anchor.y >= 400.0)
+
+	var prev_y := t.jump_button_anchor.y
+	t._on_touch_param(&"jump_anchor_x", 1600.0)
+	_ok("jump_anchor_x arm sets anchor.x to 1600",
+		_near(t.jump_button_anchor.x, 1600.0))
+	_ok("jump_anchor_x arm does not change anchor.y",
+		_near(t.jump_button_anchor.y, prev_y))
+
+	var prev_x := t.jump_button_anchor.x  # 1600 from above
+	t._on_touch_param(&"jump_anchor_y", 800.0)
+	_ok("jump_anchor_y arm sets anchor.y to 800",
+		_near(t.jump_button_anchor.y, 800.0))
+	_ok("jump_anchor_y arm does not change anchor.x",
+		_near(t.jump_button_anchor.x, prev_x))
+
+	t._on_touch_param(&"stick_max_radius", 150.0)
+	_ok("stick_max_radius arm updates stick_max_radius",
+		_near(t.stick_max_radius, 150.0))
+
+	t.free()

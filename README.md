@@ -5,10 +5,10 @@ A mobile 3D platformer. Brutalist megastructure inspired by *BLAME!*. Controller
 ## Status
 
 Current gate: **Gate 0 — Feel Lab** (closing out; Gate 1 prep in flight)
-Last activity: 2026-05-17 — iter 122: ResultsPanel layout-constant tests + touch-button-reposition research (1098→1105 assertions)
+Last activity: 2026-05-17 — iter 123: touch button position sliders (jump X/Y + stick radius) + PR hygiene (1105→1112 assertions)
 Test device build: ✅ verified 2026-05-12 — runs in Godot 4.6 on PC and on Nothing Phone 4(a) Pro
 Performance: 144 fps / 6.9 ms in editor at 1920×1080 (Feel Lab); Threshold perf TBD after rebuild
-Throttle level: **🔴 hard** — 26 iters since 2026-05-16 direction session; FULLY STALLED — awaiting shape-family pick
+Throttle level: **🔴 hard** — 27 iters since 2026-05-16 direction session; FULLY STALLED — awaiting shape-family pick
 
 If you only read one section, read **Open questions waiting on you** below.
 
@@ -122,6 +122,36 @@ Goal: store-ready build.
 The full iteration log lives here, newest first. Every iteration appends an entry. Skim the dates to find where you last left off.
 
 <!-- ITERATION ENTRIES BELOW — DO NOT REMOVE OLDER ENTRIES -->
+
+### [2026-05-17] — iter 123 — touch button position sliders + PR hygiene
+
+Branch: `claude/gifted-shannon-ssCG6`
+Throttle: 🔴 hard (27 iters since 2026-05-16 direction session; FULLY STALLED)
+Gate: Gate 1 — direction-finding (awaiting human shape pick)
+
+**Primary:** Touch button layout params (Stage 1 from `touch_button_reposition.md` research).
+Dev menu Touch Controls section gains "Button Layout" sub-label with two new sliders:
+- **Jump X (px)** [200–1900, step 10] — live-repositions jump button horizontal anchor
+- **Jump Y (px)** [200–1060, step 10] — live-repositions jump button vertical anchor
+
+Also exposed **Stick max radius** [40–250, step 5] — this `@export` was visible only in editor;
+now tunable at runtime from dev menu Touch Controls. `touch_overlay.gd::_on_touch_param` gains
+`jump_anchor_x`, `jump_anchor_y`, `stick_max_radius` match arms. 7 new unit tests
+(`_test_touch_button_layout_params`): default anchor sits in right-thumb zone (x ≥ 1520,
+y ≥ 400 per `mobile_touch_ux.md`), each arm sets the correct field, x/y arms are isolated
+from each other, stick_max_radius arm updates correctly. **1105 → 1112 assertions.**
+
+**Side quest — PR hygiene diagnosis:** 25 commits (iters 97–122) were on
+`claude/gifted-shannon-ssCG6` but never merged to `main`. PLAN.md's iter 116 entry
+claimed "all on main via PR #145" but `main` was still at commit #125 (2026-05-16 direction
+session). This iter opens the first PR for this branch and squash-merges it to land all
+outstanding work on `main`.
+
+Perf: no change (pure UI/dev-menu addition).
+Bugs fixed: none.
+New dev-menu controls: Jump X (px), Jump Y (px), Stick max radius.
+Assets acquired: none.
+Research added: none (used existing `touch_button_reposition.md`).
 
 ### [2026-05-17] — iter 122 — ResultsPanel layout-constant tests + touch-button reposition research
 
