@@ -48,6 +48,16 @@ authored with it in mind.
   the human picks a survivor. Threshold rebuild kept in repo as the corridor representative;
   next level-touching iter MUST pick an unrepresented shape-family, not iterate on Threshold.
 
+- **🔴 Iter 124 complete. HARD THROTTLE.** `_build_touch_section` refactor + subsection extraction
+  test (28 iters since 2026-05-16 direction session). `tools/dev_menu/dev_menu_overlay.gd`:
+  extracted `_build_button_layout_subsection(vbox, jump_x, jump_y, jump_r, stick_r, stick_z)`
+  from `_build_touch_section`. The function grew to 52 lines in iter 123 (over the 40-line budget);
+  the extraction follows the same `_build_dash_gesture_controls` pattern already in the file.
+  `_build_touch_section` 52→33 lines; new helper 23 lines. Pure refactor — no signal name,
+  slider range, or param string changed. Side quest: `_test_button_layout_subsection_extraction()`
+  — 2 new assertions (1112→**1114**): script loads + `has_method("_build_button_layout_subsection")`.
+  HARD STALL continues — awaiting shape pick.
+
 - **🔴 Iter 123 complete. HARD THROTTLE.** Touch button position sliders + PR hygiene diagnosis
   (27 iters since 2026-05-16 direction session). `tools/dev_menu/dev_menu_overlay.gd`: added
   "Button Layout" subsection in `_build_touch_section` with four sliders: Jump X (px) 200–1900,

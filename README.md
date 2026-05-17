@@ -5,10 +5,10 @@ A mobile 3D platformer. Brutalist megastructure inspired by *BLAME!*. Controller
 ## Status
 
 Current gate: **Gate 0 — Feel Lab** (closing out; Gate 1 prep in flight)
-Last activity: 2026-05-17 — iter 123: touch button position sliders (jump X/Y + stick radius) + PR hygiene (1105→1112 assertions)
+Last activity: 2026-05-17 — iter 124: `_build_touch_section` refactor (52→33 lines, extracted `_build_button_layout_subsection`; 1112→1114 assertions)
 Test device build: ✅ verified 2026-05-12 — runs in Godot 4.6 on PC and on Nothing Phone 4(a) Pro
 Performance: 144 fps / 6.9 ms in editor at 1920×1080 (Feel Lab); Threshold perf TBD after rebuild
-Throttle level: **🔴 hard** — 27 iters since 2026-05-16 direction session; FULLY STALLED — awaiting shape-family pick
+Throttle level: **🔴 hard** — 28 iters since 2026-05-16 direction session; FULLY STALLED — awaiting shape-family pick
 
 If you only read one section, read **Open questions waiting on you** below.
 
@@ -122,6 +122,28 @@ Goal: store-ready build.
 The full iteration log lives here, newest first. Every iteration appends an entry. Skim the dates to find where you last left off.
 
 <!-- ITERATION ENTRIES BELOW — DO NOT REMOVE OLDER ENTRIES -->
+
+### [2026-05-17] — iter 124 — `_build_touch_section` refactor
+
+Branch: `claude/gifted-shannon-UNXDw`
+Throttle: 🔴 hard (28 iters since 2026-05-16 direction session; FULLY STALLED)
+Gate: Gate 1 — direction-finding (awaiting human shape pick)
+
+**Primary:** Extracted `_build_button_layout_subsection(vbox, jump_x, jump_y, jump_r, stick_r, stick_z)`
+from `_build_touch_section` in `tools/dev_menu/dev_menu_overlay.gd`. The function grew to 52 lines
+after iter 123 added the Button Layout block; now `_build_touch_section` is 33 lines and the new
+helper is 23 lines (both under the 40-line budget). Follows the same pattern as the existing
+`_build_dash_gesture_controls` extraction. Pure behaviour-preserving refactor — no signal, no
+slider range, no param name changed.
+
+**Side quest:** `_test_button_layout_subsection_extraction()` — 2 new assertions (1112 → **1114**):
+loads `dev_menu_overlay.gd`, checks `has_method("_build_button_layout_subsection")`. Ensures the
+extraction is caught by the test suite if the function is accidentally inlined or renamed.
+
+Perf: no change (pure refactor).
+Bugs fixed: none.
+New dev-menu controls: none.
+Research added: none.
 
 ### [2026-05-17] — iter 123 — touch button position sliders + PR hygiene
 
