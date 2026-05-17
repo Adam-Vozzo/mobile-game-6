@@ -29,6 +29,8 @@ const MP  := preload("res://scripts/levels/moving_platform.gd")
 const RH  := preload("res://scripts/levels/rotating_hazard.gd")
 const TO  := preload("res://scripts/ui/touch_overlay.gd")
 const CR  := preload("res://scripts/camera/camera_rig.gd")
+const PS  := preload("res://scripts/enemies/patrol_sentry.gd")
+const HB  := preload("res://scripts/levels/hazard_body.gd")
 
 var _pass_count := 0
 var _fail_count := 0
@@ -170,6 +172,8 @@ func _ready() -> void:
 	_test_touch_button_layout_params()
 	_test_button_layout_subsection_extraction()
 	_test_checkpoint_class()
+	_test_sentry_geometry_constants()
+	_test_hazard_body_class()
 	_report()
 
 
@@ -6627,3 +6631,63 @@ func _test_checkpoint_class() -> void:
 	another_node.free()
 
 	cp.free()
+
+
+func _test_sentry_geometry_constants() -> void:
+	## Reads BODY_HALF and KILL_HALF directly from PatrolSentry's script constants
+	## so a value change in the source is caught here.  The earlier
+	## _test_patrol_sentry_logic() asserts the same invariant (KILL > BODY) using
+	## local copies — those tests still pass even if the source drifts.  This test
+	## closes that gap by binding to the actual values.
+	print("\n-- PatrolSentry geometry constants (source values, not local copies) --")
+
+	var cmap: Dictionary = PS.get_script_constant_map()
+
+	# 1. Constant presence — confirms the script loaded and the name was not renamed.
+	_ok("PatrolSentry.BODY_HALF constant defined in source",
+		cmap.has("BODY_HALF"))
+
+	# 2. Value drift guard — local copies in _test_patrol_sentry_logic use 0.40;
+	#    this catches a silent mismatch between the test copies and the source.
+	_ok("PatrolSentry.BODY_HALF == 0.40 (0.8 m cube half-extent)",
+		_near(float(cmap.get("BODY_HALF", -1.0)), 0.40))
+
+	# 3. Kill-zone value — local copy in _test_patrol_sentry_logic uses 0.50.
+	_ok("PatrolSentry.KILL_HALF == 0.50 (kill zone half-extent)",
+		_near(float(cmap.get("KILL_HALF", -1.0)), 0.50))
+
+	# 4. Structural invariant from source (not local copies):
+	#    Area3D must fire before the physics wall stops the player.
+	_ok("PatrolSentry.KILL_HALF > BODY_HALF (Area3D fires before physics wall) — from source",
+		float(cmap.get("KILL_HALF", 0.0)) > float(cmap.get("BODY_HALF", 1.0)))
+
+	# 5. Bob animation sanity: amplitude must be positive so the bob is visible.
+	_ok("PatrolSentry.BOB_AMPLITUDE > 0 (bob is visible, not a no-op)",
+		float(cmap.get("BOB_AMPLITUDE", 0.0)) > 0.0)
+
+
+func _test_hazard_body_class() -> void:
+	## First-ever test coverage for hazard_body.gd — a tiny script with no prior
+	## tests despite being the kill-zone component used by IndustrialPress,
+	## PatrolSentry, and all level kill-floor Area3Ds.
+	## Three invariants: type contract, response method, zero configuration.
+	print("\n-- HazardBody class invariants --")
+
+	var hb := HB.new()
+
+	# 1. Kill zone must be an Area3D trigger, not a StaticBody3D or CharacterBody3D.
+	#    If this type changes, physics-body kill zones stop detecting player contact.
+	_ok("HazardBody extends Area3D (trigger-based kill, not physics collision)",
+		hb is Area3D)
+
+	# 2. Response method present — if renamed or removed, no kills ever fire.
+	_ok("HazardBody has _on_body_entered method",
+		hb.has_method("_on_body_entered"))
+
+	hb.free()
+
+	# 3. HazardBody intentionally has no script properties (zero-config kill trigger).
+	#    Any @export added accidentally would be caught here and require a deliberate
+	#    review — tunable kill zones belong in the level's Area3D export, not here.
+	_ok("HazardBody has no script-level properties (zero-config — no accidental exports)",
+		HB.get_script_property_list().is_empty())

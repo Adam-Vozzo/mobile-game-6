@@ -5,10 +5,10 @@ A mobile 3D platformer. Brutalist megastructure inspired by *BLAME!*. Controller
 ## Status
 
 Current gate: **Gate 0 — Feel Lab** (closing out; Gate 1 prep in flight)
-Last activity: 2026-05-17 — iter 126: `CameraHint.blend_time` removed + `camera_rig._HINT_BLEND_RATE` named constant + 3 net-new test assertions (1119→1120)
+Last activity: 2026-05-17 — iter 127: PatrolSentry geometry constants + HazardBody class tests (1120→1128)
 Test device build: ✅ verified 2026-05-12 — runs in Godot 4.6 on PC and on Nothing Phone 4(a) Pro
 Performance: 144 fps / 6.9 ms in editor at 1920×1080 (Feel Lab); Threshold perf TBD after rebuild
-Throttle level: **🔴 hard** — 30 iters since 2026-05-16 direction session; FULLY STALLED — awaiting shape-family pick
+Throttle level: **🔴 hard** — 31 iters since 2026-05-16 direction session; FULLY STALLED — awaiting shape-family pick
 
 If you only read one section, read **Open questions waiting on you** below.
 
@@ -123,6 +123,35 @@ Goal: store-ready build.
 The full iteration log lives here, newest first. Every iteration appends an entry. Skim the dates to find where you last left off.
 
 <!-- ITERATION ENTRIES BELOW — DO NOT REMOVE OLDER ENTRIES -->
+
+### [2026-05-17] — iter 127 — PatrolSentry geometry constants + HazardBody class tests
+
+Branch: `claude/gifted-shannon-b1qde`
+Throttle: 🔴 hard (31 iters since 2026-05-16 direction session; FULLY STALLED)
+Gate: Gate 1 — direction-finding (awaiting human shape pick)
+
+**Primary:** Two test-coverage gaps closed.
+
+(1) `_test_sentry_geometry_constants()` — 5 assertions. `_test_patrol_sentry_logic()` (iter 90)
+asserted the `KILL_HALF > BODY_HALF` invariant using *local constant copies* (same class of bug
+fixed in iter 114 for GhostTrailRenderer). If the source drifted, those tests would still pass.
+New test reads `BODY_HALF`, `KILL_HALF`, and `BOB_AMPLITUDE` directly from
+`PS.get_script_constant_map()` — drift in the source is now caught.
+
+(2) `_test_hazard_body_class()` — 3 assertions. `hazard_body.gd` had zero test coverage despite
+being the kill-zone component used by IndustrialPress, PatrolSentry, and all level kill-floor
+Area3Ds. Three invariants: `extends Area3D` type contract (trigger not physics body),
+`_on_body_entered` method present, no accidental `@export` properties added.
+
+Added preloads `const PS` + `const HB`; 2 new calls in `_ready()`.
+
+**Side quest:** none (primary task was sufficient for hard throttle).
+
+Perf: no change.
+Bugs fixed: none.
+New dev-menu controls: none.
+Research added: none.
+Assertions: **1120 → 1128**.
 
 ### [2026-05-17] — iter 126 — `CameraHint.blend_time` removal + `_HINT_BLEND_RATE` constant
 
