@@ -28,6 +28,7 @@ const GTR := preload("res://scripts/levels/ghost_trail_renderer.gd")
 const MP  := preload("res://scripts/levels/moving_platform.gd")
 const RH  := preload("res://scripts/levels/rotating_hazard.gd")
 const TO  := preload("res://scripts/ui/touch_overlay.gd")
+const CR  := preload("res://scripts/camera/camera_rig.gd")
 
 var _pass_count := 0
 var _fail_count := 0
@@ -3512,18 +3513,20 @@ func _test_camera_hint_defaults() -> void:
 	_ok("pull_back_amount defaults 0.0 (no-op until authored)",
 		_near(ch.pull_back_amount, 0.0))
 
-	# blend_time = 0.5 s: smooth without feeling sluggish — at 60 fps this
-	# gives ~30 frames of lerp, which reads as a deliberate cinematic pull.
-	_ok("blend_time defaults 0.5 s", _near(ch.blend_time, 0.5))
-
 	# Negative pull_back_amount would shorten the spring arm during a hint,
 	# moving the camera closer — the opposite of the design intent.
 	_ok("pull_back_amount default is non-negative", ch.pull_back_amount >= 0.0)
 
-	# A zero blend_time would produce an instant camera snap, which looks like
-	# a glitch on mobile. The default must be strictly positive.
-	_ok("blend_time default > 0 (prevents instant camera snap)",
-		ch.blend_time > 0.0)
+	# blend_time was removed — it was exported but not wired (rate was always
+	# 3 /sec regardless of the value). The authoritative rate is now the named
+	# constant camera_rig._HINT_BLEND_RATE. Verify the property is gone so a
+	# future accidental re-introduction is caught immediately.
+	var has_blend_time := false
+	for p in ch.get_property_list():
+		if p["name"] == "blend_time":
+			has_blend_time = true
+			break
+	_ok("blend_time export removed (rate is camera_rig._HINT_BLEND_RATE)", not has_blend_time)
 
 	# Group StringName must match the query in camera_rig.gd::_get_active_hint_extra().
 	_ok("camera_hints StringName matches camera_rig group query",
@@ -3730,6 +3733,14 @@ func _test_hint_distance_blend() -> void:
 	var w_ref := 1.0 - exp(-6.0 * DELTA)
 	_ok("hint blend rate (3/sec) < ref-floor rate (6/sec) → slower pull",
 		w1 < w_ref)
+
+	# camera_rig._HINT_BLEND_RATE names the rate used by _update_hint_distance.
+	# Verify it exists (so accidental removal is caught) and matches RATE (so
+	# a silent value change is caught before the test's math drifts from source).
+	var crig_cmap: Dictionary = CR.get_script_constant_map()
+	_ok("camera_rig._HINT_BLEND_RATE constant defined", crig_cmap.has("_HINT_BLEND_RATE"))
+	_ok("camera_rig._HINT_BLEND_RATE == 3.0 (matches local RATE)",
+		_near(float(crig_cmap.get("_HINT_BLEND_RATE", -1.0)), RATE))
 
 
 func _test_industrial_press_position_formula() -> void:

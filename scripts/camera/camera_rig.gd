@@ -156,9 +156,13 @@ var _reference_floor_y: float = 0.0
 # spuriously trigger the track-up branch. Distinct from `_reference_floor_y`:
 # this one drives the *threshold*, the smoothed one drives the *target*.
 var _apex_anchor_y: float = 0.0
+## Exponential-lerp rate (/sec) for CameraHint pull-back blending.
+## 3 /sec → 95 % converged in ≈1 s — a "breath" pace, slower than the
+## 6 /sec reference-floor smoothing so hints feel gradual, not a cut.
+const _HINT_BLEND_RATE := 3.0
 # Extra spring-arm distance (metres) blended in while the player is inside a
 # CameraHint volume. Lerps toward the max pull_back_amount among all active
-# hints at 3 /sec (→ 95% blend in ~1 s). Zero when no hints are active.
+# hints at _HINT_BLEND_RATE /sec. Zero when no hints are active.
 var _hint_distance_extra: float = 0.0
 
 # Screen shake state. `_shake_remaining` IS the current peak magnitude (radians)
@@ -228,7 +232,7 @@ func _update_hint_distance(delta: float) -> float:
 	_hint_distance_extra = lerpf(
 		_hint_distance_extra,
 		_get_active_hint_extra(),
-		1.0 - exp(-3.0 * delta),
+		1.0 - exp(-_HINT_BLEND_RATE * delta),
 	)
 	return distance + _hint_distance_extra
 

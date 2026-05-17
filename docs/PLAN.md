@@ -48,6 +48,21 @@ authored with it in mind.
   the human picks a survivor. Threshold rebuild kept in repo as the corridor representative;
   next level-touching iter MUST pick an unrepresented shape-family, not iterate on Threshold.
 
+- **🔴 Iter 126 complete. HARD THROTTLE.** `blend_time` removal + `_HINT_BLEND_RATE` constant
+  (30 iters since 2026-05-16 direction session). `scripts/levels/camera_hint.gd`: removed
+  `@export_range(0.1, 2.0, 0.1) var blend_time: float = 0.5` (was exported but never read by
+  camera_rig.gd — iter 125 identified it as a silent interface/behaviour discrepancy). Docstring
+  updated to reference `CameraRig._HINT_BLEND_RATE`. `scripts/camera/camera_rig.gd`: extracted
+  `const _HINT_BLEND_RATE := 3.0` near `_hint_distance_extra` state; `_update_hint_distance`
+  now uses `exp(-_HINT_BLEND_RATE * delta)` instead of the bare `3.0` literal. `DECISIONS.md`
+  entry added (Option B from research). Side quest: `tests/test_controller_kinematics.gd` —
+  `const CR := preload` added; `_test_camera_hint_defaults`: removed 2 stale blend_time assertions,
+  added 1 "blend_time absent from property list" guard; `_test_hint_distance_blend`: 2 new
+  assertions cross-checking `_HINT_BLEND_RATE` exists and == 3.0 via `get_script_constant_map()`.
+  Net: **1119 → 1120** assertions (−2 +1 +2). `docs/research/camera_hint_authoring.md` updated
+  (action items 1+2 marked done, "Known gap" section replaced with resolution note).
+  HARD STALL continues — awaiting shape pick.
+
 - **🔴 Iter 125 complete. HARD THROTTLE.** CameraHint authoring research + CheckPoint tests
   (29 iters since 2026-05-16 direction session). `docs/research/camera_hint_authoring.md`:
   CameraHint is fully implemented (not a stub) — camera_rig.gd blends at 3/sec via exponential
