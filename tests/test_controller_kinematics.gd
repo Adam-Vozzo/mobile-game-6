@@ -162,6 +162,7 @@ func _ready() -> void:
 	_test_moving_platform_defaults()
 	_test_rotating_hazard_defaults()
 	_test_particle_mat_properties()
+	_test_data_shard_collision_invariants()
 	_report()
 
 
@@ -6386,3 +6387,56 @@ func _test_particle_mat_properties() -> void:
 		mat.no_depth_test == true)
 	_ok("particle mat: CULL_DISABLED — ImmediateMesh lines are visible from any camera angle",
 		mat.cull_mode == BaseMaterial3D.CULL_DISABLED)
+
+
+func _test_data_shard_collision_invariants() -> void:
+	## Guards two DataShard invariants documented in the class docstring but never
+	## directly tested — both protect against silent regressions:
+	## (1) SphereShape3D radius 0.6 m: the mobile dead-zone contract. Shrinking to
+	##     the capsule radius (0.28 m) causes missed collections under touch-latency
+	##     correction — the class docstring explains the 0.6 + 0.28 = 0.88 m overlap.
+	## (2) respawn_shard() reset: the dev-menu "Respawn shard" button calls this
+	##     without a level reload. If _collected isn't cleared, the shard can never
+	##     be re-collected in the same session after the first pick-up.
+	## Uses _build_visual() directly, matching _test_win_state_beacon_runtime pattern.
+	print("\n-- DataShard collision shape + respawn reset --")
+
+	var ds := DS.new()
+	_ok("DataShard instantiates for collision test", ds != null)
+	if ds == null:
+		return
+
+	ds._build_visual()
+
+	# Three children: CollisionShape3D + MeshInstance3D + OmniLight3D (in that order).
+	_ok("_build_visual adds 3 children (col, mesh, light)", ds.get_child_count() == 3)
+
+	var col: CollisionShape3D = ds.get_child(0) as CollisionShape3D
+	_ok("child[0] is CollisionShape3D", col != null)
+	if col != null:
+		var sphere: SphereShape3D = col.shape as SphereShape3D
+		_ok("collision shape is SphereShape3D (not Box/Capsule — overlaps from all angles)",
+			sphere != null)
+		if sphere != null:
+			# 0.6 + player capsule 0.28 = 0.88 m total overlap — wide enough for mobile thumb latency.
+			_ok("sphere radius == 0.6 m (generous mobile dead zone — docstring invariant)",
+				is_equal_approx(sphere.radius, 0.6))
+
+	# respawn_shard() reset: simulate post-collection state, then reset.
+	ds._collected = true
+	ds._mesh_instance.visible = false
+	ds._light.light_energy = 0.0
+	ds._light.visible = false
+	ds.respawn_shard()
+	_ok("respawn_shard clears _collected flag (shard collectible again after reset)",
+		ds._collected == false)
+	_ok("respawn_shard restores mesh visibility",
+		ds._mesh_instance.visible == true)
+	_ok("respawn_shard restores light visibility",
+		ds._light.visible == true)
+	# 1.4 is the default light_energy from _build_visual — restored so the glow marks
+	# the shard position again after reset (not a dark invisible object floating in space).
+	_ok("respawn_shard restores light_energy to 1.4 (default glow, not dark post-fade)",
+		is_equal_approx(ds._light.light_energy, 1.4))
+
+	ds.free()

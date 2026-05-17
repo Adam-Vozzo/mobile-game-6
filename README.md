@@ -5,10 +5,10 @@ A mobile 3D platformer. Brutalist megastructure inspired by *BLAME!*. Controller
 ## Status
 
 Current gate: **Gate 0 — Feel Lab** (closing out; Gate 1 prep in flight)
-Last activity: 2026-05-17 — iter 118: particle material refactor + property test (1080→1084 assertions)
+Last activity: 2026-05-17 — iter 119: DataShard collision + respawn tests (1084→1093 assertions)
 Test device build: ✅ verified 2026-05-12 — runs in Godot 4.6 on PC and on Nothing Phone 4(a) Pro
 Performance: 144 fps / 6.9 ms in editor at 1920×1080 (Feel Lab); Threshold perf TBD after rebuild
-Throttle level: **🔴 hard** — 22 iters since 2026-05-16 direction session; FULLY STALLED — awaiting shape-family pick
+Throttle level: **🔴 hard** — 23 iters since 2026-05-16 direction session; FULLY STALLED — awaiting shape-family pick
 
 If you only read one section, read **Open questions waiting on you** below.
 
@@ -120,6 +120,38 @@ Goal: store-ready build.
 The full iteration log lives here, newest first. Every iteration appends an entry. Skim the dates to find where you last left off.
 
 <!-- ITERATION ENTRIES BELOW — DO NOT REMOVE OLDER ENTRIES -->
+
+### [2026-05-17] — iter 119 — DataShard collision shape + respawn reset tests
+
+Branch: `claude/gifted-shannon-Wh5gh`
+Throttle: 🔴 hard (23 iters since 2026-05-16 direction session; FULLY STALLED)
+Gate: Gate 1 — direction-finding (awaiting human shape pick)
+
+**Primary:** `_test_data_shard_collision_invariants()` — 9 new assertions (1084 → **1093**).
+
+Two `data_shard.gd` invariants were documented in the class docstring but never directly tested:
+
+1. **SphereShape3D radius 0.6 m** — the mobile dead-zone contract. The class docstring explains
+   that `0.6 m (sphere) + 0.28 m (capsule) = 0.88 m` total overlap, which is wide enough to
+   absorb touch-correction latency. Shrinking this silently causes missed collections on device.
+   The test calls `_build_visual()` directly (same pattern as `_test_win_state_beacon_runtime`)
+   and asserts `child[0]` is a `CollisionShape3D` containing a `SphereShape3D` with `radius == 0.6`.
+
+2. **`respawn_shard()` reset** — the dev-menu "Respawn shard" button calls this without a level
+   reload. If `_collected` isn't cleared, the shard can never be re-collected in the same dev
+   session after the first pick-up. The test simulates post-collection state (`_collected = true`,
+   mesh/light hidden, light energy faded to 0), calls `respawn_shard()`, and asserts all four
+   fields are restored: `_collected == false`, mesh visible, light visible, `light_energy == 1.4`.
+
+No scene tree required — pure node-hierarchy test, no `_ready()` call needed.
+
+Perf: no change (test-only).
+Bugs fixed: none.
+New dev-menu controls: none.
+Research added: none.
+Assets acquired: none.
+
+---
 
 ### [2026-05-17] — iter 118 — Particle material helper refactor + property test
 
