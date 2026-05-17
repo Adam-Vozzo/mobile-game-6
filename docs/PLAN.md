@@ -48,6 +48,16 @@ authored with it in mind.
   the human picks a survivor. Threshold rebuild kept in repo as the corridor representative;
   next level-touching iter MUST pick an unrepresented shape-family, not iterate on Threshold.
 
+- **🔴 Iter 120 complete. HARD THROTTLE.** Dev menu "← Level Selector" button + path-constant test
+  (24 iters since 2026-05-16 direction session). `tools/dev_menu/dev_menu_overlay.gd`:
+  added `const _LEVEL_SELECT_SCENE := "res://scenes/ui/level_select.tscn"` and a
+  `← Level Selector` button at the top of `_build_level_select()` — from any level, the human
+  can now return to the boot selector via dev menu → Level → Load Level without restarting.
+  `tests/test_controller_kinematics.gd`: 2 new assertions in `_test_level_select_ui`
+  (1093 → 1095): loads `dev_menu_overlay.gd`, reads `_LEVEL_SELECT_SCENE` via
+  `get_script_constant_map()`, asserts value == `"res://scenes/ui/level_select.tscn"`.
+  HARD STALL continues — awaiting shape pick.
+
 - **🔴 Iter 119 complete. HARD THROTTLE.** DataShard collision shape + respawn reset tests
   (23 iters since 2026-05-16 direction session). `tests/test_controller_kinematics.gd`:
   `_test_data_shard_collision_invariants()` — 9 new assertions (1084 → 1093).
@@ -655,6 +665,13 @@ These mirror "Open questions waiting on you" in the README.
   drive the next tuning iteration.
 
 ## Recently completed (last 5)
+
+- 2026-05-17 — iter 120. **Dev menu "← Level Selector" button. HARD THROTTLE.**
+  `_LEVEL_SELECT_SCENE` constant + button at top of Load Level section. 2 new test assertions
+  (1093→1095): `_LEVEL_SELECT_SCENE` value check via `get_script_constant_map()`.
+
+- 2026-05-17 — iter 119. **DataShard collision + respawn tests. HARD THROTTLE.**
+  `_test_data_shard_collision_invariants()` — 9 assertions (1084→1093).
 
 - 2026-05-17 — iter 117. **Platform gap calibration research + checkpoint_id test. HARD THROTTLE.**
   `platform_gap_calibration.md`: per-profile jump stats + cross-profile gap table + depth-pass
