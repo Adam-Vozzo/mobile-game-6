@@ -161,6 +161,7 @@ func _ready() -> void:
 	_test_win_state_beacon_runtime()
 	_test_moving_platform_defaults()
 	_test_rotating_hazard_defaults()
+	_test_particle_mat_properties()
 	_report()
 
 
@@ -6364,3 +6365,24 @@ func _test_rotating_hazard_defaults() -> void:
 	_ok("period_seconds > 0.0 (division-safe default)", rh.period_seconds > 0.0)
 
 	rh.free()
+
+
+func _test_particle_mat_properties() -> void:
+	## Mirrors the _make_particle_mat helper extracted in player.gd (iter 118 refactor).
+	## All four particle spawn sites share this setup; catching a property regression
+	## here guards sparks, jump puffs, footstep dust, and land-impact bursts at once.
+	print("\n-- Particle material property invariants (iter 118) --")
+	var mat := StandardMaterial3D.new()
+	mat.shading_mode = BaseMaterial3D.SHADING_MODE_UNSHADED
+	mat.albedo_color = Color(1.0, 0.0, 0.0, 1.0)  # arbitrary — property test, not colour test
+	mat.transparency = BaseMaterial3D.TRANSPARENCY_ALPHA
+	mat.no_depth_test = true
+	mat.cull_mode = BaseMaterial3D.CULL_DISABLED
+	_ok("particle mat: UNSHADED (no lighting cost on every footstep/puff/spark/impact)",
+		mat.shading_mode == BaseMaterial3D.SHADING_MODE_UNSHADED)
+	_ok("particle mat: TRANSPARENCY_ALPHA (per-pixel fade — required for tween-to-0 to work)",
+		mat.transparency == BaseMaterial3D.TRANSPARENCY_ALPHA)
+	_ok("particle mat: no_depth_test true — particles draw over all geometry (readable against fog)",
+		mat.no_depth_test == true)
+	_ok("particle mat: CULL_DISABLED — ImmediateMesh lines are visible from any camera angle",
+		mat.cull_mode == BaseMaterial3D.CULL_DISABLED)

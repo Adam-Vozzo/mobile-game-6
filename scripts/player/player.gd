@@ -639,7 +639,7 @@ func _spawn_sparks(origin: Vector3) -> void:
 		return
 	var rng := RandomNumberGenerator.new()
 	rng.randomize()
-	var mat := _build_spark_material()
+	var mat := _make_particle_mat(Color(1.0, 0.78, 0.12, 1.0))
 	var mi := MeshInstance3D.new()
 	mi.mesh = _build_spark_mesh(rng)
 	mi.material_override = mat
@@ -647,16 +647,6 @@ func _spawn_sparks(origin: Vector3) -> void:
 	get_tree().root.add_child(mi)
 	mi.global_position = origin
 	_fade_and_free_spark(mi, mat)
-
-
-func _build_spark_material() -> StandardMaterial3D:
-	var mat := StandardMaterial3D.new()
-	mat.shading_mode = BaseMaterial3D.SHADING_MODE_UNSHADED
-	mat.albedo_color = Color(1.0, 0.78, 0.12, 1.0)
-	mat.transparency = BaseMaterial3D.TRANSPARENCY_ALPHA
-	mat.no_depth_test = true
-	mat.cull_mode = BaseMaterial3D.CULL_DISABLED
-	return mat
 
 
 func _build_spark_mesh(rng: RandomNumberGenerator) -> ImmediateMesh:
@@ -686,7 +676,7 @@ func _fade_and_free_spark(mi: MeshInstance3D, mat: StandardMaterial3D) -> void:
 func _spawn_jump_puff() -> void:
 	if not DevMenu.is_juice_on(&"particles"):
 		return
-	var mat := _build_puff_material()
+	var mat := _make_particle_mat(Color(0.80, 0.77, 0.72, 1.0))
 	var mi := MeshInstance3D.new()
 	mi.mesh = _build_puff_mesh()
 	mi.material_override = mat
@@ -694,16 +684,6 @@ func _spawn_jump_puff() -> void:
 	get_tree().root.add_child(mi)
 	mi.global_position = global_position + Vector3(0.0, 0.06, 0.0)
 	_fade_and_free_puff(mi, mat)
-
-
-func _build_puff_material() -> StandardMaterial3D:
-	var mat := StandardMaterial3D.new()
-	mat.shading_mode = BaseMaterial3D.SHADING_MODE_UNSHADED
-	mat.albedo_color = Color(0.80, 0.77, 0.72, 1.0)
-	mat.transparency = BaseMaterial3D.TRANSPARENCY_ALPHA
-	mat.no_depth_test = true
-	mat.cull_mode = BaseMaterial3D.CULL_DISABLED
-	return mat
 
 
 func _build_puff_mesh() -> ImmediateMesh:
@@ -746,12 +726,7 @@ func _apply_landing_effects(impact: float) -> void:
 # Gated behind "particles" toggle. 4 short lines at foot level; fades in 0.10 s.
 # Throttled by _footstep_dust_timer so it fires at most every _footstep_dust_interval.
 func _spawn_footstep_dust() -> void:
-	var mat := StandardMaterial3D.new()
-	mat.shading_mode = BaseMaterial3D.SHADING_MODE_UNSHADED
-	mat.albedo_color = Color(0.80, 0.77, 0.72, 0.50)
-	mat.transparency = BaseMaterial3D.TRANSPARENCY_ALPHA
-	mat.no_depth_test = true
-	mat.cull_mode = BaseMaterial3D.CULL_DISABLED
+	var mat := _make_particle_mat(Color(0.80, 0.77, 0.72, 0.50))
 	var mi := MeshInstance3D.new()
 	mi.mesh = _build_footstep_mesh()
 	mi.material_override = mat
@@ -779,12 +754,7 @@ func _build_footstep_mesh() -> ImmediateMesh:
 # Gated behind "particles" toggle. Radial burst scaled by landing impact;
 # suppressed below _LAND_IMPACT_THRESHOLD. Fades in 0.18 s after a 0.03 s hold.
 func _spawn_land_impact(impact: float) -> void:
-	var mat := StandardMaterial3D.new()
-	mat.shading_mode = BaseMaterial3D.SHADING_MODE_UNSHADED
-	mat.albedo_color = Color(0.80, 0.77, 0.72, 0.85)
-	mat.transparency = BaseMaterial3D.TRANSPARENCY_ALPHA
-	mat.no_depth_test = true
-	mat.cull_mode = BaseMaterial3D.CULL_DISABLED
+	var mat := _make_particle_mat(Color(0.80, 0.77, 0.72, 0.85))
 	var mi := MeshInstance3D.new()
 	mi.mesh = _build_impact_mesh(impact)
 	mi.material_override = mat
@@ -814,6 +784,16 @@ func _build_impact_mesh(impact: float) -> ImmediateMesh:
 func _on_particles_param(param: StringName, value: float) -> void:
 	match param:
 		&"footstep_interval": _footstep_dust_interval = value
+
+
+func _make_particle_mat(color: Color) -> StandardMaterial3D:
+	var mat := StandardMaterial3D.new()
+	mat.shading_mode = BaseMaterial3D.SHADING_MODE_UNSHADED
+	mat.albedo_color = color
+	mat.transparency = BaseMaterial3D.TRANSPARENCY_ALPHA
+	mat.no_depth_test = true
+	mat.cull_mode = BaseMaterial3D.CULL_DISABLED
+	return mat
 
 
 func _set_emission(color: Color, energy: float) -> void:

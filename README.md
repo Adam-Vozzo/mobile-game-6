@@ -5,10 +5,10 @@ A mobile 3D platformer. Brutalist megastructure inspired by *BLAME!*. Controller
 ## Status
 
 Current gate: **Gate 0 — Feel Lab** (closing out; Gate 1 prep in flight)
-Last activity: 2026-05-17 — iter 117: platform gap calibration research + checkpoint_id test
+Last activity: 2026-05-17 — iter 118: particle material refactor + property test (1080→1084 assertions)
 Test device build: ✅ verified 2026-05-12 — runs in Godot 4.6 on PC and on Nothing Phone 4(a) Pro
 Performance: 144 fps / 6.9 ms in editor at 1920×1080 (Feel Lab); Threshold perf TBD after rebuild
-Throttle level: **🔴 hard** — 21 iters since 2026-05-16 direction session; FULLY STALLED — awaiting shape-family pick
+Throttle level: **🔴 hard** — 22 iters since 2026-05-16 direction session; FULLY STALLED — awaiting shape-family pick
 
 If you only read one section, read **Open questions waiting on you** below.
 
@@ -120,6 +120,33 @@ Goal: store-ready build.
 The full iteration log lives here, newest first. Every iteration appends an entry. Skim the dates to find where you last left off.
 
 <!-- ITERATION ENTRIES BELOW — DO NOT REMOVE OLDER ENTRIES -->
+
+### [2026-05-17] — iter 118 — Particle material helper refactor + property test
+
+Branch: `iter/particle-mat-refactor`
+Throttle: 🔴 hard (22 iters since 2026-05-16 direction session; FULLY STALLED)
+Gate: Gate 1 — direction-finding (awaiting human shape pick)
+
+**Primary:** Extracted `_make_particle_mat(color)` helper in `player.gd`. Four particle
+spawn sites (`_spawn_sparks`, `_spawn_jump_puff`, `_spawn_footstep_dust`, `_spawn_land_impact`)
+each duplicated the same 6-line `StandardMaterial3D` setup block. Replaced with one
+7-line helper; two intermediate `_build_spark_material()` / `_build_puff_material()` wrapper
+functions eliminated. Net: −20 lines, 0 behaviour change.
+
+**Side quest:** `_test_particle_mat_properties()` — 4 new assertions (1080 → **1084**):
+SHADING_MODE_UNSHADED, TRANSPARENCY_ALPHA, no_depth_test=true, CULL_DISABLED.
+Existing `_puff_material_fade_checks` / `_spark_material_fade_checks` tested colour
+channel invariants via local constants but never verified the 4 StandardMaterial3D
+property settings directly. The new test catches regressions like dropping `no_depth_test`
+(particles would z-fight against geometry) or reverting transparency mode.
+
+Perf: no change (no scene edits, same allocation pattern per spawn).
+Bugs fixed: none.
+New dev-menu controls: none.
+Research added: none.
+Assets acquired: none.
+
+---
 
 ### [2026-05-17] — iter 117 — Platform gap calibration research + checkpoint_id test
 
