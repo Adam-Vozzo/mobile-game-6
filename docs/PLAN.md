@@ -48,6 +48,17 @@ authored with it in mind.
   the human picks a survivor. Threshold rebuild kept in repo as the corridor representative;
   next level-touching iter MUST pick an unrepresented shape-family, not iterate on Threshold.
 
+- **🔴 Iter 121 complete. HARD THROTTLE.** Spire DataShards added + presence test
+  (25 iters since 2026-05-16 direction session). `scenes/levels/spire.tscn`: added
+  `ext_resource` for `data_shard.tscn` (load_steps 40→41); `Shards` group with two
+  instances — `Shard1` at (2, 3.45, 0) (0.25 m above ShelfB, before mid_shaft CP) and
+  `Shard2` at (-2, 14.75, 0) (0.25 m above PlatformG, near summit). Follows rooftop.tscn
+  placement pattern. `game.shards_total` in `spire.gd` already uses
+  `get_nodes_in_group("data_shard").size()` — no script change needed.
+  Side quest: `_test_spire_shard_presence()` — 3 assertions (1095→1098) reading spire.tscn
+  source text: ext_resource present + Shard1/Shard2 node names present.
+  HARD STALL continues — awaiting shape pick.
+
 - **🔴 Iter 120 complete. HARD THROTTLE.** Dev menu "← Level Selector" button + path-constant test
   (24 iters since 2026-05-16 direction session). `tools/dev_menu/dev_menu_overlay.gd`:
   added `const _LEVEL_SELECT_SCENE := "res://scenes/ui/level_select.tscn"` and a

@@ -163,6 +163,7 @@ func _ready() -> void:
 	_test_rotating_hazard_defaults()
 	_test_particle_mat_properties()
 	_test_data_shard_collision_invariants()
+	_test_spire_shard_presence()
 	_report()
 
 
@@ -6451,3 +6452,22 @@ func _test_data_shard_collision_invariants() -> void:
 		is_equal_approx(ds._light.light_energy, 1.4))
 
 	ds.free()
+
+
+func _test_spire_shard_presence() -> void:
+	## Guards the DataShard additions in spire.tscn (iter 121).
+	## Spire was the only breadth-pass level missing shards — flagged in
+	## gate1_depth_pass_plan.md as "must add during depth pass."
+	## Reads the .tscn source text directly; no scene-tree instantiation needed.
+	## Shard1 sits 0.25 m above ShelfB (before the checkpoint, y=3.45).
+	## Shard2 sits 0.25 m above PlatformG (before the summit, y=14.75).
+	## Both follow the rooftop.tscn placement pattern (walk-up collect, on-platform).
+	print("\n-- Spire DataShard presence (iter 121) --")
+
+	var tscn_text := FileAccess.get_file_as_string("res://scenes/levels/spire.tscn")
+	_ok("Spire: data_shard.tscn registered as ext_resource (load_steps incremented)",
+		tscn_text.contains("data_shard.tscn"))
+	_ok("Spire: Shard1 node present in scene (ShelfB level, y=3.45, before mid_shaft CP)",
+		tscn_text.contains('[node name="Shard1"'))
+	_ok("Spire: Shard2 node present in scene (PlatformG level, y=14.75, near summit)",
+		tscn_text.contains('[node name="Shard2"'))
