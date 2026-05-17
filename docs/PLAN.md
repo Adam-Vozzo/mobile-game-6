@@ -48,6 +48,15 @@ authored with it in mind.
   the human picks a survivor. Threshold rebuild kept in repo as the corridor representative;
   next level-touching iter MUST pick an unrepresented shape-family, not iterate on Threshold.
 
+- **🔴 Iter 118 complete. HARD THROTTLE.** Particle material helper refactor + property test
+  (22 iters since 2026-05-16 direction session). `player.gd`: extracted `_make_particle_mat(color)`
+  from 4 duplicate 6-line `StandardMaterial3D` setup blocks in `_spawn_sparks`, `_spawn_jump_puff`,
+  `_spawn_footstep_dust`, `_spawn_land_impact`. Deleted `_build_spark_material()` and
+  `_build_puff_material()` wrapper functions (each was a single-use 8-line function).
+  Net −20 lines, no behaviour change. Side quest: `_test_particle_mat_properties()` — 4 new
+  assertions (1080→1084) verifying SHADING_MODE_UNSHADED, TRANSPARENCY_ALPHA, no_depth_test=true,
+  CULL_DISABLED — covers a gap the existing colour-channel tests left open. HARD STALL continues.
+
 - **🔴 Iter 117 complete. HARD THROTTLE.** Platform gap calibration research + checkpoint_id
   test (21 iters since 2026-05-16 direction session). `docs/research/platform_gap_calibration.md`
   written: physics model (3-phase gravity), per-profile jump heights (Snappy 1.9 m / Floaty
