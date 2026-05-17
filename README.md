@@ -5,10 +5,10 @@ A mobile 3D platformer. Brutalist megastructure inspired by *BLAME!*. Controller
 ## Status
 
 Current gate: **Gate 0 — Feel Lab** (closing out; Gate 1 prep in flight)
-Last activity: 2026-05-17 — iter 124: `_build_touch_section` refactor (52→33 lines, extracted `_build_button_layout_subsection`; 1112→1114 assertions)
+Last activity: 2026-05-17 — iter 125: `camera_hint_authoring.md` research + stale docstring fix + 5 CheckPoint unit tests (1114→1119 assertions)
 Test device build: ✅ verified 2026-05-12 — runs in Godot 4.6 on PC and on Nothing Phone 4(a) Pro
 Performance: 144 fps / 6.9 ms in editor at 1920×1080 (Feel Lab); Threshold perf TBD after rebuild
-Throttle level: **🔴 hard** — 28 iters since 2026-05-16 direction session; FULLY STALLED — awaiting shape-family pick
+Throttle level: **🔴 hard** — 29 iters since 2026-05-16 direction session; FULLY STALLED — awaiting shape-family pick
 
 If you only read one section, read **Open questions waiting on you** below.
 
@@ -122,6 +122,34 @@ Goal: store-ready build.
 The full iteration log lives here, newest first. Every iteration appends an entry. Skim the dates to find where you last left off.
 
 <!-- ITERATION ENTRIES BELOW — DO NOT REMOVE OLDER ENTRIES -->
+
+### [2026-05-17] — iter 125 — CameraHint authoring research + CheckPoint tests
+
+Branch: `claude/gifted-shannon-xIso0`
+Throttle: 🔴 hard (29 iters since 2026-05-16 direction session; FULLY STALLED)
+Gate: Gate 1 — direction-finding (awaiting human shape pick)
+
+**Primary:** `docs/research/camera_hint_authoring.md` — the CameraHint system is fully
+implemented in `camera_rig.gd` (blends at 3/sec via exponential lerp, queries `camera_hints`
+group every frame) but had no authoring guide. Key finding: the `blend_time` export on
+`CameraHint` is not wired to the blend rate (always 3/sec, hardcoded in `_update_hint_distance`).
+Depth-pass action: remove `blend_time` (project standard is 3/sec) per Option B.
+Note covers: when to use vs avoid hints, collision volume sizing, pull_back_amount by
+geometry width, per-shape placement recommendations for all 9 families, and a dev-menu
+proxy tuning workflow.
+Also fixed the stale "Stub for Gate 1" docstring in `camera_hint.gd` — the framing pass
+landed long ago; the comment was actively misleading. `docs/research/INDEX.md` updated.
+
+**Side quest:** `_test_checkpoint_class()` — 5 new assertions (**1114 → 1119**): CheckPoint
+had zero test coverage despite being in every breadth-pass level. Tests: `checkpoint_id`
+export default (`&"checkpoint_1"`), `_activated` starts false, `reset()` clears `_activated`,
+non-Player body_entered leaves `_activated` false, already-activated body_entered is a no-op.
+
+Perf: no change.
+Bugs fixed: stale `camera_hint.gd` docstring corrected.
+New dev-menu controls: none.
+Research added: `camera_hint_authoring.md` (placement guide for all 9 shapes, blend_time
+gap identified, dev-menu proxy workflow).
 
 ### [2026-05-17] — iter 124 — `_build_touch_section` refactor
 

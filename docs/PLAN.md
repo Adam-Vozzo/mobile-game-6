@@ -48,6 +48,19 @@ authored with it in mind.
   the human picks a survivor. Threshold rebuild kept in repo as the corridor representative;
   next level-touching iter MUST pick an unrepresented shape-family, not iterate on Threshold.
 
+- **🔴 Iter 125 complete. HARD THROTTLE.** CameraHint authoring research + CheckPoint tests
+  (29 iters since 2026-05-16 direction session). `docs/research/camera_hint_authoring.md`:
+  CameraHint is fully implemented (not a stub) — camera_rig.gd blends at 3/sec via exponential
+  lerp, queries `camera_hints` group every frame. Key finding: `blend_time` export on `CameraHint`
+  is NOT wired to the blend rate (always 3/sec hardcoded); depth-pass action is to remove it
+  (Option B). Placement guide covers when to use/avoid hints, collision volume sizing,
+  pull_back_amount table, per-shape recommendations for all 9 families, dev-menu proxy workflow.
+  Stale "Stub for Gate 1" docstring in `camera_hint.gd` fixed (comment was actively misleading
+  since the framing pass landed). INDEX.md updated.
+  Side quest: `_test_checkpoint_class()` — 5 new assertions (1114→**1119**): CheckPoint had zero
+  test coverage. Tests: `checkpoint_id == &"checkpoint_1"`, `_activated` default false, `reset()`
+  clears state, non-Player guard fires, already-activated no-op. HARD STALL continues.
+
 - **🔴 Iter 124 complete. HARD THROTTLE.** `_build_touch_section` refactor + subsection extraction
   test (28 iters since 2026-05-16 direction session). `tools/dev_menu/dev_menu_overlay.gd`:
   extracted `_build_button_layout_subsection(vbox, jump_x, jump_y, jump_r, stick_r, stick_z)`
@@ -715,6 +728,15 @@ These mirror "Open questions waiting on you" in the README.
   drive the next tuning iteration.
 
 ## Recently completed (last 5)
+
+- 2026-05-17 — iter 125. **CameraHint authoring research + CheckPoint tests. HARD THROTTLE.**
+  `docs/research/camera_hint_authoring.md`: CameraHint fully implemented (not stub); `blend_time`
+  export not wired (hardcoded 3/sec) — depth-pass Option B: remove export. Per-shape placement
+  guide for all 9 families. Stale "Stub for Gate 1" docstring in `camera_hint.gd` fixed.
+  `_test_checkpoint_class()` — 5 assertions (1114→1119). INDEX.md updated.
+
+- 2026-05-17 — iter 124. **`_build_touch_section` refactor + subsection test. HARD THROTTLE.**
+  `_build_button_layout_subsection` extracted (52→33 lines). 2 assertions (1112→1114).
 
 - 2026-05-17 — iter 122. **ResultsPanel layout-constant tests + touch-button reposition research. HARD THROTTLE.**
   `_test_results_panel_layout_constants()` — 7 assertions (1098→1105): `_FONT_SIZE` range,
