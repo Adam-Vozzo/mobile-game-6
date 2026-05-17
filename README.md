@@ -5,10 +5,10 @@ A mobile 3D platformer. Brutalist megastructure inspired by *BLAME!*. Controller
 ## Status
 
 Current gate: **Gate 0 — Feel Lab** (closing out; Gate 1 prep in flight)
-Last activity: 2026-05-17 — iter 120: dev menu "← Level Selector" button + path-constant test (1093→1095 assertions)
+Last activity: 2026-05-17 — iter 122: ResultsPanel layout-constant tests + touch-button-reposition research (1098→1105 assertions)
 Test device build: ✅ verified 2026-05-12 — runs in Godot 4.6 on PC and on Nothing Phone 4(a) Pro
 Performance: 144 fps / 6.9 ms in editor at 1920×1080 (Feel Lab); Threshold perf TBD after rebuild
-Throttle level: **🔴 hard** — 24 iters since 2026-05-16 direction session; FULLY STALLED — awaiting shape-family pick
+Throttle level: **🔴 hard** — 26 iters since 2026-05-16 direction session; FULLY STALLED — awaiting shape-family pick
 
 If you only read one section, read **Open questions waiting on you** below.
 
@@ -16,7 +16,7 @@ If you only read one section, read **Open questions waiting on you** below.
 
 Things Claude can't decide alone, or where it's stalled and needs direction.
 
-> **🔴 FULLY STALLED — 24 iterations since 2026-05-16 direction session.**
+> **🔴 FULLY STALLED — 26 iterations since 2026-05-16 direction session.**
 > The breadth directive is complete: all 9 shape-families from `docs/CLAUDE.md` are built and
 > now all on main. Shape inventory: Threshold (corridor), Spire (tower), Rooftop, Plaza (hub),
 > Cavern (maze), Descent (inverted), Filterbank (gauntlet), Viaduct (bridge crossing), Arena (ringed).
@@ -122,6 +122,32 @@ Goal: store-ready build.
 The full iteration log lives here, newest first. Every iteration appends an entry. Skim the dates to find where you last left off.
 
 <!-- ITERATION ENTRIES BELOW — DO NOT REMOVE OLDER ENTRIES -->
+
+### [2026-05-17] — iter 122 — ResultsPanel layout-constant tests + touch-button reposition research
+
+Branch: `iter/results-panel-layout-test`
+Throttle: 🔴 hard (26 iters since 2026-05-16 direction session; FULLY STALLED)
+Gate: Gate 1 — direction-finding (awaiting human shape pick)
+
+**Primary:** `_test_results_panel_layout_constants()` — 7 new assertions (1098 → **1105**) guarding
+the mobile usability constants in `results_panel.gd`. No other mechanism catches a regression in
+these values. Covered: `_FONT_SIZE` in [28, 48] range (arm's-length readable), `_BTN_FONT_SIZE >
+_FONT_SIZE` (primary-action emphasis), `_BTN_FONT_SIZE >= 36`, `_BTN_MIN.x >= 300` and
+`_BTN_MIN.y >= 88` (Android HIG thumb-tap targets at Nothing Phone 4(a) Pro ppi), `_PANEL_WIDTH
+>= 400` (fits "61:01.00" without clip).
+
+**Side quest:** `docs/research/touch_button_reposition.md` — repositionable/resizable button
+design + implementation plan. CLAUDE.md requirement with zero prior research. Key findings:
+(1) Genshin Impact configure mode (drag + size presets) is the established pattern; Dadish 3D
+never shipped this and users asked for it; (2) two-stage plan: dev-menu sliders (Gate 1, one
+iter, no approval needed) → dedicated configure mode + `ConfigFile` persistence (Gate 3);
+(3) `ConfigFile` pattern included verbatim; (4) Stage 1 unblocks the CLAUDE.md requirement
+without a dedicated configure mode. `docs/research/INDEX.md` updated.
+
+Perf: no change.
+Bugs fixed: README Status line was showing iter 120 instead of iter 121 (stale).
+New dev-menu controls: none.
+Research added: `touch_button_reposition.md`.
 
 ### [2026-05-17] — iter 121 — Spire DataShards added
 

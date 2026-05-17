@@ -97,6 +97,7 @@ func _ready() -> void:
 	_test_game_gate1_api()
 	_test_data_shard_placement()
 	_test_results_panel_formatting()
+	_test_results_panel_layout_constants()
 	_test_win_state_one_shot_guard()
 	_test_data_shard_state_machine()
 	_test_industrial_press_timing()
@@ -6471,3 +6472,42 @@ func _test_spire_shard_presence() -> void:
 		tscn_text.contains('[node name="Shard1"'))
 	_ok("Spire: Shard2 node present in scene (PlatformG level, y=14.75, near summit)",
 		tscn_text.contains('[node name="Shard2"'))
+
+
+func _test_results_panel_layout_constants() -> void:
+	## Guards layout constants in results_panel.gd that govern mobile readability
+	## and thumb-tap target sizes. A silent change to any of these degrades the
+	## post-level touch UX without any other failing symptom — these invariants
+	## are the only catch.
+	print("\n-- ResultsPanel layout constants (mobile readability + tap targets) --")
+
+	# _FONT_SIZE: stat-row labels must be arm's-length readable on a 6-inch screen.
+	# Android Material Design minimum is 12 sp; at 3× pixel density that's ~36 px.
+	# Guard: >= 28 (below this, numbers are hard to read at device-hold distance).
+	_ok("_FONT_SIZE >= 28 (arm's-length readable at 3x pixel density)",
+		RP._FONT_SIZE >= 28)
+	_ok("_FONT_SIZE <= 48 (not so large the key-value rows clip on a 560 px panel)",
+		RP._FONT_SIZE <= 48)
+
+	# _BTN_FONT_SIZE: REPLAY is the primary call-to-action — button text must be
+	# visually larger than stat labels to read as dominant. Also must be readable
+	# from a slight angle (device on a surface, player leaning in).
+	_ok("_BTN_FONT_SIZE > _FONT_SIZE (primary-action emphasis over stat labels)",
+		RP._BTN_FONT_SIZE > RP._FONT_SIZE)
+	_ok("_BTN_FONT_SIZE >= 36 (readable at glance distance)",
+		RP._BTN_FONT_SIZE >= 36)
+
+	# _BTN_MIN: REPLAY button minimum size. Android HIG recommends >= 48 dp (~8 mm).
+	# At Nothing Phone 4(a) Pro's ~414 ppi, 48 dp ≈ 99 px; 88 dp ≈ 183 px is
+	# comfortably tappable without precision targeting. Guard values give a regression
+	# budget without prescribing the exact on-device-tuned numbers.
+	_ok("_BTN_MIN.x >= 300 (wide enough to tap in landscape without precision aim)",
+		RP._BTN_MIN.x >= 300.0)
+	_ok("_BTN_MIN.y >= 88 (tall enough for thumb tap at Nothing Phone 4a Pro ppi)",
+		RP._BTN_MIN.y >= 88.0)
+
+	# _PANEL_WIDTH: must fit all three stat rows without horizontal clip.
+	# Key label is 180 px wide; value for "61:01.00" at _FONT_SIZE=36 is ~168 px;
+	# row separation is 40 px → minimum content width ~388 px. 400 adds headroom.
+	_ok("_PANEL_WIDTH >= 400 (fits key-value rows without clipping '61:01.00')",
+		RP._PANEL_WIDTH >= 400.0)

@@ -48,6 +48,17 @@ authored with it in mind.
   the human picks a survivor. Threshold rebuild kept in repo as the corridor representative;
   next level-touching iter MUST pick an unrepresented shape-family, not iterate on Threshold.
 
+- **🔴 Iter 122 complete. HARD THROTTLE.** ResultsPanel layout-constant tests + touch-button
+  reposition research (26 iters since 2026-05-16 direction session).
+  `tests/test_controller_kinematics.gd`: `_test_results_panel_layout_constants()` — 7 new
+  assertions (1098→1105): `_FONT_SIZE` in [28,48], `_BTN_FONT_SIZE > _FONT_SIZE` (primary-action
+  emphasis), `_BTN_FONT_SIZE >= 36`, `_BTN_MIN.x >= 300` + `_BTN_MIN.y >= 88` (Android HIG
+  tap-target guards at Nothing Phone 4(a) Pro ppi), `_PANEL_WIDTH >= 400`.
+  Side quest: `docs/research/touch_button_reposition.md` — Genshin Impact configure-mode
+  survey; two-stage plan (dev-menu sliders Gate 1 / configure+ConfigFile Gate 3); persistence
+  pattern included verbatim. Stage 1 implementable in one iter without approval. INDEX.md updated.
+  HARD STALL continues — awaiting shape pick.
+
 - **🔴 Iter 121 complete. HARD THROTTLE.** Spire DataShards added + presence test
   (25 iters since 2026-05-16 direction session). `scenes/levels/spire.tscn`: added
   `ext_resource` for `data_shard.tscn` (load_steps 40→41); `Shards` group with two
@@ -676,6 +687,17 @@ These mirror "Open questions waiting on you" in the README.
   drive the next tuning iteration.
 
 ## Recently completed (last 5)
+
+- 2026-05-17 — iter 122. **ResultsPanel layout-constant tests + touch-button reposition research. HARD THROTTLE.**
+  `_test_results_panel_layout_constants()` — 7 assertions (1098→1105): `_FONT_SIZE` range,
+  `_BTN_FONT_SIZE > _FONT_SIZE`, `_BTN_MIN.x/y` Android HIG tap-target guards, `_PANEL_WIDTH`.
+  Side quest: `docs/research/touch_button_reposition.md` — two-stage reposition plan
+  (dev-menu sliders for Gate 1; configure mode + ConfigFile for Gate 3). INDEX.md updated.
+
+- 2026-05-17 — iter 121. **Spire DataShards added + presence test. HARD THROTTLE.**
+  `scenes/levels/spire.tscn`: Shard1 (2, 3.45, 0) + Shard2 (-2, 14.75, 0). Spire was the
+  only breadth-pass level missing collectibles. `_test_spire_shard_presence()` — 3 assertions
+  (1095→1098).
 
 - 2026-05-17 — iter 120. **Dev menu "← Level Selector" button. HARD THROTTLE.**
   `_LEVEL_SELECT_SCENE` constant + button at top of Load Level section. 2 new test assertions
