@@ -16,6 +16,18 @@ authored with it in mind.
 
 ## Active iteration
 
+- **🔴 Iter 130 complete. HARD THROTTLE.** Remaining levels DataShard presence tests
+  (34 iters since 2026-05-16 direction session). `tests/test_controller_kinematics.gd`:
+  `_test_remaining_levels_shard_presence()` — 19 new assertions (**1131 → 1150**) covering
+  the 7 breadth-pass levels that carry DataShards but had no shard presence guard after
+  iters 97–128 (Spire and Arena were covered in iters 121 and 128 respectively).
+  Threshold uses `count('[node name="DataShard"') == 4` to guard all four zone-parented
+  shards in one assertion. Rooftop / Plaza / Cavern / Descent / Gauntlet use
+  `.contains('[node name="Shard1"')` + `Shard2` (3 assertions each). Viaduct uses
+  `.contains('[node name="DataShard1"')` (singleton off PierHead1 spur). All read
+  .tscn source text directly — no scene-tree instantiation needed.
+  HARD STALL continues — awaiting shape pick.
+
 - **🔴 Iter 129 complete. HARD THROTTLE.** `untyped_declaration` warning cleanup in test file
   (33 iters since 2026-05-16 direction session). `tests/test_controller_kinematics.gd`: breadth-pass
   test functions (iters 97–128) used `var X = load(...)` / `var x = Y.new()` with bare `=` assignment,

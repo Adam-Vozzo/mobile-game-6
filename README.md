@@ -124,6 +124,27 @@ The full iteration log lives here, newest first. Every iteration appends an entr
 
 <!-- ITERATION ENTRIES BELOW — DO NOT REMOVE OLDER ENTRIES -->
 
+### [2026-05-17] — iter 130 — remaining levels DataShard presence tests (7 levels)
+
+Branch: `claude/gifted-shannon-BraSl`
+Throttle: 🔴 hard (34 iters since 2026-05-16 direction session; FULLY STALLED)
+Gate: Gate 1 — direction-finding (awaiting human shape pick)
+
+**Primary:** Added `_test_remaining_levels_shard_presence()` to
+`tests/test_controller_kinematics.gd`. The 7 breadth-pass levels that carry DataShards
+(Threshold, Rooftop, Plaza, Cavern, Descent, Gauntlet, Viaduct) had no shard presence
+guard — a silent .tscn edit deleting any shard node would not be caught by any existing
+test. Pattern: read .tscn source text, assert ext_resource registration + at least one
+instance node. Threshold uses `count('[node name="DataShard"') == 4` to cover all four
+zone-parented shards in one assertion. The other 5 "Shard1/Shard2" levels and Viaduct
+use `.contains()` on named nodes.
+
+Perf: no change.
+Bugs fixed: none.
+New dev-menu controls: none.
+Research added: none.
+Assertions: **1131 → 1150** (+19).
+
 ### [2026-05-17] — iter 129 — `untyped_declaration` warning cleanup in test file
 
 Branch: `claude/gifted-shannon-RlziQ`
