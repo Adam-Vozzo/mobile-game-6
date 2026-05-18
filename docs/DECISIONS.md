@@ -15,6 +15,29 @@ Append, don't rewrite. Supersession adds a new entry referencing the old.
 
 ---
 
+## 2026-05-18 — Landing predictor disc added to BlobShadow (default OFF)
+
+Status: accepted
+Context: `docs/research/depth_perception_cues.md` §1 specifies a landing target predictor as
+a "Gate 1 enhancement if Zone 3 lateral jumps read ambiguous on device." The feature was specced
+but unimplemented. Two options: (A) implement as a dedicated Node3D child separate from BlobShadow,
+or (B) add directly to `blob_shadow.gd` as a second disc controlled by a new juice key.
+Decision: Option B. The predictor is a variant of the blob shadow (same material, same physics
+mask, same parent relationship) and needs no independent lifecycle. Adding a second
+`MeshInstance3D + raycast` to the existing script adds +85 lines with no new architectural surface.
+The new juice key `predict_landing` (default OFF) gates it cleanly in the existing dev menu
+pattern, and three tunables (`predict_seconds`, `predictor_radius_scale`, `predictor_alpha_max`)
+live in the existing Blob Shadow — Tuning section.
+Alternatives considered: Option A (standalone `LandingPredictor` node) — rejected for Gate 1;
+the separation only matters if the predictor needs independent enable/disable from the main shadow,
+which is not a current requirement.
+Consequences: `BlobShadow` adds one raycast + one draw call per frame when `predict_landing` is
+ON (both off by default). `DevMenu.juice_state` gains `predict_landing: false`. The feature is
+only relevant after device testing confirms lateral jump depth is ambiguous.
+Reference: `docs/research/depth_perception_cues.md` §1.
+
+---
+
 ## 2026-05-17 — CameraHint `blend_time` removed; rate named in `camera_rig._HINT_BLEND_RATE`
 
 Status: accepted

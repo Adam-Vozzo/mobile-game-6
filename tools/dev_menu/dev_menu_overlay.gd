@@ -497,6 +497,10 @@ func _build_blob_shadow_tuning(vbox: VBoxContainer) -> void:
 	_make_blob_slider(vbox, "Radius height",  &"radius_at_height",  0.1,  2.0,  0.01, 0.55)
 	_make_blob_slider(vbox, "Fade height",    &"fade_height",        1.0,  20.0, 0.5,  6.0)
 	_make_blob_slider(vbox, "Max alpha",      &"alpha_max",          0.05, 1.0,  0.01, 0.42)
+	vbox.add_child(_make_label("Predictor (enable via Juice → predict_landing)", SECTION_FONT_SIZE, false))
+	_make_blob_slider(vbox, "Predict ahead (s)",  &"predict_seconds",        0.05, 1.0, 0.05, 0.35)
+	_make_blob_slider(vbox, "Predictor radius ×", &"predictor_radius_scale", 0.1,  1.0, 0.05, 0.5)
+	_make_blob_slider(vbox, "Predictor alpha",    &"predictor_alpha_max",    0.05, 1.0, 0.01, 0.25)
 
 
 func _build_audio_sfx_tuning(vbox: VBoxContainer) -> void:

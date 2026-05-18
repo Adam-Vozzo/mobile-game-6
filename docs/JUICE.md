@@ -72,6 +72,7 @@ is not affected. Only the strongest in-flight shake wins (weaker arrivals are di
 | element | status | notes |
 |---------|--------|-------|
 | Ground-projected disc | prototype | `scripts/player/blob_shadow.gd`; 1 raycast/frame + 1 draw call; disc scales radius_at_ground→radius_at_height and alpha_max→0 as height increases; quadratic alpha falloff; default ON (gameplay-critical depth aid, not decoration). 4 tunables now live in dev menu Juice → Blob Shadow — Tuning (radius ground/height, fade height, max alpha). |
+| Landing predictor disc | prototype | Toggle key `predict_landing` (default OFF — enable if lateral jumps read ambiguous on device). Second disc projected at `origin + velocity × predict_seconds` downcast to the floor; radius = main disc radius × predictor_radius_scale; alpha = predictor_alpha_max × (1 − t²). Extra draw call + raycast when enabled. 3 tunables: Predict ahead (s), Predictor radius ×, Predictor alpha. See `docs/research/depth_perception_cues.md` §1. |
 
 ## Sound layers — toggle key `sound_layers`
 
