@@ -176,6 +176,7 @@ func _ready() -> void:
 	_test_hazard_body_class()
 	_test_arena_shard_presence()
 	_test_remaining_levels_shard_presence()
+	_test_landing_predictor_defaults()
 	_report()
 
 
@@ -6747,3 +6748,59 @@ func _test_remaining_levels_shard_presence() -> void:
 		vi.contains("data_shard.tscn"))
 	_ok("viaduct: DataShard1 node present (PierHead1 east spur, 1.5 m jump off-path)",
 		vi.contains('[node name="DataShard1"'))
+
+
+func _test_landing_predictor_defaults() -> void:
+	## Guards the three new @export defaults added to BlobShadow for the landing
+	## predictor, the _predict_enabled initial state, the predict_landing juice
+	## registration in DevMenu, and the param-dispatch + juice-toggle routing.
+	##
+	## BlobShadow._ready() is never called (no scene tree) — @export defaults and
+	## logic methods are independently verifiable without a scene instantiation.
+	print("\n-- Landing predictor export defaults + juice routing (iter 131) --")
+
+	var bs := BlobShadow.new()
+
+	# Export defaults — tuned from depth_perception_cues.md §1 recommendations.
+	_ok("predict_seconds default 0.35 s (time-ahead window for lateral jump reads)",
+		_near(bs.predict_seconds, 0.35))
+	_ok("predictor_radius_scale default 0.5 (half the main disc — visually secondary)",
+		_near(bs.predictor_radius_scale, 0.5))
+	_ok("predictor_alpha_max default 0.25 (dimmer than blob alpha_max 0.42)",
+		_near(bs.predictor_alpha_max, 0.25))
+
+	# Disabled by default: must be explicitly toggled on via juice key.
+	_ok("_predict_enabled starts false (off until device confirms lateral-jump need)",
+		bs._predict_enabled == false)
+
+	# Param dispatch: each new arm routes to the correct property.
+	bs._on_blob_shadow_param_changed(&"predict_seconds", 0.50)
+	_ok("predict_seconds dispatch sets property", _near(bs.predict_seconds, 0.50))
+
+	bs._on_blob_shadow_param_changed(&"predictor_radius_scale", 0.75)
+	_ok("predictor_radius_scale dispatch sets property",
+		_near(bs.predictor_radius_scale, 0.75))
+
+	bs._on_blob_shadow_param_changed(&"predictor_alpha_max", 0.40)
+	_ok("predictor_alpha_max dispatch sets property",
+		_near(bs.predictor_alpha_max, 0.40))
+
+	# Juice toggle routing: predict_landing key flips _predict_enabled.
+	bs._on_juice_changed(&"predict_landing", true)
+	_ok("juice_changed predict_landing→true enables predictor", bs._predict_enabled == true)
+
+	bs._on_juice_changed(&"predict_landing", false)
+	_ok("juice_changed predict_landing→false disables predictor", bs._predict_enabled == false)
+
+	# Unrelated juice key must not affect predictor state.
+	bs._on_juice_changed(&"blob_shadow", false)
+	_ok("juice_changed blob_shadow does not affect _predict_enabled (was false)",
+		bs._predict_enabled == false)
+
+	bs.free()
+
+	# DevMenu juice_state registration: predict_landing is registered as false.
+	var dm := DM.new()
+	_ok("predict_landing registered in DevMenu.juice_state with default false",
+		dm.juice_state.has(&"predict_landing") and not dm.is_juice_on(&"predict_landing"))
+	dm.free()

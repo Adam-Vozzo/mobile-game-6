@@ -16,6 +16,20 @@ authored with it in mind.
 
 ## Active iteration
 
+- **🔴 Iter 131 complete. HARD THROTTLE.** Landing predictor disc + tests (35 iters since
+  2026-05-16 direction session). `scripts/player/blob_shadow.gd`: added second
+  `MeshInstance3D` (12-segment cylinder) built by `_build_predict_mesh()`; three new exports
+  (`predict_seconds = 0.35`, `predictor_radius_scale = 0.5`, `predictor_alpha_max = 0.25`);
+  `_update_predictor()` fires a second downward raycast from `origin + velocity × predict_seconds`
+  (linear, no gravity correction — sufficient for lateral jump reads); renders dimmer disc at
+  projected landing point, active only when `_predict_enabled` and `height > 0.2 m`. `_process`
+  refactored: early returns now call `_hide_all()` helper (reduces duplication). New juice key
+  `predict_landing: false` in `dev_menu.gd`. Dev menu Blob Shadow — Tuning: Predict ahead (s) /
+  Predictor radius × / Predictor alpha sliders. `JUICE.md` + `DECISIONS.md` updated.
+  Side quest: `_test_landing_predictor_defaults()` — 11 new assertions (**1148 → 1159**).
+  Throttle override: specced in `depth_perception_cues.md` §1, no new architectural surface.
+  HARD STALL continues — awaiting shape pick.
+
 - **🔴 Iter 130 complete. HARD THROTTLE.** Remaining levels DataShard presence tests
   (34 iters since 2026-05-16 direction session). `tests/test_controller_kinematics.gd`:
   `_test_remaining_levels_shard_presence()` — 19 new assertions (**1131 → 1150**) covering

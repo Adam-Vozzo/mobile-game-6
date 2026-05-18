@@ -5,7 +5,7 @@ A mobile 3D platformer. Brutalist megastructure inspired by *BLAME!*. Controller
 ## Status
 
 Current gate: **Gate 0 — Feel Lab** (closing out; Gate 1 prep in flight)
-Last activity: 2026-05-17 — iter 129: `untyped_declaration` warning cleanup in test file (28 fixes)
+Last activity: 2026-05-18 — iter 131: landing predictor disc in BlobShadow (predict_landing juice key, 3 tunables, 11 tests)
 Test device build: ✅ verified 2026-05-12 — runs in Godot 4.6 on PC and on Nothing Phone 4(a) Pro
 Performance: 144 fps / 6.9 ms in editor at 1920×1080 (Feel Lab); Threshold perf TBD after rebuild
 Throttle level: **🔴 hard** — 33 iters since 2026-05-16 direction session; FULLY STALLED — awaiting shape-family pick
@@ -123,6 +123,33 @@ Goal: store-ready build.
 The full iteration log lives here, newest first. Every iteration appends an entry. Skim the dates to find where you last left off.
 
 <!-- ITERATION ENTRIES BELOW — DO NOT REMOVE OLDER ENTRIES -->
+
+### [2026-05-18] — iter 131 — landing predictor disc in BlobShadow
+
+Branch: `claude/gifted-shannon-7yR5v`
+Throttle: 🔴 hard (35 iters since 2026-05-16 direction session; FULLY STALLED — still awaiting shape pick)
+Gate: Gate 1 — direction-finding
+
+**Primary:** Implemented the landing target predictor specified in `docs/research/depth_perception_cues.md`
+§1 (throttle override: specced in existing research, no new architectural surface, single file touched).
+`blob_shadow.gd`: added second `MeshInstance3D` + `StandardMaterial3D` built in `_build_predict_mesh()`;
+three new exports (`predict_seconds = 0.35 s`, `predictor_radius_scale = 0.5`, `predictor_alpha_max = 0.25`);
+`_update_predictor(parent, origin, space, height, t)` fires a second downward raycast from
+`origin + velocity × predict_seconds`, renders a dimmer disc at the projected landing point;
+only active when `_predict_enabled` and `height > 0.2 m` (airborne guard).
+`dev_menu.gd`: added `predict_landing: false` to `juice_state` (default OFF — enable on device if
+Zone 3 lateral jumps read ambiguous). Dev menu Blob Shadow — Tuning: 3 new sliders.
+`JUICE.md`: landing predictor row added (prototype). `DECISIONS.md`: ADR logged.
+
+**Side quest:** `_test_landing_predictor_defaults()` — 11 new assertions (**1148 → 1159**)
+covering export defaults, `_predict_enabled = false` initial state, param dispatch for all 3 new
+params, juice toggle routing (predict_landing→on/off + unrelated-key isolation), and
+`DevMenu.juice_state` registration.
+
+Perf: +1 raycast + 1 draw call per frame only when `predict_landing` is ON (default OFF). No change at current default settings.
+Bugs fixed: none.
+New dev-menu controls: Juice → predict_landing toggle; Blob Shadow — Tuning → Predict ahead (s), Predictor radius ×, Predictor alpha.
+Research added: none (implements existing spec from depth_perception_cues.md §1).
 
 ### [2026-05-17] — iter 130 — remaining levels DataShard presence tests (7 levels)
 

@@ -54,7 +54,8 @@ var juice_state: Dictionary[StringName, bool] = {
 	&"squash_stretch": true,
 	&"sound_layers": true,
 	&"blob_shadow": true,
-	&"ghost_trails": false,   # default OFF — enable once level has meaningful data
+	&"ghost_trails": false,    # default OFF — enable once level has meaningful data
+	&"predict_landing": false, # default OFF — enable if lateral jumps read ambiguous on device
 }
 var debug_viz_state: Dictionary[StringName, bool] = {
 	&"perf_hud": true,
